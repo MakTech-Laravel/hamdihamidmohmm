@@ -1,0 +1,16 @@
+{
+    "agents": [
+        "claude_code",
+        "cursor",
+        "gemini",
+        "windsurf"
+    ],
+    "editors": [
+        "claude_code",
+        "cursor",
+        "gemini",
+        "vscode",
+        "windsurf"
+    ],
+    "guidelines": true
+}

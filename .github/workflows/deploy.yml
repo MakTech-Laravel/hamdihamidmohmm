@@ -1,0 +1,23 @@
+          script: |
+            set -e
+
+            # allow git to update files (storage/cache can block reset)
+            sudo chown -R deploy:deploy /var/www/willwrite/storage /var/www/willwrite/bootstrap/cache
+
+            cd /var/www/willwrite
+            git fetch --all
+            git reset --hard origin/main
+
+            composer install --no-dev --optimize-autoloader
+            php artisan migrate --force
+            php artisan optimize:clear
+
+            npm ci
+            npm run build
+
+            # restore correct runtime permissions
+            sudo chown -R www-data:www-data storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
+
+            sudo systemctl reload php8.3-fpm
+            sudo systemctl reload nginx
