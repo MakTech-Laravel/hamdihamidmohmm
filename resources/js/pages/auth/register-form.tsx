@@ -1,11 +1,13 @@
 import { Form, Head, Link } from '@inertiajs/react';
 
 import InputError from '@/components/input-error';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import TextLink from '@/components/text-link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Spinner } from '@/components/ui/spinner';
+import { useLocale } from '@/hooks/use-locale';
 import AuthLayout from '@/layouts/auth-layout';
 import { login, register } from '@/routes';
 import { store } from '@/routes/register';
@@ -21,24 +23,31 @@ export default function RegisterForm({
     roleLabel,
     isEmployer,
 }: RegisterFormProps) {
+    const { t } = useLocale();
     const accent = isEmployer ? '#e57124' : '#323981';
     const title = isEmployer
-        ? 'Create Employer Account'
-        : 'Create Job Seeker Account';
+        ? t('auth.create_employer_account')
+        : t('auth.create_job_seeker_account');
     const subtitle = isEmployer
-        ? 'Start hiring the right talent today'
-        : 'Find your next career opportunity';
+        ? t('auth.employer_subtitle')
+        : t('auth.job_seeker_subtitle');
 
     return (
         <AuthLayout title={title}>
             <Head title={title} />
+
+            <div className="mb-4 flex justify-end">
+                <div className="rounded-lg bg-[#323981]">
+                    <LanguageSwitcher variant="header" />
+                </div>
+            </div>
 
             <div>
                 <Link
                     href={register()}
                     className="text-sm font-semibold text-[#323981] hover:underline"
                 >
-                    ← Back
+                    {t('auth.back')}
                 </Link>
                 <h1 className="mt-4 text-2xl font-extrabold leading-8 text-[#050315]">
                     {title}
@@ -62,7 +71,7 @@ export default function RegisterForm({
                                     htmlFor="company_name"
                                     className="text-sm font-semibold text-[#364153]"
                                 >
-                                    Company / Organization Name
+                                    {t('auth.company_name')}
                                 </Label>
                                 <Input
                                     id="company_name"
@@ -70,7 +79,7 @@ export default function RegisterForm({
                                     type="text"
                                     required
                                     autoFocus
-                                    placeholder="Enter company name"
+                                    placeholder={t('auth.company_name_placeholder')}
                                     className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#e57124] focus-visible:ring-[#e57124]/30"
                                 />
                                 <InputError message={errors.company_name} />
@@ -81,7 +90,7 @@ export default function RegisterForm({
                                     htmlFor="name"
                                     className="text-sm font-semibold text-[#364153]"
                                 >
-                                    Full Name
+                                    {t('auth.full_name')}
                                 </Label>
                                 <Input
                                     id="name"
@@ -89,7 +98,7 @@ export default function RegisterForm({
                                     type="text"
                                     required
                                     autoFocus
-                                    placeholder="Enter your full name"
+                                    placeholder={t('auth.full_name_placeholder')}
                                     className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
                                 />
                                 <InputError message={errors.name} />
@@ -101,7 +110,7 @@ export default function RegisterForm({
                                 htmlFor="email"
                                 className="text-sm font-semibold text-[#364153]"
                             >
-                                Email Address
+                                {t('auth.email')}
                             </Label>
                             <Input
                                 id="email"
@@ -109,7 +118,7 @@ export default function RegisterForm({
                                 type="email"
                                 required
                                 autoComplete="username"
-                                placeholder="Enter your email address"
+                                placeholder={t('auth.email_address_placeholder')}
                                 className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
                             />
                             <InputError message={errors.email} />
@@ -120,14 +129,14 @@ export default function RegisterForm({
                                 htmlFor="password"
                                 className="text-sm font-semibold text-[#364153]"
                             >
-                                Password
+                                {t('auth.password')}
                             </Label>
                             <PasswordInput
                                 id="password"
                                 name="password"
                                 required
                                 autoComplete="new-password"
-                                placeholder="Create a strong password"
+                                placeholder={t('auth.create_password_placeholder')}
                                 className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
                             />
                             <InputError message={errors.password} />
@@ -138,14 +147,14 @@ export default function RegisterForm({
                                 htmlFor="password_confirmation"
                                 className="text-sm font-semibold text-[#364153]"
                             >
-                                Confirm Password
+                                {t('auth.confirm_password')}
                             </Label>
                             <PasswordInput
                                 id="password_confirmation"
                                 name="password_confirmation"
                                 required
                                 autoComplete="new-password"
-                                placeholder="Re-enter your password"
+                                placeholder={t('auth.confirm_password_placeholder')}
                                 className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
                             />
                             <InputError message={errors.password_confirmation} />
@@ -159,10 +168,7 @@ export default function RegisterForm({
                                 required
                                 className="mt-0.5 size-4 shrink-0 rounded-[2px] border-[#767676] text-[#323981] focus:ring-[#323981]"
                             />
-                            <span>
-                                I agree to the Terms &amp; Conditions and Privacy
-                                Policy
-                            </span>
+                            <span>{t('auth.terms')}</span>
                         </label>
                         <InputError message={errors.terms} />
                         <InputError message={errors.role} />
@@ -181,7 +187,7 @@ export default function RegisterForm({
                             {processing ? (
                                 <Spinner className="h-4 w-4" />
                             ) : (
-                                'Create Account'
+                                t('auth.create_account_button')
                             )}
                         </button>
                     </>
@@ -189,17 +195,19 @@ export default function RegisterForm({
             </Form>
 
             <p className="mt-6 text-center text-sm text-[#6a7282]">
-                Already have an account?{' '}
+                {t('auth.already_have_account')}{' '}
                 <TextLink
                     href={login()}
                     className="font-bold no-underline hover:underline"
                     style={{ color: accent }}
                 >
-                    Login
+                    {t('auth.login')}
                 </TextLink>
             </p>
 
-            <p className="sr-only">Registering as {roleLabel}</p>
+            <p className="sr-only">
+                {t('auth.register')} — {roleLabel}
+            </p>
         </AuthLayout>
     );
 }

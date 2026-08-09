@@ -16,7 +16,7 @@ export default function AuthLayout({
     maxWidthClassName = 'max-w-[420px]',
 }: AuthLayoutProps) {
     return (
-        <div className="relative min-h-svh overflow-hidden bg-[#f8faff] font-['Plus_Jakarta_Sans',sans-serif] text-[#050315]">
+        <div className="relative min-h-svh overflow-hidden bg-[#f8faff] font-['Plus_Jakarta_Sans','Noto_Sans_Arabic',sans-serif] text-[#050315]">
             <div
                 className="pointer-events-none absolute inset-0"
                 style={{

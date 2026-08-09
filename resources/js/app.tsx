@@ -23,6 +23,7 @@ createInertiaApp({
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
+        const dir = (props.initialPage.props as { dir?: string }).dir ?? 'ltr';
 
         root.render(
             <StrictMode>
@@ -36,10 +37,11 @@ createInertiaApp({
                     >
                         <App {...props} />
                         <Toaster
-                            position="top-right"
+                            position={dir === 'rtl' ? 'top-left' : 'top-right'}
                             richColors
                             closeButton
                             expand={true}
+                            dir={dir === 'rtl' ? 'rtl' : 'ltr'}
                         />
                         <ErrorOverlay />
                         <ErrorBadge />

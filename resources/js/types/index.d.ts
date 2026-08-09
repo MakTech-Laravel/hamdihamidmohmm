@@ -38,11 +38,24 @@ export interface NavItem {
 // Alias for backward compatibility
 export type NavItem = NavItem;
 
+export interface LocaleOption {
+    code: string;
+    label: string;
+    dir: 'ltr' | 'rtl';
+}
+
 export interface SharedData {
     name: string;
     auth: Auth;
     features: Features;
+    flash: {
+        success?: boolean | null;
+    };
     sidebarOpen: boolean;
+    locale: string;
+    dir: 'ltr' | 'rtl';
+    translations: Record<string, string>;
+    availableLocales: LocaleOption[];
     [key: string]: unknown;
 }
 

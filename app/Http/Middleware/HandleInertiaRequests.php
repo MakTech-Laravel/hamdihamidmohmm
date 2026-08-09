@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Locale;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Inertia\Middleware;
 use Laravel\Fortify\Features;
 
@@ -29,10 +31,22 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user('web');
         $admin = $request->user('admin');
+        $locale = app()->getLocale();
 
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'locale' => $locale,
+            'dir' => Locale::direction($locale),
+            'translations' => $this->translationsFor($locale),
+            'availableLocales' => collect(Locale::supported())
+                ->map(fn (string $code) => [
+                    'code' => $code,
+                    'label' => Locale::label($code),
+                    'dir' => Locale::direction($code),
+                ])
+                ->values()
+                ->all(),
             'auth' => [
                 'user' => $user ? array_merge(
                     $user->only([
@@ -58,6 +72,9 @@ class HandleInertiaRequests extends Middleware
                     'email' => $admin->email,
                 ] : null,
             ],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+            ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'features' => [
                 // 'canRegister' => Features::enabled(Features::registration()),
@@ -75,5 +92,22 @@ class HandleInertiaRequests extends Middleware
     private function displayName($user): string
     {
         return ! empty($user->name) ? $user->name : $user->email;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function translationsFor(string $locale): array
+    {
+        $path = lang_path("{$locale}.json");
+
+        if (! File::exists($path)) {
+            return [];
+        }
+
+        /** @var array<string, string> $translations */
+        $translations = json_decode(File::get($path), true) ?: [];
+
+        return $translations;
     }
 }

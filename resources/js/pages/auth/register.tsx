@@ -1,18 +1,28 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowRight, Building2, UserRound } from 'lucide-react';
 
+import { LanguageSwitcher } from '@/components/language-switcher';
 import TextLink from '@/components/text-link';
+import { useLocale } from '@/hooks/use-locale';
 import AuthLayout from '@/layouts/auth-layout';
 import { login } from '@/routes';
 import { role as registerRole } from '@/routes/register';
 
 export default function Register() {
+    const { t } = useLocale();
+
     return (
-        <AuthLayout title="Create account" maxWidthClassName="max-w-[560px]">
-            <Head title="Register" />
+        <AuthLayout title={t('auth.create_account')} maxWidthClassName="max-w-[560px]">
+            <Head title={t('auth.register')} />
+
+            <div className="mb-4 flex justify-end">
+                <div className="rounded-lg bg-[#323981]">
+                    <LanguageSwitcher variant="header" />
+                </div>
+            </div>
 
             <h1 className="text-center text-2xl font-extrabold leading-8 text-[#050315]">
-                Create Your Account
+                {t('auth.create_account')}
             </h1>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -24,15 +34,14 @@ export default function Register() {
                         <UserRound className="size-7" strokeWidth={1.75} />
                     </div>
                     <h2 className="mt-4 text-base font-extrabold text-[#050315]">
-                        Job Seeker
+                        {t('auth.job_seeker')}
                     </h2>
                     <p className="mt-2 flex-1 text-sm leading-[22.75px] text-[#6a7282]">
-                        Search and apply for jobs, upload your resume, and track
-                        applications.
+                        {t('auth.job_seeker_description')}
                     </p>
                     <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#323981]">
-                        Register as Job Seeker
-                        <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+                        {t('auth.register_as_job_seeker')}
+                        <ArrowRight className="size-4 transition group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
                     </span>
                 </Link>
 
@@ -44,26 +53,25 @@ export default function Register() {
                         <Building2 className="size-7" strokeWidth={1.75} />
                     </div>
                     <h2 className="mt-4 text-base font-extrabold text-[#050315]">
-                        Employer
+                        {t('auth.employer')}
                     </h2>
                     <p className="mt-2 flex-1 text-sm leading-[22.75px] text-[#6a7282]">
-                        Post job vacancies, receive applications, and manage your
-                        hiring process.
+                        {t('auth.employer_description')}
                     </p>
                     <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#e57124]">
-                        Register as Employer
-                        <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+                        {t('auth.register_as_employer')}
+                        <ArrowRight className="size-4 transition group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
                     </span>
                 </Link>
             </div>
 
             <p className="mt-6 text-center text-sm text-[#6a7282]">
-                Already have an account?{' '}
+                {t('auth.already_have_account')}{' '}
                 <TextLink
                     href={login()}
                     className="font-bold text-[#323981] no-underline hover:underline"
                 >
-                    Login
+                    {t('auth.login')}
                 </TextLink>
             </p>
         </AuthLayout>
