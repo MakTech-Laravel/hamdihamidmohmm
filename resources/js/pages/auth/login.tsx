@@ -2,7 +2,6 @@ import { Form, Head, usePage } from '@inertiajs/react';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -11,131 +10,122 @@ import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
-import { SharedData } from '@/types';
+import type { SharedData } from '@/types';
 
-export default function Login() {
+export default function Login({
+    canResetPassword,
+    status,
+}: {
+    canResetPassword?: boolean;
+    status?: string;
+}) {
     const { features } = usePage<SharedData>().props;
+    const showReset = canResetPassword ?? features.canResetPassword;
 
     return (
-        <AuthLayout
-            title="Welcome back"
-            description="Enter your credentials to access your account"
-            context="login"
-        >
+        <AuthLayout title="Log in">
             <Head title="Log in" />
 
-            <div className="w-full space-y-3 md:space-y-6 lg:space-y-10 px-2 py-4 lg:py-10">
-                <div className="rounded-3xl border border-primary-50/40 bg-primary-50/20 px-4 py-3 text-sm text-primary-600 sm:px-5 sm:py-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <p className="text-xs uppercase tracking-[0.35em] text-primary-600">Trusted access</p>
-                    <p className="mt-1 text-base font-medium text-primary-600">
-                        Sign in with your Horizon credentials or approved hardware key.
-                    </p>
-                </div>
-
-                <Form
-                    {...store.form()}
-                    resetOnSuccess={['password']}
-                    className="space-y-3 px-1 sm:space-y-6 sm:px-0"
-                >
-                    {({ processing, errors }) => (
-                        <>
-                            <div className="space-y-3 sm:space-y-6">
-                                <div className="rounded-3xl border border-primary-50/40 bg-primary-50/20 p-4 text-foreground shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300 sm:p-5">
-                                    <Label
-                                        htmlFor="email"
-                                        className="text-xs font-semibold uppercase tracking-[0.35em] text-primary-500"
-                                    >
-                                        Email address
-                                    </Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        name="email"
-                                        required
-                                        autoFocus
-                                        placeholder="name@company.com"
-                                        className="mt-2 h-11 rounded-2xl border border-muted/60 bg-white text-sm text-primary-500 placeholder:text-primary-500/60 focus:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-200 sm:h-12 sm:text-base"
-                                    />
-                                    <InputError message={errors.email} />
-                                </div>
-
-                                <div className="rounded-3xl border border-primary-50/40 bg-primary-50/20 p-4 text-foreground shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300 sm:p-5">
-                                    <div className="mb-2 flex items-center justify-between">
-                                        <Label
-                                            htmlFor="password"
-                                            className="text-xs font-semibold uppercase tracking-[0.35em] text-primary-500"
-                                        >
-                                            Password
-                                        </Label>
-                                        {features.canResetPassword && (
-                                            <TextLink
-                                                href={request()}
-                                                className="text-xs font-semibold text-primary-600"
-                                            >
-                                                Forgot?
-                                            </TextLink>
-                                        )}
-                                    </div>
-                                    <PasswordInput
-                                        id="password"
-                                        name="password"
-                                        required
-                                        placeholder="••••••••"
-                                        className="h-11 rounded-2xl border border-muted/60 bg-white text-sm text-primary-500 placeholder:text-primary-500/60 focus:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-200 sm:h-12 sm:text-base"
-                                    />
-                                    <InputError message={errors.password} />
-                                </div>
-                            </div>
-
-                            <div className="space-y-3 sm:space-y-4">
-                                <div className="flex flex-wrap items-center gap-3 rounded-3xl border border-primary-50/40 bg-primary-50/20 px-3 py-3 text-xs text-primary-500/80 animate-in fade-in slide-in-from-bottom-2 duration-300 sm:px-4">
-                                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white/15 text-lg">
-                                        🔐
-                                    </span>
-                                    End-to-end encrypted · Adaptive multi-factor · SOC2 compliant
-                                </div>
-
-                                <Button
-                                    type="submit"
-                                    className="group relative w-full overflow-hidden rounded-3xl bg-gradient-to-r from-primary-500 via-primary-400 to-primary-600 py-4 text-sm font-semibold tracking-wide text-white shadow-lg transition hover:brightness-110 sm:py-5 sm:text-base"
-                                    disabled={processing}
-                                >
-                                    <span className="relative flex items-center justify-center gap-2">
-                                        {processing ? (
-                                            <Spinner className="h-4 w-4" />
-                                        ) : (
-                                            <>
-                                                <span>Log in securely</span>
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    strokeWidth={1.5}
-                                                    stroke="currentColor"
-                                                    className="h-5 w-5 transition group-hover:translate-x-1"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M13.5 4.5 21 12l-7.5 7.5M21 12H3"
-                                                    />
-                                                </svg>
-                                            </>
-                                        )}
-                                    </span>
-                                </Button>
-                            </div>
-                        </>
-                    )}
-                </Form>
-
-                <div className="text-center text-xs uppercase tracking-[0.3em] text-primary-500">
-                    Ready to join us?{' '}
-                    <TextLink href={register()} className="font-semibold text-primary-500 border-none hover:text-primary-200">
-                        Create your account
-                    </TextLink>
-                </div>
+            <div>
+                <h1 className="text-2xl font-extrabold leading-8 text-[#050315]">
+                    Welcome Back
+                </h1>
+                <p className="mt-1 text-sm leading-5 text-[#6a7282]">
+                    Sign in to your RR Job Portal account
+                </p>
             </div>
+
+            {status && (
+                <div className="mt-4 rounded-xl bg-[#eff6ff] px-4 py-3 text-sm text-[#323981]">
+                    {status}
+                </div>
+            )}
+
+            <Form
+                {...store.form()}
+                resetOnSuccess={['password']}
+                className="mt-7 space-y-4"
+            >
+                {({ processing, errors }) => (
+                    <>
+                        <div className="space-y-1.5">
+                            <Label
+                                htmlFor="email"
+                                className="text-sm font-semibold text-[#364153]"
+                            >
+                                Email Address
+                            </Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                name="email"
+                                required
+                                autoFocus
+                                autoComplete="username"
+                                placeholder="Enter your email"
+                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
+                            />
+                            <InputError message={errors.email} />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label
+                                htmlFor="password"
+                                className="text-sm font-semibold text-[#364153]"
+                            >
+                                Password
+                            </Label>
+                            <PasswordInput
+                                id="password"
+                                name="password"
+                                required
+                                autoComplete="current-password"
+                                placeholder="Enter your password"
+                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
+                            />
+                            <InputError message={errors.password} />
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3 pt-1">
+                            <label className="flex items-center gap-2 text-sm text-[#4a5565]">
+                                <input
+                                    type="checkbox"
+                                    name="remember"
+                                    className="size-4 rounded-[2px] border-[#767676] text-[#323981] focus:ring-[#323981]"
+                                />
+                                Remember me
+                            </label>
+
+                            {showReset && (
+                                <TextLink
+                                    href={request()}
+                                    className="text-sm font-semibold text-[#323981] no-underline hover:underline"
+                                >
+                                    Forgot Password?
+                                </TextLink>
+                            )}
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="flex h-12 w-full items-center justify-center rounded-xl bg-[#323981] text-base font-medium tracking-[-0.18px] text-white transition hover:brightness-110 disabled:opacity-70"
+                        >
+                            {processing ? <Spinner className="h-4 w-4" /> : 'Login'}
+                        </button>
+                    </>
+                )}
+            </Form>
+
+            <p className="mt-6 text-center text-sm text-[#6a7282]">
+                Don&apos;t have an account?{' '}
+                <TextLink
+                    href={register()}
+                    className="font-bold text-[#323981] no-underline hover:underline"
+                >
+                    Register
+                </TextLink>
+            </p>
         </AuthLayout>
     );
 }

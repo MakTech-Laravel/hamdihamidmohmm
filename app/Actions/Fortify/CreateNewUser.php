@@ -4,8 +4,10 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
@@ -21,23 +23,38 @@ class CreateNewUser implements CreatesNewUsers
     /**
      * Validate and create a newly registered user.
      *
-     * @param  array<string, string>  $input
+     * @param  array<string, mixed>  $input
      */
     public function create(array $input): User
     {
-        $profileRules = $this->baseProfileRules();
-        unset($profileRules['password'], $profileRules['password_confirmation']);
+        $role = (int) ($input['role'] ?? UserRole::JobSeeker->value);
+        $isEmployer = $role === UserRole::Employer->value;
 
         Validator::make($input, [
-            ...$profileRules,
+            'name' => $isEmployer ? ['nullable', 'string', 'max:255'] : $this->nameRules(),
+            'email' => $this->emailRules(),
             'password' => $this->passwordRules(),
             'password_confirmation' => $this->profilePasswordConfirmationRules(),
+            'role' => ['required', 'integer', Rule::in(UserRole::registrableValues())],
+            'company_name' => [$isEmployer ? 'required' : 'nullable', 'string', 'max:255'],
+            'terms' => ['accepted'],
+        ], [
+            'role.required' => 'Please select whether you are a job seeker or an employer.',
+            'role.in' => 'Please select a valid account type.',
+            'company_name.required' => 'Please enter your company or organization name.',
+            'terms.accepted' => 'You must agree to the Terms & Conditions and Privacy Policy.',
         ])->validate();
 
+        $displayName = $isEmployer
+            ? (string) $input['company_name']
+            : (string) $input['name'];
+
         return User::create([
-            'name' => $input['name'],
+            'name' => $displayName,
+            'company_name' => $isEmployer ? $displayName : null,
             'email' => $input['email'],
             'password' => $input['password'],
+            'role' => UserRole::from($role),
         ]);
     }
 

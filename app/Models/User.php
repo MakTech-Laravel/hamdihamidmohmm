@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,7 +12,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
@@ -21,9 +22,11 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'company_name',
         'email',
         'avatar',
         'password',
+        'role',
         'created_at',
         'updated_at',
     ];
@@ -47,6 +50,7 @@ class User extends Authenticatable
      */
     protected $appends = [
         'avatar_url',
+        'role_label',
     ];
 
     /**
@@ -60,7 +64,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
-
+            'role' => UserRole::class,
         ];
     }
 
@@ -93,12 +97,22 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === UserRole::ADMIN;
+        return $this->role === UserRole::Admin;
+    }
+
+    public function isJobSeeker(): bool
+    {
+        return $this->role === UserRole::JobSeeker;
+    }
+
+    public function isEmployer(): bool
+    {
+        return $this->role === UserRole::Employer;
     }
 
     public function isUser(): bool
     {
-        return $this->role === UserRole::USER;
+        return $this->isJobSeeker();
     }
 
     public function canManageUsers(): bool
@@ -116,6 +130,11 @@ class User extends Authenticatable
         return $this->role?->canAccessPayroll() ?? false;
     }
 
+    public function dashboardRoute(): string
+    {
+        return $this->role?->dashboardRoute() ?? 'job-seeker.dashboard';
+    }
+
     public function getAvatarUrlAttribute(): ?string
     {
         if ($this->avatar_urls && isset($this->avatar_urls['url'])) {
@@ -128,6 +147,4 @@ class User extends Authenticatable
 
         return null;
     }
-
-  
 }

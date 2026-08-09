@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -13,8 +14,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__ . '/../routes/web.php',
-        commands: __DIR__ . '/../routes/console.php',
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -30,16 +31,19 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'role' => EnsureUserHasRole::class,
         ]);
 
-        $middleware->redirectGuestsTo(fn(Request $request) => route('login'));
+        $middleware->redirectGuestsTo(fn (Request $request) => route('login'));
 
         $middleware->redirectUsersTo(function (Request $request) {
             if ($request->routeIs('admin.*')) {
                 return route('admin.dashboard');
             }
 
-            return route('dashboard');
+            $user = $request->user();
+
+            return route($user?->dashboardRoute() ?? 'dashboard');
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
