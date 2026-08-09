@@ -3,7 +3,8 @@ import { FormEvent, useMemo, useState } from 'react';
 
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
-import { home, login } from '@/routes';
+import { home } from '@/routes';
+import { show as jobShow } from '@/routes/jobs';
 
 const jobTypeKeys = [
     'full_time',
@@ -28,6 +29,7 @@ export default function Jobs() {
     const jobs = useMemo(
         () => [
             {
+                slug: 'senior-frontend-developer',
                 initials: 'TC',
                 title: 'Senior Frontend Developer',
                 company: 'TechCorp Solutions',
@@ -41,6 +43,7 @@ export default function Jobs() {
                 featured: true,
             },
             {
+                slug: 'marketing-manager',
                 initials: 'BH',
                 title: 'Marketing Manager',
                 company: 'BrandHouse Agency',
@@ -54,6 +57,7 @@ export default function Jobs() {
                 featured: true,
             },
             {
+                slug: 'financial-analyst',
                 initials: 'GF',
                 title: 'Financial Analyst',
                 company: 'Gulf Finance Group',
@@ -67,6 +71,7 @@ export default function Jobs() {
                 featured: true,
             },
             {
+                slug: 'ux-ui-designer',
                 initials: 'PC',
                 title: 'UX/UI Designer',
                 company: 'PixelCraft Studio',
@@ -80,6 +85,7 @@ export default function Jobs() {
                 featured: true,
             },
             {
+                slug: 'hr-business-partner',
                 initials: 'NC',
                 title: 'HR Business Partner',
                 company: 'NovaCorp International',
@@ -93,6 +99,7 @@ export default function Jobs() {
                 featured: false,
             },
             {
+                slug: 'sales-representative',
                 initials: 'AR',
                 title: 'Sales Representative',
                 company: 'AlphaRetail Group',
@@ -106,6 +113,7 @@ export default function Jobs() {
                 featured: false,
             },
             {
+                slug: 'backend-engineer',
                 initials: 'QS',
                 title: 'Backend Engineer',
                 company: 'Qatar Soft Labs',
@@ -119,6 +127,7 @@ export default function Jobs() {
                 featured: true,
             },
             {
+                slug: 'content-specialist',
                 initials: 'SM',
                 title: 'Content Specialist',
                 company: 'Sahara Media',
@@ -448,7 +457,7 @@ export default function Jobs() {
                                             </p>
                                         </div>
                                         <Link
-                                            href={login()}
+                                            href={jobShow.url(job.slug)}
                                             className="shrink-0 rounded-xl bg-[#1e3a8a] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110"
                                         >
                                             {t('jobs_page.apply')}
@@ -492,8 +501,8 @@ export default function Jobs() {
                                         type="button"
                                         onClick={() => setPage(pageNumber)}
                                         className={`inline-flex size-9 items-center justify-center rounded-lg text-sm font-semibold transition ${page === pageNumber
-                                                ? 'bg-[#323981] text-white'
-                                                : 'bg-white text-[#364153] hover:bg-[#f1f5f9]'
+                                            ? 'bg-[#323981] text-white'
+                                            : 'bg-white text-[#364153] hover:bg-[#f1f5f9]'
                                             }`}
                                     >
                                         {pageNumber}

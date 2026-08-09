@@ -3,7 +3,8 @@ import { FormEvent, useMemo, useState } from 'react';
 
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
-import { jobs, login, pricing } from '@/routes';
+import { jobs, pricing } from '@/routes';
+import { show as jobShow } from '@/routes/jobs';
 import { role as registerRole } from '@/routes/register';
 
 export default function Home() {
@@ -55,6 +56,7 @@ export default function Home() {
     const featuredJobs = useMemo(
         () => [
             {
+                slug: 'senior-frontend-developer',
                 initials: 'TC',
                 title: 'Senior Frontend Developer',
                 company: 'TechCorp Solutions',
@@ -66,6 +68,7 @@ export default function Home() {
                 salary: 'SAR 15,000 – 20,000',
             },
             {
+                slug: 'marketing-manager',
                 initials: 'BH',
                 title: 'Marketing Manager',
                 company: 'BrandHouse Agency',
@@ -77,6 +80,7 @@ export default function Home() {
                 salary: 'SAR 18,000 – 25,000',
             },
             {
+                slug: 'financial-analyst',
                 initials: 'GF',
                 title: 'Financial Analyst',
                 company: 'Gulf Finance Group',
@@ -88,6 +92,7 @@ export default function Home() {
                 salary: 'AED 12,000 – 16,000',
             },
             {
+                slug: 'ux-ui-designer',
                 initials: 'PC',
                 title: 'UX/UI Designer',
                 company: 'PixelCraft Studio',
@@ -99,6 +104,7 @@ export default function Home() {
                 salary: 'SAR 10,000 – 14,000',
             },
             {
+                slug: 'hr-business-partner',
                 initials: 'NC',
                 title: 'HR Business Partner',
                 company: 'NovaCorp International',
@@ -110,6 +116,7 @@ export default function Home() {
                 salary: 'SAR 16,000 – 22,000',
             },
             {
+                slug: 'sales-representative',
                 initials: 'AR',
                 title: 'Sales Representative',
                 company: 'AlphaRetail Group',
@@ -480,7 +487,7 @@ export default function Home() {
                                         </p>
                                     </div>
                                     <Link
-                                        href={login()}
+                                        href={jobShow.url(job.slug)}
                                         className="shrink-0 rounded-xl bg-[#323981] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110"
                                     >
                                         {t('jobs.apply_now')}
