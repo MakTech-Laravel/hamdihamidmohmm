@@ -6,7 +6,6 @@ use App\Support\Locale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Inertia\Middleware;
-use Laravel\Fortify\Features;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -29,8 +28,7 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $user = $request->user('web');
-        $admin = $request->user('admin');
+        $user = $request->user();
         $locale = app()->getLocale();
 
         return [
@@ -61,26 +59,21 @@ class HandleInertiaRequests extends Middleware
                     [
                         'name' => $this->displayName($user),
                         'role' => $user->role?->value,
+                        'role_name' => $user->primaryRoleName()?->value,
                         'role_label' => $user->role_label,
+                        'roles' => $user->getRoleNames()->values()->all(),
+                        'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
                         'can_manage_users' => $user->canManageUsers(),
+                        'can_manage_admins' => $user->canManageAdmins(),
                         'avatar_url' => $user->avatar_url,
                     ]
                 ) : null,
-                'admin' => $admin ? [
-                    'id' => $admin->id,
-                    'name' => $admin->name,
-                    'email' => $admin->email,
-                ] : null,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'features' => [
-                // 'canRegister' => Features::enabled(Features::registration()),
-                // 'canResetPassword' => Features::enabled(Features::resetPasswords()),
-                // 'canVerifyEmail' => Features::enabled(Features::emailVerification()),
-                // 'canUseTwoFactorAuthentication' => Features::enabled(Features::twoFactorAuthentication()),
                 'canRegister' => false,
                 'canResetPassword' => false,
                 'canVerifyEmail' => false,

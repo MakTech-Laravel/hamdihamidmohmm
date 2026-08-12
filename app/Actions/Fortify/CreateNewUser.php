@@ -6,6 +6,7 @@ use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Support\RoleAssigner;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
@@ -49,13 +50,15 @@ class CreateNewUser implements CreatesNewUsers
             ? (string) $input['company_name']
             : (string) $input['name'];
 
-        return User::create([
+        $user = User::create([
             'name' => $displayName,
             'company_name' => $isEmployer ? $displayName : null,
             'email' => $input['email'],
             'password' => $input['password'],
             'role' => UserRole::from($role),
         ]);
+
+        return RoleAssigner::assign($user, UserRole::from($role));
     }
 
     /**

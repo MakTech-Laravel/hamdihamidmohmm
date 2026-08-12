@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\User;
+use App\Support\RoleAssigner;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -13,14 +15,33 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::insert([
+        $jobSeeker = User::query()->updateOrCreate(
+            ['email' => 'seeker@dev.com'],
             [
-                'name' => 'Regular User',
-                'email' => 'user@dev.com',
-                'password' => Hash::make('user@dev.com'),
+                'name' => 'Job Seeker',
+                'company_name' => null,
+                'password' => Hash::make('seeker@dev.com'),
+                'email_verified_at' => now(),
+                'role' => UserRole::JobSeeker,
             ],
-        ]);
+        );
 
-        User::factory(50)->create();
+        RoleAssigner::assign($jobSeeker, UserRole::JobSeeker);
+
+        $employer = User::query()->updateOrCreate(
+            ['email' => 'employer@dev.com'],
+            [
+                'name' => 'Horizon Hiring Ltd',
+                'company_name' => 'Horizon Hiring Ltd',
+                'password' => Hash::make('employer@dev.com'),
+                'email_verified_at' => now(),
+                'role' => UserRole::Employer,
+            ],
+        );
+
+        RoleAssigner::assign($employer, UserRole::Employer);
+
+        User::factory(20)->jobSeeker()->create();
+        User::factory(10)->employer()->create();
     }
 }

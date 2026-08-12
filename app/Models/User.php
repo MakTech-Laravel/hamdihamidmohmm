@@ -2,18 +2,22 @@
 
 namespace App\Models;
 
+use App\Enums\PermissionName;
+use App\Enums\RoleName;
 use App\Enums\UserRole;
+use App\Support\RoleAssigner;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -46,7 +50,7 @@ class User extends Authenticatable
     /**
      * The accessors to append to the model's array form.
      *
-     * @var array<int, string>
+     * @var array<string, mixed>
      */
     protected $appends = [
         'avatar_url',
@@ -54,8 +58,6 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
@@ -92,22 +94,49 @@ class User extends Authenticatable
 
     public function getRoleLabelAttribute(): string
     {
-        return $this->role?->label() ?? 'Unknown';
+        return $this->primaryRoleName()?->label()
+            ?? $this->role?->label()
+            ?? 'Unknown';
+    }
+
+    public function primaryRoleName(): ?RoleName
+    {
+        $spatieRole = $this->getRoleNames()->first();
+
+        if (is_string($spatieRole) && RoleName::tryFrom($spatieRole) instanceof RoleName) {
+            return RoleName::from($spatieRole);
+        }
+
+        return $this->role?->toRoleName();
+    }
+
+    public function assignAppRole(UserRole|RoleName|string $role): self
+    {
+        return RoleAssigner::assign($this, $role);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole(RoleName::SuperAdmin->value)
+            || $this->role === UserRole::SuperAdmin;
     }
 
     public function isAdmin(): bool
     {
-        return $this->role === UserRole::Admin;
+        return $this->hasAnyRole(RoleName::adminPanelValues())
+            || $this->role?->isAdmin() === true;
     }
 
     public function isJobSeeker(): bool
     {
-        return $this->role === UserRole::JobSeeker;
+        return $this->hasRole(RoleName::JobSeeker->value)
+            || $this->role === UserRole::JobSeeker;
     }
 
     public function isEmployer(): bool
     {
-        return $this->role === UserRole::Employer;
+        return $this->hasRole(RoleName::Employer->value)
+            || $this->role === UserRole::Employer;
     }
 
     public function isUser(): bool
@@ -117,7 +146,13 @@ class User extends Authenticatable
 
     public function canManageUsers(): bool
     {
-        return $this->isAdmin();
+        return $this->can(PermissionName::ManageUsers->value)
+            || $this->isAdmin();
+    }
+
+    public function canManageAdmins(): bool
+    {
+        return $this->isSuperAdmin();
     }
 
     public function getCanManageUsersAttribute(): bool
@@ -125,14 +160,21 @@ class User extends Authenticatable
         return $this->canManageUsers();
     }
 
+    public function getCanManageAdminsAttribute(): bool
+    {
+        return $this->canManageAdmins();
+    }
+
     public function canAccessPayroll(): bool
     {
-        return $this->role?->canAccessPayroll() ?? false;
+        return $this->isAdmin();
     }
 
     public function dashboardRoute(): string
     {
-        return $this->role?->dashboardRoute() ?? 'job-seeker.dashboard';
+        return $this->primaryRoleName()?->dashboardRoute()
+            ?? $this->role?->dashboardRoute()
+            ?? 'job-seeker.dashboard';
     }
 
     public function getAvatarUrlAttribute(): ?string

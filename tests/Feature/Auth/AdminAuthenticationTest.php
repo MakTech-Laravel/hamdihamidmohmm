@@ -1,72 +1,63 @@
 <?php
 
-use App\Models\Admin;
+use App\Enums\RoleName;
+use App\Enums\UserRole;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 
-function createAdmin(): Admin
-{
-    return Admin::create([
-        'name' => 'Admin User',
-        'email' => 'admin@dev.com',
-        'password' => Hash::make('admin@dev.com'),
-    ]);
-}
-
-test('admin login screen can be rendered', function () {
-    $this->get(route('admin.login'))->assertOk();
+test('admin login redirects to the shared login page', function () {
+    $this->get(route('admin.login'))->assertRedirect(route('login'));
 });
 
-test('admins can authenticate using the admin login screen', function () {
-    $admin = createAdmin();
+test('super admins are redirected to the admin dashboard after login', function () {
+    $admin = User::factory()->superAdmin()->create();
 
-    $response = $this->post(route('admin.login.store'), [
-        'email' => 'admin@dev.com',
-        'password' => 'admin@dev.com',
-    ]);
-
-    $this->assertAuthenticatedAs($admin, 'admin');
-    $response->assertRedirect(route('admin.dashboard'));
+    $this->post(route('login.store'), [
+        'email' => $admin->email,
+        'password' => 'password',
+    ])->assertRedirect(route('admin.dashboard', absolute: false));
 });
 
-test('admins cannot authenticate with invalid password', function () {
-    createAdmin();
+test('admins can access the admin dashboard through the shared login', function () {
+    $admin = User::factory()->admin()->create();
 
-    $this->post(route('admin.login.store'), [
-        'email' => 'admin@dev.com',
-        'password' => 'wrong-password',
-    ]);
-
-    $this->assertGuest('admin');
-});
-
-test('regular users cannot access admin routes', function () {
-    $user = User::factory()->create();
-
-    $this->actingAs($user)
-        ->get(route('admin.dashboard'))
-        ->assertRedirect(route('admin.login'));
-});
-
-test('authenticated admins can access admin dashboard', function () {
-    $admin = createAdmin();
-
-    $this->actingAs($admin, 'admin')
+    $this->actingAs($admin)
         ->get(route('admin.dashboard'))
         ->assertOk();
 });
 
-test('guests are redirected to admin login from admin routes', function () {
-    $this->get(route('admin.dashboard'))
-        ->assertRedirect(route('admin.login'));
+test('job seekers cannot access admin routes', function () {
+    $seeker = User::factory()->jobSeeker()->create();
+
+    $this->actingAs($seeker)
+        ->get(route('admin.dashboard'))
+        ->assertRedirect(route('job-seeker.dashboard'));
 });
 
-test('admins can logout', function () {
-    $admin = createAdmin();
+test('guests are redirected to the shared login from admin routes', function () {
+    $this->get(route('admin.dashboard'))
+        ->assertRedirect(route('login'));
+});
 
-    $this->actingAs($admin, 'admin')
-        ->post(route('admin.logout'))
-        ->assertRedirect(route('admin.login'));
+test('admins can logout through the shared logout route', function () {
+    $admin = User::factory()->admin()->create();
 
-    $this->assertGuest('admin');
+    $this->actingAs($admin)
+        ->post(route('logout'))
+        ->assertRedirect('/');
+
+    $this->assertGuest();
+});
+
+test('users receive the correct spatie roles', function () {
+    $seeker = User::factory()->jobSeeker()->create();
+    $employer = User::factory()->employer()->create();
+    $admin = User::factory()->admin()->create();
+    $superAdmin = User::factory()->superAdmin()->create();
+
+    expect($seeker->hasRole(RoleName::JobSeeker->value))->toBeTrue()
+        ->and($employer->hasRole(RoleName::Employer->value))->toBeTrue()
+        ->and($admin->hasRole(RoleName::Admin->value))->toBeTrue()
+        ->and($superAdmin->hasRole(RoleName::SuperAdmin->value))->toBeTrue()
+        ->and($seeker->role)->toBe(UserRole::JobSeeker)
+        ->and($employer->role)->toBe(UserRole::Employer);
 });

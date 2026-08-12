@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Support\RoleAssigner;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -19,8 +20,6 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
-     *
      * @return array<string, mixed>
      */
     public function definition(): array
@@ -37,6 +36,13 @@ class UserFactory extends Factory
         ];
     }
 
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            RoleAssigner::assign($user, $user->role ?? UserRole::JobSeeker);
+        });
+    }
+
     public function jobSeeker(): static
     {
         return $this->state(fn (array $attributes) => [
@@ -51,6 +57,22 @@ class UserFactory extends Factory
             'role' => UserRole::Employer,
             'company_name' => fake()->company(),
             'name' => fake()->company(),
+        ]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Admin,
+            'company_name' => null,
+        ]);
+    }
+
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::SuperAdmin,
+            'company_name' => null,
         ]);
     }
 

@@ -3,7 +3,6 @@ import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
     user: User;
-    admin?: AdminUser;
     permissions?: string[];
 }
 
@@ -49,7 +48,7 @@ export interface SharedData {
     auth: Auth;
     features: Features;
     flash: {
-        success?: boolean | null;
+        success?: boolean | string | null;
     };
     sidebarOpen: boolean;
     locale: string;
@@ -76,16 +75,18 @@ export interface User {
     two_factor_enabled?: boolean;
     permissions?: string[];
     all_permissions?: string[];
+    roles?: string[];
     created_at: string;
     updated_at: string;
-    // When I Work fields
     first_name?: string;
     last_name?: string;
     phone_number?: string;
     employee_code?: string;
     role?: number;
+    role_name?: string;
     role_label?: string;
     can_manage_users?: boolean;
+    can_manage_admins?: boolean;
     avatar_url?: string;
     [key: string]: unknown;
 }
