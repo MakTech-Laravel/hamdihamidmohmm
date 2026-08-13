@@ -18,14 +18,16 @@ export default function JobSeekerLayout({
     const [collapsed, setCollapsed] = useState(false);
 
     return (
-        <div className="flex min-h-screen bg-[#f1f5f9]">
-            <JobSeekerSidebar
-                collapsed={collapsed}
-                onToggle={() => setCollapsed((value) => !value)}
-            />
+        <div className="flex h-svh overflow-hidden bg-[#f1f5f9]">
+            <div className="sticky top-0 z-40 hidden h-svh shrink-0 md:block">
+                <JobSeekerSidebar
+                    collapsed={collapsed}
+                    onToggle={() => setCollapsed((value) => !value)}
+                />
+            </div>
             <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
                 <JobSeekerHeader title={title} unreadCount={unreadCount} />
-                <main className="flex-1 overflow-y-auto bg-[#f8faff]">
+                <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#f8faff]">
                     {children}
                 </main>
             </div>

@@ -2,6 +2,7 @@
 
 use App\Enums\RoleName;
 use App\Http\Controllers\Backend\User\EmployerDashboardController;
+use App\Http\Controllers\Backend\User\EmployerPortalPageController;
 use App\Http\Controllers\Backend\User\JobSeekerApplicationsController;
 use App\Http\Controllers\Backend\User\JobSeekerDashboardController;
 use App\Http\Controllers\Backend\User\JobSeekerNotificationsController;
@@ -22,9 +23,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/settings', JobSeekerSettingsController::class)->name('settings');
     });
 
-    Route::get('/employer/dashboard', EmployerDashboardController::class)
-        ->middleware('role:'.RoleName::Employer->value)
-        ->name('employer.dashboard');
+    Route::middleware('role:'.RoleName::Employer->value)->prefix('employer')->name('employer.')->group(function () {
+        Route::get('/dashboard', EmployerDashboardController::class)->name('dashboard');
+        Route::get('/profile', [EmployerPortalPageController::class, 'profile'])->name('profile');
+        Route::get('/packages', [EmployerPortalPageController::class, 'packages'])->name('packages');
+        Route::get('/jobs', [EmployerPortalPageController::class, 'jobs'])->name('jobs');
+        Route::get('/applications', [EmployerPortalPageController::class, 'applications'])->name('applications');
+        Route::get('/notifications', [EmployerPortalPageController::class, 'notifications'])->name('notifications');
+        Route::get('/settings', [EmployerPortalPageController::class, 'settings'])->name('settings');
+    });
 
     Route::get('/profile', [UserProfileController::class, 'edit'])->name('user-profile.edit');
     Route::post('/profile', [UserProfileController::class, 'update'])->name('user-profile.update');
