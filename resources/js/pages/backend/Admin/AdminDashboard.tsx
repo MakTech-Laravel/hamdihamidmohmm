@@ -1,17 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import {
-    AlertTriangle,
-    ArrowDownRight,
-    ArrowUpRight,
-    Briefcase,
-    Building2,
-    CheckCircle2,
-    CreditCard,
-    Shield,
-    UserRound,
-    Users,
-} from 'lucide-react';
 
+import { AdminIcon } from '@/components/admin-icon';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -69,64 +58,64 @@ export default function AdminDashboard({
             value: stats.total_employers.toLocaleString(),
             trend: '+12.4%',
             up: true,
-            icon: Building2,
-            iconBg: 'bg-[#dbeafe] text-[#1d4ed8]',
+            icon: '/images/admin/stat-employers.svg',
+            iconBg: 'bg-[#eef2ff]',
         },
         {
             label: 'Total Job Seekers',
             value: stats.total_job_seekers.toLocaleString(),
             trend: '+8.7%',
             up: true,
-            icon: UserRound,
-            iconBg: 'bg-[#dcfce7] text-[#15803d]',
+            icon: '/images/admin/stat-job-seekers.svg',
+            iconBg: 'bg-[#f0f9ff]',
         },
         {
             label: 'Active Jobs',
             value: stats.active_jobs.toLocaleString(),
             trend: '+5.2%',
             up: true,
-            icon: Briefcase,
-            iconBg: 'bg-[#e9d5ff] text-[#7e22ce]',
+            icon: '/images/admin/stat-active-jobs.svg',
+            iconBg: 'bg-[#f0fdf4]',
         },
         {
             label: 'Pending Jobs',
             value: stats.pending_jobs.toLocaleString(),
             trend: '-3.1%',
             up: false,
-            icon: AlertTriangle,
-            iconBg: 'bg-[#ffedd5] text-[#c2410c]',
+            icon: '/images/admin/stat-pending-jobs.svg',
+            iconBg: 'bg-[#fffbeb]',
         },
         {
             label: 'Applications Today',
             value: stats.applications_today.toLocaleString(),
             trend: '+18.9%',
             up: true,
-            icon: CheckCircle2,
-            iconBg: 'bg-[#dbeafe] text-[#0057c8]',
+            icon: '/images/admin/stat-applications.svg',
+            iconBg: 'bg-[#f5f3ff]',
         },
         {
             label: 'Monthly Revenue',
             value: `AED ${stats.monthly_revenue.toLocaleString()}`,
             trend: '+10.6%',
             up: true,
-            icon: CreditCard,
-            iconBg: 'bg-[#fef3c7] text-[#b45309]',
+            icon: '/images/admin/stat-monthly-revenue.svg',
+            iconBg: 'bg-[#fff1f2]',
         },
         {
             label: 'Total Users',
             value: stats.total_users.toLocaleString(),
             trend: '+6.1%',
             up: true,
-            icon: Users,
-            iconBg: 'bg-[#e0e7ff] text-[#4338ca]',
+            icon: '/images/admin/stat-job-seekers.svg',
+            iconBg: 'bg-[#e0e7ff]',
         },
         {
             label: 'Total Admins',
             value: stats.total_admins.toLocaleString(),
             trend: 'Live',
             up: true,
-            icon: Shield,
-            iconBg: 'bg-[#fce7f3] text-[#be185d]',
+            icon: '/images/admin/stat-verifications.svg',
+            iconBg: 'bg-[#fff7ed]',
         },
     ];
 
@@ -183,8 +172,6 @@ export default function AdminDashboard({
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {metricCards.map((card) => {
-                        const Icon = card.icon;
-
                         return (
                             <div
                                 key={card.label}
@@ -193,25 +180,28 @@ export default function AdminDashboard({
                                 <div className="flex items-start justify-between">
                                     <div
                                         className={cn(
-                                            'flex size-10 items-center justify-center rounded-xl',
+                                            'flex size-9 items-center justify-center rounded-lg',
                                             card.iconBg,
                                         )}
                                     >
-                                        <Icon className="size-5" />
+                                        <AdminIcon src={card.icon} size={18} />
                                     </div>
                                     <span
                                         className={cn(
-                                            'inline-flex items-center gap-0.5 text-xs font-semibold',
+                                            'inline-flex items-center gap-1 text-[11px] font-semibold',
                                             card.up
-                                                ? 'text-[#15803d]'
-                                                : 'text-[#b91c1c]',
+                                                ? 'text-[#10b981]'
+                                                : 'text-[#ef4444]',
                                         )}
                                     >
-                                        {card.up ? (
-                                            <ArrowUpRight className="size-3.5" />
-                                        ) : (
-                                            <ArrowDownRight className="size-3.5" />
-                                        )}
+                                        <AdminIcon
+                                            src={
+                                                card.up
+                                                    ? '/images/admin/stat-trend-up.svg'
+                                                    : '/images/admin/stat-trend-down.svg'
+                                            }
+                                            size={12}
+                                        />
                                         {card.trend}
                                     </span>
                                 </div>

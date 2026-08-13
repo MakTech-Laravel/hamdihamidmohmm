@@ -17,13 +17,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware([
         'auth',
         'verified',
-        'role:'.RoleName::SuperAdmin->value.','.RoleName::Admin->value,
+        'admin.panel',
     ])->group(function () {
         Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
         Route::get('/users/list', [UserSelectionController::class, 'getUsers'])->name('users.list');
 
         Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
-        Route::put('/users/{user}/role', [UserManagementController::class, 'updateRole'])->name('users.role.update');
+        Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('users.show');
+        Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
 
         Route::get('/roles-permissions', [RolePermissionController::class, 'index'])->name('roles-permissions.index');
 
@@ -42,7 +44,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('role:'.RoleName::SuperAdmin->value)->group(function () {
             Route::get('/admins', [AdminManagementController::class, 'index'])->name('admins.index');
             Route::post('/admins', [AdminManagementController::class, 'store'])->name('admins.store');
-            Route::put('/roles/permissions', [RolePermissionController::class, 'update'])->name('roles.permissions.update');
+
+            Route::get('/roles-permissions/create', [RolePermissionController::class, 'create'])->name('roles-permissions.create');
+            Route::post('/roles-permissions', [RolePermissionController::class, 'store'])->name('roles-permissions.store');
+            Route::get('/roles-permissions/{role}/edit', [RolePermissionController::class, 'edit'])->name('roles-permissions.edit');
+            Route::put('/roles-permissions/{role}', [RolePermissionController::class, 'update'])->name('roles-permissions.update');
+            Route::delete('/roles-permissions/{role}', [RolePermissionController::class, 'destroy'])->name('roles-permissions.destroy');
         });
+
+        Route::get('/roles-permissions/{role}', [RolePermissionController::class, 'show'])->name('roles-permissions.show');
     });
 });

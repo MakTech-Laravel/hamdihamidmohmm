@@ -4,8 +4,10 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Enums\ActivityAction;
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Support\ActivityLogger;
 use App\Support\RoleAssigner;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -58,7 +60,16 @@ class CreateNewUser implements CreatesNewUsers
             'role' => UserRole::from($role),
         ]);
 
-        return RoleAssigner::assign($user, UserRole::from($role));
+        $user = RoleAssigner::assign($user, UserRole::from($role));
+
+        ActivityLogger::log(
+            $user,
+            ActivityAction::AccountCreated,
+            'Account registered.',
+            $user,
+        );
+
+        return $user;
     }
 
     /**

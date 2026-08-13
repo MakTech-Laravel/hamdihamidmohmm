@@ -1,9 +1,7 @@
-import { Form, Head, Link, router, usePage } from '@inertiajs/react';
-import { Users } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
+import { AdminIcon } from '@/components/admin-icon';
 import { Input } from '@/components/ui/input';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
@@ -12,7 +10,6 @@ import type { SharedData } from '@/types';
 type RoleOption = {
     value: string;
     label: string;
-    enum: number;
 };
 
 type ManagedUser = {
@@ -51,7 +48,6 @@ export default function UserManagement({
     users,
     filters,
     roleCounts,
-    roles,
     canManageAdmins,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
@@ -72,14 +68,6 @@ export default function UserManagement({
         );
     }, [search, users.data]);
 
-    const assignableRoles = roles.filter((role) => {
-        if (role.value === 'super-admin') {
-            return canManageAdmins;
-        }
-
-        return true;
-    });
-
     return (
         <AdminPortalLayout>
             <Head title="All Users" />
@@ -91,7 +79,7 @@ export default function UserManagement({
                             All Users
                         </h1>
                         <p className="mt-1 text-sm text-[#3977a6]">
-                            View every account and assign the correct role.
+                            View every account, update details, and track activity.
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -166,7 +154,12 @@ export default function UserManagement({
                 <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2">
-                            <Users className="size-5 text-[#0057c8]" />
+                            <AdminIcon
+                                src="/images/admin/nav-job-seekers.svg"
+                                size={16}
+                                tint
+                                className="text-[#0057c8]"
+                            />
                             <h2 className="text-base font-bold text-[#101828]">
                                 Users Directory
                             </h2>
@@ -251,64 +244,24 @@ export default function UserManagement({
                                             {user.created_at ?? '—'}
                                         </td>
                                         <td className="px-3 py-3">
-                                            {user.is_self ? (
-                                                <span className="text-xs text-[#99a1af]">
-                                                    Current user
-                                                </span>
-                                            ) : (
-                                                <Form
-                                                    action={`/admin/users/${user.id}/role`}
-                                                    method="put"
-                                                    className="flex items-center gap-2"
+                                            <div className="flex flex-wrap gap-2">
+                                                <Link
+                                                    href={`/admin/users/${user.id}`}
+                                                    className="inline-flex h-9 items-center rounded-lg border border-[#e2e8f0] bg-white px-3 text-xs font-semibold text-[#0057c8] hover:bg-[#f8faff]"
                                                 >
-                                                    {({
-                                                        processing,
-                                                        errors,
-                                                    }) => (
-                                                        <>
-                                                            <select
-                                                                name="role"
-                                                                defaultValue={
-                                                                    user.role ??
-                                                                    ''
-                                                                }
-                                                                className="h-9 rounded-lg border border-[#e2e8f0] bg-white px-2 text-xs"
-                                                            >
-                                                                {assignableRoles.map(
-                                                                    (role) => (
-                                                                        <option
-                                                                            key={
-                                                                                role.value
-                                                                            }
-                                                                            value={
-                                                                                role.enum
-                                                                            }
-                                                                        >
-                                                                            {
-                                                                                role.label
-                                                                            }
-                                                                        </option>
-                                                                    ),
-                                                                )}
-                                                            </select>
-                                                            <Button
-                                                                type="submit"
-                                                                disabled={
-                                                                    processing
-                                                                }
-                                                                className="h-9 rounded-lg bg-[#0057c8] px-3 text-xs text-white hover:bg-[#0046a3]"
-                                                            >
-                                                                Save
-                                                            </Button>
-                                                            <InputError
-                                                                message={
-                                                                    errors.role
-                                                                }
-                                                            />
-                                                        </>
+                                                    View
+                                                </Link>
+                                                {(canManageAdmins ||
+                                                    user.role_name !==
+                                                    'super-admin') && (
+                                                        <Link
+                                                            href={`/admin/users/${user.id}/edit`}
+                                                            className="inline-flex h-9 items-center rounded-lg border border-[#e2e8f0] bg-white px-3 text-xs font-semibold text-[#101828] hover:bg-[#f8faff]"
+                                                        >
+                                                            Edit
+                                                        </Link>
                                                     )}
-                                                </Form>
-                                            )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

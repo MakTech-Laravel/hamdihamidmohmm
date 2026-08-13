@@ -4,9 +4,9 @@ namespace Database\Seeders;
 
 use App\Enums\PermissionName;
 use App\Enums\RoleName;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
@@ -22,10 +22,23 @@ class RolePermissionSeeder extends Seeder
             Permission::findOrCreate($permission->value, 'web');
         }
 
-        $superAdmin = Role::findOrCreate(RoleName::SuperAdmin->value, 'web');
-        $admin = Role::findOrCreate(RoleName::Admin->value, 'web');
-        $jobSeeker = Role::findOrCreate(RoleName::JobSeeker->value, 'web');
-        $employer = Role::findOrCreate(RoleName::Employer->value, 'web');
+        $superAdmin = $this->systemRole(
+            RoleName::SuperAdmin,
+            'Full platform access. Permissions cannot be reduced.',
+            locked: true,
+        );
+        $admin = $this->systemRole(
+            RoleName::Admin,
+            'Staff access to the admin portal. Permissions can be adjusted.',
+        );
+        $jobSeeker = $this->systemRole(
+            RoleName::JobSeeker,
+            'Public portal access for candidates.',
+        );
+        $employer = $this->systemRole(
+            RoleName::Employer,
+            'Public portal access for hiring companies.',
+        );
 
         $superAdmin->syncPermissions(collect(PermissionName::cases())->map->value->all());
 
@@ -43,5 +56,19 @@ class RolePermissionSeeder extends Seeder
 
         $jobSeeker->syncPermissions([]);
         $employer->syncPermissions([]);
+    }
+
+    private function systemRole(RoleName $roleName, string $description, bool $locked = false): Role
+    {
+        $role = Role::findOrCreate($roleName->value, 'web');
+
+        $role->forceFill([
+            'label' => $roleName->label(),
+            'description' => $description,
+            'is_system' => true,
+            'is_locked' => $locked,
+        ])->save();
+
+        return $role->fresh();
     }
 }

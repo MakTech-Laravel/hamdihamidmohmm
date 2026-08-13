@@ -62,7 +62,7 @@ export function EmployerSidebar() {
         <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-[#ffebf5]">
             <div className="flex h-[60px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
                 <img
-                    src="/logo.png"
+                    src="/images/admin/logo.png"
                     alt="RR Job Portal"
                     className="h-[51px] w-[76px] object-contain"
                     width={76}

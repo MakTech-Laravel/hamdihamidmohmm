@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/react';
-import { Bell, ChevronDown, Globe, Menu, Search } from 'lucide-react';
 
+import { AdminIcon } from '@/components/admin-icon';
 import { getInitials } from '@/components/job-seeker/demo-data';
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
@@ -40,10 +40,14 @@ export function AdminPortalHeader({
                     className="rounded-lg p-1.5 text-[#3977a6] hover:bg-[#f8faff] md:hidden"
                     aria-label="Toggle sidebar"
                 >
-                    <Menu className="size-[18px]" />
+                    <AdminIcon src="/images/admin/header-menu.svg" size={18} />
                 </button>
                 <div className="relative hidden max-w-[400px] flex-1 sm:block">
-                    <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#94a3b8]" />
+                    <AdminIcon
+                        src="/images/admin/header-search.svg"
+                        size={14}
+                        className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
+                    />
                     <input
                         type="search"
                         placeholder="Search employers, jobs, payments…"
@@ -71,7 +75,7 @@ export function AdminPortalHeader({
                     className="relative rounded-lg p-1.5 text-[#3977a6] hover:bg-[#f8faff]"
                     aria-label="Notifications"
                 >
-                    <Bell className="size-[18px]" />
+                    <AdminIcon src="/images/admin/header-bell.svg" size={18} />
                     <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-[#ef4444] text-[9px] font-bold text-white">
                         3
                     </span>
@@ -83,7 +87,7 @@ export function AdminPortalHeader({
                     className="rounded-lg p-1.5 text-[#3977a6] hover:bg-[#f8faff]"
                     aria-label="Switch language"
                 >
-                    <Globe className="size-[18px]" />
+                    <AdminIcon src="/images/admin/header-globe.svg" size={18} />
                 </button>
 
                 <div className="flex items-center gap-2 rounded-xl px-1.5 py-1">
@@ -98,7 +102,11 @@ export function AdminPortalHeader({
                             {user.role_label}
                         </p>
                     </div>
-                    <ChevronDown className="hidden size-3.5 text-[#94a3b8] sm:block" />
+                    <AdminIcon
+                        src="/images/admin/header-chevron.svg"
+                        size={14}
+                        className="hidden sm:block"
+                    />
                 </div>
             </div>
         </header>

@@ -3,11 +3,10 @@
 namespace App\Http\Requests\Backend\Admin;
 
 use App\Enums\PermissionName;
-use App\Enums\RoleName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateRolePermissionsRequest extends FormRequest
+class StoreManagedRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -20,12 +19,21 @@ class UpdateRolePermissionsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role' => ['required', 'string', Rule::in([
-                RoleName::SuperAdmin->value,
-                RoleName::Admin->value,
-            ])],
-            'permissions' => ['required', 'array'],
+            'label' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', Rule::in(collect(PermissionName::cases())->map->value->all())],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'label.required' => 'Please enter a role name.',
+            'permissions.*.in' => 'One of the selected permissions is not allowed.',
         ];
     }
 }

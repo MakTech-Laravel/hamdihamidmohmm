@@ -69,7 +69,7 @@ export function JobSeekerSidebar({
         >
             <div className="flex h-[60px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
                 <img
-                    src="/logo.png"
+                    src="/images/admin/logo.png"
                     alt="RR Job Portal"
                     className="h-[51px] w-[76px] object-contain"
                     width={76}

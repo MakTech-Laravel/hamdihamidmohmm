@@ -1,31 +1,34 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
-import { Check, Shield, X } from 'lucide-react';
-import { useState } from 'react';
 
-import { Button } from '@/components/ui/button';
+import { AdminIcon } from '@/components/admin-icon';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
 type RoleCard = {
+    id: number;
     value: string;
     label: string;
+    description: string | null;
     users_count: number;
-    permissions: string[];
     permissions_count: number;
+    editable: boolean;
+    locked: boolean;
+    is_system: boolean;
+    can_delete: boolean;
+    kind: 'admin-panel' | 'portal';
 };
 
 type PermissionMatrixRow = {
     name: string;
     label: string;
+    group: string;
     roles: Record<string, boolean>;
 };
 
 type Props = {
     roles: RoleCard[];
     permissionMatrix: PermissionMatrixRow[];
-    allPermissions: Array<{ name: string; label: string }>;
-    adminPermissions: string[];
     canManageAdmins: boolean;
 };
 
@@ -39,13 +42,9 @@ const roleBadgeStyles: Record<string, string> = {
 export default function RolePermissions({
     roles,
     permissionMatrix,
-    allPermissions,
-    adminPermissions,
     canManageAdmins,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
-    const [selectedPermissions, setSelectedPermissions] =
-        useState<string[]>(adminPermissions);
 
     return (
         <AdminPortalLayout>
@@ -58,15 +57,26 @@ export default function RolePermissions({
                             Roles & Permissions
                         </h1>
                         <p className="mt-1 text-sm text-[#3977a6]">
-                            Review role access and update Admin permissions.
+                            Create roles, edit access, and set which modules
+                            each role can use.
                         </p>
                     </div>
-                    <Link
-                        href="/admin/users"
-                        className="inline-flex items-center justify-center rounded-xl border border-[#e2e8f0] bg-white px-4 py-2.5 text-sm font-semibold text-[#0057c8] hover:bg-[#f8fafc]"
-                    >
-                        All Users
-                    </Link>
+                    <div className="flex flex-wrap gap-2">
+                        <Link
+                            href="/admin/users"
+                            className="inline-flex items-center justify-center rounded-xl border border-[#e2e8f0] bg-white px-4 py-2.5 text-sm font-semibold text-[#0057c8] hover:bg-[#f8fafc]"
+                        >
+                            All Users
+                        </Link>
+                        {canManageAdmins && (
+                            <Link
+                                href="/admin/roles-permissions/create"
+                                className="inline-flex items-center justify-center rounded-xl bg-[#0057c8] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0046a3]"
+                            >
+                                + Create Role
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 {flash.success && (
@@ -77,43 +87,21 @@ export default function RolePermissions({
                     </div>
                 )}
 
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {roles.map((role) => (
-                        <div
-                            key={role.value}
-                            className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]"
-                        >
-                            <span
-                                className={cn(
-                                    'rounded-full px-2.5 py-1 text-xs font-semibold',
-                                    roleBadgeStyles[role.value] ??
-                                    'bg-[#f1f5f9] text-[#64748b]',
-                                )}
-                            >
-                                {role.label}
-                            </span>
-                            <p className="mt-4 text-3xl font-extrabold text-[#101828]">
-                                {role.users_count}
-                            </p>
-                            <p className="mt-1 text-xs text-[#6a7282]">
-                                Users with this role
-                            </p>
-                            <p className="mt-3 text-xs font-medium text-[#64748b]">
-                                {role.permissions_count} permissions assigned
-                            </p>
-                        </div>
-                    ))}
-                </div>
-
                 <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                     <div className="mb-4 flex items-center gap-2">
-                        <Shield className="size-5 text-[#0057c8]" />
+                        <AdminIcon
+                            src="/images/admin/nav-verification.svg"
+                            size={16}
+                            tint
+                            className="text-[#0057c8]"
+                        />
                         <div>
                             <h2 className="text-base font-bold text-[#101828]">
-                                Role Permissions Matrix
+                                Roles
                             </h2>
                             <p className="text-xs text-[#99a1af]">
-                                Module access by role
+                                System roles stay in place. Custom roles can be
+                                created, edited, or removed.
                             </p>
                         </div>
                     </div>
@@ -123,20 +111,139 @@ export default function RolePermissions({
                             <thead className="border-b border-[#e2e8f0] text-[#64748b]">
                                 <tr>
                                     <th className="px-3 py-2 font-semibold">
+                                        Role
+                                    </th>
+                                    <th className="px-3 py-2 font-semibold">
+                                        Type
+                                    </th>
+                                    <th className="px-3 py-2 font-semibold">
+                                        Users
+                                    </th>
+                                    <th className="px-3 py-2 font-semibold">
+                                        Permissions
+                                    </th>
+                                    <th className="px-3 py-2 font-semibold">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {roles.map((role) => (
+                                    <tr
+                                        key={role.id}
+                                        className="border-b border-[#f1f5f9]"
+                                    >
+                                        <td className="px-3 py-3">
+                                            <div className="flex flex-col gap-1">
+                                                <span
+                                                    className={cn(
+                                                        'w-fit rounded-full px-2.5 py-1 text-xs font-semibold',
+                                                        roleBadgeStyles[
+                                                            role.value
+                                                        ] ??
+                                                            'bg-[#eef2ff] text-[#3730a3]',
+                                                    )}
+                                                >
+                                                    {role.label}
+                                                </span>
+                                                <span className="text-xs text-[#99a1af]">
+                                                    {role.description ||
+                                                        role.value}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-3 text-xs font-medium text-[#64748b]">
+                                            {role.locked
+                                                ? 'Locked'
+                                                : role.is_system
+                                                  ? 'System'
+                                                  : 'Custom'}
+                                        </td>
+                                        <td className="px-3 py-3 font-semibold text-[#101828]">
+                                            {role.users_count}
+                                        </td>
+                                        <td className="px-3 py-3 text-[#64748b]">
+                                            {role.permissions_count} assigned
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <div className="flex flex-wrap gap-2">
+                                                <Link
+                                                    href={`/admin/roles-permissions/${role.id}`}
+                                                    className="inline-flex h-9 items-center rounded-lg border border-[#e2e8f0] bg-white px-3 text-xs font-semibold text-[#0057c8] hover:bg-[#f8faff]"
+                                                >
+                                                    View
+                                                </Link>
+                                                {canManageAdmins &&
+                                                    role.editable && (
+                                                        <Link
+                                                            href={`/admin/roles-permissions/${role.id}/edit`}
+                                                            className="inline-flex h-9 items-center rounded-lg border border-[#e2e8f0] bg-white px-3 text-xs font-semibold text-[#101828] hover:bg-[#f8faff]"
+                                                        >
+                                                            Edit
+                                                        </Link>
+                                                    )}
+                                                {canManageAdmins &&
+                                                    role.can_delete && (
+                                                        <Form
+                                                            action={`/admin/roles-permissions/${role.id}`}
+                                                            method="delete"
+                                                        >
+                                                            {({
+                                                                processing,
+                                                            }) => (
+                                                                <button
+                                                                    type="submit"
+                                                                    disabled={
+                                                                        processing
+                                                                    }
+                                                                    className="inline-flex h-9 items-center rounded-lg border border-[#fecaca] bg-white px-3 text-xs font-semibold text-[#b91c1c] hover:bg-[#fef2f2]"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            )}
+                                                        </Form>
+                                                    )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
+                    <div className="mb-4 flex items-center gap-2">
+                        <AdminIcon
+                            src="/images/admin/nav-reports.svg"
+                            size={16}
+                            tint
+                            className="text-[#0057c8]"
+                        />
+                        <div>
+                            <h2 className="text-base font-bold text-[#101828]">
+                                Access comparison
+                            </h2>
+                            <p className="text-xs text-[#99a1af]">
+                                Module access for every role
+                            </p>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full text-left text-sm">
+                            <thead className="border-b border-[#e2e8f0] text-[#64748b]">
+                                <tr>
+                                    <th className="px-3 py-2 font-semibold">
                                         Module
                                     </th>
-                                    <th className="px-3 py-2 font-semibold">
-                                        Super Admin
-                                    </th>
-                                    <th className="px-3 py-2 font-semibold">
-                                        Admin
-                                    </th>
-                                    <th className="px-3 py-2 font-semibold">
-                                        Job Seeker
-                                    </th>
-                                    <th className="px-3 py-2 font-semibold">
-                                        Employer
-                                    </th>
+                                    {roles.map((role) => (
+                                        <th
+                                            key={role.id}
+                                            className="px-3 py-2 font-semibold"
+                                        >
+                                            {role.label}
+                                        </th>
+                                    ))}
                                 </tr>
                             </thead>
                             <tbody>
@@ -148,23 +255,20 @@ export default function RolePermissions({
                                         <td className="px-3 py-3 font-medium text-[#101828]">
                                             {row.label}
                                         </td>
-                                        {(
-                                            [
-                                                'super-admin',
-                                                'admin',
-                                                'job-seeker',
-                                                'employer',
-                                            ] as const
-                                        ).map((roleKey) => (
+                                        {roles.map((role) => (
                                             <td
-                                                key={roleKey}
+                                                key={role.id}
                                                 className="px-3 py-3"
                                             >
-                                                <PermissionIcon
-                                                    allowed={
-                                                        row.roles[roleKey]
-                                                    }
-                                                />
+                                                {row.roles[role.value] ? (
+                                                    <span className="inline-flex rounded-full bg-[#dcfce7] px-2.5 py-1 text-[11px] font-semibold text-[#15803d]">
+                                                        On
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex rounded-full bg-[#f1f5f9] px-2.5 py-1 text-[11px] font-semibold text-[#94a3b8]">
+                                                        Off
+                                                    </span>
+                                                )}
                                             </td>
                                         ))}
                                     </tr>
@@ -173,101 +277,7 @@ export default function RolePermissions({
                         </table>
                     </div>
                 </div>
-
-                {canManageAdmins ? (
-                    <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
-                        <h3 className="text-base font-bold text-[#101828]">
-                            Edit Admin Role Permissions
-                        </h3>
-                        <p className="mt-1 text-xs text-[#99a1af]">
-                            Super Admin always has full access. Update the Admin
-                            role permissions below.
-                        </p>
-                        <Form
-                            action="/admin/roles/permissions"
-                            method="put"
-                            className="mt-4 space-y-4"
-                        >
-                            {({ processing }) => (
-                                <>
-                                    <input
-                                        type="hidden"
-                                        name="role"
-                                        value="admin"
-                                    />
-                                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                        {allPermissions.map((permission) => {
-                                            const checked =
-                                                selectedPermissions.includes(
-                                                    permission.name,
-                                                );
-
-                                            return (
-                                                <label
-                                                    key={permission.name}
-                                                    className="flex items-center gap-2 rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm"
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        name="permissions[]"
-                                                        value={permission.name}
-                                                        checked={checked}
-                                                        onChange={(event) => {
-                                                            setSelectedPermissions(
-                                                                (current) =>
-                                                                    event.target
-                                                                        .checked
-                                                                        ? [
-                                                                            ...current,
-                                                                            permission.name,
-                                                                        ]
-                                                                        : current.filter(
-                                                                            (
-                                                                                item,
-                                                                            ) =>
-                                                                                item !==
-                                                                                permission.name,
-                                                                        ),
-                                                            );
-                                                        }}
-                                                        className="accent-[#0057c8]"
-                                                    />
-                                                    {permission.label}
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                    <Button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="rounded-xl bg-[#0057c8] text-white hover:bg-[#0046a3]"
-                                    >
-                                        {processing
-                                            ? 'Saving…'
-                                            : 'Save Admin Permissions'}
-                                    </Button>
-                                </>
-                            )}
-                        </Form>
-                    </div>
-                ) : (
-                    <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-5 text-sm text-[#64748b]">
-                        Only Super Admins can edit role permissions.
-                    </div>
-                )}
             </div>
         </AdminPortalLayout>
-    );
-}
-
-function PermissionIcon({ allowed }: { allowed: boolean }) {
-    return allowed ? (
-        <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#dcfce7] text-[#15803d]">
-            <Check className="size-3.5" />
-        </span>
-    ) : (
-        <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#f1f5f9] text-[#94a3b8]">
-            <X className="size-3.5" />
-        </span>
     );
 }

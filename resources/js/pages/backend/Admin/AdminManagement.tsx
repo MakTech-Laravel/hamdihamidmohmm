@@ -1,6 +1,6 @@
 import { Form, Head, usePage } from '@inertiajs/react';
-import { ShieldPlus, Users } from 'lucide-react';
 
+import { AdminIcon } from '@/components/admin-icon';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,7 +54,12 @@ export default function AdminManagement({
                 <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
                     <div className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                         <div className="mb-5 flex items-center gap-2">
-                            <ShieldPlus className="size-5 text-[#0057c8]" />
+                            <AdminIcon
+                                src="/images/admin/nav-admins.svg"
+                                size={16}
+                                tint
+                                className="text-[#0057c8]"
+                            />
                             <h2 className="text-lg font-bold text-[#101828]">
                                 Create Admin
                             </h2>
@@ -134,7 +139,12 @@ export default function AdminManagement({
 
                     <div className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                         <div className="mb-5 flex items-center gap-2">
-                            <Users className="size-5 text-[#0057c8]" />
+                            <AdminIcon
+                                src="/images/admin/nav-job-seekers.svg"
+                                size={16}
+                                tint
+                                className="text-[#0057c8]"
+                            />
                             <h2 className="text-lg font-bold text-[#101828]">
                                 Panel Admins
                             </h2>

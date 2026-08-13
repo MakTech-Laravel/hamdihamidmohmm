@@ -9,6 +9,7 @@ use App\Support\RoleAssigner;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -94,9 +95,20 @@ class User extends Authenticatable
 
     public function getRoleLabelAttribute(): string
     {
+        $spatieRole = $this->roles->first();
+
+        if ($spatieRole instanceof Role) {
+            return $spatieRole->displayLabel();
+        }
+
         return $this->primaryRoleName()?->label()
             ?? $this->role?->label()
             ?? 'Unknown';
+    }
+
+    public function assignedRoleName(): ?string
+    {
+        return $this->getRoleNames()->first();
     }
 
     public function primaryRoleName(): ?RoleName
@@ -124,7 +136,7 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->hasAnyRole(RoleName::adminPanelValues())
-            || $this->role?->isAdmin() === true;
+            || $this->can(PermissionName::AccessAdminPanel->value);
     }
 
     public function isJobSeeker(): bool
@@ -147,7 +159,7 @@ class User extends Authenticatable
     public function canManageUsers(): bool
     {
         return $this->can(PermissionName::ManageUsers->value)
-            || $this->isAdmin();
+            || $this->isSuperAdmin();
     }
 
     public function canManageAdmins(): bool
@@ -163,6 +175,14 @@ class User extends Authenticatable
     public function getCanManageAdminsAttribute(): bool
     {
         return $this->canManageAdmins();
+    }
+
+    /**
+     * @return HasMany<ActivityLog, $this>
+     */
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class)->latest();
     }
 
     public function canAccessPayroll(): bool

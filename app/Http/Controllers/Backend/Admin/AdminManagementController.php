@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Backend\Admin;
 
+use App\Enums\ActivityAction;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\StoreAdminRequest;
 use App\Models\User;
+use App\Support\ActivityLogger;
 use App\Support\RoleAssigner;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -47,6 +49,13 @@ class AdminManagementController extends Controller
         ]);
 
         RoleAssigner::assign($admin, UserRole::Admin);
+
+        ActivityLogger::log(
+            $admin,
+            ActivityAction::AccountCreated,
+            'Admin account created.',
+            $request->user(),
+        );
 
         return redirect()
             ->route('admin.admins.index')

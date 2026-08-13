@@ -1,28 +1,13 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import {
-    BarChart3,
-    Bell,
-    Briefcase,
-    Building2,
-    Code2,
-    CreditCard,
-    FileText,
-    LayoutDashboard,
-    LogOut,
-    Package,
-    Settings,
-    Shield,
-    ShieldCheck,
-    Users,
-} from 'lucide-react';
 
+import { AdminIcon } from '@/components/admin-icon';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
 type NavItem = {
     title: string;
     href: string | null;
-    icon: typeof LayoutDashboard;
+    icon: string;
     match?: string;
     superAdminOnly?: boolean;
 };
@@ -31,91 +16,91 @@ const navItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: '/admin/dashboard',
-        icon: LayoutDashboard,
+        icon: '/images/admin/nav-dashboard.svg',
         match: '/admin/dashboard',
     },
     {
         title: 'All Users',
         href: '/admin/users',
-        icon: Users,
+        icon: '/images/admin/nav-job-seekers.svg',
         match: '/admin/users',
     },
     {
         title: 'Roles & Permissions',
         href: '/admin/roles-permissions',
-        icon: ShieldCheck,
+        icon: '/images/admin/nav-verification.svg',
         match: '/admin/roles-permissions',
     },
     {
         title: 'Employer Management',
         href: '/admin/employers',
-        icon: Building2,
+        icon: '/images/admin/nav-employers.svg',
         match: '/admin/employers',
     },
     {
         title: 'Job Seeker Management',
         href: '/admin/job-seekers',
-        icon: Users,
+        icon: '/images/admin/nav-job-seekers.svg',
         match: '/admin/job-seekers',
     },
     {
         title: 'Job Management',
         href: '/admin/jobs',
-        icon: Briefcase,
+        icon: '/images/admin/nav-jobs.svg',
         match: '/admin/jobs',
     },
     {
         title: 'Applications',
         href: '/admin/applications',
-        icon: FileText,
+        icon: '/images/admin/nav-applications.svg',
         match: '/admin/applications',
     },
     {
         title: 'Packages & Pricing',
         href: '/admin/packages',
-        icon: Package,
+        icon: '/images/admin/nav-packages.svg',
         match: '/admin/packages',
     },
     {
         title: 'Payments & Revenue',
         href: '/admin/payments',
-        icon: CreditCard,
+        icon: '/images/admin/nav-payments.svg',
         match: '/admin/payments',
     },
     {
         title: 'Verification Center',
         href: '/admin/verifications',
-        icon: ShieldCheck,
+        icon: '/images/admin/nav-verification.svg',
         match: '/admin/verifications',
     },
     {
         title: 'Reports & Analytics',
         href: '/admin/reports',
-        icon: BarChart3,
+        icon: '/images/admin/nav-reports.svg',
         match: '/admin/reports',
     },
     {
         title: 'Content Management',
         href: '/admin/content',
-        icon: Code2,
+        icon: '/images/admin/nav-content.svg',
         match: '/admin/content',
     },
     {
         title: 'Notifications',
         href: '/admin/notifications',
-        icon: Bell,
+        icon: '/images/admin/nav-notifications.svg',
         match: '/admin/notifications',
     },
     {
         title: 'Platform Settings',
         href: '/admin/settings',
-        icon: Settings,
+        icon: '/images/admin/nav-settings.svg',
         match: '/admin/settings',
     },
     {
         title: 'Admin Management',
         href: '/admin/admins',
-        icon: Shield,
+        icon: '/images/admin/nav-admins.svg',
         match: '/admin/admins',
         superAdminOnly: true,
     },
@@ -135,7 +120,7 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
         >
             <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
                 <img
-                    src="/logo.png"
+                    src="/images/admin/logo.png"
                     alt="RR Job Portal"
                     className="h-[51px] w-[76px] object-contain"
                     width={76}
@@ -158,7 +143,6 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
                             !item.superAdminOnly || auth.user.can_manage_admins,
                     )
                     .map((item) => {
-                        const Icon = item.icon;
                         const active = item.match
                             ? currentUrl.startsWith(item.match)
                             : false;
@@ -175,12 +159,11 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
                                 href={item.href!}
                                 className={className}
                             >
-                                <Icon
-                                    className={cn(
-                                        'size-4 shrink-0',
-                                        !active && 'opacity-60',
-                                    )}
-                                    strokeWidth={1.75}
+                                <AdminIcon
+                                    src={item.icon}
+                                    size={16}
+                                    tint
+                                    className={cn(!active && 'opacity-60')}
                                 />
                                 <span className="truncate">{item.title}</span>
                             </Link>
@@ -194,7 +177,11 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
                     onClick={() => router.post('/logout')}
                     className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium text-[#3977a6] transition-colors hover:bg-[rgba(50,57,129,0.06)]"
                 >
-                    <LogOut className="size-4 shrink-0" strokeWidth={1.75} />
+                    <AdminIcon
+                        src="/images/admin/nav-logout.svg"
+                        size={16}
+                        tint
+                    />
                     Logout
                 </button>
             </div>

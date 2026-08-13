@@ -4,29 +4,43 @@ namespace App\Support;
 
 use App\Enums\RoleName;
 use App\Enums\UserRole;
+use App\Models\Role;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
 
 class RoleAssigner
 {
     public static function assign(User $user, UserRole|RoleName|string $role): User
     {
-        $userRole = match (true) {
-            $role instanceof UserRole => $role,
-            $role instanceof RoleName => UserRole::fromRoleName($role),
-            default => UserRole::fromRoleName(RoleName::from($role)),
-        };
-
-        $roleName = $userRole->spatieName();
-
-        Role::findOrCreate($roleName, 'web');
+        $roleModel = self::resolve($role);
 
         $user->forceFill([
-            'role' => $userRole,
+            'role' => self::userRoleFor($roleModel),
         ])->save();
 
-        $user->syncRoles([$roleName]);
+        $user->syncRoles([$roleModel->name]);
 
         return $user->refresh();
+    }
+
+    public static function resolve(UserRole|RoleName|string $role): Role
+    {
+        $name = match (true) {
+            $role instanceof UserRole => $role->spatieName(),
+            $role instanceof RoleName => $role->value,
+            default => $role,
+        };
+
+        return Role::findByName($name, 'web');
+    }
+
+    public static function userRoleFor(Role $role): UserRole
+    {
+        $roleName = RoleName::tryFrom($role->name);
+
+        if ($roleName instanceof RoleName) {
+            return UserRole::fromRoleName($roleName);
+        }
+
+        return UserRole::Admin;
     }
 }
