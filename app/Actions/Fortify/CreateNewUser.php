@@ -5,6 +5,9 @@ namespace App\Actions\Fortify;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Enums\ActivityAction;
+use App\Enums\EmployerAccountStatus;
+use App\Enums\EmployerPackage;
+use App\Enums\EmployerVerificationStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\ActivityLogger;
@@ -55,9 +58,13 @@ class CreateNewUser implements CreatesNewUsers
         $user = User::create([
             'name' => $displayName,
             'company_name' => $isEmployer ? $displayName : null,
+            'contact_name' => $isEmployer ? $displayName : null,
             'email' => $input['email'],
             'password' => $input['password'],
             'role' => UserRole::from($role),
+            'verification_status' => $isEmployer ? EmployerVerificationStatus::Pending : null,
+            'account_status' => $isEmployer ? EmployerAccountStatus::PendingVerification : null,
+            'package' => $isEmployer ? EmployerPackage::Starter : null,
         ]);
 
         $user = RoleAssigner::assign($user, UserRole::from($role));

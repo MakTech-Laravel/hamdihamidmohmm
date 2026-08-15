@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\EmployerAccountStatus;
+use App\Enums\EmployerPackage;
+use App\Enums\EmployerVerificationStatus;
 use App\Enums\PermissionName;
 use App\Enums\RoleName;
 use App\Enums\UserRole;
@@ -28,10 +31,17 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'company_name',
+        'industry',
+        'contact_name',
         'email',
         'avatar',
         'password',
         'role',
+        'verification_status',
+        'account_status',
+        'package',
+        'rejection_reason',
+        'verified_at',
         'created_at',
         'updated_at',
     ];
@@ -68,6 +78,10 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'role' => UserRole::class,
+            'verification_status' => EmployerVerificationStatus::class,
+            'account_status' => EmployerAccountStatus::class,
+            'package' => EmployerPackage::class,
+            'verified_at' => 'datetime',
         ];
     }
 
@@ -162,9 +176,21 @@ class User extends Authenticatable
             || $this->isSuperAdmin();
     }
 
+    public function canManageEmployers(): bool
+    {
+        return $this->can(PermissionName::ManageEmployers->value)
+            || $this->isSuperAdmin();
+    }
+
     public function canManageAdmins(): bool
     {
         return $this->isSuperAdmin();
+    }
+
+    public function canApproveEmployer(): bool
+    {
+        return $this->isEmployer()
+            && $this->verification_status === EmployerVerificationStatus::Pending;
     }
 
     public function getCanManageUsersAttribute(): bool

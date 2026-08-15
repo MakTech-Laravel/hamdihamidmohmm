@@ -9,11 +9,6 @@ use Inertia\Response;
 
 class AdminPortalModuleController extends Controller
 {
-    public function employers(Request $request): Response
-    {
-        return $this->page($request, 'backend/Admin/EmployerManagement');
-    }
-
     public function jobSeekers(Request $request): Response
     {
         return $this->page($request, 'backend/Admin/JobSeekerManagement');

@@ -2,6 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\EmployerAccountStatus;
+use App\Enums\EmployerPackage;
+use App\Enums\EmployerVerificationStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\RoleAssigner;
@@ -56,7 +59,31 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'role' => UserRole::Employer,
             'company_name' => fake()->company(),
-            'name' => fake()->company(),
+            'name' => fake()->name(),
+            'contact_name' => fake()->name(),
+            'industry' => fake()->randomElement([
+                'Technology',
+                'Construction',
+                'Finance',
+                'Retail',
+                'Logistics',
+                'Healthcare',
+                'Media',
+            ]),
+            'verification_status' => EmployerVerificationStatus::Approved,
+            'account_status' => EmployerAccountStatus::Active,
+            'package' => EmployerPackage::Professional,
+            'verified_at' => now(),
+        ]);
+    }
+
+    public function pendingEmployer(): static
+    {
+        return $this->employer()->state(fn (array $attributes) => [
+            'verification_status' => EmployerVerificationStatus::Pending,
+            'account_status' => EmployerAccountStatus::PendingVerification,
+            'verified_at' => null,
+            'rejection_reason' => null,
         ]);
     }
 

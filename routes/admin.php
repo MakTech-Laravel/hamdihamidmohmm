@@ -4,6 +4,7 @@ use App\Enums\RoleName;
 use App\Http\Controllers\Backend\Admin\AdminDashboardController;
 use App\Http\Controllers\Backend\Admin\AdminManagementController;
 use App\Http\Controllers\Backend\Admin\AdminPortalModuleController;
+use App\Http\Controllers\Backend\Admin\EmployerManagementController;
 use App\Http\Controllers\Backend\Admin\RolePermissionController;
 use App\Http\Controllers\Backend\Admin\UserManagementController;
 use App\Http\Controllers\UserSelectionController;
@@ -29,7 +30,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/roles-permissions', [RolePermissionController::class, 'index'])->name('roles-permissions.index');
 
-        Route::get('/employers', [AdminPortalModuleController::class, 'employers'])->name('employers.index');
+        Route::get('/employers/export', [EmployerManagementController::class, 'export'])->name('employers.export');
+        Route::get('/employers/create', [EmployerManagementController::class, 'create'])->name('employers.create');
+        Route::get('/employers', [EmployerManagementController::class, 'index'])->name('employers.index');
+        Route::post('/employers', [EmployerManagementController::class, 'store'])->name('employers.store');
+        Route::get('/employers/{user}', [EmployerManagementController::class, 'show'])->name('employers.show');
+        Route::get('/employers/{user}/edit', [EmployerManagementController::class, 'edit'])->name('employers.edit');
+        Route::put('/employers/{user}', [EmployerManagementController::class, 'update'])->name('employers.update');
+        Route::post('/employers/{user}/approve', [EmployerManagementController::class, 'approve'])->name('employers.approve');
+        Route::post('/employers/{user}/reject', [EmployerManagementController::class, 'reject'])->name('employers.reject');
+
         Route::get('/job-seekers', [AdminPortalModuleController::class, 'jobSeekers'])->name('job-seekers.index');
         Route::get('/jobs', [AdminPortalModuleController::class, 'jobs'])->name('jobs.index');
         Route::get('/applications', [AdminPortalModuleController::class, 'applications'])->name('applications.index');

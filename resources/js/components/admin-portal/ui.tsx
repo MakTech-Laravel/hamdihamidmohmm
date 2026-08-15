@@ -1,6 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { router } from '@inertiajs/react';
+
 import { cn } from '@/lib/utils';
 
 export function AdminPageHeader({
@@ -240,26 +242,38 @@ export function AdminTableShell({
 
 export function AdminPagination({
     showingLabel = 'Showing 7 of 7',
+    links,
 }: {
     showingLabel?: string;
+    links?: Array<{ url: string | null; label: string; active: boolean }>;
 }) {
     return (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-[#94a3b8]">{showingLabel}</p>
-            <div className="flex gap-1.5">
-                {['1', '2', '3', '…', '28'].map((page) => (
+            <div className="flex flex-wrap gap-1.5">
+                {(links ?? ['1', '2', '3', '…', '28'].map((page) => ({
+                    url: page === '1' ? '#' : null,
+                    label: page,
+                    active: page === '1',
+                }))).map((link, index) => (
                     <button
-                        key={page}
+                        key={`${link.label}-${index}`}
                         type="button"
+                        disabled={!link.url || link.label.includes('…')}
+                        onClick={() => {
+                            if (link.url && link.url !== '#') {
+                                router.get(link.url, {}, { preserveState: true });
+                            }
+                        }}
                         className={cn(
-                            'flex size-8 items-center justify-center rounded-md text-xs font-semibold',
-                            page === '1'
+                            'flex min-w-8 items-center justify-center rounded-md px-2 text-xs font-semibold',
+                            link.active
                                 ? 'bg-[#0057c8] text-white'
                                 : 'border border-[#e2e8f0] bg-white text-[#64748b]',
+                            (!link.url || link.label.includes('…')) && 'opacity-40',
                         )}
-                    >
-                        {page}
-                    </button>
+                        dangerouslySetInnerHTML={{ __html: link.label }}
+                    />
                 ))}
             </div>
         </div>
