@@ -52,6 +52,8 @@ class RolePermissionSeeder extends Seeder
             PermissionName::ManagePayments->value,
             PermissionName::ManageVerification->value,
             PermissionName::ViewAnalytics->value,
+            PermissionName::ManageCms->value,
+            PermissionName::ManageSettings->value,
         ]);
 
         $jobSeeker->syncPermissions([]);

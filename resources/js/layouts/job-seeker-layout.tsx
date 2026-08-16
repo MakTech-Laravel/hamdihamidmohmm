@@ -1,8 +1,10 @@
 import { type ReactNode, useState } from 'react';
+import { usePage } from '@inertiajs/react';
 
 import { Toaster } from '@/components/ui/sonner';
 import { JobSeekerHeader } from '@/layouts/partials/job-seeker/header';
 import { JobSeekerSidebar } from '@/layouts/partials/job-seeker/sidebar';
+import type { SharedData } from '@/types';
 
 interface JobSeekerLayoutProps {
     children: ReactNode;
@@ -13,9 +15,12 @@ interface JobSeekerLayoutProps {
 export default function JobSeekerLayout({
     children,
     title,
-    unreadCount = 2,
+    unreadCount,
 }: JobSeekerLayoutProps) {
     const [collapsed, setCollapsed] = useState(false);
+    const sharedUnread = Number(
+        usePage<SharedData>().props.unread_notifications ?? 0,
+    );
 
     return (
         <div className="flex h-svh overflow-hidden bg-[#f1f5f9]">
@@ -26,7 +31,10 @@ export default function JobSeekerLayout({
                 />
             </div>
             <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-                <JobSeekerHeader title={title} unreadCount={unreadCount} />
+                <JobSeekerHeader
+                    title={title}
+                    unreadCount={unreadCount ?? sharedUnread}
+                />
                 <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#f8faff]">
                     {children}
                 </main>

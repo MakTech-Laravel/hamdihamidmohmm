@@ -1,36 +1,65 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 
 import { AdminIcon } from '@/components/admin-icon';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
+type Trend = {
+    label: string;
+    up: boolean;
+};
+
+type PackageSlice = {
+    value: string;
+    label: string;
+    count: number;
+    percent: number;
+    color: string;
+};
+
 type DashboardProps = {
     stats: {
         total_employers: number;
         total_job_seekers: number;
+        active_employers: number;
+        pending_verifications: number;
+        active_job_seekers: number;
+        suspended_accounts: number;
+        total_users: number;
+        total_admins: number;
         active_jobs: number;
         pending_jobs: number;
         applications_today: number;
         monthly_revenue: number;
-        total_revenue: number;
-        pending_verifications: number;
-        total_users: number;
-        total_admins: number;
     };
+    trends: Record<string, Trend>;
     quickStats: {
         active_sessions: number;
         unread_alerts: number;
         tasks_today: number;
     };
-    recentUsers: Array<{
+    chart: {
+        range: string;
+        labels: string[];
+        employers: number[];
+        job_seekers: number[];
+    };
+    packages: PackageSlice[];
+    alerts: Array<{
+        title: string;
+        tone: string;
+        detail: string;
+        href: string;
+    }>;
+    activities: Array<{
         id: number;
-        name: string;
-        email: string;
-        role_label: string;
+        action_label: string;
+        description: string;
+        subject_name: string;
+        actor_name: string | null;
         created_at: string | null;
     }>;
-    alerts: Array<{ title: string; tone: string; detail: string }>;
     canCreateAdmins: boolean;
     firstName: string;
 };
@@ -42,80 +71,125 @@ const toneStyles: Record<string, string> = {
     info: 'border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]',
 };
 
+const rangeOptions = [
+    ['7d', '7D'],
+    ['30d', '30D'],
+    ['90d', '90D'],
+    ['12m', '12M'],
+] as const;
+
+function toPoints(values: number[], width = 640, height = 200, pad = 20): string {
+    const max = Math.max(...values, 1);
+
+    return values
+        .map((value, index) => {
+            const x =
+                pad +
+                (index * (width - pad * 2)) / Math.max(values.length - 1, 1);
+            const y = height - pad - (value / max) * (height - pad * 2);
+
+            return `${x},${y}`;
+        })
+        .join(' ');
+}
+
+function packageGradient(packages: PackageSlice[]): string {
+    let cursor = 0;
+    const stops = packages.map((slice) => {
+        const start = cursor;
+        cursor += slice.percent;
+
+        return `${slice.color} ${start}% ${cursor}%`;
+    });
+
+    if (stops.length === 0 || packages.every((slice) => slice.count === 0)) {
+        return 'conic-gradient(#e2e8f0 0 100%)';
+    }
+
+    return `conic-gradient(${stops.join(', ')})`;
+}
+
 export default function AdminDashboard({
     stats,
+    trends,
     quickStats,
-    recentUsers,
+    chart,
+    packages,
     alerts,
+    activities,
     canCreateAdmins,
     firstName,
 }: DashboardProps) {
     const { auth } = usePage<SharedData>().props;
+    const chartHasData =
+        chart.employers.some((value) => value > 0) ||
+        chart.job_seekers.some((value) => value > 0);
+    const packageTotal = packages.reduce((sum, slice) => sum + slice.count, 0);
 
     const metricCards = [
         {
+            key: 'total_employers',
             label: 'Total Employers',
             value: stats.total_employers.toLocaleString(),
-            trend: '+12.4%',
-            up: true,
+            href: '/admin/employers',
             icon: '/images/admin/stat-employers.svg',
             iconBg: 'bg-[#eef2ff]',
         },
         {
+            key: 'total_job_seekers',
             label: 'Total Job Seekers',
             value: stats.total_job_seekers.toLocaleString(),
-            trend: '+8.7%',
-            up: true,
+            href: '/admin/job-seekers',
             icon: '/images/admin/stat-job-seekers.svg',
             iconBg: 'bg-[#f0f9ff]',
         },
         {
+            key: 'active_jobs',
             label: 'Active Jobs',
             value: stats.active_jobs.toLocaleString(),
-            trend: '+5.2%',
-            up: true,
+            href: '/admin/jobs?status=active',
             icon: '/images/admin/stat-active-jobs.svg',
             iconBg: 'bg-[#f0fdf4]',
         },
         {
+            key: 'pending_jobs',
             label: 'Pending Jobs',
             value: stats.pending_jobs.toLocaleString(),
-            trend: '-3.1%',
-            up: false,
+            href: '/admin/jobs?status=pending',
             icon: '/images/admin/stat-pending-jobs.svg',
             iconBg: 'bg-[#fffbeb]',
         },
         {
+            key: 'applications_today',
             label: 'Applications Today',
             value: stats.applications_today.toLocaleString(),
-            trend: '+18.9%',
-            up: true,
+            href: '/admin/applications',
             icon: '/images/admin/stat-applications.svg',
             iconBg: 'bg-[#f5f3ff]',
         },
         {
+            key: 'monthly_revenue',
             label: 'Monthly Revenue',
             value: `AED ${stats.monthly_revenue.toLocaleString()}`,
-            trend: '+10.6%',
-            up: true,
+            href: '/admin/payments',
             icon: '/images/admin/stat-monthly-revenue.svg',
             iconBg: 'bg-[#fff1f2]',
         },
         {
-            label: 'Total Users',
-            value: stats.total_users.toLocaleString(),
-            trend: '+6.1%',
-            up: true,
-            icon: '/images/admin/stat-job-seekers.svg',
-            iconBg: 'bg-[#e0e7ff]',
-        },
-        {
-            label: 'Total Admins',
-            value: stats.total_admins.toLocaleString(),
-            trend: 'Live',
-            up: true,
+            key: 'pending_verifications',
+            label: 'Pending Verifications',
+            value: stats.pending_verifications.toLocaleString(),
+            href: '/admin/verifications',
             icon: '/images/admin/stat-verifications.svg',
             iconBg: 'bg-[#fff7ed]',
+        },
+        {
+            key: 'total_users',
+            label: 'Total Users',
+            value: stats.total_users.toLocaleString(),
+            href: '/admin/users' as string | null,
+            icon: '/images/admin/stat-job-seekers.svg',
+            iconBg: 'bg-[#e0e7ff]',
         },
     ];
 
@@ -172,11 +246,12 @@ export default function AdminDashboard({
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {metricCards.map((card) => {
-                        return (
-                            <div
-                                key={card.label}
-                                className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]"
-                            >
+                        const trend = trends[card.key] ?? {
+                            label: '—',
+                            up: true,
+                        };
+                        const content = (
+                            <>
                                 <div className="flex items-start justify-between">
                                     <div
                                         className={cn(
@@ -189,20 +264,20 @@ export default function AdminDashboard({
                                     <span
                                         className={cn(
                                             'inline-flex items-center gap-1 text-[11px] font-semibold',
-                                            card.up
+                                            trend.up
                                                 ? 'text-[#10b981]'
                                                 : 'text-[#ef4444]',
                                         )}
                                     >
                                         <AdminIcon
                                             src={
-                                                card.up
+                                                trend.up
                                                     ? '/images/admin/stat-trend-up.svg'
                                                     : '/images/admin/stat-trend-down.svg'
                                             }
                                             size={12}
                                         />
-                                        {card.trend}
+                                        {trend.label}
                                     </span>
                                 </div>
                                 <p className="mt-3 text-2xl font-extrabold text-[#101828]">
@@ -211,6 +286,23 @@ export default function AdminDashboard({
                                 <p className="mt-1 text-xs font-medium text-[#6a7282]">
                                     {card.label}
                                 </p>
+                            </>
+                        );
+
+                        return card.href ? (
+                            <Link
+                                key={card.key}
+                                href={card.href}
+                                className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-[0px_1px_3px_rgba(0,0,0,0.06)] transition-colors hover:border-[#bfdbfe] hover:bg-[#f8faff]"
+                            >
+                                {content}
+                            </Link>
+                        ) : (
+                            <div
+                                key={card.key}
+                                className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]"
+                            >
+                                {content}
                             </div>
                         );
                     })}
@@ -218,51 +310,78 @@ export default function AdminDashboard({
 
                 <div className="grid gap-5 xl:grid-cols-[1.4fr_0.8fr]">
                     <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
-                        <div className="mb-4 flex items-center justify-between">
+                        <div className="mb-4 flex items-center justify-between gap-3">
                             <div>
                                 <h2 className="text-base font-bold text-[#101828]">
-                                    Revenue Analytics
+                                    Registration Analytics
                                 </h2>
                                 <p className="text-xs text-[#99a1af]">
-                                    Monthly revenue trend – 2024
+                                    Employer vs job seeker signups
                                 </p>
                             </div>
                             <div className="flex gap-1">
-                                {['7D', '30D', '90D', '12M'].map((range) => (
-                                    <span
-                                        key={range}
+                                {rangeOptions.map(([value, label]) => (
+                                    <button
+                                        key={value}
+                                        type="button"
                                         className={cn(
                                             'rounded-lg px-2.5 py-1 text-[11px] font-semibold',
-                                            range === '12M'
+                                            chart.range === value
                                                 ? 'bg-[#0057c8] text-white'
-                                                : 'bg-[#f8faff] text-[#64748b]',
+                                                : 'bg-[#f8faff] text-[#64748b] hover:bg-[#eef2ff]',
                                         )}
+                                        onClick={() =>
+                                            router.get(
+                                                '/admin/dashboard',
+                                                { range: value },
+                                                {
+                                                    preserveState: true,
+                                                    replace: true,
+                                                },
+                                            )
+                                        }
                                     >
-                                        {range}
-                                    </span>
+                                        {label}
+                                    </button>
                                 ))}
                             </div>
                         </div>
                         <div className="relative h-52 overflow-hidden rounded-xl bg-[#f8faff]">
-                            <svg
-                                viewBox="0 0 640 200"
-                                className="h-full w-full"
-                                preserveAspectRatio="none"
-                            >
-                                <polyline
-                                    fill="none"
-                                    stroke="#0057c8"
-                                    strokeWidth="3"
-                                    points="20,150 80,130 140,140 200,100 260,110 320,70 380,90 440,55 500,75 560,40 620,60"
-                                />
-                                <polyline
-                                    fill="none"
-                                    stroke="#e57124"
-                                    strokeWidth="2"
-                                    strokeDasharray="6 4"
-                                    points="20,160 80,155 140,150 200,145 260,130 320,125 380,120 440,110 500,105 560,95 620,90"
-                                />
-                            </svg>
+                            {chartHasData ? (
+                                <svg
+                                    viewBox="0 0 640 200"
+                                    className="h-full w-full"
+                                    preserveAspectRatio="none"
+                                >
+                                    <polyline
+                                        fill="none"
+                                        stroke="#0057c8"
+                                        strokeWidth="3"
+                                        points={toPoints(chart.employers)}
+                                    />
+                                    <polyline
+                                        fill="none"
+                                        stroke="#e57124"
+                                        strokeWidth="2"
+                                        strokeDasharray="6 4"
+                                        points={toPoints(chart.job_seekers)}
+                                    />
+                                </svg>
+                            ) : (
+                                <div className="flex h-full items-center justify-center text-sm text-[#99a1af]">
+                                    No registrations in this range.
+                                </div>
+                            )}
+                        </div>
+                        <div className="mt-3 flex gap-4 text-xs text-[#64748b]">
+                            <span className="inline-flex items-center gap-1.5">
+                                <span className="size-2 rounded-full bg-[#0057c8]" />
+                                Employers
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                                <span className="size-2 rounded-full bg-[#e57124]" />
+                                Job seekers
+                            </span>
                         </div>
                     </div>
 
@@ -271,41 +390,43 @@ export default function AdminDashboard({
                             Package Distribution
                         </h2>
                         <p className="text-xs text-[#99a1af]">
-                            Active subscribers by plan
+                            Employer accounts by plan
                         </p>
-                        <div className="mt-5 flex items-center gap-5">
-                            <div
-                                className="size-32 rounded-full"
-                                style={{
-                                    background:
-                                        'conic-gradient(#0057c8 0 38%, #3b82f6 38% 67%, #93c5fd 67% 85%, #e57124 85% 100%)',
-                                }}
-                            />
-                            <div className="space-y-2 text-xs">
-                                {[
-                                    ['Starter', '38%', '#0057c8'],
-                                    ['Professional', '29%', '#3b82f6'],
-                                    ['Enterprise', '18%', '#93c5fd'],
-                                    ['Premium', '15%', '#e57124'],
-                                ].map(([label, value, color]) => (
-                                    <div
-                                        key={label}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <span
-                                            className="size-2.5 rounded-full"
-                                            style={{ background: color }}
-                                        />
-                                        <span className="text-[#64748b]">
-                                            {label}
-                                        </span>
-                                        <span className="font-semibold text-[#101828]">
-                                            {value}
-                                        </span>
-                                    </div>
-                                ))}
+                        {packageTotal === 0 ? (
+                            <p className="mt-8 text-sm text-[#99a1af]">
+                                No employer packages yet.
+                            </p>
+                        ) : (
+                            <div className="mt-5 flex items-center gap-5">
+                                <div
+                                    className="size-32 rounded-full"
+                                    style={{
+                                        background: packageGradient(packages),
+                                    }}
+                                />
+                                <div className="space-y-2 text-xs">
+                                    {packages.map((slice) => (
+                                        <div
+                                            key={slice.value}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <span
+                                                className="size-2.5 rounded-full"
+                                                style={{
+                                                    background: slice.color,
+                                                }}
+                                            />
+                                            <span className="text-[#64748b]">
+                                                {slice.label}
+                                            </span>
+                                            <span className="font-semibold text-[#101828]">
+                                                {slice.percent}%
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 
@@ -318,6 +439,14 @@ export default function AdminDashboard({
                         </div>
                         <div className="space-y-2">
                             {[
+                                {
+                                    label: 'Manage Employers',
+                                    href: '/admin/employers',
+                                },
+                                {
+                                    label: 'Manage Job Seekers',
+                                    href: '/admin/job-seekers',
+                                },
                                 {
                                     label: 'Manage Users',
                                     href: '/admin/users',
@@ -332,10 +461,6 @@ export default function AdminDashboard({
                                     label: 'Review Roles & Permissions',
                                     href: '/admin/roles-permissions',
                                 },
-                                {
-                                    label: 'Open Admin Portal Home',
-                                    href: '/admin/dashboard',
-                                },
                             ].map((action) =>
                                 action.href ? (
                                     <Link
@@ -344,7 +469,9 @@ export default function AdminDashboard({
                                         className="flex items-center justify-between rounded-xl border border-[#e2e8f0] px-4 py-3 text-sm font-medium text-[#101828] transition-colors hover:bg-[#f8faff]"
                                     >
                                         {action.label}
-                                        <span className="text-[#0057c8]">→</span>
+                                        <span className="text-[#0057c8]">
+                                            →
+                                        </span>
                                     </Link>
                                 ) : (
                                     <div
@@ -364,16 +491,31 @@ export default function AdminDashboard({
                             <h2 className="text-base font-bold text-[#101828]">
                                 Platform Alerts
                             </h2>
-                            <span className="rounded-full bg-[#fef2f2] px-2.5 py-0.5 text-xs font-semibold text-[#b91c1c]">
-                                {alerts.length} Active
+                            <span
+                                className={cn(
+                                    'rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                                    alerts.length > 0
+                                        ? 'bg-[#fef2f2] text-[#b91c1c]'
+                                        : 'bg-[#f0fdf4] text-[#15803d]',
+                                )}
+                            >
+                                {alerts.length > 0
+                                    ? `${alerts.length} Active`
+                                    : 'All clear'}
                             </span>
                         </div>
                         <div className="space-y-3">
+                            {alerts.length === 0 && (
+                                <p className="text-sm text-[#99a1af]">
+                                    No pending employer or account issues.
+                                </p>
+                            )}
                             {alerts.map((alert) => (
-                                <div
+                                <Link
                                     key={alert.title}
+                                    href={alert.href}
                                     className={cn(
-                                        'rounded-xl border px-3 py-3',
+                                        'block rounded-xl border px-3 py-3',
                                         toneStyles[alert.tone] ??
                                         toneStyles.info,
                                     )}
@@ -384,7 +526,7 @@ export default function AdminDashboard({
                                     <p className="mt-0.5 text-xs opacity-80">
                                         {alert.detail}
                                     </p>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     </div>
@@ -402,28 +544,34 @@ export default function AdminDashboard({
                             </Link>
                         </div>
                         <div className="space-y-3">
-                            {recentUsers.map((user) => (
+                            {activities.map((item) => (
                                 <div
-                                    key={user.id}
+                                    key={item.id}
                                     className="flex items-start gap-3"
                                 >
                                     <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#dbeafe] text-xs font-bold text-[#1d4ed8]">
-                                        {user.name.slice(0, 1).toUpperCase()}
+                                        {item.subject_name
+                                            .slice(0, 1)
+                                            .toUpperCase()}
                                     </div>
                                     <div className="min-w-0">
                                         <p className="truncate text-sm font-semibold text-[#101828]">
-                                            {user.name}
+                                            {item.action_label}
                                         </p>
-                                        <p className="text-xs text-[#64748b]">
-                                            {user.role_label} · {user.email}
+                                        <p className="truncate text-xs text-[#64748b]">
+                                            {item.subject_name}
+                                            {item.description
+                                                ? ` · ${item.description}`
+                                                : ''}
                                         </p>
                                         <p className="text-[11px] text-[#99a1af]">
-                                            {user.created_at}
+                                            {item.actor_name ?? 'System'} ·{' '}
+                                            {item.created_at}
                                         </p>
                                     </div>
                                 </div>
                             ))}
-                            {recentUsers.length === 0 && (
+                            {activities.length === 0 && (
                                 <p className="text-sm text-[#99a1af]">
                                     No recent activity yet.
                                 </p>

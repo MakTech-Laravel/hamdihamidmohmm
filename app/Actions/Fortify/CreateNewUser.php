@@ -8,6 +8,8 @@ use App\Enums\ActivityAction;
 use App\Enums\EmployerAccountStatus;
 use App\Enums\EmployerPackage;
 use App\Enums\EmployerVerificationStatus;
+use App\Enums\JobSeekerAccountStatus;
+use App\Enums\JobSeekerResumeStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\ActivityLogger;
@@ -63,7 +65,8 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $input['password'],
             'role' => UserRole::from($role),
             'verification_status' => $isEmployer ? EmployerVerificationStatus::Pending : null,
-            'account_status' => $isEmployer ? EmployerAccountStatus::PendingVerification : null,
+            'account_status' => $isEmployer ? EmployerAccountStatus::PendingVerification : JobSeekerAccountStatus::Active,
+            'resume_status' => $isEmployer ? null : JobSeekerResumeStatus::Warning,
             'package' => $isEmployer ? EmployerPackage::Starter : null,
         ]);
 

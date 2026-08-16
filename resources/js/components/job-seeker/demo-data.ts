@@ -5,7 +5,8 @@ export type ApplicationStatus =
     | 'Interview'
     | 'Rejected'
     | 'Offer'
-    | 'Hired';
+    | 'Hired'
+    | 'Withdrawn';
 
 export type NotificationCategory =
     | 'Interview'
@@ -215,6 +216,11 @@ export const STATUS_STYLES: Record<
         badge: 'bg-[#ecfdf5]',
         dot: 'bg-[#10b981]',
         text: 'text-[#047857]',
+    },
+    Withdrawn: {
+        badge: 'bg-[#f1f5f9]',
+        dot: 'bg-[#64748b]',
+        text: 'text-[#475569]',
     },
 };
 

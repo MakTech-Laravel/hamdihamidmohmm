@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
 import { useLocale } from '@/hooks/use-locale';
@@ -11,33 +11,42 @@ type SimilarJob = {
     slug: string;
     initials: string;
     title: string;
-    company: string;
+    company: string | null;
 };
 
 type JobDetail = {
     slug: string;
-    initials: string;
+    initials?: string;
     title: string;
-    company: string;
-    company_industry: string;
-    company_about: string;
-    company_website: string;
-    type: string;
-    location: string;
-    experience: string;
-    salary: string;
-    posted: string;
-    deadline: string;
-    vacancies: string;
-    industry: string;
-    overview: string;
-    responsibilities: string[];
-    requirements: string[];
-    benefits: string[];
-    similar: SimilarJob[];
+    company: string | null;
+    company_industry?: string | null;
+    company_about?: string | null;
+    company_website?: string | null;
+    type?: string | null;
+    location?: string | null;
+    experience?: string;
+    salary?: string | null;
+    posted?: string;
+    deadline?: string;
+    vacancies?: string;
+    industry?: string | null;
+    overview?: string | null;
+    description?: string | null;
+    responsibilities?: string[];
+    requirements?: string[];
+    benefits?: string[];
+    similar?: SimilarJob[];
 };
 
-export default function JobShow({ job }: { job: JobDetail }) {
+export default function JobShow({
+    job,
+    applied = false,
+    can_apply = false,
+}: {
+    job: JobDetail;
+    applied?: boolean;
+    can_apply?: boolean;
+}) {
     const { t } = useLocale();
     const { auth } = usePage<SharedData>().props;
     const [shareOpen, setShareOpen] = useState(false);
@@ -67,6 +76,11 @@ export default function JobShow({ job }: { job: JobDetail }) {
     }, [shareOpen]);
 
     const applyHref = auth.user ? '/dashboard' : login.url();
+    const overview = job.overview || job.description || '';
+    const similar = job.similar ?? [];
+    const responsibilities = job.responsibilities ?? [];
+    const requirements = job.requirements ?? [];
+    const benefits = job.benefits ?? [];
 
     const shareItems = [
         {
@@ -185,7 +199,7 @@ export default function JobShow({ job }: { job: JobDetail }) {
                                                 'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
                                         }}
                                     >
-                                        {job.initials}
+                                        {job.initials || 'JP'}
                                     </div>
                                     <div className="min-w-0">
                                         <h1 className="text-2xl font-bold text-[#050315]">
@@ -226,12 +240,26 @@ export default function JobShow({ job }: { job: JobDetail }) {
                                 </div>
 
                                 <div className="relative mt-6 flex flex-col gap-3 sm:flex-row">
-                                    <Link
-                                        href={applyHref}
-                                        className="inline-flex h-[46px] flex-1 items-center justify-center rounded-xl bg-[#323981] text-sm font-semibold text-white transition hover:brightness-110"
-                                    >
-                                        {t('job_detail.apply_now')}
-                                    </Link>
+                                    {can_apply ? (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                router.post(`/jobs/${job.slug}/apply`)
+                                            }
+                                            className="inline-flex h-[46px] flex-1 items-center justify-center rounded-xl bg-[#323981] text-sm font-semibold text-white transition hover:brightness-110"
+                                        >
+                                            {t('job_detail.apply_now')}
+                                        </button>
+                                    ) : (
+                                        <Link
+                                            href={applied ? '/job-seeker/applications' : applyHref}
+                                            className="inline-flex h-[46px] flex-1 items-center justify-center rounded-xl bg-[#323981] text-sm font-semibold text-white transition hover:brightness-110"
+                                        >
+                                            {applied
+                                                ? 'Applied'
+                                                : t('job_detail.apply_now')}
+                                        </Link>
+                                    )}
 
                                     <div className="relative" ref={shareRef}>
                                         <button
@@ -308,7 +336,7 @@ export default function JobShow({ job }: { job: JobDetail }) {
                                         {t('job_detail.overview')}
                                     </h2>
                                     <p className="mt-3 text-sm leading-[23px] text-[#4a5565]">
-                                        {job.overview}
+                                        {overview}
                                     </p>
                                 </section>
 
@@ -317,7 +345,7 @@ export default function JobShow({ job }: { job: JobDetail }) {
                                         {t('job_detail.responsibilities')}
                                     </h2>
                                     <ul className="mt-4 space-y-3">
-                                        {job.responsibilities.map((item) => (
+                                        {responsibilities.map((item) => (
                                             <li
                                                 key={item}
                                                 className="flex items-start gap-3 text-sm text-[#364153]"
@@ -342,7 +370,7 @@ export default function JobShow({ job }: { job: JobDetail }) {
                                         {t('job_detail.requirements')}
                                     </h2>
                                     <ul className="mt-4 space-y-3">
-                                        {job.requirements.map((item) => (
+                                        {requirements.map((item) => (
                                             <li
                                                 key={item}
                                                 className="flex items-start gap-3 text-sm text-[#364153]"
@@ -367,7 +395,7 @@ export default function JobShow({ job }: { job: JobDetail }) {
                                         {t('job_detail.benefits')}
                                     </h2>
                                     <div className="mt-4 flex flex-wrap gap-2">
-                                        {job.benefits.map((benefit) => (
+                                        {benefits.map((benefit) => (
                                             <span
                                                 key={benefit}
                                                 className="inline-flex items-center gap-1.5 rounded-full border border-[#bbf7d0] bg-[#f0fdf4] px-3 py-1.5 text-xs font-semibold text-[#15803d]"
@@ -393,7 +421,7 @@ export default function JobShow({ job }: { job: JobDetail }) {
                                                 'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
                                         }}
                                     >
-                                        {job.initials}
+                                        {job.initials || 'JP'}
                                     </div>
                                     <div>
                                         <p className="text-sm font-semibold text-[#050315]">
@@ -443,10 +471,10 @@ export default function JobShow({ job }: { job: JobDetail }) {
                                     {t('job_detail.similar')}
                                 </h2>
                                 <div className="mt-4 space-y-3">
-                                    {job.similar.map((similar) => (
+                                    {similar.map((item) => (
                                         <Link
-                                            key={similar.slug}
-                                            href={jobShow.url(similar.slug)}
+                                            key={item.slug}
+                                            href={jobShow.url(item.slug)}
                                             className="flex items-center gap-3 rounded-xl border border-[#f1f5f9] p-3 transition hover:border-[#dbeafe] hover:bg-[#f8faff]"
                                         >
                                             <div
@@ -456,14 +484,14 @@ export default function JobShow({ job }: { job: JobDetail }) {
                                                         'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
                                                 }}
                                             >
-                                                {similar.initials}
+                                                {item.initials}
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="truncate text-sm font-semibold text-[#050315]">
-                                                    {similar.title}
+                                                    {item.title}
                                                 </p>
                                                 <p className="truncate text-xs text-[#6a7282]">
-                                                    {similar.company}
+                                                    {item.company}
                                                 </p>
                                             </div>
                                         </Link>

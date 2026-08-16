@@ -1,59 +1,80 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Check, X } from 'lucide-react';
 
-import {
-    APPLICATIONS,
-    NOTIFICATIONS,
-    PROFILE_COMPLETION,
-    PROFILE_SECTIONS,
-    firstName,
-} from '@/components/job-seeker/demo-data';
+import { firstName, getInitials } from '@/components/job-seeker/demo-data';
 import { StatusBadge } from '@/components/job-seeker/status-badge';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import type { SharedData } from '@/types';
+import type { ApplicationStatus } from '@/components/job-seeker/demo-data';
 
-const stats = [
-    {
-        value: '5',
-        label: 'Applications',
-        icon: '📋',
-        iconBg: 'bg-[#dbeafe]',
-        valueClass: 'text-[#1d4ed8]',
-    },
-    {
-        value: '2',
-        label: 'Under Review',
-        icon: '🔍',
-        iconBg: 'bg-[#fed7aa]',
-        valueClass: 'text-[#c2410c]',
-    },
-    {
-        value: '1',
-        label: 'Shortlisted',
-        icon: '⭐',
-        iconBg: 'bg-[#e9d5ff]',
-        valueClass: 'text-[#7e22ce]',
-    },
-    {
-        value: String(PROFILE_COMPLETION),
-        label: 'Profile %',
-        icon: '👤',
-        iconBg: 'bg-[#bbf7d0]',
-        valueClass: 'text-[#15803d]',
-    },
-];
+type Props = {
+    first_name: string;
+    completion: number;
+    stats: {
+        total: number;
+        active: number;
+        interviews: number;
+        offers: number;
+    };
+    applications: Array<{
+        id: number;
+        title: string | null;
+        company: string | null;
+        status: string | null;
+        date: string | null;
+    }>;
+    notifications: Array<{
+        id: string;
+        title: string;
+        message: string;
+        created_at: string | null;
+    }>;
+};
 
-export default function JobSeekerDashboard() {
+export default function JobSeekerDashboard({
+    first_name,
+    completion,
+    stats,
+    applications,
+    notifications,
+}: Props) {
     const { auth } = usePage<SharedData>().props;
-    const name = firstName(auth.user.name);
+    const name = firstName(auth.user.name) || first_name;
     const today = new Intl.DateTimeFormat('en-US', {
         weekday: 'long',
         month: 'long',
         day: 'numeric',
     }).format(new Date());
 
-    const recentApplications = APPLICATIONS.slice(0, 4);
-    const latestNotifications = NOTIFICATIONS.slice(0, 3);
+    const statCards = [
+        {
+            value: String(stats.total),
+            label: 'Applications',
+            icon: '📋',
+            iconBg: 'bg-[#dbeafe]',
+            valueClass: 'text-[#1d4ed8]',
+        },
+        {
+            value: String(stats.active),
+            label: 'Active',
+            icon: '🔍',
+            iconBg: 'bg-[#fed7aa]',
+            valueClass: 'text-[#c2410c]',
+        },
+        {
+            value: String(stats.interviews),
+            label: 'Interviews',
+            icon: '⭐',
+            iconBg: 'bg-[#e9d5ff]',
+            valueClass: 'text-[#7e22ce]',
+        },
+        {
+            value: String(completion),
+            label: 'Profile %',
+            icon: '👤',
+            iconBg: 'bg-[#bbf7d0]',
+            valueClass: 'text-[#15803d]',
+        },
+    ];
 
     return (
         <JobSeekerLayout title="Dashboard">
@@ -79,25 +100,24 @@ export default function JobSeekerDashboard() {
                             <div className="h-1.5 w-32 max-w-[128px] overflow-hidden rounded-full bg-white/32">
                                 <div
                                     className="h-full rounded-full bg-[#0057c8]"
-                                    style={{ width: `${PROFILE_COMPLETION}%` }}
+                                    style={{ width: `${completion}%` }}
                                 />
                             </div>
                             <p className="text-xs font-semibold text-[#bedbff]">
-                                {PROFILE_COMPLETION}% Profile Completion
+                                {completion}% Profile Completion
                             </p>
                         </div>
                     </div>
-
                     <div className="flex flex-wrap gap-2">
                         <Link
                             href="/jobs"
-                            className="inline-flex items-center justify-center rounded-xl bg-[#e57124] px-4 py-2.5 text-base font-medium text-white transition-opacity hover:opacity-90"
+                            className="inline-flex items-center justify-center rounded-xl bg-[#e57124] px-4 py-2.5 text-base font-medium text-white"
                         >
                             Browse Jobs
                         </Link>
                         <Link
                             href="/job-seeker/profile"
-                            className="inline-flex items-center justify-center rounded-xl border border-white/30 px-4 py-2.5 text-base font-medium text-white transition-colors hover:bg-white/10"
+                            className="inline-flex items-center justify-center rounded-xl border border-white/30 px-4 py-2.5 text-base font-medium text-white"
                         >
                             Complete Profile
                         </Link>
@@ -105,7 +125,7 @@ export default function JobSeekerDashboard() {
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                    {stats.map((stat) => (
+                    {statCards.map((stat) => (
                         <div
                             key={stat.label}
                             className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]"
@@ -128,9 +148,9 @@ export default function JobSeekerDashboard() {
                 </div>
 
                 <div className="grid gap-5 xl:grid-cols-[1fr_414px]">
-                    <div className="rounded-2xl border border-[#e2e8f0] bg-white shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
+                    <div className="rounded-2xl border border-[#e2e8f0] bg-white">
                         <div className="flex items-center justify-between border-b border-[#f1f5f9] p-5">
-                            <h2 className="text-base font-bold text-[#101828]">
+                            <h2 className="text-base font-bold">
                                 Recent Applications
                             </h2>
                             <Link
@@ -141,123 +161,57 @@ export default function JobSeekerDashboard() {
                             </Link>
                         </div>
                         <div className="space-y-3 p-4">
-                            {recentApplications.map((application) => (
+                            {applications.map((application) => (
                                 <div
                                     key={application.id}
                                     className="flex items-center gap-3 rounded-xl border border-[#f1f5f9] p-3"
                                 >
-                                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#1e3a8a] to-[#2563eb] text-xs font-bold text-white">
-                                        {application.initials}
+                                    <div className="flex size-9 items-center justify-center rounded-lg bg-[#1e3a8a] text-xs font-bold text-white">
+                                        {getInitials(
+                                            application.company || 'JP',
+                                        )}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-semibold text-[#101828]">
+                                        <p className="truncate text-sm font-semibold">
                                             {application.title}
                                         </p>
                                         <p className="text-xs text-[#99a1af]">
                                             {application.company}
                                         </p>
                                     </div>
-                                    <div className="hidden items-center gap-3 sm:flex">
-                                        <span className="text-xs text-[#99a1af]">
-                                            {application.appliedAt}
-                                        </span>
-                                        <StatusBadge
-                                            status={application.status}
-                                        />
-                                    </div>
+                                    <StatusBadge
+                                        status={
+                                            (application.status ||
+                                                'Applied') as ApplicationStatus
+                                        }
+                                    />
                                 </div>
                             ))}
+                            {applications.length === 0 && (
+                                <p className="text-sm text-[#99a1af]">
+                                    You have not applied to any jobs yet.
+                                </p>
+                            )}
                         </div>
                     </div>
-
-                    <div className="space-y-5">
-                        <div className="rounded-2xl border border-[#e2e8f0] bg-white shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
-                            <div className="border-b border-[#f1f5f9] p-5">
-                                <h3 className="text-base font-bold text-[#101828]">
-                                    Profile Completion
-                                </h3>
-                                <div className="mt-3 flex items-center gap-3">
-                                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#f3f4f6]">
-                                        <div
-                                            className="h-full rounded-full bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6]"
-                                            style={{
-                                                width: `${PROFILE_COMPLETION}%`,
-                                            }}
-                                        />
-                                    </div>
-                                    <span className="text-sm font-extrabold text-[#1e3a8a]">
-                                        {PROFILE_COMPLETION}%
-                                    </span>
+                    <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
+                        <h3 className="text-base font-bold">Notifications</h3>
+                        <div className="mt-4 space-y-3">
+                            {notifications.map((item) => (
+                                <div key={item.id}>
+                                    <p className="text-sm font-semibold">
+                                        {item.title}
+                                    </p>
+                                    <p className="text-xs text-[#99a1af]">
+                                        {item.created_at}
+                                    </p>
                                 </div>
-                            </div>
-                            <div className="space-y-2 p-4">
-                                {PROFILE_SECTIONS.map((section) => (
-                                    <div
-                                        key={section.id}
-                                        className="flex items-center gap-3"
-                                    >
-                                        <span
-                                            className={`flex size-4 items-center justify-center rounded-full ${
-                                                section.complete
-                                                    ? 'bg-[#dcfce7] text-[#15803d]'
-                                                    : 'bg-[#fee2e2] text-[#b91c1c]'
-                                            }`}
-                                        >
-                                            {section.complete ? (
-                                                <Check className="size-2.5" />
-                                            ) : (
-                                                <X className="size-2.5" />
-                                            )}
-                                        </span>
-                                        <span className="flex-1 text-xs text-[#4a5565]">
-                                            {section.label}
-                                        </span>
-                                        {!section.complete && (
-                                            <Link
-                                                href="/job-seeker/profile"
-                                                className="text-xs font-semibold text-[#ef4444]"
-                                            >
-                                                Complete Now
-                                            </Link>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border border-[#e2e8f0] bg-white shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
-                            <div className="flex items-center justify-between border-b border-[#f1f5f9] p-5">
-                                <h3 className="text-base font-bold text-[#101828]">
-                                    Latest Notifications
-                                </h3>
-                                <Link
-                                    href="/job-seeker/notifications"
-                                    className="text-xs font-bold text-[#1e3a8a]"
-                                >
-                                    View All
-                                </Link>
-                            </div>
-                            <div className="space-y-3 p-4">
-                                {latestNotifications.map((notification) => (
-                                    <div
-                                        key={notification.id}
-                                        className="flex gap-3"
-                                    >
-                                        <div className="mt-0.5 size-2 shrink-0 rounded-full bg-[#0057c8]" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-[#101828]">
-                                                {notification.title}
-                                            </p>
-                                            <p className="mt-0.5 text-xs text-[#99a1af]">
-                                                {notification.time}
-                                            </p>
-                                        </div>
-                                        {notification.unread && (
-                                            <span className="mt-1 size-2 shrink-0 rounded-full bg-[#0057c8]" />
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
+                            ))}
+                            {notifications.length === 0 && (
+                                <p className="text-sm text-[#99a1af]">
+                                    No notifications yet.
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>

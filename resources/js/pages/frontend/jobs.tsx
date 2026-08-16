@@ -1,5 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
 import { FormEvent, useMemo, useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
@@ -17,150 +17,73 @@ const jobTypeKeys = [
 
 type JobTypeKey = (typeof jobTypeKeys)[number];
 
-export default function Jobs() {
+type JobRow = {
+    id: number;
+    slug: string;
+    title: string;
+    company: string | null;
+    initials: string;
+    location: string | null;
+    type: string | null;
+    category: string | null;
+    salary: string | null;
+    featured: boolean;
+};
+
+type Props = {
+    jobs: {
+        data: JobRow[];
+        links: Array<{ url: string | null; label: string; active: boolean }>;
+        total: number;
+        current_page: number;
+        last_page: number;
+    };
+    filters: { search: string };
+};
+
+function typeClass(type: string | null): string {
+    const value = (type ?? '').toLowerCase();
+
+    if (value.includes('remote')) {
+        return 'bg-[#dbeafe] text-[#2563eb]';
+    }
+
+    if (value.includes('contract')) {
+        return 'bg-[#ffedd5] text-[#c2410c]';
+    }
+
+    if (value.includes('part')) {
+        return 'bg-[#f3e8ff] text-[#7e22ce]';
+    }
+
+    return 'bg-[#dcfce7] text-[#16a34a]';
+}
+
+export default function Jobs({ jobs, filters }: Props) {
     const { t } = useLocale();
-    const [keyword, setKeyword] = useState('');
+    const [keyword, setKeyword] = useState(filters.search ?? '');
     const [location, setLocation] = useState('all');
     const [category, setCategory] = useState('all');
     const [sort, setSort] = useState('latest');
     const [selectedTypes, setSelectedTypes] = useState<JobTypeKey[]>([]);
-    const [page, setPage] = useState(1);
-
-    const jobs = useMemo(
-        () => [
-            {
-                slug: 'senior-frontend-developer',
-                initials: 'TC',
-                title: 'Senior Frontend Developer',
-                company: 'TechCorp Solutions',
-                type: t('jobs.full_time'),
-                typeKey: 'full_time' as const,
-                typeClass: 'bg-[#dcfce7] text-[#16a34a]',
-                location: '📍 Riyadh, Saudi Arabia',
-                experience: '💼 3–5 Years',
-                posted: '2 days ago',
-                salary: 'SAR 15,000 – 20,000',
-                featured: true,
-            },
-            {
-                slug: 'marketing-manager',
-                initials: 'BH',
-                title: 'Marketing Manager',
-                company: 'BrandHouse Agency',
-                type: t('jobs.full_time'),
-                typeKey: 'full_time' as const,
-                typeClass: 'bg-[#dcfce7] text-[#16a34a]',
-                location: '📍 Jeddah, Saudi Arabia',
-                experience: '💼 5–7 Years',
-                posted: '1 day ago',
-                salary: 'SAR 18,000 – 25,000',
-                featured: true,
-            },
-            {
-                slug: 'financial-analyst',
-                initials: 'GF',
-                title: 'Financial Analyst',
-                company: 'Gulf Finance Group',
-                type: t('jobs.full_time'),
-                typeKey: 'full_time' as const,
-                typeClass: 'bg-[#dcfce7] text-[#16a34a]',
-                location: '📍 Dubai, UAE',
-                experience: '💼 2–4 Years',
-                posted: '3 days ago',
-                salary: 'AED 12,000 – 16,000',
-                featured: true,
-            },
-            {
-                slug: 'ux-ui-designer',
-                initials: 'PC',
-                title: 'UX/UI Designer',
-                company: 'PixelCraft Studio',
-                type: t('jobs.remote'),
-                typeKey: 'remote' as const,
-                typeClass: 'bg-[#dbeafe] text-[#2563eb]',
-                location: '📍 Remote',
-                experience: '💼 2–3 Years',
-                posted: '4 days ago',
-                salary: 'SAR 10,000 – 14,000',
-                featured: true,
-            },
-            {
-                slug: 'hr-business-partner',
-                initials: 'NC',
-                title: 'HR Business Partner',
-                company: 'NovaCorp International',
-                type: t('jobs.full_time'),
-                typeKey: 'full_time' as const,
-                typeClass: 'bg-[#dcfce7] text-[#16a34a]',
-                location: '📍 Riyadh, Saudi Arabia',
-                experience: '💼 4–6 Years',
-                posted: '5 days ago',
-                salary: 'SAR 16,000 – 22,000',
-                featured: false,
-            },
-            {
-                slug: 'sales-representative',
-                initials: 'AR',
-                title: 'Sales Representative',
-                company: 'AlphaRetail Group',
-                type: t('jobs.full_time'),
-                typeKey: 'full_time' as const,
-                typeClass: 'bg-[#dcfce7] text-[#16a34a]',
-                location: '📍 Dammam, Saudi Arabia',
-                experience: '💼 1–3 Years',
-                posted: '1 week ago',
-                salary: 'SAR 7,000 – 10,000 + Commission',
-                featured: false,
-            },
-            {
-                slug: 'backend-engineer',
-                initials: 'QS',
-                title: 'Backend Engineer',
-                company: 'Qatar Soft Labs',
-                type: t('jobs.contract'),
-                typeKey: 'contract' as const,
-                typeClass: 'bg-[#ffedd5] text-[#c2410c]',
-                location: '📍 Doha, Qatar',
-                experience: '💼 3–5 Years',
-                posted: '6 days ago',
-                salary: 'QAR 14,000 – 18,000',
-                featured: true,
-            },
-            {
-                slug: 'content-specialist',
-                initials: 'SM',
-                title: 'Content Specialist',
-                company: 'Sahara Media',
-                type: t('jobs.part_time'),
-                typeKey: 'part_time' as const,
-                typeClass: 'bg-[#f3e8ff] text-[#7e22ce]',
-                location: '📍 Jeddah, Saudi Arabia',
-                experience: '💼 1–2 Years',
-                posted: '2 weeks ago',
-                salary: 'SAR 5,000 – 7,000',
-                featured: false,
-            },
-        ],
-        [t],
-    );
 
     const filteredJobs = useMemo(() => {
-        return jobs.filter((job) => {
-            const matchesKeyword =
-                keyword.trim() === '' ||
-                job.title.toLowerCase().includes(keyword.toLowerCase()) ||
-                job.company.toLowerCase().includes(keyword.toLowerCase());
-
+        return jobs.data.filter((job) => {
             const matchesLocation =
                 location === 'all' ||
-                job.location.toLowerCase().includes(location.toLowerCase());
-
+                (job.location ?? '').toLowerCase().includes(location.toLowerCase());
+            const matchesCategory =
+                category === 'all' ||
+                (job.category ?? '').toLowerCase().includes(category.toLowerCase());
             const matchesType =
-                selectedTypes.length === 0 || selectedTypes.includes(job.typeKey);
+                selectedTypes.length === 0 ||
+                selectedTypes.some((type) =>
+                    (job.type ?? '').toLowerCase().includes(type.replace('_', ' ')),
+                );
 
-            return matchesKeyword && matchesLocation && matchesType;
+            return matchesLocation && matchesCategory && matchesType;
         });
-    }, [jobs, keyword, location, selectedTypes]);
+    }, [jobs.data, location, category, selectedTypes]);
 
     const toggleType = (type: JobTypeKey) => {
         setSelectedTypes((current) =>
@@ -168,7 +91,6 @@ export default function Jobs() {
                 ? current.filter((item) => item !== type)
                 : [...current, type],
         );
-        setPage(1);
     };
 
     const clearFilters = () => {
@@ -176,12 +98,12 @@ export default function Jobs() {
         setCategory('all');
         setSelectedTypes([]);
         setKeyword('');
-        setPage(1);
+        router.get('/jobs');
     };
 
     const handleSearch = (event: FormEvent) => {
         event.preventDefault();
-        setPage(1);
+        router.get('/jobs', { search: keyword }, { preserveState: true });
     };
 
     return (
@@ -437,21 +359,22 @@ export default function Jobs() {
 
                                     <div className="mt-3 flex flex-wrap gap-1.5">
                                         <span
-                                            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${job.typeClass}`}
+                                            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeClass(job.type)}`}
                                         >
                                             {job.type}
                                         </span>
                                         <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
                                             {job.location}
                                         </span>
-                                        <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
-                                            {job.experience}
-                                        </span>
+                                        {job.category && (
+                                            <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
+                                                {job.category}
+                                            </span>
+                                        )}
                                     </div>
 
                                     <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#f1f5f9] pt-3">
                                         <div className="min-w-0">
-                                            <p className="text-xs text-[#99a1af]">{job.posted}</p>
                                             <p className="mt-0.5 truncate text-sm font-semibold text-[#1e3a8a]">
                                                 {job.salary}
                                             </p>
@@ -487,35 +410,20 @@ export default function Jobs() {
 
                         {filteredJobs.length > 0 && (
                             <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-                                <button
-                                    type="button"
-                                    disabled={page === 1}
-                                    onClick={() => setPage((current) => Math.max(1, current - 1))}
-                                    className="rounded-lg px-3 py-2 text-sm text-[#6a7282] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                    {t('jobs_page.previous')}
-                                </button>
-                                {[1, 2].map((pageNumber) => (
-                                    <button
-                                        key={pageNumber}
-                                        type="button"
-                                        onClick={() => setPage(pageNumber)}
-                                        className={`inline-flex size-9 items-center justify-center rounded-lg text-sm font-semibold transition ${page === pageNumber
-                                            ? 'bg-[#323981] text-white'
-                                            : 'bg-white text-[#364153] hover:bg-[#f1f5f9]'
-                                            }`}
-                                    >
-                                        {pageNumber}
-                                    </button>
+                                {jobs.links.map((link) => (
+                                    <Link
+                                        key={link.label}
+                                        href={link.url ?? ''}
+                                        className={`inline-flex min-w-9 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold ${
+                                            link.active
+                                                ? 'bg-[#323981] text-white'
+                                                : 'bg-white text-[#364153] hover:bg-[#f1f5f9]'
+                                        } ${link.url ? '' : 'pointer-events-none opacity-40'}`}
+                                        dangerouslySetInnerHTML={{
+                                            __html: link.label,
+                                        }}
+                                    />
                                 ))}
-                                <button
-                                    type="button"
-                                    disabled={page === 2}
-                                    onClick={() => setPage((current) => Math.min(2, current + 1))}
-                                    className="rounded-lg px-3 py-2 text-sm text-[#6a7282] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                    {t('jobs_page.next')}
-                                </button>
                             </div>
                         )}
                     </div>

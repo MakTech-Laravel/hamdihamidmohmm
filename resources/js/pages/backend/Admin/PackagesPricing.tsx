@@ -1,91 +1,86 @@
-import { Head } from '@inertiajs/react';
-import {
-    Copy,
-    CreditCard,
-    Crown,
-    Package,
-    Pencil,
-    Plus,
-    Star,
-    Users,
-} from 'lucide-react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { CreditCard, Package, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 import {
     AdminPageHeader,
     AdminPanel,
     AdminPrimaryButton,
-    AdminSecondaryButton,
     AdminStatCard,
     AdminStatusBadge,
 } from '@/components/admin-portal/ui';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
+import type { SharedData } from '@/types';
 
-const packageStats = [
-    { label: 'Total Packages', value: '6', tone: 'text-[#0057c8]' },
-    { label: 'Active Subscribers', value: '484', tone: 'text-[#e57124]' },
-    { label: 'Monthly Sales', value: 'AED 89K', tone: 'text-[#0057c8]' },
-    { label: 'Most Popular', value: 'Starter', tone: 'text-[#3977a6]' },
-];
+type PackageRow = {
+    id: number;
+    slug: string;
+    name: string;
+    price: number;
+    currency: string;
+    billing_period: string;
+    job_credits: number;
+    featured_credits: number;
+    is_active: boolean;
+    subscribers: number;
+    revenue: number;
+};
 
-const packages = [
-    {
-        name: 'Starter',
-        price: 'AED 299',
-        period: '/month',
-        status: 'Active',
-        statusTone: 'success' as const,
-        jobCredits: 10,
-        featuredCredits: 2,
-        subscribers: 184,
-        revenue: 'AED 55K',
-    },
-    {
-        name: 'Professional',
-        price: 'AED 799',
-        period: '/month',
-        status: 'Active',
-        statusTone: 'success' as const,
-        jobCredits: 30,
-        featuredCredits: 8,
-        subscribers: 142,
-        revenue: 'AED 113K',
-    },
-    {
-        name: 'Enterprise',
-        price: 'AED 1,999',
-        period: '/month',
-        status: 'Active',
-        statusTone: 'success' as const,
-        jobCredits: 100,
-        featuredCredits: 25,
-        subscribers: 87,
-        revenue: 'AED 174K',
-    },
-    {
-        name: 'Trial',
-        price: 'Free',
-        period: '/7 days',
-        status: 'Active',
-        statusTone: 'info' as const,
-        jobCredits: 3,
-        featuredCredits: 0,
-        subscribers: 58,
-        revenue: 'AED 0',
-    },
-    {
-        name: 'Legacy Basic',
-        price: 'AED 199',
-        period: '/month',
-        status: 'Archived',
-        statusTone: 'neutral' as const,
-        jobCredits: 5,
-        featuredCredits: 1,
-        subscribers: 13,
-        revenue: 'AED 2.6K',
-    },
-];
+type Props = {
+    packages: PackageRow[];
+    stats: {
+        total: number;
+        subscribers: number;
+        monthly_sales: number;
+        most_popular: string;
+    };
+};
 
-export default function PackagesPricing() {
+const emptyForm = {
+    slug: '',
+    name: '',
+    price: 0,
+    billing_period: 'month',
+    job_credits: 0,
+    featured_credits: 0,
+    is_active: true,
+};
+
+export default function PackagesPricing({ packages, stats }: Props) {
+    const { flash } = usePage<SharedData>().props;
+    const [editing, setEditing] = useState<PackageRow | null>(null);
+    const [creating, setCreating] = useState(false);
+    const form = useForm(emptyForm);
+
+    const openCreate = (): void => {
+        form.reset();
+        form.setData(emptyForm);
+        setCreating(true);
+    };
+
+    const openEdit = (row: PackageRow): void => {
+        form.setData({
+            slug: row.slug,
+            name: row.name,
+            price: row.price,
+            billing_period: row.billing_period,
+            job_credits: row.job_credits,
+            featured_credits: row.featured_credits,
+            is_active: row.is_active,
+        });
+        setEditing(row);
+    };
+
     return (
         <AdminPortalLayout>
             <Head title="Packages & Pricing" />
@@ -93,107 +88,231 @@ export default function PackagesPricing() {
             <div className="space-y-6 p-6">
                 <AdminPageHeader
                     title="Packages & Pricing"
-                    subtitle="Control employer subscription plans and platform monetization."
+                    subtitle="Manage employer subscription packages."
                     actions={
-                        <AdminPrimaryButton>
+                        <AdminPrimaryButton onClick={openCreate}>
                             <Plus className="size-4" />
-                            Create Package
+                            Add Package
                         </AdminPrimaryButton>
                     }
                 />
 
+                {flash.success && (
+                    <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
+                        {typeof flash.success === 'string'
+                            ? flash.success
+                            : 'Saved successfully.'}
+                    </div>
+                )}
+
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {packageStats.map((stat, index) => (
-                        <AdminStatCard
-                            key={stat.label}
-                            label={stat.label}
-                            value={stat.value}
-                            valueClassName={stat.tone}
-                            icon={
-                                [Package, Users, CreditCard, Star][index]
-                            }
-                        />
-                    ))}
+                    <AdminStatCard
+                        label="Total Packages"
+                        value={String(stats.total)}
+                        valueClassName="text-[#0057c8]"
+                        icon={Package}
+                    />
+                    <AdminStatCard
+                        label="Active Subscribers"
+                        value={stats.subscribers.toLocaleString()}
+                        valueClassName="text-[#e57124]"
+                        icon={CreditCard}
+                    />
+                    <AdminStatCard
+                        label="Completed Sales"
+                        value={`AED ${stats.monthly_sales.toLocaleString()}`}
+                        valueClassName="text-[#0057c8]"
+                        icon={CreditCard}
+                    />
+                    <AdminStatCard
+                        label="Most Popular"
+                        value={stats.most_popular}
+                        valueClassName="text-[#3977a6]"
+                        icon={Package}
+                    />
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                    {packages.map((pkg) => (
-                        <AdminPanel
-                            key={pkg.name}
-                            className="flex flex-col gap-4"
-                        >
-                            <div className="flex items-start justify-between">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {packages.map((item) => (
+                        <AdminPanel key={item.id} className="space-y-3">
+                            <div className="flex items-start justify-between gap-3">
                                 <div>
-                                    <div className="flex items-center gap-2">
-                                        <Crown className="size-5 text-[#e57124]" />
-                                        <h3 className="text-lg font-extrabold text-[#050315]">
-                                            {pkg.name}
-                                        </h3>
-                                    </div>
-                                    <p className="mt-1">
-                                        <span className="text-2xl font-extrabold text-[#0057c8]">
-                                            {pkg.price}
-                                        </span>
-                                        <span className="text-sm text-[#64748b]">
-                                            {pkg.period}
-                                        </span>
+                                    <h2 className="text-lg font-bold text-[#050315]">
+                                        {item.name}
+                                    </h2>
+                                    <p className="text-sm text-[#64748b]">
+                                        {item.currency} {item.price} /{' '}
+                                        {item.billing_period}
                                     </p>
                                 </div>
                                 <AdminStatusBadge
-                                    label={pkg.status}
-                                    tone={pkg.statusTone}
+                                    label={item.is_active ? 'Active' : 'Archived'}
+                                    tone={item.is_active ? 'success' : 'neutral'}
                                 />
                             </div>
-
-                            <div className="grid grid-cols-2 gap-3 text-sm">
-                                <div className="rounded-lg bg-[#f8faff] p-3">
-                                    <p className="text-xs text-[#64748b]">
-                                        Job Credits
-                                    </p>
-                                    <p className="font-bold text-[#050315]">
-                                        {pkg.jobCredits}
-                                    </p>
-                                </div>
-                                <div className="rounded-lg bg-[#f8faff] p-3">
-                                    <p className="text-xs text-[#64748b]">
-                                        Featured Credits
-                                    </p>
-                                    <p className="font-bold text-[#050315]">
-                                        {pkg.featuredCredits}
-                                    </p>
-                                </div>
-                                <div className="rounded-lg bg-[#f8faff] p-3">
-                                    <p className="text-xs text-[#64748b]">
-                                        Subscribers
-                                    </p>
-                                    <p className="font-bold text-[#050315]">
-                                        {pkg.subscribers}
-                                    </p>
-                                </div>
-                                <div className="rounded-lg bg-[#f8faff] p-3">
-                                    <p className="text-xs text-[#64748b]">
-                                        Revenue
-                                    </p>
-                                    <p className="font-bold text-[#050315]">
-                                        {pkg.revenue}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="mt-auto flex gap-2">
-                                <AdminSecondaryButton className="flex-1">
+                            <p className="text-sm text-[#475569]">
+                                {item.job_credits} job credits ·{' '}
+                                {item.featured_credits} featured
+                            </p>
+                            <p className="text-sm font-semibold text-[#050315]">
+                                {item.subscribers} subscribers · AED{' '}
+                                {item.revenue.toLocaleString()}
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b]"
+                                    onClick={() => openEdit(item)}
+                                >
                                     <Pencil className="size-4" />
-                                    Edit
-                                </AdminSecondaryButton>
-                                <AdminSecondaryButton className="flex-1">
-                                    <Copy className="size-4" />
-                                    Clone
-                                </AdminSecondaryButton>
+                                </button>
+                                <button
+                                    type="button"
+                                    className="flex size-8 items-center justify-center rounded-lg border border-[#fee2e2] text-[#991b1b]"
+                                    onClick={() =>
+                                        router.delete(
+                                            `/admin/packages/${item.id}`,
+                                        )
+                                    }
+                                >
+                                    <Trash2 className="size-4" />
+                                </button>
                             </div>
                         </AdminPanel>
                     ))}
+                    {packages.length === 0 && (
+                        <p className="text-sm text-[#99a1af]">
+                            No packages yet.
+                        </p>
+                    )}
                 </div>
             </div>
+
+            <Dialog
+                open={creating || editing !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setCreating(false);
+                        setEditing(null);
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {editing ? 'Edit package' : 'Create package'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <form
+                        className="space-y-3"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+
+                            if (editing) {
+                                form.put(`/admin/packages/${editing.id}`, {
+                                    onSuccess: () => setEditing(null),
+                                });
+
+                                return;
+                            }
+
+                            form.post('/admin/packages', {
+                                onSuccess: () => setCreating(false),
+                            });
+                        }}
+                    >
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <Label>Slug</Label>
+                                <Input
+                                    value={form.data.slug}
+                                    onChange={(event) =>
+                                        form.setData('slug', event.target.value)
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label>Name</Label>
+                                <Input
+                                    value={form.data.name}
+                                    onChange={(event) =>
+                                        form.setData('name', event.target.value)
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label>Price (AED)</Label>
+                                <Input
+                                    type="number"
+                                    value={form.data.price}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'price',
+                                            Number(event.target.value),
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label>Billing period</Label>
+                                <Input
+                                    value={form.data.billing_period}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'billing_period',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label>Job credits</Label>
+                                <Input
+                                    type="number"
+                                    value={form.data.job_credits}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'job_credits',
+                                            Number(event.target.value),
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label>Featured credits</Label>
+                                <Input
+                                    type="number"
+                                    value={form.data.featured_credits}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'featured_credits',
+                                            Number(event.target.value),
+                                        )
+                                    }
+                                />
+                            </div>
+                        </div>
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={form.data.is_active}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'is_active',
+                                        event.target.checked,
+                                    )
+                                }
+                            />
+                            Active
+                        </label>
+                        <DialogFooter>
+                            <Button type="submit" disabled={form.processing}>
+                                Save
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </AdminPortalLayout>
     );
 }

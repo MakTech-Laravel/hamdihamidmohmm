@@ -5,6 +5,8 @@ namespace Database\Factories;
 use App\Enums\EmployerAccountStatus;
 use App\Enums\EmployerPackage;
 use App\Enums\EmployerVerificationStatus;
+use App\Enums\JobSeekerAccountStatus;
+use App\Enums\JobSeekerResumeStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\RoleAssigner;
@@ -51,6 +53,16 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'role' => UserRole::JobSeeker,
             'company_name' => null,
+            'phone' => fake()->numerify('+971 5# ### ####'),
+            'location' => fake()->randomElement([
+                'Dubai, UAE',
+                'Abu Dhabi, UAE',
+                'Sharjah, UAE',
+                'Ajman, UAE',
+                'Al Ain, UAE',
+            ]),
+            'resume_status' => JobSeekerResumeStatus::Active,
+            'account_status' => JobSeekerAccountStatus::Active,
         ]);
     }
 
@@ -72,6 +84,9 @@ class UserFactory extends Factory
             ]),
             'verification_status' => EmployerVerificationStatus::Approved,
             'account_status' => EmployerAccountStatus::Active,
+            'resume_status' => null,
+            'phone' => null,
+            'location' => null,
             'package' => EmployerPackage::Professional,
             'verified_at' => now(),
         ]);

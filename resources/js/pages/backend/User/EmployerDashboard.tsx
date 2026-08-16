@@ -2,23 +2,63 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { Clock3, Hourglass, MapPin, Users } from 'lucide-react';
 
 import {
-    EMPLOYER_ACTIVE_JOBS,
-    EMPLOYER_NOTIFICATIONS,
     EMPLOYER_QUICK_ACTIONS,
-    EMPLOYER_RECENT_APPLICATIONS,
-    EMPLOYER_STATS,
-    applicationToneClass,
     firstName,
     getInitials,
 } from '@/components/employer/demo-data';
 import EmployerLayout from '@/layouts/employer-layout';
-import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
-export default function EmployerDashboard() {
+type Props = {
+    stats: {
+        total_jobs: number;
+        active_jobs: number;
+        total_applications: number;
+        new_this_week: number;
+    };
+    package_label: string | null;
+    active_jobs: Array<{
+        id: number;
+        title: string;
+        location: string | null;
+        type: string | null;
+        applications: number;
+        expires_at: string | null;
+    }>;
+    recent_applications: Array<{
+        id: number;
+        name: string | null;
+        job: string | null;
+        status: string | null;
+        date: string | null;
+    }>;
+    notifications: Array<{
+        id: string;
+        title: string;
+        message: string;
+        created_at: string | null;
+    }>;
+    first_name: string;
+};
+
+export default function EmployerDashboard({
+    stats,
+    package_label,
+    active_jobs,
+    recent_applications,
+    notifications,
+    first_name,
+}: Props) {
     const { auth } = usePage<SharedData>().props;
-    const name = firstName(auth.user.name);
+    const name = firstName(auth.user.name) || first_name;
     const companyName = auth.user.company_name || 'Your Company';
+
+    const statCards = [
+        { value: stats.total_jobs, label: 'Total Jobs', icon: '💼' },
+        { value: stats.active_jobs, label: 'Active Jobs', icon: '✅' },
+        { value: stats.total_applications, label: 'Applications', icon: '📥' },
+        { value: stats.new_this_week, label: 'New this week', icon: '🆕' },
+    ];
 
     return (
         <EmployerLayout title="Dashboard">
@@ -37,13 +77,9 @@ export default function EmployerDashboard() {
                     </h1>
                     <div className="mt-1 flex flex-wrap items-center gap-2 opacity-90">
                         <p className="text-base font-semibold">{companyName}</p>
-                        <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold">
-                            ✔ Verified
-                        </span>
                     </div>
                     <p className="mt-3 text-sm text-white/80">
-                        5 job credits remaining · Business Package · Expires Aug
-                        31, 2026
+                        {package_label || 'No package assigned'}
                     </p>
                     <div className="mt-5 flex flex-wrap gap-3">
                         <Link
@@ -62,7 +98,7 @@ export default function EmployerDashboard() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {EMPLOYER_STATS.map((stat) => (
+                    {statCards.map((stat) => (
                         <div
                             key={stat.label}
                             className="rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]"
@@ -102,37 +138,10 @@ export default function EmployerDashboard() {
                     </div>
                 </div>
 
-                <div className="rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                            <h2 className="text-base font-bold text-[#050315]">
-                                Business Package
-                            </h2>
-                            <p className="mt-1 text-[12.8px] text-[#6b7280]">
-                                5 used / 10 total
-                            </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                            <span className="rounded-full bg-[#fff7ed] px-3 py-0.5 text-[12.8px] font-bold text-[#e57124]">
-                                ⏳ 23 days remaining
-                            </span>
-                            <Link
-                                href="/employer/packages"
-                                className="text-[12.8px] font-semibold text-[#323981] underline"
-                            >
-                                Upgrade Plan
-                            </Link>
-                        </div>
-                    </div>
-                    <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[#f3f4f6]">
-                        <div className="h-full w-1/2 rounded-full bg-linear-to-r from-[#e57124] to-[#f59e0b]" />
-                    </div>
-                </div>
-
                 <section className="rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
                     <div className="mb-4 flex items-center justify-between">
                         <h2 className="text-base font-bold text-[#050315]">
-                            Active Jobs
+                            Latest Jobs
                         </h2>
                         <Link
                             href="/employer/jobs"
@@ -142,9 +151,9 @@ export default function EmployerDashboard() {
                         </Link>
                     </div>
                     <div className="space-y-3">
-                        {EMPLOYER_ACTIVE_JOBS.map((job) => (
+                        {active_jobs.map((job) => (
                             <div
-                                key={job.title}
+                                key={job.id}
                                 className="flex flex-col gap-3 rounded-xl border border-[#f1f5f9] bg-[#f8faff] p-4 lg:flex-row lg:items-center lg:justify-between"
                             >
                                 <div>
@@ -154,11 +163,11 @@ export default function EmployerDashboard() {
                                     <div className="mt-2 flex flex-wrap gap-3 text-xs text-[#64748b]">
                                         <span className="inline-flex items-center gap-1">
                                             <MapPin className="size-3.5" />
-                                            {job.location}
+                                            {job.location || '—'}
                                         </span>
                                         <span className="inline-flex items-center gap-1">
                                             <Clock3 className="size-3.5" />
-                                            {job.type}
+                                            {job.type || '—'}
                                         </span>
                                         <span className="inline-flex items-center gap-1">
                                             <Users className="size-3.5" />
@@ -166,26 +175,17 @@ export default function EmployerDashboard() {
                                         </span>
                                         <span className="inline-flex items-center gap-1">
                                             <Hourglass className="size-3.5" />
-                                            {job.remaining}
+                                            {job.expires_at || '—'}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <Link
-                                        href="/employer/applications"
-                                        className="rounded-lg bg-[#0057c8] px-3 py-2 text-xs font-semibold text-white"
-                                    >
-                                        Applications
-                                    </Link>
-                                    <Link
-                                        href="/employer/jobs"
-                                        className="rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-xs font-semibold text-[#64748b]"
-                                    >
-                                        Edit
-                                    </Link>
-                                </div>
                             </div>
                         ))}
+                        {active_jobs.length === 0 && (
+                            <p className="text-sm text-[#99a1af]">
+                                You have not posted any jobs yet.
+                            </p>
+                        )}
                     </div>
                 </section>
 
@@ -202,19 +202,14 @@ export default function EmployerDashboard() {
                         </Link>
                     </div>
                     <div className="space-y-3">
-                        {EMPLOYER_RECENT_APPLICATIONS.map((application) => (
+                        {recent_applications.map((application) => (
                             <div
-                                key={`${application.name}-${application.job}`}
+                                key={application.id}
                                 className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f1f5f9] pb-3 last:border-0 last:pb-0"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div
-                                        className={cn(
-                                            'flex size-10 items-center justify-center rounded-full text-xs font-bold',
-                                            application.avatar,
-                                        )}
-                                    >
-                                        {getInitials(application.name)}
+                                    <div className="flex size-10 items-center justify-center rounded-full bg-[#eef2ff] text-xs font-bold text-[#323981]">
+                                        {getInitials(application.name || 'A')}
                                     </div>
                                     <div>
                                         <p className="font-semibold text-[#050315]">
@@ -226,16 +221,16 @@ export default function EmployerDashboard() {
                                         </p>
                                     </div>
                                 </div>
-                                <span
-                                    className={cn(
-                                        'rounded-full px-2.5 py-1 text-xs font-semibold',
-                                        applicationToneClass[application.tone],
-                                    )}
-                                >
+                                <span className="rounded-full bg-[#f8faff] px-2.5 py-1 text-xs font-semibold text-[#323981]">
                                     {application.status}
                                 </span>
                             </div>
                         ))}
+                        {recent_applications.length === 0 && (
+                            <p className="text-sm text-[#99a1af]">
+                                No applications yet.
+                            </p>
+                        )}
                     </div>
                 </section>
 
@@ -252,27 +247,27 @@ export default function EmployerDashboard() {
                         </Link>
                     </div>
                     <div className="space-y-3">
-                        {EMPLOYER_NOTIFICATIONS.map((notification) => (
+                        {notifications.map((notification) => (
                             <div
-                                key={notification.title}
-                                className="flex gap-3 rounded-xl border border-[#fed7aa]/60 bg-[#fff7ed] p-4"
+                                key={notification.id}
+                                className="rounded-xl border border-[#fed7aa]/60 bg-[#fff7ed] p-4"
                             >
-                                <span className="text-xl leading-none">
-                                    {notification.icon}
-                                </span>
-                                <div>
-                                    <p className="font-semibold text-[#050315]">
-                                        {notification.title}
-                                    </p>
-                                    <p className="mt-0.5 text-sm text-[#6b7280]">
-                                        {notification.detail}
-                                    </p>
-                                    <p className="mt-1 text-xs text-[#94a3b8]">
-                                        {notification.time}
-                                    </p>
-                                </div>
+                                <p className="font-semibold text-[#050315]">
+                                    {notification.title}
+                                </p>
+                                <p className="mt-0.5 text-sm text-[#6b7280]">
+                                    {notification.message}
+                                </p>
+                                <p className="mt-1 text-xs text-[#94a3b8]">
+                                    {notification.created_at}
+                                </p>
                             </div>
                         ))}
+                        {notifications.length === 0 && (
+                            <p className="text-sm text-[#99a1af]">
+                                No notifications yet.
+                            </p>
+                        )}
                     </div>
                 </section>
             </div>

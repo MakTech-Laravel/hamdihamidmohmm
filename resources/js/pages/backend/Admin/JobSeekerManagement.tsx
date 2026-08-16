@@ -1,12 +1,19 @@
-import { Head } from '@inertiajs/react';
-import { Download, Eye, Search, UserRound } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import {
+    Download,
+    Eye,
+    Pencil,
+    Plus,
+    Search,
+    UserRound,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { jobSeekerDemo } from '@/components/admin-portal/demo-data';
 import {
     AdminPageHeader,
     AdminPagination,
     AdminPanel,
+    AdminPrimaryButton,
     AdminSecondaryButton,
     AdminStatCard,
     AdminStatusBadge,
@@ -14,6 +21,45 @@ import {
 } from '@/components/admin-portal/ui';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
+import type { SharedData } from '@/types';
+
+type JobSeekerRow = {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    location: string;
+    applications: number;
+    resume: string;
+    date: string | null;
+    status: string;
+    status_value: string | null;
+    can_suspend: boolean;
+    can_reactivate: boolean;
+};
+
+type PaginatedJobSeekers = {
+    data: JobSeekerRow[];
+    links: Array<{ url: string | null; label: string; active: boolean }>;
+    from: number | null;
+    to: number | null;
+    total: number;
+};
+
+type Props = {
+    jobSeekers: PaginatedJobSeekers;
+    filters: { status: string; location: string; search: string };
+    stats: {
+        total: number;
+        active: number;
+        suspended: number;
+        inactive: number;
+    };
+    options: {
+        locations: string[];
+        statuses: Array<{ value: string; label: string }>;
+    };
+};
 
 function statusTone(
     value: string,
@@ -30,9 +76,7 @@ function statusTone(
     return 'neutral';
 }
 
-function resumeTone(
-    value: string,
-): 'success' | 'warning' | 'neutral' {
+function resumeTone(value: string): 'success' | 'warning' | 'neutral' {
     if (value === 'Active') {
         return 'success';
     }
@@ -42,32 +86,54 @@ function resumeTone(
     return 'neutral';
 }
 
-export default function JobSeekerManagement() {
-    const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('All Status');
-    const [countryFilter, setCountryFilter] = useState('All Countries');
+export default function JobSeekerManagement({
+    jobSeekers,
+    filters,
+    stats,
+    options,
+}: Props) {
+    const { flash } = usePage<SharedData>().props;
+    const [search, setSearch] = useState(filters.search ?? '');
 
-    const filteredRows = useMemo(() => {
-        const query = search.trim().toLowerCase();
+    const query = useMemo(() => {
+        const params = new URLSearchParams();
 
-        return jobSeekerDemo.rows.filter((row) => {
-            const matchesStatus =
-                statusFilter === 'All Status' || row.status === statusFilter;
-            const matchesCountry =
-                countryFilter === 'All Countries' ||
-                row.location.includes(
-                    countryFilter.replace('All ', '').replace('s', ''),
-                );
-            const matchesSearch =
-                query === '' ||
-                row.name.toLowerCase().includes(query) ||
-                row.email.toLowerCase().includes(query) ||
-                row.phone.includes(query) ||
-                row.location.toLowerCase().includes(query);
+        if (filters.status) {
+            params.set('status', filters.status);
+        }
 
-            return matchesStatus && matchesCountry && matchesSearch;
-        });
-    }, [countryFilter, search, statusFilter]);
+        if (filters.location) {
+            params.set('location', filters.location);
+        }
+
+        if (search.trim() !== '') {
+            params.set('search', search.trim());
+        }
+
+        const encoded = params.toString();
+
+        return encoded === '' ? '' : `?${encoded}`;
+    }, [filters.location, filters.status, search]);
+
+    const visitList = (
+        status = filters.status,
+        location = filters.location,
+        searchValue = search,
+    ): void => {
+        router.get(
+            '/admin/job-seekers',
+            {
+                ...(status !== 'all' && status !== '' ? { status } : {}),
+                ...(location !== 'all' && location !== ''
+                    ? { location }
+                    : {}),
+                ...(searchValue.trim() !== ''
+                    ? { search: searchValue.trim() }
+                    : {}),
+            },
+            { preserveState: true, replace: true },
+        );
+    };
 
     return (
         <AdminPortalLayout>
@@ -78,20 +144,55 @@ export default function JobSeekerManagement() {
                     title="Job Seeker Management"
                     subtitle="Monitor and manage candidate accounts."
                     actions={
-                        <AdminSecondaryButton>
-                            <Download className="size-4" />
-                            Export
-                        </AdminSecondaryButton>
+                        <div className="flex flex-wrap gap-2">
+                            <a href={`/admin/job-seekers/export${query}`}>
+                                <AdminSecondaryButton>
+                                    <Download className="size-4" />
+                                    Export
+                                </AdminSecondaryButton>
+                            </a>
+                            <Link href="/admin/job-seekers/create">
+                                <AdminPrimaryButton>
+                                    <Plus className="size-4" />
+                                    Add Job Seeker
+                                </AdminPrimaryButton>
+                            </Link>
+                        </div>
                     }
                 />
 
+                {flash.success && (
+                    <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
+                        {typeof flash.success === 'string'
+                            ? flash.success
+                            : 'Saved successfully.'}
+                    </div>
+                )}
+
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {jobSeekerDemo.stats.map((stat) => (
+                    {[
+                        ['Total Job Seekers', stats.total, 'text-[#0057c8]'],
+                        [
+                            'Active Job Seekers',
+                            stats.active,
+                            'text-[#10b981]',
+                        ],
+                        [
+                            'Suspended Job Seekers',
+                            stats.suspended,
+                            'text-[#ef4444]',
+                        ],
+                        [
+                            'Inactive Job Seekers',
+                            stats.inactive,
+                            'text-[#64748b]',
+                        ],
+                    ].map(([label, value, tone]) => (
                         <AdminStatCard
-                            key={stat.label}
-                            label={stat.label}
-                            value={stat.value}
-                            valueClassName={stat.tone}
+                            key={label}
+                            label={label}
+                            value={Number(value).toLocaleString()}
+                            valueClassName={tone}
                             icon={UserRound}
                         />
                     ))}
@@ -99,7 +200,13 @@ export default function JobSeekerManagement() {
 
                 <AdminPanel>
                     <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="relative max-w-md flex-1">
+                        <form
+                            className="relative max-w-md flex-1"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                visitList();
+                            }}
+                        >
                             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#94a3b8]" />
                             <input
                                 type="search"
@@ -110,29 +217,42 @@ export default function JobSeekerManagement() {
                                 }
                                 className="w-full rounded-xl border border-[#e2e8f0] bg-[#f8faff] py-2.5 pr-4 pl-10 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
                             />
-                        </div>
+                        </form>
                         <div className="flex flex-wrap gap-2">
                             <select
-                                value={statusFilter}
+                                value={filters.status || 'all'}
                                 onChange={(event) =>
-                                    setStatusFilter(event.target.value)
+                                    visitList(event.target.value)
                                 }
                                 className="rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm font-semibold text-[#64748b] outline-none focus:border-[#0057c8]"
                             >
-                                <option>All Status</option>
-                                <option>Active</option>
-                                <option>Inactive</option>
-                                <option>Suspended</option>
+                                <option value="all">All Status</option>
+                                {options.statuses.map((status) => (
+                                    <option
+                                        key={status.value}
+                                        value={status.value}
+                                    >
+                                        {status.label}
+                                    </option>
+                                ))}
                             </select>
                             <select
-                                value={countryFilter}
+                                value={filters.location || 'all'}
                                 onChange={(event) =>
-                                    setCountryFilter(event.target.value)
+                                    visitList(
+                                        filters.status,
+                                        event.target.value,
+                                    )
                                 }
                                 className="rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm font-semibold text-[#64748b] outline-none focus:border-[#0057c8]"
                             >
-                                <option>All Countries</option>
-                                <option>UAE</option>
+                                <option value="all">All Countries</option>
+                                <option value="UAE">UAE</option>
+                                {options.locations.map((location) => (
+                                    <option key={location} value={location}>
+                                        {location}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>
@@ -150,7 +270,7 @@ export default function JobSeekerManagement() {
                             'Actions',
                         ]}
                     >
-                        {filteredRows.map((row) => (
+                        {jobSeekers.data.map((row) => (
                             <tr
                                 key={row.id}
                                 className="border-b border-[#e2e8f0] last:border-0 hover:bg-[#f8faff]"
@@ -177,7 +297,7 @@ export default function JobSeekerManagement() {
                                     />
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
-                                    {row.date}
+                                    {row.date ?? '—'}
                                 </td>
                                 <td className="px-3 py-3">
                                     <AdminStatusBadge
@@ -187,20 +307,32 @@ export default function JobSeekerManagement() {
                                 </td>
                                 <td className="px-3 py-3">
                                     <div className="flex items-center gap-1.5">
-                                        <button
-                                            type="button"
+                                        <Link
+                                            href={`/admin/job-seekers/${row.id}`}
                                             className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8faff]"
                                             aria-label="View job seeker"
                                         >
                                             <Eye className="size-4" />
-                                        </button>
-                                        {row.status === 'Suspended' ? (
+                                        </Link>
+                                        <Link
+                                            href={`/admin/job-seekers/${row.id}/edit`}
+                                            className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8faff]"
+                                            aria-label="Edit job seeker"
+                                        >
+                                            <Pencil className="size-4" />
+                                        </Link>
+                                        {row.can_reactivate ? (
                                             <button
                                                 type="button"
                                                 className={cn(
                                                     'rounded-lg px-3 py-1.5 text-xs font-semibold',
                                                     'bg-[#d1fae5] text-[#065f46] hover:bg-[#a7f3d0]',
                                                 )}
+                                                onClick={() =>
+                                                    router.post(
+                                                        `/admin/job-seekers/${row.id}/reactivate`,
+                                                    )
+                                                }
                                             >
                                                 Reactivate
                                             </button>
@@ -211,6 +343,11 @@ export default function JobSeekerManagement() {
                                                     'rounded-lg px-3 py-1.5 text-xs font-semibold',
                                                     'bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca]',
                                                 )}
+                                                onClick={() =>
+                                                    router.post(
+                                                        `/admin/job-seekers/${row.id}/suspend`,
+                                                    )
+                                                }
                                             >
                                                 Suspend
                                             </button>
@@ -221,8 +358,15 @@ export default function JobSeekerManagement() {
                         ))}
                     </AdminTableShell>
 
+                    {jobSeekers.data.length === 0 && (
+                        <p className="mt-6 text-center text-sm text-[#99a1af]">
+                            No job seekers match these filters.
+                        </p>
+                    )}
+
                     <AdminPagination
-                        showingLabel={`Showing ${filteredRows.length} of ${jobSeekerDemo.rows.length}`}
+                        showingLabel={`Showing ${jobSeekers.from ?? 0}-${jobSeekers.to ?? 0} of ${jobSeekers.total}`}
+                        links={jobSeekers.links}
                     />
                 </AdminPanel>
             </div>

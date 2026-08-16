@@ -1,4 +1,4 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 import EmployerLayout from '@/layouts/employer-layout';
@@ -20,9 +20,24 @@ const TABS: { id: SettingsTab; label: string; danger?: boolean }[] = [
     { id: 'danger', label: 'Danger Zone', danger: true },
 ];
 
-export default function EmployerSettings() {
-    const { auth } = usePage<SharedData>().props;
+export default function EmployerSettings({
+    profile,
+}: {
+    profile: { name: string | null; email: string | null; company_name: string | null };
+}) {
+    const { auth, flash } = usePage<SharedData>().props;
     const [activeTab, setActiveTab] = useState<SettingsTab>('account');
+    const accountForm = useForm({
+        name: profile?.name || auth.user.name,
+        email: profile?.email || auth.user.email,
+        company_name: profile?.company_name || auth.user.company_name || '',
+        contact_name: profile?.name || auth.user.name,
+    });
+    const passwordForm = useForm({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
+    });
     const [emailAlerts, setEmailAlerts] = useState(true);
     const [applicationAlerts, setApplicationAlerts] = useState(true);
     const [billingAlerts, setBillingAlerts] = useState(false);
@@ -69,19 +84,38 @@ export default function EmployerSettings() {
                     <div className="min-w-0 flex-1 rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
                         {activeTab === 'account' && (
                             <div className="space-y-8">
-                                <div>
+                                {flash.success && (
+                                    <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
+                                        {typeof flash.success === 'string'
+                                            ? flash.success
+                                            : 'Saved successfully.'}
+                                    </div>
+                                )}
+                                <form
+                                    className="space-y-4"
+                                    onSubmit={(event) => {
+                                        event.preventDefault();
+                                        accountForm.put('/employer/profile');
+                                    }}
+                                >
                                     <h2 className="text-base font-bold text-[#050315]">
                                         Account Information
                                     </h2>
-                                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                                    <div className="grid gap-4 sm:grid-cols-2">
                                         <label className="block">
                                             <span className="text-xs font-medium text-[#6b7280]">
                                                 Contact Name
                                             </span>
                                             <input
                                                 type="text"
-                                                defaultValue={auth.user.name}
-                                                className="mt-1 w-full rounded-lg border border-[#e8d5e8] bg-[#f8faff] px-3 py-2 text-sm text-[#050315] focus:border-[#0057c8] focus:outline-none"
+                                                value={accountForm.data.name}
+                                                onChange={(event) =>
+                                                    accountForm.setData(
+                                                        'name',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                className="mt-1 w-full rounded-lg border border-[#e8d5e8] bg-[#f8faff] px-3 py-2 text-sm"
                                             />
                                         </label>
                                         <label className="block">
@@ -90,64 +124,87 @@ export default function EmployerSettings() {
                                             </span>
                                             <input
                                                 type="email"
-                                                defaultValue={auth.user.email}
-                                                className="mt-1 w-full rounded-lg border border-[#e8d5e8] bg-[#f8faff] px-3 py-2 text-sm text-[#050315] focus:border-[#0057c8] focus:outline-none"
-                                            />
-                                        </label>
-                                        <label className="block sm:col-span-2">
-                                            <span className="text-xs font-medium text-[#6b7280]">
-                                                Phone
-                                            </span>
-                                            <input
-                                                type="tel"
-                                                defaultValue="+971 4 123 4567"
-                                                className="mt-1 w-full rounded-lg border border-[#e8d5e8] bg-[#f8faff] px-3 py-2 text-sm text-[#050315] focus:border-[#0057c8] focus:outline-none"
+                                                value={accountForm.data.email}
+                                                onChange={(event) =>
+                                                    accountForm.setData(
+                                                        'email',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                className="mt-1 w-full rounded-lg border border-[#e8d5e8] bg-[#f8faff] px-3 py-2 text-sm"
                                             />
                                         </label>
                                     </div>
-                                </div>
-
-                                <div>
+                                    <button
+                                        type="submit"
+                                        className="rounded-lg bg-[#0057c8] px-6 py-2.5 text-sm font-semibold text-white"
+                                        disabled={accountForm.processing}
+                                    >
+                                        Save Changes
+                                    </button>
+                                </form>
+                                <form
+                                    className="space-y-4"
+                                    onSubmit={(event) => {
+                                        event.preventDefault();
+                                        passwordForm.put('/settings/password', {
+                                            onSuccess: () =>
+                                                passwordForm.reset(),
+                                        });
+                                    }}
+                                >
                                     <h2 className="text-base font-bold text-[#050315]">
                                         Change Password
                                     </h2>
-                                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                                        <label className="block">
-                                            <span className="text-xs font-medium text-[#6b7280]">
-                                                Current Password
-                                            </span>
-                                            <input
-                                                type="password"
-                                                className="mt-1 w-full rounded-lg border border-[#e8d5e8] bg-[#f8faff] px-3 py-2 text-sm focus:border-[#0057c8] focus:outline-none"
-                                            />
-                                        </label>
-                                        <label className="block">
-                                            <span className="text-xs font-medium text-[#6b7280]">
-                                                New Password
-                                            </span>
-                                            <input
-                                                type="password"
-                                                className="mt-1 w-full rounded-lg border border-[#e8d5e8] bg-[#f8faff] px-3 py-2 text-sm focus:border-[#0057c8] focus:outline-none"
-                                            />
-                                        </label>
-                                        <label className="block sm:col-span-2">
-                                            <span className="text-xs font-medium text-[#6b7280]">
-                                                Confirm New Password
-                                            </span>
-                                            <input
-                                                type="password"
-                                                className="mt-1 w-full rounded-lg border border-[#e8d5e8] bg-[#f8faff] px-3 py-2 text-sm focus:border-[#0057c8] focus:outline-none"
-                                            />
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    className="rounded-lg bg-[#0057c8] px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                                >
-                                    Save Changes
-                                </button>
+                                    <input
+                                        type="password"
+                                        placeholder="Current password"
+                                        value={
+                                            passwordForm.data.current_password
+                                        }
+                                        onChange={(event) =>
+                                            passwordForm.setData(
+                                                'current_password',
+                                                event.target.value,
+                                            )
+                                        }
+                                        className="w-full rounded-lg border px-3 py-2 text-sm"
+                                    />
+                                    <input
+                                        type="password"
+                                        placeholder="New password"
+                                        value={passwordForm.data.password}
+                                        onChange={(event) =>
+                                            passwordForm.setData(
+                                                'password',
+                                                event.target.value,
+                                            )
+                                        }
+                                        className="w-full rounded-lg border px-3 py-2 text-sm"
+                                    />
+                                    <input
+                                        type="password"
+                                        placeholder="Confirm new password"
+                                        value={
+                                            passwordForm.data
+                                                .password_confirmation
+                                        }
+                                        onChange={(event) =>
+                                            passwordForm.setData(
+                                                'password_confirmation',
+                                                event.target.value,
+                                            )
+                                        }
+                                        className="w-full rounded-lg border px-3 py-2 text-sm"
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="rounded-lg bg-[#0057c8] px-6 py-2.5 text-sm font-semibold text-white"
+                                        disabled={passwordForm.processing}
+                                    >
+                                        Update password
+                                    </button>
+                                </form>
                             </div>
                         )}
 

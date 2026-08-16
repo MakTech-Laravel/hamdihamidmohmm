@@ -1,13 +1,5 @@
-import { Head } from '@inertiajs/react';
-import {
-    AlertCircle,
-    Check,
-    CreditCard,
-    DollarSign,
-    Download,
-    RefreshCw,
-    TrendingUp,
-} from 'lucide-react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { CreditCard, Download, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
 import {
@@ -15,115 +7,106 @@ import {
     AdminPageHeader,
     AdminPagination,
     AdminPanel,
+    AdminPrimaryButton,
     AdminSecondaryButton,
     AdminStatCard,
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
+import type { SharedData } from '@/types';
 
-const revenueStats = [
-    {
-        label: "Today's Revenue",
-        value: 'AED 9,798',
-        tone: 'text-[#e57124]',
-    },
-    { label: 'Monthly Revenue', value: 'AED 134K', tone: 'text-[#0057c8]' },
-    { label: 'Failed Payments', value: '3', tone: 'text-[#ef4444]' },
-    {
-        label: 'Refund Requests',
-        value: '7',
-        tone: 'text-[#3977a6]',
-    },
-];
+type PaymentRow = {
+    id: number;
+    reference: string;
+    employer: string | null;
+    package: string;
+    amount: number;
+    method: string;
+    status: string;
+    status_value: string | null;
+    date: string | null;
+};
 
-const rangeChips = ['7D', '30D', '3M', '1Y'] as const;
+type Props = {
+    payments: {
+        data: PaymentRow[];
+        links: Array<{ url: string | null; label: string; active: boolean }>;
+        from: number | null;
+        to: number | null;
+        total: number;
+    };
+    filters: { status: string; range: string };
+    stats: { today: number; monthly: number; failed: number; refunded: number };
+    chart: { range: string; labels: string[]; values: number[] };
+    employers: Array<{ id: number; name: string; company_name: string | null }>;
+    packages: Array<{ id: number; name: string; price: number }>;
+};
 
-const transactions = [
-    {
-        id: 'TXN-48291',
-        employer: 'Emirates Tech Solutions',
-        package: 'Enterprise',
-        amount: 'AED 1,999',
-        method: 'Credit Card',
-        date: '2024-03-12',
-        status: 'Completed',
-    },
-    {
-        id: 'TXN-48290',
-        employer: 'Gulf Construction Co.',
-        package: 'Professional',
-        amount: 'AED 799',
-        method: 'Bank Transfer',
-        date: '2024-03-12',
-        status: 'Completed',
-    },
-    {
-        id: 'TXN-48289',
-        employer: 'Nova Retail LLC',
-        package: 'Starter',
-        amount: 'AED 299',
-        method: 'Credit Card',
-        date: '2024-03-11',
-        status: 'Failed',
-    },
-    {
-        id: 'TXN-48288',
-        employer: 'Apex Logistics',
-        package: 'Professional',
-        amount: 'AED 799',
-        method: 'Credit Card',
-        date: '2024-03-11',
-        status: 'Refund Requested',
-    },
-    {
-        id: 'TXN-48287',
-        employer: 'Bright Health Clinics',
-        package: 'Starter',
-        amount: 'AED 299',
-        method: 'Credit Card',
-        date: '2024-03-10',
-        status: 'Completed',
-    },
-    {
-        id: 'TXN-48286',
-        employer: 'Horizon Media',
-        package: 'Enterprise',
-        amount: 'AED 1,999',
-        method: 'Bank Transfer',
-        date: '2024-03-10',
-        status: 'Pending',
-    },
-    {
-        id: 'TXN-48285',
-        employer: 'Desert Finance Group',
-        package: 'Professional',
-        amount: 'AED 799',
-        method: 'Credit Card',
-        date: '2024-03-09',
-        status: 'Completed',
-    },
-];
+const rangeChips = [
+    ['7d', '7D'],
+    ['30d', '30D'],
+    ['90d', '3M'],
+    ['12m', '1Y'],
+] as const;
 
-function transactionStatusTone(
-    status: string,
-): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
-    if (status === 'Completed') {
+function statusTone(
+    value: string,
+): 'success' | 'warning' | 'danger' | 'neutral' {
+    if (value === 'Completed') {
         return 'success';
     }
-    if (status === 'Pending' || status === 'Refund Requested') {
+    if (value === 'Pending') {
         return 'warning';
     }
-    if (status === 'Failed') {
+    if (value === 'Failed' || value === 'Refunded') {
         return 'danger';
     }
+
     return 'neutral';
 }
 
-export default function PaymentsRevenue() {
-    const [activeRange, setActiveRange] =
-        useState<(typeof rangeChips)[number]>('30D');
+export default function PaymentsRevenue({
+    payments,
+    filters,
+    stats,
+    chart,
+    employers,
+    packages,
+}: Props) {
+    const { flash } = usePage<SharedData>().props;
+    const [creating, setCreating] = useState(false);
+    const form = useForm({
+        employer_id: '',
+        package_id: '',
+        amount: 0,
+        method: 'bank_transfer',
+        status: 'completed',
+        reference: '',
+    });
+    const maxValue = Math.max(...chart.values, 1);
+
+    const visit = (status: string, range = filters.range): void => {
+        router.get(
+            '/admin/payments',
+            {
+                ...(status && status !== 'all' ? { status } : {}),
+                range,
+            },
+            { preserveState: true, replace: true },
+        );
+    };
 
     return (
         <AdminPortalLayout>
@@ -132,152 +115,185 @@ export default function PaymentsRevenue() {
             <div className="space-y-6 p-6">
                 <AdminPageHeader
                     title="Payments & Revenue"
-                    subtitle="Monitor transactions, manage refunds, and track revenue performance."
+                    subtitle="Record, approve, refund, and retry in-app payments."
                     actions={
-                        <AdminSecondaryButton>
-                            <Download className="size-4" />
-                            Export
-                        </AdminSecondaryButton>
+                        <div className="flex gap-2">
+                            <a href="/admin/payments/export">
+                                <AdminSecondaryButton>
+                                    <Download className="size-4" />
+                                    Export
+                                </AdminSecondaryButton>
+                            </a>
+                            <AdminPrimaryButton onClick={() => setCreating(true)}>
+                                Record payment
+                            </AdminPrimaryButton>
+                        </div>
                     }
                 />
 
+                {flash.success && (
+                    <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
+                        {typeof flash.success === 'string'
+                            ? flash.success
+                            : 'Saved successfully.'}
+                    </div>
+                )}
+
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {revenueStats.map((stat, index) => (
-                        <AdminStatCard
-                            key={stat.label}
-                            label={stat.label}
-                            value={stat.value}
-                            valueClassName={stat.tone}
-                            icon={
-                                [DollarSign, TrendingUp, AlertCircle, RefreshCw][
-                                    index
-                                ]
-                            }
-                        />
-                    ))}
+                    <AdminStatCard
+                        label="Today's Revenue"
+                        value={`AED ${stats.today.toLocaleString()}`}
+                        valueClassName="text-[#e57124]"
+                        icon={CreditCard}
+                    />
+                    <AdminStatCard
+                        label="Monthly Revenue"
+                        value={`AED ${stats.monthly.toLocaleString()}`}
+                        valueClassName="text-[#0057c8]"
+                        icon={CreditCard}
+                    />
+                    <AdminStatCard
+                        label="Failed Payments"
+                        value={String(stats.failed)}
+                        valueClassName="text-[#ef4444]"
+                        icon={CreditCard}
+                    />
+                    <AdminStatCard
+                        label="Refunded"
+                        value={String(stats.refunded)}
+                        valueClassName="text-[#3977a6]"
+                        icon={CreditCard}
+                    />
                 </div>
 
                 <AdminPanel>
-                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <h2 className="text-base font-bold text-[#050315]">
-                                Revenue Trend
-                            </h2>
-                            <p className="text-xs text-[#64748b]">
-                                Daily revenue performance
-                            </p>
-                        </div>
-                        <div className="flex gap-2">
-                            {rangeChips.map((chip) => (
-                                <AdminFilterChip
-                                    key={chip}
-                                    label={chip}
-                                    active={activeRange === chip}
-                                    onClick={() => setActiveRange(chip)}
-                                />
-                            ))}
-                        </div>
+                    <div className="mb-4 flex flex-wrap gap-2">
+                        {rangeChips.map(([key, label]) => (
+                            <AdminFilterChip
+                                key={key}
+                                label={label}
+                                active={(filters.range || '30d') === key}
+                                onClick={() => visit(filters.status, key)}
+                            />
+                        ))}
                     </div>
-                    <div className="relative h-52 overflow-hidden rounded-xl bg-[#f8faff]">
-                        <svg
-                            viewBox="0 0 640 200"
-                            className="h-full w-full"
-                            preserveAspectRatio="none"
-                        >
-                            <polyline
-                                fill="none"
-                                stroke="#0057c8"
-                                strokeWidth="3"
-                                points="20,150 80,120 140,130 200,90 260,100 320,60 380,80 440,45 500,65 560,30 620,50"
-                            />
-                            <polyline
-                                fill="none"
-                                stroke="#e57124"
-                                strokeWidth="2"
-                                strokeDasharray="6 4"
-                                points="20,160 80,145 140,140 200,135 260,120 320,115 380,110 440,100 500,95 560,85 620,75"
-                            />
-                        </svg>
+                    <div className="flex h-40 items-end gap-1">
+                        {chart.values.map((value, index) => (
+                            <div
+                                key={`${chart.labels[index]}-${index}`}
+                                className="flex flex-1 flex-col items-center gap-1"
+                            >
+                                <div
+                                    className="w-full rounded-t bg-[#0057c8]"
+                                    style={{
+                                        height: `${Math.max((value / maxValue) * 100, 4)}%`,
+                                    }}
+                                />
+                            </div>
+                        ))}
                     </div>
                 </AdminPanel>
 
                 <AdminPanel>
+                    <div className="mb-4 flex flex-wrap gap-2">
+                        {[
+                            ['all', 'All'],
+                            ['pending', 'Pending'],
+                            ['completed', 'Completed'],
+                            ['failed', 'Failed'],
+                            ['refunded', 'Refunded'],
+                        ].map(([key, label]) => (
+                            <AdminFilterChip
+                                key={key}
+                                label={label}
+                                active={(filters.status || 'all') === key}
+                                onClick={() => visit(key)}
+                            />
+                        ))}
+                    </div>
+
                     <AdminTableShell
                         headers={[
-                            'ID',
+                            'Reference',
                             'Employer',
                             'Package',
                             'Amount',
                             'Method',
-                            'Date',
                             'Status',
+                            'Date',
                             'Actions',
                         ]}
                     >
-                        {transactions.map((txn) => (
+                        {payments.data.map((row) => (
                             <tr
-                                key={txn.id}
+                                key={row.id}
                                 className="border-b border-[#e2e8f0] last:border-0 hover:bg-[#f8faff]"
                             >
-                                <td className="px-3 py-3 font-mono text-xs text-[#64748b]">
-                                    {txn.id}
-                                </td>
                                 <td className="px-3 py-3 font-semibold text-[#050315]">
-                                    {txn.employer}
+                                    {row.reference}
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
-                                    {txn.package}
-                                </td>
-                                <td className="px-3 py-3 font-semibold text-[#050315]">
-                                    {txn.amount}
+                                    {row.employer}
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
-                                    <span className="inline-flex items-center gap-1.5">
-                                        <CreditCard className="size-3.5" />
-                                        {txn.method}
-                                    </span>
+                                    {row.package}
+                                </td>
+                                <td className="px-3 py-3 font-semibold">
+                                    AED {row.amount.toLocaleString()}
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
-                                    {txn.date}
+                                    {row.method}
                                 </td>
                                 <td className="px-3 py-3">
                                     <AdminStatusBadge
-                                        label={txn.status}
-                                        tone={transactionStatusTone(
-                                            txn.status,
-                                        )}
+                                        label={row.status}
+                                        tone={statusTone(row.status)}
                                     />
                                 </td>
+                                <td className="px-3 py-3 text-[#64748b]">
+                                    {row.date ?? '—'}
+                                </td>
                                 <td className="px-3 py-3">
-                                    <div className="flex items-center gap-1.5">
-                                        {txn.status === 'Refund Requested' && (
-                                            <>
-                                                <button
-                                                    type="button"
-                                                    className={cn(
-                                                        'rounded-lg px-2.5 py-1.5 text-xs font-semibold',
-                                                        'bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca]',
-                                                    )}
-                                                >
-                                                    Refund
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className={cn(
-                                                        'rounded-lg px-2.5 py-1.5 text-xs font-semibold',
-                                                        'bg-[#d1fae5] text-[#065f46] hover:bg-[#a7f3d0]',
-                                                    )}
-                                                >
-                                                    <Check className="mr-1 inline size-3" />
-                                                    Approve
-                                                </button>
-                                            </>
-                                        )}
-                                        {txn.status === 'Failed' && (
+                                    <div className="flex gap-1">
+                                        {row.status_value !== 'completed' && (
                                             <button
                                                 type="button"
-                                                className="rounded-lg border border-[#e2e8f0] px-2.5 py-1.5 text-xs font-semibold text-[#64748b] hover:bg-[#f8faff]"
+                                                className="rounded-lg border border-[#d1fae5] px-2 py-1 text-xs text-[#065f46]"
+                                                onClick={() =>
+                                                    router.post(
+                                                        `/admin/payments/${row.id}/approve`,
+                                                    )
+                                                }
                                             >
+                                                Approve
+                                            </button>
+                                        )}
+                                        {row.status_value === 'completed' && (
+                                            <button
+                                                type="button"
+                                                className="rounded-lg border border-[#fee2e2] px-2 py-1 text-xs text-[#991b1b]"
+                                                onClick={() =>
+                                                    router.post(
+                                                        `/admin/payments/${row.id}/refund`,
+                                                    )
+                                                }
+                                            >
+                                                Refund
+                                            </button>
+                                        )}
+                                        {row.status_value === 'failed' && (
+                                            <button
+                                                type="button"
+                                                className={cn(
+                                                    'rounded-lg border border-[#e2e8f0] px-2 py-1 text-xs',
+                                                )}
+                                                onClick={() =>
+                                                    router.post(
+                                                        `/admin/payments/${row.id}/retry`,
+                                                    )
+                                                }
+                                            >
+                                                <RefreshCw className="inline size-3" />{' '}
                                                 Retry
                                             </button>
                                         )}
@@ -287,9 +303,122 @@ export default function PaymentsRevenue() {
                         ))}
                     </AdminTableShell>
 
-                    <AdminPagination showingLabel="Showing 7 of 1,284" />
+                    {payments.data.length === 0 && (
+                        <p className="mt-6 text-center text-sm text-[#99a1af]">
+                            No payments recorded.
+                        </p>
+                    )}
+
+                    <AdminPagination
+                        showingLabel={`Showing ${payments.from ?? 0}-${payments.to ?? 0} of ${payments.total}`}
+                        links={payments.links}
+                    />
                 </AdminPanel>
             </div>
+
+            <Dialog open={creating} onOpenChange={setCreating}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Record payment</DialogTitle>
+                    </DialogHeader>
+                    <form
+                        className="space-y-3"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            form.post('/admin/payments', {
+                                onSuccess: () => setCreating(false),
+                            });
+                        }}
+                    >
+                        <div>
+                            <Label>Employer</Label>
+                            <select
+                                className="mt-1 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm"
+                                value={form.data.employer_id}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'employer_id',
+                                        event.target.value,
+                                    )
+                                }
+                            >
+                                <option value="">Select employer</option>
+                                {employers.map((employer) => (
+                                    <option key={employer.id} value={employer.id}>
+                                        {employer.company_name || employer.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <Label>Package</Label>
+                            <select
+                                className="mt-1 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm"
+                                value={form.data.package_id}
+                                onChange={(event) => {
+                                    const packageId = event.target.value;
+                                    const selected = packages.find(
+                                        (item) => String(item.id) === packageId,
+                                    );
+                                    form.setData({
+                                        ...form.data,
+                                        package_id: packageId,
+                                        amount: selected?.price ?? form.data.amount,
+                                    });
+                                }}
+                            >
+                                <option value="">None</option>
+                                {packages.map((item) => (
+                                    <option key={item.id} value={item.id}>
+                                        {item.name} (AED {item.price})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <Label>Amount</Label>
+                            <Input
+                                type="number"
+                                value={form.data.amount}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'amount',
+                                        Number(event.target.value),
+                                    )
+                                }
+                            />
+                        </div>
+                        <div>
+                            <Label>Method</Label>
+                            <Input
+                                value={form.data.method}
+                                onChange={(event) =>
+                                    form.setData('method', event.target.value)
+                                }
+                            />
+                        </div>
+                        <div>
+                            <Label>Status</Label>
+                            <select
+                                className="mt-1 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm"
+                                value={form.data.status}
+                                onChange={(event) =>
+                                    form.setData('status', event.target.value)
+                                }
+                            >
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                        <DialogFooter>
+                            <Button type="submit" disabled={form.processing}>
+                                Save
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </AdminPortalLayout>
     );
 }

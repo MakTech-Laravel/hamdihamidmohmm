@@ -7,7 +7,7 @@ import type { SharedData } from '@/types';
 
 export function EmployerHeader({
     title,
-    unreadCount = 2,
+    unreadCount = 0,
 }: {
     title: string;
     unreadCount?: number;

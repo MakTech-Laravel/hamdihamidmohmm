@@ -11,6 +11,8 @@ enum ActivityAction: string
     case PasswordUpdated = 'password_updated';
     case EmployerApproved = 'employer_approved';
     case EmployerRejected = 'employer_rejected';
+    case JobSeekerSuspended = 'job_seeker_suspended';
+    case JobSeekerReactivated = 'job_seeker_reactivated';
 
     public function label(): string
     {
@@ -22,6 +24,8 @@ enum ActivityAction: string
             self::PasswordUpdated => 'Password updated',
             self::EmployerApproved => 'Employer approved',
             self::EmployerRejected => 'Employer rejected',
+            self::JobSeekerSuspended => 'Job seeker suspended',
+            self::JobSeekerReactivated => 'Job seeker reactivated',
         };
     }
 }

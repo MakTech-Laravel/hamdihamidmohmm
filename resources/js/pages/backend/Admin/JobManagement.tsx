@@ -1,16 +1,7 @@
-import { Head } from '@inertiajs/react';
-import {
-    Briefcase,
-    Check,
-    Download,
-    Eye,
-    Search,
-    Star,
-    X,
-} from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Briefcase, Check, Download, Eye, Search, Star, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { jobDemo } from '@/components/admin-portal/demo-data';
 import {
     AdminFilterChip,
     AdminPageHeader,
@@ -21,15 +12,60 @@ import {
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
-import { cn } from '@/lib/utils';
+import type { SharedData } from '@/types';
+
+type JobRow = {
+    id: number;
+    title: string;
+    employer: string;
+    category: string;
+    location: string;
+    applications: number;
+    views: number;
+    status: string;
+    status_value: string;
+    featured: boolean;
+    created: string | null;
+    can_review: boolean;
+};
+
+type Props = {
+    jobs: {
+        data: JobRow[];
+        links: Array<{ url: string | null; label: string; active: boolean }>;
+        from: number | null;
+        to: number | null;
+        total: number;
+    };
+    filters: { status: string; search: string };
+    stats: {
+        total: number;
+        active: number;
+        pending: number;
+        rejected: number;
+        expired: number;
+        featured: number;
+    };
+};
 
 const filterChips = [
-    'All',
-    'Active',
-    'Pending',
-    'Rejected',
-    'Expired',
+    ['all', 'All'],
+    ['active', 'Active'],
+    ['pending', 'Pending'],
+    ['rejected', 'Rejected'],
+    ['expired', 'Expired'],
 ] as const;
 
 function jobStatusTone(
@@ -44,30 +80,44 @@ function jobStatusTone(
     if (value === 'Rejected') {
         return 'danger';
     }
+
     return 'neutral';
 }
 
-export default function JobManagement() {
-    const [search, setSearch] = useState('');
-    const [activeFilter, setActiveFilter] =
-        useState<(typeof filterChips)[number]>('All');
+export default function JobManagement({ jobs, filters, stats }: Props) {
+    const { flash } = usePage<SharedData>().props;
+    const [search, setSearch] = useState(filters.search ?? '');
+    const [rejecting, setRejecting] = useState<JobRow | null>(null);
+    const [rejectionReason, setRejectionReason] = useState('');
 
-    const filteredRows = useMemo(() => {
-        const query = search.trim().toLowerCase();
+    const query = useMemo(() => {
+        const params = new URLSearchParams();
 
-        return jobDemo.rows.filter((row) => {
-            const matchesFilter =
-                activeFilter === 'All' || row.status === activeFilter;
-            const matchesSearch =
-                query === '' ||
-                row.title.toLowerCase().includes(query) ||
-                row.employer.toLowerCase().includes(query) ||
-                row.category.toLowerCase().includes(query) ||
-                row.location.toLowerCase().includes(query);
+        if (filters.status) {
+            params.set('status', filters.status);
+        }
 
-            return matchesFilter && matchesSearch;
-        });
-    }, [activeFilter, search]);
+        if (search.trim() !== '') {
+            params.set('search', search.trim());
+        }
+
+        const encoded = params.toString();
+
+        return encoded === '' ? '' : `?${encoded}`;
+    }, [filters.status, search]);
+
+    const visitList = (status: string, searchValue = search): void => {
+        router.get(
+            '/admin/jobs',
+            {
+                ...(status !== 'all' && status !== '' ? { status } : {}),
+                ...(searchValue.trim() !== ''
+                    ? { search: searchValue.trim() }
+                    : {}),
+            },
+            { preserveState: true, replace: true },
+        );
+    };
 
     return (
         <AdminPortalLayout>
@@ -78,20 +128,37 @@ export default function JobManagement() {
                     title="Job Management"
                     subtitle="Review, approve, moderate, and feature job listings."
                     actions={
-                        <AdminSecondaryButton>
-                            <Download className="size-4" />
-                            Export
-                        </AdminSecondaryButton>
+                        <a href={`/admin/jobs/export${query}`}>
+                            <AdminSecondaryButton>
+                                <Download className="size-4" />
+                                Export
+                            </AdminSecondaryButton>
+                        </a>
                     }
                 />
 
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
-                    {jobDemo.stats.map((stat) => (
+                {flash.success && (
+                    <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
+                        {typeof flash.success === 'string'
+                            ? flash.success
+                            : 'Saved successfully.'}
+                    </div>
+                )}
+
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+                    {[
+                        ['Total Jobs', stats.total, 'text-[#0057c8]'],
+                        ['Active', stats.active, 'text-[#10b981]'],
+                        ['Pending', stats.pending, 'text-[#e57124]'],
+                        ['Rejected', stats.rejected, 'text-[#ef4444]'],
+                        ['Expired', stats.expired, 'text-[#64748b]'],
+                        ['Featured', stats.featured, 'text-[#7c3aed]'],
+                    ].map(([label, value, tone]) => (
                         <AdminStatCard
-                            key={stat.label}
-                            label={stat.label}
-                            value={stat.value}
-                            valueClassName={stat.tone}
+                            key={label}
+                            label={label}
+                            value={Number(value).toLocaleString()}
+                            valueClassName={tone}
                             icon={Briefcase}
                         />
                     ))}
@@ -99,7 +166,13 @@ export default function JobManagement() {
 
                 <AdminPanel>
                     <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="relative max-w-md flex-1">
+                        <form
+                            className="relative max-w-md flex-1"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                visitList(filters.status || 'all');
+                            }}
+                        >
                             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#94a3b8]" />
                             <input
                                 type="search"
@@ -110,14 +183,14 @@ export default function JobManagement() {
                                 }
                                 className="w-full rounded-xl border border-[#e2e8f0] bg-[#f8faff] py-2.5 pr-4 pl-10 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
                             />
-                        </div>
+                        </form>
                         <div className="flex flex-wrap items-center gap-2">
-                            {filterChips.map((chip) => (
+                            {filterChips.map(([key, label]) => (
                                 <AdminFilterChip
-                                    key={chip}
-                                    label={chip}
-                                    active={activeFilter === chip}
-                                    onClick={() => setActiveFilter(chip)}
+                                    key={key}
+                                    label={label}
+                                    active={(filters.status || 'all') === key}
+                                    onClick={() => visitList(key)}
                                 />
                             ))}
                         </div>
@@ -125,18 +198,17 @@ export default function JobManagement() {
 
                     <AdminTableShell
                         headers={[
-                            'Job Title',
+                            'Title',
                             'Employer',
                             'Category',
                             'Location',
-                            'Applications',
+                            'Apps',
                             'Views',
                             'Status',
-                            'Created',
                             'Actions',
                         ]}
                     >
-                        {filteredRows.map((row) => (
+                        {jobs.data.map((row) => (
                             <tr
                                 key={row.id}
                                 className="border-b border-[#e2e8f0] last:border-0 hover:bg-[#f8faff]"
@@ -157,7 +229,7 @@ export default function JobManagement() {
                                     {row.applications}
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
-                                    {row.views.toLocaleString()}
+                                    {row.views}
                                 </td>
                                 <td className="px-3 py-3">
                                     <AdminStatusBadge
@@ -165,44 +237,56 @@ export default function JobManagement() {
                                         tone={jobStatusTone(row.status)}
                                     />
                                 </td>
-                                <td className="px-3 py-3 text-[#64748b]">
-                                    {row.created}
-                                </td>
                                 <td className="px-3 py-3">
                                     <div className="flex items-center gap-1.5">
-                                        <button
-                                            type="button"
+                                        <Link
+                                            href={`/admin/jobs/${row.id}`}
                                             className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8faff]"
                                             aria-label="View job"
                                         >
                                             <Eye className="size-4" />
-                                        </button>
+                                        </Link>
                                         <button
                                             type="button"
-                                            className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#e57124] hover:bg-[#fff7ed]"
-                                            aria-label="Feature job"
+                                            className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#fff7ed]"
+                                            aria-label="Toggle featured"
+                                            onClick={() =>
+                                                router.post(
+                                                    `/admin/jobs/${row.id}/feature`,
+                                                )
+                                            }
                                         >
-                                            <Star className="size-4" />
+                                            <Star
+                                                className="size-4"
+                                                fill={
+                                                    row.featured
+                                                        ? '#e57124'
+                                                        : 'none'
+                                                }
+                                            />
                                         </button>
-                                        {row.status === 'Pending' && (
+                                        {row.can_review && (
                                             <>
                                                 <button
                                                     type="button"
-                                                    className={cn(
-                                                        'flex size-8 items-center justify-center rounded-lg',
-                                                        'border border-[#d1fae5] bg-[#d1fae5] text-[#065f46] hover:bg-[#a7f3d0]',
-                                                    )}
+                                                    className="flex size-8 items-center justify-center rounded-lg border border-[#d1fae5] bg-[#d1fae5] text-[#065f46] hover:bg-[#a7f3d0]"
                                                     aria-label="Approve job"
+                                                    onClick={() =>
+                                                        router.post(
+                                                            `/admin/jobs/${row.id}/approve`,
+                                                        )
+                                                    }
                                                 >
                                                     <Check className="size-4" />
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className={cn(
-                                                        'flex size-8 items-center justify-center rounded-lg',
-                                                        'border border-[#fee2e2] bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca]',
-                                                    )}
+                                                    className="flex size-8 items-center justify-center rounded-lg border border-[#fee2e2] bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca]"
                                                     aria-label="Reject job"
+                                                    onClick={() => {
+                                                        setRejectionReason('');
+                                                        setRejecting(row);
+                                                    }}
                                                 >
                                                     <X className="size-4" />
                                                 </button>
@@ -214,11 +298,81 @@ export default function JobManagement() {
                         ))}
                     </AdminTableShell>
 
+                    {jobs.data.length === 0 && (
+                        <p className="mt-6 text-center text-sm text-[#99a1af]">
+                            No jobs match these filters.
+                        </p>
+                    )}
+
                     <AdminPagination
-                        showingLabel={`Showing ${filteredRows.length} of ${jobDemo.rows.length}`}
+                        showingLabel={`Showing ${jobs.from ?? 0}-${jobs.to ?? 0} of ${jobs.total}`}
+                        links={jobs.links}
                     />
                 </AdminPanel>
             </div>
+
+            <Dialog
+                open={rejecting !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setRejecting(null);
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reject job</DialogTitle>
+                        <DialogDescription>
+                            {rejecting
+                                ? `Tell the employer why “${rejecting.title}” is being rejected.`
+                                : 'Provide a rejection reason.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="rejection_reason">Reason</Label>
+                        <Textarea
+                            id="rejection_reason"
+                            value={rejectionReason}
+                            onChange={(event) =>
+                                setRejectionReason(event.target.value)
+                            }
+                            className="min-h-24 rounded-xl"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setRejecting(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            className="bg-[#b91c1c] text-white hover:bg-[#991b1b]"
+                            disabled={rejectionReason.trim() === ''}
+                            onClick={() => {
+                                if (rejecting === null) {
+                                    return;
+                                }
+
+                                router.post(
+                                    `/admin/jobs/${rejecting.id}/reject`,
+                                    {
+                                        rejection_reason:
+                                            rejectionReason.trim(),
+                                    },
+                                    {
+                                        onSuccess: () => setRejecting(null),
+                                    },
+                                );
+                            }}
+                        >
+                            Reject
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AdminPortalLayout>
     );
 }

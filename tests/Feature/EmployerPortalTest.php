@@ -11,9 +11,9 @@ test('employers can view the designed employer dashboard', function () {
     $this->actingAs($employer)
         ->get(route('employer.dashboard'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerDashboard')
-            ->has('user'));
+            ->has('stats'));
 });
 
 test('employers can open designed employer portal module pages', function (string $route, string $component) {
@@ -24,7 +24,7 @@ test('employers can open designed employer portal module pages', function (strin
     $this->actingAs($employer)
         ->get(route($route))
         ->assertOk()
-        ->assertInertia(fn($page) => $page->component($component));
+        ->assertInertia(fn ($page) => $page->component($component));
 })->with([
     ['employer.profile', 'backend/User/EmployerCompanyProfile'],
     ['employer.packages', 'backend/User/EmployerPackages'],

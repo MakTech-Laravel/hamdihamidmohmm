@@ -3,11 +3,13 @@
 namespace App\Providers;
 
 use App\Listeners\LogUserLogin;
+use App\Models\JobPost;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -27,6 +29,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        Route::bind('jobPost', function (string $value): JobPost {
+            return JobPost::query()
+                ->where('id', $value)
+                ->orWhere('slug', $value)
+                ->firstOrFail();
+        });
 
         Event::listen(Login::class, LogUserLogin::class);
     }

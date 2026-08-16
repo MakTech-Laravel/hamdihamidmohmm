@@ -55,6 +55,7 @@ export interface SharedData {
     dir: 'ltr' | 'rtl';
     translations: Record<string, string>;
     availableLocales: LocaleOption[];
+    unread_notifications?: number;
     [key: string]: unknown;
 }
 

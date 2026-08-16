@@ -1,4 +1,4 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { Globe, Lock, Mail, UserRound } from 'lucide-react';
 import { useState } from 'react';
 
@@ -20,9 +20,17 @@ const tabs = [
 type TabId = (typeof tabs)[number]['id'];
 
 export default function JobSeekerSettings() {
-    const { auth } = usePage<SharedData>().props;
+    const { auth, flash } = usePage<SharedData>().props;
     const [tab, setTab] = useState<TabId>('personal');
     const [twoFactor, setTwoFactor] = useState(false);
+    const profileForm = useForm({
+        name: auth.user.name,
+    });
+    const passwordForm = useForm({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
+    });
 
     return (
         <JobSeekerLayout title="Account Settings">
@@ -63,8 +71,21 @@ export default function JobSeekerSettings() {
                         })}
                     </div>
 
+                    {flash.success && (
+                        <div className="mb-4 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
+                            {typeof flash.success === 'string'
+                                ? flash.success
+                                : 'Saved successfully.'}
+                        </div>
+                    )}
                     {tab === 'personal' && (
-                        <div className="max-w-xl space-y-5">
+                        <form
+                            className="max-w-xl space-y-5"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                profileForm.put('/job-seeker/profile');
+                            }}
+                        >
                             <h2 className="text-base font-bold text-[#101828]">
                                 Personal Settings
                             </h2>
@@ -73,7 +94,13 @@ export default function JobSeekerSettings() {
                                     Display Name
                                 </Label>
                                 <Input
-                                    defaultValue={auth.user.name}
+                                    value={profileForm.data.name}
+                                    onChange={(event) =>
+                                        profileForm.setData(
+                                            'name',
+                                            event.target.value,
+                                        )
+                                    }
                                     className="rounded-xl border-[#e2e8f0]"
                                 />
                             </div>
@@ -97,42 +124,88 @@ export default function JobSeekerSettings() {
                                 </select>
                             </div>
                             <Button
-                                type="button"
+                                type="submit"
                                 className="rounded-xl bg-[#0057c8] text-white hover:bg-[#0046a3]"
+                                disabled={profileForm.processing}
                             >
                                 Save Changes
                             </Button>
-                        </div>
+                        </form>
                     )}
 
                     {tab === 'security' && (
                         <div className="max-w-xl space-y-8">
-                            <div className="space-y-5">
+                            <form
+                                className="space-y-5"
+                                onSubmit={(event) => {
+                                    event.preventDefault();
+                                    passwordForm.put('/settings/password', {
+                                        onSuccess: () => passwordForm.reset(),
+                                    });
+                                }}
+                            >
                                 <h2 className="text-base font-bold text-[#101828]">
                                     Security Settings
                                 </h2>
-                                {[
-                                    'Current Password',
-                                    'New Password',
-                                    'Confirm New Password',
-                                ].map((label) => (
-                                    <div key={label} className="space-y-1.5">
-                                        <Label className="text-xs text-[#99a1af]">
-                                            {label}
-                                        </Label>
-                                        <Input
-                                            type="password"
-                                            className="rounded-xl border-[#e2e8f0]"
-                                        />
-                                    </div>
-                                ))}
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-[#99a1af]">
+                                        Current Password
+                                    </Label>
+                                    <Input
+                                        type="password"
+                                        value={passwordForm.data.current_password}
+                                        onChange={(event) =>
+                                            passwordForm.setData(
+                                                'current_password',
+                                                event.target.value,
+                                            )
+                                        }
+                                        className="rounded-xl border-[#e2e8f0]"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-[#99a1af]">
+                                        New Password
+                                    </Label>
+                                    <Input
+                                        type="password"
+                                        value={passwordForm.data.password}
+                                        onChange={(event) =>
+                                            passwordForm.setData(
+                                                'password',
+                                                event.target.value,
+                                            )
+                                        }
+                                        className="rounded-xl border-[#e2e8f0]"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-[#99a1af]">
+                                        Confirm New Password
+                                    </Label>
+                                    <Input
+                                        type="password"
+                                        value={
+                                            passwordForm.data
+                                                .password_confirmation
+                                        }
+                                        onChange={(event) =>
+                                            passwordForm.setData(
+                                                'password_confirmation',
+                                                event.target.value,
+                                            )
+                                        }
+                                        className="rounded-xl border-[#e2e8f0]"
+                                    />
+                                </div>
                                 <Button
-                                    type="button"
+                                    type="submit"
                                     className="rounded-xl bg-[#0057c8] text-white hover:bg-[#0046a3]"
+                                    disabled={passwordForm.processing}
                                 >
                                     Change Password
                                 </Button>
-                            </div>
+                            </form>
 
                             <div className="flex items-start justify-between gap-4 border-t border-[#f1f5f9] pt-6">
                                 <div>

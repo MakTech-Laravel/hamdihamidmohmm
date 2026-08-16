@@ -1,14 +1,8 @@
-import { Head } from '@inertiajs/react';
-import {
-    Activity,
-    Calendar,
-    Download,
-    Eye,
-    FileText,
-    TrendingUp,
-} from 'lucide-react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { Download, FileText } from 'lucide-react';
 
 import {
+    AdminFilterChip,
     AdminPageHeader,
     AdminPagination,
     AdminPanel,
@@ -18,103 +12,70 @@ import {
     AdminTableShell,
 } from '@/components/admin-portal/ui';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
+import type { SharedData } from '@/types';
 
-const applicationStats = [
-    { label: 'Total Applications', value: '184,291', tone: 'text-[#0057c8]' },
-    { label: 'This Month', value: '12,840', tone: 'text-[#e57124]' },
-    { label: 'Today', value: '1,203', tone: 'text-[#0057c8]' },
-    { label: 'Avg / Job', value: '36', tone: 'text-[#3977a6]' },
-];
+type ApplicationRow = {
+    id: number;
+    seeker: string | null;
+    email: string | null;
+    job: string | null;
+    employer: string | null;
+    status: string;
+    status_value: string;
+    date: string | null;
+};
 
-const statusDistribution = [
-    { label: 'Applied', percent: 42, color: '#0057c8' },
-    { label: 'Under Review', percent: 28, color: '#3977a6' },
-    { label: 'Shortlisted', percent: 15, color: '#10b981' },
-    { label: 'Interview', percent: 8, color: '#e57124' },
-    { label: 'Hired', percent: 5, color: '#0ea5e9' },
-    { label: 'Rejected', percent: 2, color: '#ef4444' },
-];
+type Props = {
+    applications: {
+        data: ApplicationRow[];
+        links: Array<{ url: string | null; label: string; active: boolean }>;
+        from: number | null;
+        to: number | null;
+        total: number;
+    };
+    filters: { status: string };
+    stats: { total: number; today: number; interviews: number; hired: number };
+    trend: Array<{ label: string; count: number }>;
+};
 
-const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+const filterChips = [
+    ['all', 'All'],
+    ['applied', 'Applied'],
+    ['under_review', 'Under Review'],
+    ['shortlisted', 'Shortlisted'],
+    ['interview', 'Interview'],
+    ['hired', 'Hired'],
+    ['rejected', 'Rejected'],
+] as const;
 
-const applicationRows = [
-    {
-        id: 'APP-92841',
-        candidate: 'Rania Ahmed',
-        employer: 'Emirates Tech Solutions',
-        job: 'Senior React Developer',
-        date: '2024-03-12',
-        status: 'Under Review',
-    },
-    {
-        id: 'APP-92840',
-        candidate: 'Ali Khan',
-        employer: 'Gulf Construction Co.',
-        job: 'Site Engineer',
-        date: '2024-03-12',
-        status: 'Applied',
-    },
-    {
-        id: 'APP-92839',
-        candidate: 'Mariam Hassan',
-        employer: 'Desert Finance Group',
-        job: 'Financial Analyst',
-        date: '2024-03-11',
-        status: 'Shortlisted',
-    },
-    {
-        id: 'APP-92838',
-        candidate: 'Omar Saleh',
-        employer: 'Apex Logistics',
-        job: 'Logistics Coordinator',
-        date: '2024-03-11',
-        status: 'Interview',
-    },
-    {
-        id: 'APP-92837',
-        candidate: 'Layla Nour',
-        employer: 'Bright Health Clinics',
-        job: 'Registered Nurse',
-        date: '2024-03-10',
-        status: 'Hired',
-    },
-    {
-        id: 'APP-92836',
-        candidate: 'Hassan Farid',
-        employer: 'Nova Retail LLC',
-        job: 'Store Manager',
-        date: '2024-03-10',
-        status: 'Rejected',
-    },
-    {
-        id: 'APP-92835',
-        candidate: 'Noor Yasin',
-        employer: 'Horizon Media',
-        job: 'Content Producer',
-        date: '2024-03-09',
-        status: 'Applied',
-    },
-];
-
-function applicationStatusTone(
-    status: string,
-): 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'orange' {
-    if (status === 'Hired') {
+function statusTone(
+    value: string,
+): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
+    if (value === 'Hired' || value === 'Offer') {
         return 'success';
     }
-    if (status === 'Shortlisted' || status === 'Interview') {
-        return 'orange';
-    }
-    if (status === 'Under Review') {
+    if (value === 'Interview' || value === 'Shortlisted') {
         return 'info';
     }
-    if (status === 'Rejected') {
+    if (value === 'Rejected' || value === 'Withdrawn') {
         return 'danger';
     }
+    if (value === 'Under Review') {
+        return 'warning';
+    }
+
     return 'neutral';
 }
 
-export default function ApplicationsMonitoring() {
+export default function ApplicationsMonitoring({
+    applications,
+    filters,
+    stats,
+    trend,
+}: Props) {
+    const { flash } = usePage<SharedData>().props;
+    const maxTrend = Math.max(...trend.map((item) => item.count), 1);
+
     return (
         <AdminPortalLayout>
             <Head title="Applications Monitoring" />
@@ -122,146 +83,144 @@ export default function ApplicationsMonitoring() {
             <div className="space-y-6 p-6">
                 <AdminPageHeader
                     title="Applications Monitoring"
-                    subtitle="Platform-wide application visibility and health monitoring."
+                    subtitle="Track every application across the platform."
                     actions={
-                        <AdminSecondaryButton>
-                            <Download className="size-4" />
-                            Export
-                        </AdminSecondaryButton>
+                        <a href="/admin/applications/export">
+                            <AdminSecondaryButton>
+                                <Download className="size-4" />
+                                Export
+                            </AdminSecondaryButton>
+                        </a>
                     }
                 />
 
+                {flash.success && (
+                    <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
+                        {typeof flash.success === 'string'
+                            ? flash.success
+                            : 'Saved successfully.'}
+                    </div>
+                )}
+
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {applicationStats.map((stat, index) => (
-                        <AdminStatCard
-                            key={stat.label}
-                            label={stat.label}
-                            value={stat.value}
-                            valueClassName={stat.tone}
-                            icon={
-                                [FileText, TrendingUp, Calendar, Activity][
-                                    index
-                                ]
-                            }
-                        />
-                    ))}
-                </div>
-
-                <div className="grid gap-5 xl:grid-cols-2">
-                    <AdminPanel>
-                        <h2 className="text-base font-bold text-[#050315]">
-                            Application Trends
-                        </h2>
-                        <p className="text-xs text-[#64748b]">
-                            Monthly application volume — Jan to Aug 2024
-                        </p>
-                        <div className="mt-5 flex h-48 items-end gap-2">
-                            {[42, 55, 48, 62, 58, 71, 68, 84].map(
-                                (height, index) => (
-                                    <div
-                                        key={months[index]}
-                                        className="flex flex-1 flex-col items-center gap-2"
-                                    >
-                                        <div
-                                            className="w-full rounded-t-md bg-[#0057c8]/80"
-                                            style={{ height: `${height}%` }}
-                                        />
-                                        <span className="text-[10px] font-semibold text-[#64748b]">
-                                            {months[index]}
-                                        </span>
-                                    </div>
-                                ),
-                            )}
-                        </div>
-                    </AdminPanel>
-
-                    <AdminPanel>
-                        <h2 className="text-base font-bold text-[#050315]">
-                            Status Distribution
-                        </h2>
-                        <p className="text-xs text-[#64748b]">
-                            Current pipeline breakdown
-                        </p>
-                        <div className="mt-5 space-y-3">
-                            {statusDistribution.map((item) => (
-                                <div key={item.label}>
-                                    <div className="mb-1 flex items-center justify-between text-xs">
-                                        <span className="font-semibold text-[#050315]">
-                                            {item.label}
-                                        </span>
-                                        <span className="text-[#64748b]">
-                                            {item.percent}%
-                                        </span>
-                                    </div>
-                                    <div className="h-2 overflow-hidden rounded-full bg-[#f1f5f9]">
-                                        <div
-                                            className="h-full rounded-full"
-                                            style={{
-                                                width: `${item.percent}%`,
-                                                backgroundColor: item.color,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </AdminPanel>
+                    <AdminStatCard
+                        label="Total Applications"
+                        value={stats.total.toLocaleString()}
+                        valueClassName="text-[#0057c8]"
+                        icon={FileText}
+                    />
+                    <AdminStatCard
+                        label="Today"
+                        value={stats.today.toLocaleString()}
+                        valueClassName="text-[#e57124]"
+                        icon={FileText}
+                    />
+                    <AdminStatCard
+                        label="Interviews"
+                        value={stats.interviews.toLocaleString()}
+                        valueClassName="text-[#3977a6]"
+                        icon={FileText}
+                    />
+                    <AdminStatCard
+                        label="Hired"
+                        value={stats.hired.toLocaleString()}
+                        valueClassName="text-[#10b981]"
+                        icon={FileText}
+                    />
                 </div>
 
                 <AdminPanel>
+                    <h2 className="mb-4 text-sm font-bold text-[#050315]">
+                        Applications this week
+                    </h2>
+                    <div className="flex h-32 items-end gap-3">
+                        {trend.map((item) => (
+                            <div
+                                key={item.label}
+                                className="flex flex-1 flex-col items-center gap-2"
+                            >
+                                <div
+                                    className="w-full rounded-t-lg bg-[#0057c8]"
+                                    style={{
+                                        height: `${Math.max((item.count / maxTrend) * 100, 6)}%`,
+                                    }}
+                                />
+                                <span className="text-xs text-[#64748b]">
+                                    {item.label}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </AdminPanel>
+
+                <AdminPanel>
+                    <div className="mb-4 flex flex-wrap gap-2">
+                        {filterChips.map(([key, label]) => (
+                            <AdminFilterChip
+                                key={key}
+                                label={label}
+                                active={(filters.status || 'all') === key}
+                                onClick={() =>
+                                    router.get(
+                                        '/admin/applications',
+                                        key === 'all' ? {} : { status: key },
+                                        { preserveState: true, replace: true },
+                                    )
+                                }
+                            />
+                        ))}
+                    </div>
+
                     <AdminTableShell
                         headers={[
-                            'ID',
                             'Candidate',
-                            'Employer',
+                            'Email',
                             'Job',
-                            'Date',
+                            'Employer',
                             'Status',
-                            'Actions',
+                            'Date',
                         ]}
                     >
-                        {applicationRows.map((row) => (
+                        {applications.data.map((row) => (
                             <tr
                                 key={row.id}
                                 className="border-b border-[#e2e8f0] last:border-0 hover:bg-[#f8faff]"
                             >
-                                <td className="px-3 py-3 font-mono text-xs text-[#64748b]">
-                                    {row.id}
-                                </td>
                                 <td className="px-3 py-3 font-semibold text-[#050315]">
-                                    {row.candidate}
+                                    {row.seeker}
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
-                                    {row.employer}
+                                    {row.email}
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
                                     {row.job}
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
-                                    {row.date}
+                                    {row.employer}
                                 </td>
                                 <td className="px-3 py-3">
                                     <AdminStatusBadge
                                         label={row.status}
-                                        tone={applicationStatusTone(
-                                            row.status,
-                                        )}
+                                        tone={statusTone(row.status)}
                                     />
                                 </td>
-                                <td className="px-3 py-3">
-                                    <button
-                                        type="button"
-                                        className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8faff]"
-                                        aria-label="View application"
-                                    >
-                                        <Eye className="size-4" />
-                                    </button>
+                                <td className="px-3 py-3 text-[#64748b]">
+                                    {row.date ?? '—'}
                                 </td>
                             </tr>
                         ))}
                     </AdminTableShell>
 
-                    <AdminPagination showingLabel="Showing 7 of 184,291" />
+                    {applications.data.length === 0 && (
+                        <p className="mt-6 text-center text-sm text-[#99a1af]">
+                            No applications yet.
+                        </p>
+                    )}
+
+                    <AdminPagination
+                        showingLabel={`Showing ${applications.from ?? 0}-${applications.to ?? 0} of ${applications.total}`}
+                        links={applications.links}
+                    />
                 </AdminPanel>
             </div>
         </AdminPortalLayout>

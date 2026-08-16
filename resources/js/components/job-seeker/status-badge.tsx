@@ -12,7 +12,11 @@ export function StatusBadge({
     status: ApplicationStatus;
     className?: string;
 }) {
-    const style = STATUS_STYLES[status];
+    const style = STATUS_STYLES[status] ?? {
+        badge: 'bg-[#f8faff]',
+        dot: 'bg-[#94a3b8]',
+        text: 'text-[#64748b]',
+    };
 
     return (
         <span

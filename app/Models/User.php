@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\EmployerAccountStatus;
+use App\Casts\AccountStatusCast;
 use App\Enums\EmployerPackage;
 use App\Enums\EmployerVerificationStatus;
+use App\Enums\JobSeekerResumeStatus;
 use App\Enums\PermissionName;
 use App\Enums\RoleName;
 use App\Enums\UserRole;
@@ -13,6 +14,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -32,8 +34,14 @@ class User extends Authenticatable
         'name',
         'company_name',
         'industry',
+        'website',
+        'about',
+        'address',
         'contact_name',
         'email',
+        'phone',
+        'location',
+        'resume_status',
         'avatar',
         'password',
         'role',
@@ -79,7 +87,8 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
             'role' => UserRole::class,
             'verification_status' => EmployerVerificationStatus::class,
-            'account_status' => EmployerAccountStatus::class,
+            'account_status' => AccountStatusCast::class,
+            'resume_status' => JobSeekerResumeStatus::class,
             'package' => EmployerPackage::class,
             'verified_at' => 'datetime',
         ];
@@ -182,6 +191,54 @@ class User extends Authenticatable
             || $this->isSuperAdmin();
     }
 
+    public function canManageJobSeekers(): bool
+    {
+        return $this->can(PermissionName::ManageJobSeekers->value)
+            || $this->isSuperAdmin();
+    }
+
+    public function canManageJobs(): bool
+    {
+        return $this->can(PermissionName::ManageJobs->value)
+            || $this->isSuperAdmin();
+    }
+
+    public function canManagePackages(): bool
+    {
+        return $this->can(PermissionName::ManagePackages->value)
+            || $this->isSuperAdmin();
+    }
+
+    public function canManagePayments(): bool
+    {
+        return $this->can(PermissionName::ManagePayments->value)
+            || $this->isSuperAdmin();
+    }
+
+    public function canManageVerification(): bool
+    {
+        return $this->can(PermissionName::ManageVerification->value)
+            || $this->isSuperAdmin();
+    }
+
+    public function canViewAnalytics(): bool
+    {
+        return $this->can(PermissionName::ViewAnalytics->value)
+            || $this->isSuperAdmin();
+    }
+
+    public function canManageCms(): bool
+    {
+        return $this->can(PermissionName::ManageCms->value)
+            || $this->isSuperAdmin();
+    }
+
+    public function canManageSettings(): bool
+    {
+        return $this->can(PermissionName::ManageSettings->value)
+            || $this->isSuperAdmin();
+    }
+
     public function canManageAdmins(): bool
     {
         return $this->isSuperAdmin();
@@ -209,6 +266,38 @@ class User extends Authenticatable
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class)->latest();
+    }
+
+    /**
+     * @return HasMany<JobPost, $this>
+     */
+    public function jobPosts(): HasMany
+    {
+        return $this->hasMany(JobPost::class, 'employer_id');
+    }
+
+    /**
+     * @return HasMany<JobApplication, $this>
+     */
+    public function jobApplications(): HasMany
+    {
+        return $this->hasMany(JobApplication::class, 'job_seeker_id');
+    }
+
+    /**
+     * @return HasMany<Payment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'employer_id');
+    }
+
+    /**
+     * @return HasOne<JobSeekerProfile, $this>
+     */
+    public function jobSeekerProfile(): HasOne
+    {
+        return $this->hasOne(JobSeekerProfile::class);
     }
 
     public function canAccessPayroll(): bool

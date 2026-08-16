@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [FrontendController::class, 'index'])->name('home');
 Route::get('/jobs', [FrontendController::class, 'jobs'])->name('jobs');
-Route::get('/jobs/{slug}', [FrontendController::class, 'jobShow'])->name('jobs.show');
+Route::get('/jobs/{jobPost:slug}', [FrontendController::class, 'jobShow'])->name('jobs.show');
 Route::get('/pricing', [FrontendController::class, 'pricing'])->name('pricing');
 Route::get('/about', [FrontendController::class, 'about'])->name('about');
 Route::get('/contact', [FrontendController::class, 'contact'])->name('contact');

@@ -3,10 +3,19 @@
 use App\Enums\RoleName;
 use App\Http\Controllers\Backend\Admin\AdminDashboardController;
 use App\Http\Controllers\Backend\Admin\AdminManagementController;
-use App\Http\Controllers\Backend\Admin\AdminPortalModuleController;
+use App\Http\Controllers\Backend\Admin\AdminNotificationController;
+use App\Http\Controllers\Backend\Admin\ApplicationMonitoringController;
+use App\Http\Controllers\Backend\Admin\ContentManagementController;
 use App\Http\Controllers\Backend\Admin\EmployerManagementController;
+use App\Http\Controllers\Backend\Admin\JobManagementController;
+use App\Http\Controllers\Backend\Admin\JobSeekerManagementController;
+use App\Http\Controllers\Backend\Admin\PackageManagementController;
+use App\Http\Controllers\Backend\Admin\PaymentManagementController;
+use App\Http\Controllers\Backend\Admin\PlatformSettingController;
+use App\Http\Controllers\Backend\Admin\ReportController;
 use App\Http\Controllers\Backend\Admin\RolePermissionController;
 use App\Http\Controllers\Backend\Admin\UserManagementController;
+use App\Http\Controllers\Backend\Admin\VerificationCenterController;
 use App\Http\Controllers\UserSelectionController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,16 +49,58 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/employers/{user}/approve', [EmployerManagementController::class, 'approve'])->name('employers.approve');
         Route::post('/employers/{user}/reject', [EmployerManagementController::class, 'reject'])->name('employers.reject');
 
-        Route::get('/job-seekers', [AdminPortalModuleController::class, 'jobSeekers'])->name('job-seekers.index');
-        Route::get('/jobs', [AdminPortalModuleController::class, 'jobs'])->name('jobs.index');
-        Route::get('/applications', [AdminPortalModuleController::class, 'applications'])->name('applications.index');
-        Route::get('/packages', [AdminPortalModuleController::class, 'packages'])->name('packages.index');
-        Route::get('/payments', [AdminPortalModuleController::class, 'payments'])->name('payments.index');
-        Route::get('/verifications', [AdminPortalModuleController::class, 'verifications'])->name('verifications.index');
-        Route::get('/reports', [AdminPortalModuleController::class, 'reports'])->name('reports.index');
-        Route::get('/content', [AdminPortalModuleController::class, 'content'])->name('content.index');
-        Route::get('/notifications', [AdminPortalModuleController::class, 'notifications'])->name('notifications.index');
-        Route::get('/settings', [AdminPortalModuleController::class, 'settings'])->name('settings.index');
+        Route::get('/job-seekers/export', [JobSeekerManagementController::class, 'export'])->name('job-seekers.export');
+        Route::get('/job-seekers/create', [JobSeekerManagementController::class, 'create'])->name('job-seekers.create');
+        Route::get('/job-seekers', [JobSeekerManagementController::class, 'index'])->name('job-seekers.index');
+        Route::post('/job-seekers', [JobSeekerManagementController::class, 'store'])->name('job-seekers.store');
+        Route::get('/job-seekers/{user}', [JobSeekerManagementController::class, 'show'])->name('job-seekers.show');
+        Route::get('/job-seekers/{user}/edit', [JobSeekerManagementController::class, 'edit'])->name('job-seekers.edit');
+        Route::put('/job-seekers/{user}', [JobSeekerManagementController::class, 'update'])->name('job-seekers.update');
+        Route::post('/job-seekers/{user}/suspend', [JobSeekerManagementController::class, 'suspend'])->name('job-seekers.suspend');
+        Route::post('/job-seekers/{user}/reactivate', [JobSeekerManagementController::class, 'reactivate'])->name('job-seekers.reactivate');
+        Route::get('/jobs/export', [JobManagementController::class, 'export'])->name('jobs.export');
+        Route::get('/jobs', [JobManagementController::class, 'index'])->name('jobs.index');
+        Route::get('/jobs/{jobPost}', [JobManagementController::class, 'show'])->name('jobs.show');
+        Route::post('/jobs/{jobPost}/approve', [JobManagementController::class, 'approve'])->name('jobs.approve');
+        Route::post('/jobs/{jobPost}/reject', [JobManagementController::class, 'reject'])->name('jobs.reject');
+        Route::post('/jobs/{jobPost}/feature', [JobManagementController::class, 'feature'])->name('jobs.feature');
+
+        Route::get('/applications/export', [ApplicationMonitoringController::class, 'export'])->name('applications.export');
+        Route::get('/applications', [ApplicationMonitoringController::class, 'index'])->name('applications.index');
+
+        Route::get('/packages', [PackageManagementController::class, 'index'])->name('packages.index');
+        Route::post('/packages', [PackageManagementController::class, 'store'])->name('packages.store');
+        Route::put('/packages/{package}', [PackageManagementController::class, 'update'])->name('packages.update');
+        Route::delete('/packages/{package}', [PackageManagementController::class, 'destroy'])->name('packages.destroy');
+
+        Route::get('/payments/export', [PaymentManagementController::class, 'export'])->name('payments.export');
+        Route::get('/payments', [PaymentManagementController::class, 'index'])->name('payments.index');
+        Route::post('/payments', [PaymentManagementController::class, 'store'])->name('payments.store');
+        Route::post('/payments/{payment}/approve', [PaymentManagementController::class, 'approve'])->name('payments.approve');
+        Route::post('/payments/{payment}/refund', [PaymentManagementController::class, 'refund'])->name('payments.refund');
+        Route::post('/payments/{payment}/retry', [PaymentManagementController::class, 'retry'])->name('payments.retry');
+
+        Route::get('/verifications', [VerificationCenterController::class, 'index'])->name('verifications.index');
+
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
+        Route::get('/reports/{generatedReport}/download', [ReportController::class, 'download'])->name('reports.download');
+        Route::delete('/reports/{generatedReport}', [ReportController::class, 'destroy'])->name('reports.destroy');
+
+        Route::get('/content', [ContentManagementController::class, 'index'])->name('content.index');
+        Route::post('/content', [ContentManagementController::class, 'store'])->name('content.store');
+        Route::put('/content/{contentPage}', [ContentManagementController::class, 'update'])->name('content.update');
+        Route::post('/content/{contentPage}/publish', [ContentManagementController::class, 'publish'])->name('content.publish');
+        Route::delete('/content/{contentPage}', [ContentManagementController::class, 'destroy'])->name('content.destroy');
+
+        Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
+        Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllRead'])->name('notifications.read-all');
+        Route::post('/notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])->name('notifications.read');
+
+        Route::get('/settings', [PlatformSettingController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [PlatformSettingController::class, 'update'])->name('settings.update');
+        Route::post('/settings/reset', [PlatformSettingController::class, 'reset'])->name('settings.reset');
 
         Route::middleware('role:'.RoleName::SuperAdmin->value)->group(function () {
             Route::get('/admins', [AdminManagementController::class, 'index'])->name('admins.index');
