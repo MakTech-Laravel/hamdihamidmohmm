@@ -132,7 +132,7 @@ export default function Jobs({ jobs, filters }: Props) {
 
                     <form
                         onSubmit={handleSearch}
-                        className="mt-6 grid gap-3 rounded-2xl bg-[#f8faff] p-4 shadow-[0px_4px_2px_rgba(0,0,0,0.12)] sm:grid-cols-2 lg:grid-cols-[2fr_1fr_auto]"
+                        className="mt-6 grid gap-3 rounded-2xl bg-white p-4 shadow-[0px_4px_2px_rgba(0,0,0,0.12)] sm:grid-cols-2 lg:grid-cols-[2fr_1fr_auto]"
                     >
                         <label className="relative flex items-center">
                             <img
@@ -163,7 +163,6 @@ export default function Jobs({ jobs, filters }: Props) {
                                 value={location}
                                 onChange={(event) => {
                                     setLocation(event.target.value);
-                                    setPage(1);
                                 }}
                                 className="w-full appearance-none bg-transparent text-sm text-[#374151] outline-none"
                             >
@@ -194,7 +193,7 @@ export default function Jobs({ jobs, filters }: Props) {
                 </div>
             </section>
 
-            <section className="px-4 py-8 sm:px-6 lg:px-8">
+            <section className="bg-white px-4 py-8 sm:px-6 lg:px-8">
                 <div className="mx-auto flex max-w-[1280px] flex-col gap-6 lg:flex-row lg:items-start">
                     <aside className="w-full shrink-0 lg:w-64">
                         <div className="rounded-2xl border border-[#d1f6ff] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
@@ -220,7 +219,6 @@ export default function Jobs({ jobs, filters }: Props) {
                                         value={location}
                                         onChange={(event) => {
                                             setLocation(event.target.value);
-                                            setPage(1);
                                         }}
                                         className="h-[42px] w-full appearance-none rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 pe-8 text-sm text-[#374151] outline-none"
                                     >
@@ -337,7 +335,7 @@ export default function Jobs({ jobs, filters }: Props) {
                                             className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
                                             style={{
                                                 backgroundImage:
-                                                    'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
+                                                    'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
                                             }}
                                         >
                                             {job.initials}

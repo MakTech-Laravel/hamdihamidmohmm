@@ -113,10 +113,10 @@ function statusTone(
 function packageTone(
     value: string,
 ): 'info' | 'purple' | 'orange' | 'neutral' {
-    if (value === 'Enterprise' || value === 'Premium') {
+    if (value === 'Enterprise' || value === 'Premium' || value === 'Business Package') {
         return 'purple';
     }
-    if (value === 'Professional') {
+    if (value === 'Professional' || value === 'Single Posting') {
         return 'info';
     }
     if (value === 'Starter') {

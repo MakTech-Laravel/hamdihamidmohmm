@@ -156,21 +156,36 @@ export function ErrorObservabilityProvider({ children }: ErrorObservabilityProvi
     }, [captureError]);
 
     useEffect(() => {
-        const removeInertiaListener = router.on('error', (event) => {
-            const detail = event.detail as { message?: string; page?: { component?: string; url?: string } };
-            const error = new Error(detail?.message || 'Inertia navigation failed');
+        const removeInvalidListener = router.on('invalid', (event) => {
+            const status = event.detail.response.status;
+            const error = new Error(
+                `Inertia request failed${status ? ` (${status})` : ''}`,
+            );
+
             captureError(error, {
                 type: ErrorType.Inertia,
                 source: ErrorSource.InertiaListener,
-                inertiaDetails: {
-                    page: detail?.page?.component,
-                    url: detail?.page?.url,
-                },
             });
         });
 
+        const removeExceptionListener = router.on('exception', (event) => {
+            const exception = event.detail.exception;
+            const error =
+                exception instanceof Error
+                    ? exception
+                    : new Error('Inertia request exception');
+
+            if (shouldCaptureError(error)) {
+                captureError(error, {
+                    type: ErrorType.Inertia,
+                    source: ErrorSource.InertiaListener,
+                });
+            }
+        });
+
         return () => {
-            removeInertiaListener();
+            removeInvalidListener();
+            removeExceptionListener();
         };
     }, [captureError]);
 

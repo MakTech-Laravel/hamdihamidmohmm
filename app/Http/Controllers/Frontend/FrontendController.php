@@ -15,7 +15,9 @@ class FrontendController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('frontend/home');
+        return Inertia::render('frontend/home', [
+            'packages' => Package::publicCards(),
+        ]);
     }
 
     public function jobs(Request $request): Response
@@ -109,9 +111,7 @@ class FrontendController extends Controller
     public function pricing(): Response
     {
         return Inertia::render('frontend/pricing', [
-            'packages' => Package::query()->where('is_active', true)->orderBy('price')->get([
-                'id', 'slug', 'name', 'price', 'currency', 'billing_period', 'job_credits', 'featured_credits',
-            ]),
+            'packages' => Package::publicCards(),
         ]);
     }
 

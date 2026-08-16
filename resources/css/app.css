@@ -71,7 +71,9 @@
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px);
   }
 
@@ -91,7 +93,9 @@
 }
 
 @keyframes glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(0, 87, 200, 0.5);
   }
 
@@ -353,8 +357,22 @@ html[dir='rtl'] body {
     background: #ffffff;
   }
 
-  h1, h2, h3, h4, h5, h6, button {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  button {
     @apply font-montserrat;
+  }
+
+  button:not(:disabled),
+  [type='button']:not(:disabled),
+  [type='submit']:not(:disabled),
+  [type='reset']:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
   }
 }
 

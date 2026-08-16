@@ -13,8 +13,8 @@ enum EmployerPackage: string
     {
         return match ($this) {
             self::Starter => 'Starter',
-            self::Professional => 'Professional',
-            self::Premium => 'Premium',
+            self::Professional => 'Single Posting',
+            self::Premium => 'Business Package',
             self::Enterprise => 'Enterprise',
         };
     }

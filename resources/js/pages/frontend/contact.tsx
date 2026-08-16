@@ -53,7 +53,7 @@ export default function Contact() {
                 </div>
             </section>
 
-            <section className="bg-[#f8faff] px-8 py-16">
+            <section className="bg-white px-8 py-16">
                 <div className="mx-auto w-full max-w-[672px]">
                     <div className="rounded-2xl border border-[#d1f6ff] bg-white p-8 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
                         <h2 className="text-xl font-bold leading-6 text-[#050315]">

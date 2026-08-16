@@ -88,13 +88,13 @@ export function AdminStatusBadge({
 }: {
     label: string;
     tone?:
-        | 'success'
-        | 'warning'
-        | 'danger'
-        | 'info'
-        | 'neutral'
-        | 'purple'
-        | 'orange';
+    | 'success'
+    | 'warning'
+    | 'danger'
+    | 'info'
+    | 'neutral'
+    | 'purple'
+    | 'orange';
 }) {
     const tones: Record<string, string> = {
         success: 'bg-[#d1fae5] text-[#065f46]',
@@ -134,7 +134,7 @@ export function AdminPrimaryButton({
             type={type}
             onClick={onClick}
             className={cn(
-                'inline-flex items-center justify-center gap-2 rounded-xl bg-[#0057c8] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0046a3]',
+                'inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0057c8] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0046a3]',
                 className,
             )}
         >
@@ -159,7 +159,7 @@ export function AdminSecondaryButton({
             type={type}
             onClick={onClick}
             className={cn(
-                'inline-flex items-center justify-center gap-2 rounded-xl border border-[#e2e8f0] bg-[#f1f5f9] px-4 py-2.5 text-sm font-semibold text-[#475569] hover:bg-white',
+                'inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#e2e8f0] bg-[#f1f5f9] px-4 py-2.5 text-sm font-semibold text-[#475569] hover:bg-white',
                 className,
             )}
         >
@@ -182,7 +182,7 @@ export function AdminFilterChip({
             type="button"
             onClick={onClick}
             className={cn(
-                'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
+                'cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
                 active
                     ? 'bg-[#0057c8] text-white'
                     : 'border border-[#e2e8f0] bg-white text-[#64748b] hover:bg-[#f8fafc]',
@@ -266,7 +266,7 @@ export function AdminPagination({
                             }
                         }}
                         className={cn(
-                            'flex min-w-8 items-center justify-center rounded-md px-2 text-xs font-semibold',
+                            'flex min-w-8 cursor-pointer items-center justify-center rounded-md px-2 text-xs font-semibold',
                             link.active
                                 ? 'bg-[#0057c8] text-white'
                                 : 'border border-[#e2e8f0] bg-white text-[#64748b]',

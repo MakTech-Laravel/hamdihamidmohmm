@@ -15,7 +15,7 @@ class EmployerPackageController extends Controller
     {
         $employer = $request->user();
 
-        $packages = Package::query()->where('is_active', true)->orderBy('price')->get()->map(fn (Package $package) => [
+        $packages = Package::query()->where('is_active', true)->orderBy('sort_order')->orderBy('price')->get()->map(fn (Package $package) => [
             'id' => $package->id,
             'slug' => $package->slug,
             'name' => $package->name,

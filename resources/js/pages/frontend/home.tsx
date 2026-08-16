@@ -1,13 +1,16 @@
 import { Head, Link } from '@inertiajs/react';
 import { FormEvent, useMemo, useState } from 'react';
 
+import PricingPackageCards, {
+    type PricingPackage,
+} from '@/components/frontend/pricing-package-cards';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
 import { jobs, pricing } from '@/routes';
 import { show as jobShow } from '@/routes/jobs';
 import { role as registerRole } from '@/routes/register';
 
-export default function Home() {
+export default function Home({ packages = [] }: { packages?: PricingPackage[] }) {
     const { t } = useLocale();
     const [keyword, setKeyword] = useState('');
     const [location, setLocation] = useState('all');
@@ -175,18 +178,18 @@ export default function Home() {
                                 </span>
                             </div>
 
-                            <h1 className="mt-5 max-w-xl text-4xl font-bold leading-[1.15] tracking-[-0.8px] text-[#c2410c] sm:text-5xl lg:text-[64px] lg:leading-[1.15]">
+                            <h1 className="mt-5 max-w-xl text-4xl font-bold leading-[1.15] tracking-[-0.8px] text-[#e57124] sm:text-5xl lg:text-[64px] lg:leading-[76px]">
                                 {t('hero.title')}
                             </h1>
 
-                            <p className="mt-6 max-w-xl text-base font-medium leading-relaxed tracking-[-0.18px] text-[#050315]/90">
+                            <p className="mt-6 max-w-xl text-base font-medium leading-[22px] tracking-[-0.18px] text-[#050315]">
                                 {t('hero.subtitle')}
                             </p>
 
                             <div className="mt-8 flex flex-wrap gap-3">
                                 <Link
                                     href={jobs()}
-                                    className="inline-flex items-center gap-[7px] rounded-xl bg-[#0057c8] px-8 py-4 text-base font-medium tracking-[-0.18px] text-white shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] transition hover:brightness-110"
+                                    className="inline-flex h-[60px] items-center gap-[7px] rounded-xl bg-[#0057c8] px-8 text-base font-medium tracking-[-0.18px] text-white shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] transition hover:brightness-110"
                                 >
                                     {t('hero.find_jobs')}
                                     <img
@@ -199,7 +202,7 @@ export default function Home() {
                                 </Link>
                                 <Link
                                     href={registerRole.url('employer')}
-                                    className="inline-flex items-center justify-center rounded-xl border-2 border-[#e57124] px-8 py-4 text-base font-medium tracking-[-0.18px] text-[#e57124] transition hover:bg-[#e57124]/10"
+                                    className="inline-flex h-[60px] items-center justify-center rounded-xl border-2 border-[#e57124] px-8 text-base font-medium tracking-[-0.18px] text-[#e57124] transition hover:bg-[#e57124]/10"
                                 >
                                     {t('hero.post_job')}
                                 </Link>
@@ -221,7 +224,7 @@ export default function Home() {
                                         className="flex size-12 shrink-0 items-center justify-center rounded-xl text-base font-bold text-white"
                                         style={{
                                             backgroundImage:
-                                                'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
+                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
                                         }}
                                     >
                                         TC
@@ -252,7 +255,7 @@ export default function Home() {
                                     </p>
                                     <button
                                         type="button"
-                                        className="rounded-lg bg-[#0057c8] px-4 py-2 text-xs font-semibold text-white"
+                                        className="rounded-lg bg-[#1e3a8a] px-4 py-2 text-xs font-semibold text-white"
                                     >
                                         {t('hero.preview.apply')}
                                     </button>
@@ -261,14 +264,14 @@ export default function Home() {
 
                             <div className="absolute start-0 top-[70%] z-10 hidden w-[107px] -translate-x-1/4 rounded-xl border border-[#e2e8f0] bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block rtl:translate-x-1/4">
                                 <p className="text-xs text-[#6a7282]">{t('hero.preview.active_jobs')}</p>
-                                <p dir="ltr" className="text-xl font-extrabold leading-7 text-[#0057c8]">
+                                <p dir="ltr" className="text-xl font-extrabold leading-7 text-[#1e3a8a]">
                                     12,450+
                                 </p>
                             </div>
 
                             <div className="absolute end-0 top-[40%] z-10 hidden w-[99px] translate-x-1/4 rounded-xl border border-[#e2e8f0] bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block rtl:-translate-x-1/4">
                                 <p className="text-xs text-[#6a7282]">{t('hero.preview.companies')}</p>
-                                <p dir="ltr" className="text-xl font-extrabold leading-7 text-[#0057c8]">
+                                <p dir="ltr" className="text-xl font-extrabold leading-7 text-[#f97316]">
                                     3,200+
                                 </p>
                             </div>
@@ -346,7 +349,7 @@ export default function Home() {
             </section>
 
             {/* Why Choose Us */}
-            <section id="about" className="scroll-mt-28 bg-[#f8faff] pt-16 pb-20 sm:pt-20">
+            <section id="about" className="scroll-mt-28 bg-white pt-16 pb-20 sm:pt-20">
                 <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
                     <div className="text-center">
                         <h2 className="text-3xl font-bold tracking-[-0.3px] text-[#050315] sm:text-[40px] sm:leading-[48px]">
@@ -411,7 +414,7 @@ export default function Home() {
             </section>
 
             {/* Featured Jobs */}
-            <section id="jobs" className="scroll-mt-28 bg-[#f8faff] py-20">
+            <section id="jobs" className="scroll-mt-28 bg-white py-20">
                 <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                         <div>
@@ -448,7 +451,7 @@ export default function Home() {
                                         className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
                                         style={{
                                             backgroundImage:
-                                                'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
+                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
                                         }}
                                     >
                                         {job.initials}
@@ -504,7 +507,7 @@ export default function Home() {
                 <div className="mx-auto max-w-[1344px] overflow-hidden rounded-3xl bg-white shadow-[0px_8px_40px_0px_rgba(30,58,138,0.1)]">
                     <div className="grid lg:grid-cols-2">
                         <div className="p-8 sm:p-12 lg:p-14">
-                            <span className="inline-flex rounded-full bg-[#eff6ff] px-3 py-1.5 text-xs font-semibold text-[#0057c8]">
+                            <span className="inline-flex rounded-full bg-[#eff6ff] px-3 py-1.5 text-xs font-semibold text-[#1e3a8a]">
                                 {t('seeker.badge')}
                             </span>
                             <h2 className="mt-4 text-3xl font-bold tracking-[-0.3px] text-[#050315] sm:text-[40px] sm:leading-[48px]">
@@ -554,7 +557,7 @@ export default function Home() {
                                     className="flex size-48 items-center justify-center rounded-full"
                                     style={{
                                         backgroundImage:
-                                            'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
+                                            'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
                                     }}
                                 >
                                     <img
@@ -567,7 +570,7 @@ export default function Home() {
                                 </div>
                                 <div className="absolute -top-3 -end-8 hidden w-[95px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
                                     <p className="text-xs text-[#6a7282]">{t('seeker.stat_applications')}</p>
-                                    <p className="text-lg font-extrabold leading-7 text-[#0057c8]">
+                                    <p className="text-lg font-extrabold leading-7 text-[#1e3a8a]">
                                         95K+
                                     </p>
                                 </div>
@@ -583,8 +586,43 @@ export default function Home() {
                 </div>
             </section>
 
+            {/* Pricing */}
+            {packages.length > 0 && (
+                <section id="pricing" className="scroll-mt-28 bg-white py-20">
+                    <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
+                        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+                            <div>
+                                <h2 className="text-3xl font-bold tracking-[-0.3px] text-[#050315] sm:text-[40px] sm:leading-[48px]">
+                                    {t('pricing.title')}
+                                </h2>
+                                <p className="mt-2 max-w-xl text-base text-[rgba(5,3,21,0.6)]">
+                                    {t('pricing.subtitle')}
+                                </p>
+                            </div>
+                            <Link
+                                href={pricing()}
+                                className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-[#0057c8] transition hover:underline"
+                            >
+                                {t('employer.cta_secondary')}
+                                <img
+                                    src="/images/home/arrow-link.svg"
+                                    alt=""
+                                    className="size-4 rtl:rotate-180"
+                                    width={16}
+                                    height={16}
+                                />
+                            </Link>
+                        </div>
+
+                        <div className="mt-10">
+                            <PricingPackageCards packages={packages} />
+                        </div>
+                    </div>
+                </section>
+            )}
+
             {/* Employer CTA */}
-            <section id="pricing" className="scroll-mt-28 px-4 py-20 sm:px-6 lg:px-8">
+            <section id="employers" className="scroll-mt-28 px-4 py-20 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1344px] overflow-hidden rounded-3xl bg-[#d1f6ff] shadow-[0px_8px_6px_0px_rgba(15,23,42,0.12)]">
                     <div className="grid lg:grid-cols-2">
                         <div className="relative order-2 flex min-h-[280px] items-center justify-center p-12 lg:order-1">
@@ -606,7 +644,7 @@ export default function Home() {
                                 </div>
                                 <div className="absolute -bottom-2 -end-6 hidden w-[92px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
                                     <p className="text-xs text-[#6a7282]">{t('employer.stat_hired_today')}</p>
-                                    <p className="text-lg font-extrabold leading-7 text-[#0057c8]">
+                                    <p className="text-lg font-extrabold leading-7 text-[#1e3a8a]">
                                         +85
                                     </p>
                                 </div>

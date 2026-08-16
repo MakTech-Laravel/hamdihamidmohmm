@@ -54,7 +54,7 @@ export function LanguageSwitcher({
                         className={cn(
                             'inline-flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
                             isActive
-                                ? 'bg-[#3977a6] text-[#d1f6ff]'
+                                ? 'bg-[#0057c8] text-[#d1f6ff]'
                                 : 'text-[rgba(5,3,21,0.9)] hover:bg-white/50',
                         )}
                         aria-pressed={isActive}

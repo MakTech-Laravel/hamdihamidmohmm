@@ -21,12 +21,18 @@ class PackageFactory extends Factory
         return [
             'slug' => $package->value.'-'.fake()->unique()->numerify('###'),
             'name' => $package->label(),
-            'price' => fake()->randomElement([0, 299, 799, 1499]),
-            'currency' => 'AED',
+            'description' => null,
+            'price' => fake()->randomElement([299, 999, 1199]),
+            'currency' => 'SAR',
             'billing_period' => 'month',
-            'job_credits' => fake()->randomElement([5, 20, 50, 999]),
-            'featured_credits' => fake()->randomElement([0, 2, 8, 20]),
+            'job_credits' => fake()->randomElement([1, 15, 30]),
+            'featured_credits' => fake()->randomElement([0, 2, 10]),
+            'features' => ['pricing.feature.one_job'],
+            'excluded_features' => [],
             'is_active' => true,
+            'is_featured' => false,
+            'is_public' => true,
+            'sort_order' => fake()->numberBetween(1, 10),
         ];
     }
 }

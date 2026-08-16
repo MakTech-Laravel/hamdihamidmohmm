@@ -65,10 +65,10 @@ function tone(
     if (value === 'Rejected' || value === 'Suspended') {
         return 'danger';
     }
-    if (value === 'Professional') {
+    if (value === 'Professional' || value === 'Single Posting') {
         return 'info';
     }
-    if (value === 'Enterprise' || value === 'Premium') {
+    if (value === 'Enterprise' || value === 'Premium' || value === 'Business Package') {
         return 'purple';
     }
     if (value === 'Starter') {

@@ -1,101 +1,56 @@
 import { Head, Link } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
+import PricingPackageCards, {
+    translatePricingValue,
+    type PricingPackage,
+} from '@/components/frontend/pricing-package-cards';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
 import { home, register } from '@/routes';
-import { role as registerRole } from '@/routes/register';
 
-type FeatureState = 'included' | 'excluded';
+type Props = {
+    packages?: PricingPackage[];
+};
 
-export default function Pricing() {
+export default function Pricing({ packages = [] }: Props) {
     const { t } = useLocale();
     const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-    const singleFeatures = useMemo(
-        () => [
-            { label: t('pricing.feature.one_job'), included: true },
-            { label: t('pricing.feature.visibility_30'), included: true },
-            { label: t('pricing.feature.receive_apps'), included: true },
-            { label: t('pricing.feature.applicant_mgmt'), included: true },
-            { label: t('pricing.feature.multiple_jobs'), included: false },
-            { label: t('pricing.feature.advanced_mgmt'), included: false },
-            { label: t('pricing.feature.dedicated_support'), included: false },
-            { label: t('pricing.feature.priority_listing'), included: false },
-        ],
-        [t],
-    );
-
-    const businessFeatures = useMemo(
-        () => [
-            t('pricing.feature.one_job'),
-            t('pricing.feature.visibility_30'),
-            t('pricing.feature.receive_apps'),
-            t('pricing.feature.applicant_mgmt'),
-            t('pricing.feature.multiple_jobs'),
-            t('pricing.feature.advanced_mgmt'),
-            t('pricing.feature.dedicated_support'),
-            t('pricing.feature.priority_listing'),
-        ],
-        [t],
-    );
-
-    const comparisonRows = useMemo(
+    const comparisonPackages = useMemo(
         () =>
-            [
-                { feature: t('pricing.feature.one_job'), single: 'included', business: 'included' },
-                {
-                    feature: t('pricing.feature.visibility_30'),
-                    single: 'included',
-                    business: 'included',
-                },
-                {
-                    feature: t('pricing.feature.receive_apps'),
-                    single: 'included',
-                    business: 'included',
-                },
-                {
-                    feature: t('pricing.feature.applicant_mgmt'),
-                    single: 'included',
-                    business: 'included',
-                },
-                {
-                    feature: t('pricing.feature.multiple_jobs'),
-                    single: 'excluded',
-                    business: 'included',
-                },
-                {
-                    feature: t('pricing.feature.advanced_mgmt'),
-                    single: 'excluded',
-                    business: 'included',
-                },
-                {
-                    feature: t('pricing.feature.dedicated_support'),
-                    single: 'excluded',
-                    business: 'included',
-                },
-                {
-                    feature: t('pricing.feature.priority_listing'),
-                    single: 'excluded',
-                    business: 'included',
-                },
-                {
-                    feature: t('pricing.feature.analytics'),
-                    single: 'excluded',
-                    business: 'included',
-                },
-                {
-                    feature: t('pricing.feature.extended_visibility'),
-                    single: 'excluded',
-                    business: 'included',
-                },
-            ] satisfies Array<{
-                feature: string;
-                single: FeatureState;
-                business: FeatureState;
-            }>,
-        [t],
+            packages.filter(
+                (item) =>
+                    item.is_featured ||
+                    item.features.some((feature) => !feature.included),
+            ).slice(0, 2),
+        [packages],
     );
+
+    const comparisonRows = useMemo(() => {
+        if (comparisonPackages.length < 2) {
+            return [];
+        }
+
+        const [left, right] = comparisonPackages;
+        const keys = [
+            ...new Set(
+                [...left.features, ...right.features].map(
+                    (feature) => feature.key,
+                ),
+            ),
+        ];
+
+        return keys.map((key) => ({
+            feature: t(key),
+            left:
+                left.features.find((feature) => feature.key === key)
+                    ?.included === true,
+            right:
+                right.features.find((feature) => feature.key === key)
+                    ?.included === true,
+        }));
+    }, [comparisonPackages, t]);
 
     const faqs = useMemo(
         () => [
@@ -151,123 +106,11 @@ export default function Pricing() {
                 </div>
             </section>
 
-            <section className="bg-[#f8faff] px-4 py-16 sm:px-6 lg:px-8">
-                <div className="mx-auto max-w-[1024px]">
-                    <div className="grid gap-6 md:grid-cols-2">
-                        {/* Single Posting */}
-                        <article className="flex flex-col rounded-2xl border border-[#e2e8f0] bg-white p-7 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
-                            <h2 className="text-xl font-extrabold leading-7 text-[#0f172a]">
-                                {t('pricing.single.name')}
-                            </h2>
-                            <p className="mt-1 text-sm text-[#64748b]">
-                                {t('pricing.single.description')}
-                            </p>
+            <section className="bg-white px-4 py-16 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-[1280px]">
+                    <PricingPackageCards packages={packages} />
 
-                            <div className="mt-5 flex items-end gap-2">
-                                <span
-                                    dir="ltr"
-                                    className="text-5xl font-extrabold leading-none text-[#0057c8]"
-                                >
-                                    299
-                                </span>
-                                <span className="pb-1 text-sm text-[#64748b]">
-                                    {t('pricing.currency')}
-                                </span>
-                            </div>
-
-                            <ul className="mt-6 flex-1 space-y-3">
-                                {singleFeatures.map((feature) => (
-                                    <li
-                                        key={feature.label}
-                                        className={`flex items-center gap-2.5 text-sm text-[#374151] ${feature.included ? '' : 'opacity-40'
-                                            }`}
-                                    >
-                                        <span
-                                            className={`inline-flex size-5 shrink-0 items-center justify-center rounded-full ${feature.included
-                                                    ? 'bg-[#dcfce7]'
-                                                    : 'bg-[#f1f5f9]'
-                                                }`}
-                                        >
-                                            <img
-                                                src={
-                                                    feature.included
-                                                        ? '/images/pricing/check-green.svg'
-                                                        : '/images/pricing/x-muted.svg'
-                                                }
-                                                alt=""
-                                                className="size-3"
-                                                width={12}
-                                                height={12}
-                                            />
-                                        </span>
-                                        {feature.label}
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <Link
-                                href={registerRole.url('employer')}
-                                className="mt-7 inline-flex h-12 items-center justify-center rounded-xl bg-[#0057c8] text-base font-medium tracking-[-0.18px] text-white transition hover:brightness-110"
-                            >
-                                {t('pricing.buy_now')}
-                            </Link>
-                        </article>
-
-                        {/* Business Package */}
-                        <article className="relative flex flex-col rounded-2xl border border-transparent bg-[#3977a6] p-7 shadow-[0px_16px_20px_rgba(30,58,138,0.3)]">
-                            <span className="absolute -top-3 end-6 rounded-full bg-[#e57124] px-3 py-1 text-xs font-bold text-white shadow-sm">
-                                {t('pricing.most_popular')}
-                            </span>
-
-                            <h2 className="text-xl font-extrabold leading-7 text-white">
-                                {t('pricing.business.name')}
-                            </h2>
-                            <p className="mt-1 text-sm text-[#bfdbfe]">
-                                {t('pricing.business.description')}
-                            </p>
-
-                            <div className="mt-5 flex items-end gap-2">
-                                <span
-                                    dir="ltr"
-                                    className="text-5xl font-extrabold leading-none text-white"
-                                >
-                                    999
-                                </span>
-                                <span className="pb-1 text-sm text-[#bfdbfe]">
-                                    {t('pricing.currency')}
-                                </span>
-                            </div>
-
-                            <ul className="mt-6 flex-1 space-y-3">
-                                {businessFeatures.map((feature) => (
-                                    <li
-                                        key={feature}
-                                        className="flex items-center gap-2.5 text-sm text-white"
-                                    >
-                                        <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-white/20">
-                                            <img
-                                                src="/images/pricing/check-light.svg"
-                                                alt=""
-                                                className="size-3"
-                                                width={12}
-                                                height={12}
-                                            />
-                                        </span>
-                                        {feature}
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <Link
-                                href={registerRole.url('employer')}
-                                className="mt-7 inline-flex h-12 items-center justify-center rounded-xl bg-white text-base font-medium tracking-[-0.18px] text-[#0057c8] transition hover:bg-[#f8faff]"
-                            >
-                                {t('pricing.buy_now')}
-                            </Link>
-                        </article>
-                    </div>
-
-                    {/* Comparison */}
+                    {comparisonRows.length > 0 && comparisonPackages.length === 2 && (
                     <div className="mt-16">
                         <h2 className="text-center text-3xl font-bold tracking-[-0.2px] text-[#050315]">
                             {t('pricing.comparison_title')}
@@ -281,10 +124,18 @@ export default function Pricing() {
                                             {t('pricing.features')}
                                         </th>
                                         <th className="p-4 text-center font-semibold text-[#0057c8]">
-                                            {t('pricing.single.name')}
+                                            {translatePricingValue(
+                                                t,
+                                                comparisonPackages[0].name,
+                                                `pricing.packages.${comparisonPackages[0].slug}.name`,
+                                            )}
                                         </th>
                                         <th className="bg-[#fff7ed] p-4 text-center font-semibold text-[#e57124]">
-                                            {t('pricing.business.name')}
+                                            {translatePricingValue(
+                                                t,
+                                                comparisonPackages[1].name,
+                                                `pricing.packages.${comparisonPackages[1].slug}.name`,
+                                            )}
                                         </th>
                                     </tr>
                                 </thead>
@@ -297,57 +148,60 @@ export default function Pricing() {
                                             <td className="p-4 text-start text-[#4a5565]">
                                                 {row.feature}
                                             </td>
-                                            <td className="p-4">
-                                                <div className="flex justify-center">
-                                                    <span
-                                                        className={`inline-flex size-6 items-center justify-center rounded-full ${row.single === 'included'
-                                                                ? 'bg-[#dcfce7]'
-                                                                : 'bg-[#f1f5f9]'
-                                                            }`}
+                                            {[row.left, row.right].map(
+                                                (included, columnIndex) => (
+                                                    <td
+                                                        key={`${row.feature}-${columnIndex}`}
+                                                        className={
+                                                            columnIndex === 1
+                                                                ? 'bg-[#fffbf7] p-4'
+                                                                : 'p-4'
+                                                        }
                                                     >
-                                                        <img
-                                                            src={
-                                                                row.single === 'included'
-                                                                    ? '/images/pricing/check-table.svg'
-                                                                    : '/images/pricing/x-table.svg'
-                                                            }
-                                                            alt=""
-                                                            className={
-                                                                row.single === 'included'
-                                                                    ? 'size-3.5'
-                                                                    : 'size-3'
-                                                            }
-                                                            width={
-                                                                row.single === 'included' ? 14 : 12
-                                                            }
-                                                            height={
-                                                                row.single === 'included' ? 14 : 12
-                                                            }
-                                                        />
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="bg-[#fffbf7] p-4">
-                                                <div className="flex justify-center">
-                                                    <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#dcfce7]">
-                                                        <img
-                                                            src="/images/pricing/check-table.svg"
-                                                            alt=""
-                                                            className="size-3.5"
-                                                            width={14}
-                                                            height={14}
-                                                        />
-                                                    </span>
-                                                </div>
-                                            </td>
+                                                        <div className="flex justify-center">
+                                                            <span
+                                                                className={`inline-flex size-6 items-center justify-center rounded-full ${
+                                                                    included
+                                                                        ? 'bg-[#dcfce7]'
+                                                                        : 'bg-[#f1f5f9]'
+                                                                }`}
+                                                            >
+                                                                <img
+                                                                    src={
+                                                                        included
+                                                                            ? '/images/pricing/check-table.svg'
+                                                                            : '/images/pricing/x-table.svg'
+                                                                    }
+                                                                    alt=""
+                                                                    className={
+                                                                        included
+                                                                            ? 'size-3.5'
+                                                                            : 'size-3'
+                                                                    }
+                                                                    width={
+                                                                        included
+                                                                            ? 14
+                                                                            : 12
+                                                                    }
+                                                                    height={
+                                                                        included
+                                                                            ? 14
+                                                                            : 12
+                                                                    }
+                                                                />
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                ),
+                                            )}
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
                     </div>
+                    )}
 
-                    {/* FAQ */}
                     <div id="faq" className="mt-16 scroll-mt-28">
                         <h2 className="text-center text-3xl font-bold tracking-[-0.2px] text-[#050315]">
                             {t('pricing.faq_title')}
@@ -376,8 +230,7 @@ export default function Pricing() {
                                             <img
                                                 src="/images/pricing/chevron-down.svg"
                                                 alt=""
-                                                className={`size-5 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''
-                                                    }`}
+                                                className={`size-5 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                                                 width={20}
                                                 height={20}
                                             />
@@ -395,7 +248,6 @@ export default function Pricing() {
                         </div>
                     </div>
 
-                    {/* CTA */}
                     <div className="mt-16 rounded-3xl bg-[#3977a6] p-10 text-center">
                         <h2 className="text-3xl font-extrabold text-white">
                             {t('pricing.cta_title')}

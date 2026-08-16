@@ -5,7 +5,7 @@ import { useLocale } from '@/hooks/use-locale';
 import { about, contact, home, jobs, pricing } from '@/routes';
 
 const socialLinks = [
-    { label: 'Instagram', src: '/images/home/instagram.svg', href: '#' },
+    { label: 'LinkedIn', src: '/images/home/linkedin.svg', href: '#' },
     { label: 'X', src: '/images/home/x.svg', href: '#' },
     { label: 'Facebook', src: '/images/home/facebook.svg', href: '#' },
 ];

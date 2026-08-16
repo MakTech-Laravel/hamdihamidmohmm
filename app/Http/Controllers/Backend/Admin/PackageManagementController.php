@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Backend\Admin;
 
-use App\Enums\EmployerPackage;
 use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
@@ -22,7 +21,7 @@ class PackageManagementController extends Controller
     {
         abort_unless($request->user()?->canManagePackages(), 403);
 
-        $packages = Package::query()->orderBy('price')->get();
+        $packages = Package::query()->orderBy('sort_order')->orderBy('price')->get();
         $subscriberCounts = User::query()
             ->toBase()
             ->where('role', UserRole::Employer->value)
@@ -43,12 +42,18 @@ class PackageManagementController extends Controller
                 'id' => $package->id,
                 'slug' => $package->slug,
                 'name' => $package->name,
+                'description' => Package::localizedLabel($package->description),
                 'price' => $package->price,
                 'currency' => $package->currency,
                 'billing_period' => $package->billing_period,
                 'job_credits' => $package->job_credits,
                 'featured_credits' => $package->featured_credits,
+                'features' => Package::localizedList($package->features),
+                'excluded_features' => Package::localizedList($package->excluded_features),
                 'is_active' => $package->is_active,
+                'is_featured' => $package->is_featured,
+                'is_public' => $package->is_public,
+                'sort_order' => $package->sort_order,
                 'subscribers' => $subscribers,
                 'revenue' => (int) ($revenueByPackage[$package->id] ?? 0),
             ];
@@ -60,7 +65,15 @@ class PackageManagementController extends Controller
                 'total' => $packages->count(),
                 'subscribers' => $subscriberCounts->sum(),
                 'monthly_sales' => (int) $revenueByPackage->sum(),
-                'most_popular' => $rows->sortByDesc('subscribers')->first()['name'] ?? '—',
+                'most_popular' => $packages
+                    ->first(fn (Package $package): bool => $package->is_featured && $package->is_active)
+                    ?->name
+                    ?? $packages
+                        ->filter(fn (Package $package): bool => $package->is_active)
+                        ->sortByDesc(fn (Package $package): int => (int) ($subscriberCounts[$package->slug] ?? 0))
+                        ->first()
+                        ?->name
+                    ?? '—',
             ],
         ]);
     }
@@ -68,9 +81,11 @@ class PackageManagementController extends Controller
     public function store(StorePackageRequest $request): RedirectResponse
     {
         Package::query()->create([
-            ...$request->safe()->except('is_active'),
-            'currency' => 'AED',
+            ...$request->safe()->except(['is_active', 'is_featured', 'is_public']),
+            'currency' => $request->string('currency')->toString() ?: 'SAR',
             'is_active' => $request->boolean('is_active', true),
+            'is_featured' => $request->boolean('is_featured'),
+            'is_public' => $request->boolean('is_public', true),
         ]);
 
         return back()->with('success', 'Package created successfully.');
@@ -79,8 +94,10 @@ class PackageManagementController extends Controller
     public function update(UpdatePackageRequest $request, Package $package): RedirectResponse
     {
         $package->update([
-            ...$request->safe()->except('is_active'),
+            ...$request->safe()->except(['is_active', 'is_featured', 'is_public']),
             'is_active' => $request->boolean('is_active', $package->is_active),
+            'is_featured' => $request->boolean('is_featured', $package->is_featured),
+            'is_public' => $request->boolean('is_public', $package->is_public),
         ]);
 
         return back()->with('success', 'Package updated successfully.');
@@ -90,14 +107,14 @@ class PackageManagementController extends Controller
     {
         abort_unless($request->user()?->canManagePackages(), 403);
 
-        if (EmployerPackage::tryFrom($package->slug) instanceof EmployerPackage) {
+        if (! $request->boolean('permanent')) {
             $package->update(['is_active' => false]);
 
-            return back()->with('success', 'System package archived.');
+            return back()->with('success', 'Package archived.');
         }
 
         $package->delete();
 
-        return back()->with('success', 'Package deleted.');
+        return back()->with('success', 'Package permanently deleted.');
     }
 }

@@ -59,13 +59,13 @@ export function FrontendHeader() {
                                     key={item.href}
                                     href={item.href}
                                     className={`relative rounded-lg px-4 py-2 text-sm font-medium transition ${isActive
-                                        ? 'text-[#0057c8]'
-                                        : 'text-[#4a5565] hover:text-[#0057c8]'
+                                        ? 'text-[#1c398e]'
+                                        : 'text-[#4a5565] hover:text-[#1c398e]'
                                         }`}
                                 >
                                     {item.label}
                                     {isActive && (
-                                        <span className="absolute inset-x-2 -bottom-0.5 h-[2px] rounded-sm bg-[#0057c8]" />
+                                        <span className="absolute inset-x-2 -bottom-0.5 h-[2px] rounded-sm bg-[#1e3a8a]" />
                                     )}
                                 </Link>
                             );

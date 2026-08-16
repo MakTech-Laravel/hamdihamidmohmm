@@ -172,7 +172,7 @@ export default function JobShow({
                 </div>
             </section>
 
-            <section className="bg-[#f8faff] px-4 py-8 sm:px-6 lg:px-8">
+            <section className="bg-white px-4 py-8 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px]">
                     <div className="grid gap-6 lg:grid-cols-[1fr_390px]">
                         <div>
@@ -196,7 +196,7 @@ export default function JobShow({
                                         className="flex size-16 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white"
                                         style={{
                                             backgroundImage:
-                                                'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
+                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
                                         }}
                                     >
                                         {job.initials || 'JP'}
@@ -418,7 +418,7 @@ export default function JobShow({
                                         className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
                                         style={{
                                             backgroundImage:
-                                                'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
+                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
                                         }}
                                     >
                                         {job.initials || 'JP'}
@@ -481,7 +481,7 @@ export default function JobShow({
                                                 className="flex size-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
                                                 style={{
                                                     backgroundImage:
-                                                        'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
+                                                        'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
                                                 }}
                                             >
                                                 {item.initials}

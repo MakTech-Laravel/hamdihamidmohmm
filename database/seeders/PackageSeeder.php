@@ -13,26 +13,92 @@ class PackageSeeder extends Seeder
      */
     public function run(): void
     {
-        $packages = [
-            EmployerPackage::Starter->value => ['price' => 0, 'job_credits' => 3, 'featured_credits' => 0],
-            EmployerPackage::Professional->value => ['price' => 299, 'job_credits' => 15, 'featured_credits' => 2],
-            EmployerPackage::Premium->value => ['price' => 799, 'job_credits' => 40, 'featured_credits' => 8],
-            EmployerPackage::Enterprise->value => ['price' => 1499, 'job_credits' => 999, 'featured_credits' => 30],
-        ];
+        Package::query()->where('slug', EmployerPackage::Starter->value)->delete();
 
-        foreach ($packages as $slug => $meta) {
+        foreach ($this->packages() as $slug => $attributes) {
             Package::query()->updateOrCreate(
                 ['slug' => $slug],
-                [
-                    'name' => EmployerPackage::from($slug)->label(),
-                    'price' => $meta['price'],
-                    'currency' => 'AED',
-                    'billing_period' => 'month',
-                    'job_credits' => $meta['job_credits'],
-                    'featured_credits' => $meta['featured_credits'],
-                    'is_active' => true,
-                ],
+                $attributes,
             );
         }
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function packages(): array
+    {
+        return [
+            EmployerPackage::Professional->value => [
+                'name' => EmployerPackage::Professional->label(),
+                'description' => 'pricing.packages.professional.description',
+                'price' => 299,
+                'currency' => 'SAR',
+                'billing_period' => 'month',
+                'job_credits' => 1,
+                'featured_credits' => 0,
+                'features' => [
+                    'pricing.feature.one_job',
+                    'pricing.feature.visibility_30',
+                    'pricing.feature.receive_apps',
+                    'pricing.feature.applicant_mgmt',
+                ],
+                'excluded_features' => [
+                    'pricing.feature.multiple_jobs',
+                    'pricing.feature.advanced_mgmt',
+                    'pricing.feature.dedicated_support',
+                    'pricing.feature.priority_listing',
+                ],
+                'is_active' => true,
+                'is_featured' => false,
+                'is_public' => true,
+                'sort_order' => 1,
+            ],
+            EmployerPackage::Premium->value => [
+                'name' => EmployerPackage::Premium->label(),
+                'description' => 'pricing.packages.premium.description',
+                'price' => 999,
+                'currency' => 'SAR',
+                'billing_period' => 'month',
+                'job_credits' => 15,
+                'featured_credits' => 2,
+                'features' => [
+                    'pricing.feature.one_job',
+                    'pricing.feature.visibility_30',
+                    'pricing.feature.receive_apps',
+                    'pricing.feature.applicant_mgmt',
+                    'pricing.feature.multiple_jobs',
+                    'pricing.feature.advanced_mgmt',
+                    'pricing.feature.dedicated_support',
+                    'pricing.feature.priority_listing',
+                ],
+                'excluded_features' => [],
+                'is_active' => true,
+                'is_featured' => true,
+                'is_public' => true,
+                'sort_order' => 2,
+            ],
+            EmployerPackage::Enterprise->value => [
+                'name' => EmployerPackage::Enterprise->label(),
+                'description' => 'pricing.packages.enterprise.description',
+                'price' => 1199,
+                'currency' => 'SAR',
+                'billing_period' => 'month',
+                'job_credits' => 30,
+                'featured_credits' => 10,
+                'features' => [
+                    'pricing.feature.thirty_jobs',
+                    'pricing.feature.full_analytics',
+                    'pricing.feature.account_manager',
+                    'pricing.feature.featured_credits',
+                    'pricing.feature.validity_60',
+                ],
+                'excluded_features' => [],
+                'is_active' => true,
+                'is_featured' => false,
+                'is_public' => true,
+                'sort_order' => 3,
+            ],
+        ];
     }
 }

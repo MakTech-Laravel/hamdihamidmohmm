@@ -157,7 +157,7 @@ class AdminPortalDemoSeeder extends Seeder
             'paid_at' => now()->subDays(3),
         ]);
         $this->payment($activeEmployers[1], $premium, [
-            'amount' => 799,
+            'amount' => 999,
             'method' => 'bank_transfer',
             'status' => PaymentStatus::Pending,
             'reference' => 'PAY-DEMO-002',
@@ -284,7 +284,7 @@ class AdminPortalDemoSeeder extends Seeder
     {
         $seeker->loadMissing('jobSeekerProfile');
         $filename = JobSeekerResume::filename($seeker);
-        $path = 'resumes/' . $seeker->id . '/' . $filename;
+        $path = 'resumes/'.$seeker->id.'/'.$filename;
 
         Storage::disk('local')->put($path, JobSeekerResume::pdf($seeker));
 
@@ -352,7 +352,7 @@ class AdminPortalDemoSeeder extends Seeder
         $alreadySent = $admin->notifications()
             ->where('type', PortalNotification::class)
             ->get()
-            ->contains(fn($notification): bool => ($notification->data['title'] ?? '') === $title);
+            ->contains(fn ($notification): bool => ($notification->data['title'] ?? '') === $title);
 
         if ($alreadySent) {
             return;

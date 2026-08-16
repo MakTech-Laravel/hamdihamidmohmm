@@ -1,4 +1,14 @@
 import { Head, Link } from '@inertiajs/react';
+import {
+    Building2,
+    Lock,
+    Rocket,
+    Star,
+    Target,
+    Trophy,
+    UserRound,
+    Zap,
+} from 'lucide-react';
 import { useMemo } from 'react';
 
 import { useLocale } from '@/hooks/use-locale';
@@ -11,20 +21,20 @@ export default function About() {
 
     const heroHighlights = useMemo(
         () => [
-            { icon: '🔒', label: t('about.highlight.secure') },
-            { icon: '⚡', label: t('about.highlight.easy') },
-            { icon: '🏆', label: t('about.highlight.professional') },
-            { icon: '🚀', label: t('about.highlight.fast') },
+            { icon: Lock, label: t('about.highlight.secure'), color: 'text-[#0057c8]' },
+            { icon: Zap, label: t('about.highlight.easy'), color: 'text-[#e57124]' },
+            { icon: Trophy, label: t('about.highlight.professional'), color: 'text-[#16a34a]' },
+            { icon: Rocket, label: t('about.highlight.fast'), color: 'text-[#7c3aed]' },
         ],
         [t],
     );
 
     const platformHighlights = useMemo(
         () => [
-            { icon: '🔒', label: t('about.highlight.secure'), bg: 'bg-[#eff6ff]' },
-            { icon: '⚡', label: t('about.highlight.easy'), bg: 'bg-[#fff7ed]' },
-            { icon: '🏆', label: t('about.highlight.professional'), bg: 'bg-[#f0fdf4]' },
-            { icon: '🚀', label: t('about.highlight.fast'), bg: 'bg-[#fdf4ff]' },
+            { icon: Lock, label: t('about.highlight.secure'), bg: 'bg-[#eff6ff]', color: 'text-[#0057c8]' },
+            { icon: Zap, label: t('about.highlight.easy'), bg: 'bg-[#fff7ed]', color: 'text-[#e57124]' },
+            { icon: Trophy, label: t('about.highlight.professional'), bg: 'bg-[#f0fdf4]', color: 'text-[#16a34a]' },
+            { icon: Rocket, label: t('about.highlight.fast'), bg: 'bg-[#fdf4ff]', color: 'text-[#7c3aed]' },
         ],
         [t],
     );
@@ -100,23 +110,27 @@ export default function About() {
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            {heroHighlights.map((item) => (
-                                <div
-                                    key={item.label}
-                                    className="flex items-center gap-3 rounded-2xl bg-white/60 p-5"
-                                >
-                                    <span className="text-2xl leading-8">{item.icon}</span>
-                                    <span className="text-sm font-semibold text-[#050315]">
-                                        {item.label}
-                                    </span>
-                                </div>
-                            ))}
+                            {heroHighlights.map((item) => {
+                                const Icon = item.icon;
+
+                                return (
+                                    <div
+                                        key={item.label}
+                                        className="flex items-center gap-3 rounded-2xl bg-white/60 p-5"
+                                    >
+                                        <Icon className={`size-6 shrink-0 ${item.color}`} />
+                                        <span className="text-sm font-semibold text-[#050315]">
+                                            {item.label}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section className="bg-[#f8faff] px-4 py-16 sm:px-6 lg:px-8">
+            <section className="bg-white px-4 py-16 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px] space-y-20">
                     <div className="grid items-center gap-12 lg:grid-cols-2">
                         <div>
@@ -127,17 +141,21 @@ export default function About() {
                                 {t('about.platform_description')}
                             </p>
                             <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                                {platformHighlights.map((item) => (
-                                    <div
-                                        key={item.label}
-                                        className={`flex items-center gap-2.5 rounded-xl p-3 ${item.bg}`}
-                                    >
-                                        <span className="text-xl leading-7">{item.icon}</span>
-                                        <span className="text-sm font-semibold tracking-[-0.16px] text-[#050315]">
-                                            {item.label}
-                                        </span>
-                                    </div>
-                                ))}
+                                {platformHighlights.map((item) => {
+                                    const Icon = item.icon;
+
+                                    return (
+                                        <div
+                                            key={item.label}
+                                            className={`flex items-center gap-2.5 rounded-xl p-3 ${item.bg}`}
+                                        >
+                                            <Icon className={`size-5 shrink-0 ${item.color}`} />
+                                            <span className="text-sm font-semibold tracking-[-0.16px] text-[#050315]">
+                                                {item.label}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
@@ -168,8 +186,8 @@ export default function About() {
 
                     <div className="grid gap-6 md:grid-cols-2">
                         <article className="rounded-2xl border border-[#e2e8f0] bg-white p-8 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
-                            <div className="flex size-14 items-center justify-center rounded-2xl bg-[#eff6ff] text-2xl">
-                                🎯
+                            <div className="flex size-14 items-center justify-center rounded-2xl bg-[#eff6ff]">
+                                <Target className="size-6 text-[#0057c8]" />
                             </div>
                             <h3 className="mt-5 text-xl font-bold text-[#050315]">
                                 {t('about.mission_title')}
@@ -179,8 +197,8 @@ export default function About() {
                             </p>
                         </article>
                         <article className="rounded-2xl border border-[#e2e8f0] bg-white p-8 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
-                            <div className="flex size-14 items-center justify-center rounded-2xl bg-[#fff7ed] text-2xl">
-                                🌟
+                            <div className="flex size-14 items-center justify-center rounded-2xl bg-[#fff7ed]">
+                                <Star className="size-6 text-[#e57124]" />
                             </div>
                             <h3 className="mt-5 text-xl font-bold text-[#050315]">
                                 {t('about.vision_title')}
@@ -198,8 +216,8 @@ export default function About() {
                         <div className="mt-10 grid gap-6 md:grid-cols-2">
                             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-7 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex size-10 items-center justify-center rounded-xl bg-[#eff6ff] text-lg">
-                                        👤
+                                    <div className="flex size-10 items-center justify-center rounded-xl bg-[#eff6ff]">
+                                        <UserRound className="size-5 text-[#0057c8]" />
                                     </div>
                                     <h3 className="text-xl font-bold text-[#050315]">
                                         {t('about.seeker_title')}
@@ -228,8 +246,8 @@ export default function About() {
 
                             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-7 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex size-10 items-center justify-center rounded-xl bg-[#fff7ed] text-lg">
-                                        🏢
+                                    <div className="flex size-10 items-center justify-center rounded-xl bg-[#fff7ed]">
+                                        <Building2 className="size-5 text-[#e57124]" />
                                     </div>
                                     <h3 className="text-xl font-bold text-[#050315]">
                                         {t('about.employer_title')}
@@ -265,8 +283,8 @@ export default function About() {
                         <div className="mt-10 grid gap-8 lg:grid-cols-2">
                             <div>
                                 <div className="flex items-center gap-3">
-                                    <div className="flex size-10 items-center justify-center rounded-xl bg-[#eff6ff] text-lg">
-                                        👤
+                                    <div className="flex size-10 items-center justify-center rounded-xl bg-[#eff6ff]">
+                                        <UserRound className="size-5 text-[#0057c8]" />
                                     </div>
                                     <h3 className="text-xl font-semibold text-[#050315]">
                                         {t('about.seeker_journey')}
@@ -289,8 +307,8 @@ export default function About() {
 
                             <div>
                                 <div className="flex items-center gap-3">
-                                    <div className="flex size-10 items-center justify-center rounded-xl bg-[#fff7ed] text-lg">
-                                        🏢
+                                    <div className="flex size-10 items-center justify-center rounded-xl bg-[#fff7ed]">
+                                        <Building2 className="size-5 text-[#e57124]" />
                                     </div>
                                     <h3 className="text-xl font-semibold text-[#050315]">
                                         {t('about.employer_journey')}
