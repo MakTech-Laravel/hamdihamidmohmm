@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class JobPost extends Model
@@ -71,6 +72,14 @@ class JobPost extends Model
     public function applications(): HasMany
     {
         return $this->hasMany(JobApplication::class);
+    }
+
+    /**
+     * @return HasOne<JobApplication, $this>
+     */
+    public function latestApplication(): HasOne
+    {
+        return $this->hasOne(JobApplication::class)->latestOfMany();
     }
 
     /**

@@ -27,7 +27,7 @@ export function FrontendFooter() {
     ];
 
     return (
-        <footer className="bg-[#ffebf5] font-['Plus_Jakarta_Sans','Noto_Sans_Arabic',sans-serif] text-[#050315]">
+        <footer className="bg-[#d1f6ff] font-['Plus_Jakarta_Sans','Noto_Sans_Arabic',sans-serif] text-[#050315]">
             <div className="mx-auto max-w-[1344px] px-4 py-14 sm:px-6 lg:px-8">
                 <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
                     <div>
@@ -54,7 +54,7 @@ export function FrontendFooter() {
                                 <li key={link.href + link.label}>
                                     <Link
                                         href={link.href}
-                                        className="text-sm text-[rgba(5,3,21,0.9)] transition hover:text-[#323981]"
+                                        className="text-sm text-[rgba(5,3,21,0.9)] transition hover:text-[#0057c8]"
                                     >
                                         {link.label}
                                     </Link>
@@ -72,7 +72,7 @@ export function FrontendFooter() {
                                 <li key={link.href}>
                                     <Link
                                         href={link.href}
-                                        className="text-sm text-[rgba(5,3,21,0.9)] transition hover:text-[#323981]"
+                                        className="text-sm text-[rgba(5,3,21,0.9)] transition hover:text-[#0057c8]"
                                     >
                                         {link.label}
                                     </Link>

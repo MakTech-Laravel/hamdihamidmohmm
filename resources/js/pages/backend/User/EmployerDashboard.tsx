@@ -66,10 +66,10 @@ export default function EmployerDashboard({
 
             <div className="space-y-6 px-4 py-6 sm:px-6">
                 <div
-                    className="rounded-2xl px-8 pt-8 pb-7 text-white shadow-[0px_4px_10px_rgba(50,57,129,0.2)]"
+                    className="rounded-2xl px-8 pt-8 pb-7 text-white shadow-[0px_4px_10px_rgba(0,87,200,0.2)]"
                     style={{
                         backgroundImage:
-                            'linear-gradient(172deg, rgb(50, 57, 129) 0%, rgb(57, 119, 166) 50%, rgb(229, 113, 36) 100%)',
+                            'linear-gradient(172deg, rgb(0, 87, 200) 0%, rgb(57, 119, 166) 50%, rgb(229, 113, 36) 100%)',
                     }}
                 >
                     <h1 className="text-2xl font-bold">
@@ -208,7 +208,7 @@ export default function EmployerDashboard({
                                 className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f1f5f9] pb-3 last:border-0 last:pb-0"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="flex size-10 items-center justify-center rounded-full bg-[#eef2ff] text-xs font-bold text-[#323981]">
+                                    <div className="flex size-10 items-center justify-center rounded-full bg-[#eef2ff] text-xs font-bold text-[#0057c8]">
                                         {getInitials(application.name || 'A')}
                                     </div>
                                     <div>
@@ -221,7 +221,7 @@ export default function EmployerDashboard({
                                         </p>
                                     </div>
                                 </div>
-                                <span className="rounded-full bg-[#f8faff] px-2.5 py-1 text-xs font-semibold text-[#323981]">
+                                <span className="rounded-full bg-[#f8faff] px-2.5 py-1 text-xs font-semibold text-[#0057c8]">
                                     {application.status}
                                 </span>
                             </div>

@@ -25,12 +25,12 @@ export function FrontendHeader() {
 
     return (
         <header className="sticky top-0 z-50 font-['Plus_Jakarta_Sans','Noto_Sans_Arabic',sans-serif]">
-            <div className="bg-[#323981]">
+            <div className="bg-[#0057c8]">
                 <div className="mx-auto flex max-w-[1344px] items-center justify-end gap-1 px-4 py-1 sm:px-6 lg:px-8">
                     <LanguageSwitcher variant="header" className="shrink-0" />
                     <Link
                         href={`${pricing.url()}#faq`}
-                        className="rounded-lg px-4 py-2 text-sm font-medium text-[#ffebf5] transition hover:bg-white/10"
+                        className="rounded-lg px-4 py-2 text-sm font-medium text-[#d1f6ff] transition hover:bg-white/10"
                     >
                         {t('nav.faq')}
                     </Link>
@@ -59,13 +59,13 @@ export function FrontendHeader() {
                                     key={item.href}
                                     href={item.href}
                                     className={`relative rounded-lg px-4 py-2 text-sm font-medium transition ${isActive
-                                        ? 'text-[#1c398e]'
-                                        : 'text-[#4a5565] hover:text-[#1c398e]'
+                                        ? 'text-[#0057c8]'
+                                        : 'text-[#4a5565] hover:text-[#0057c8]'
                                         }`}
                                 >
                                     {item.label}
                                     {isActive && (
-                                        <span className="absolute inset-x-2 -bottom-0.5 h-[2px] rounded-sm bg-[#1e3a8a]" />
+                                        <span className="absolute inset-x-2 -bottom-0.5 h-[2px] rounded-sm bg-[#0057c8]" />
                                     )}
                                 </Link>
                             );
@@ -76,7 +76,7 @@ export function FrontendHeader() {
                         {auth.user ? (
                             <Link
                                 href="/dashboard"
-                                className="rounded-lg bg-[#323981] px-4 py-2 text-base font-medium tracking-[-0.18px] text-[#ffebf5] transition hover:brightness-110"
+                                className="rounded-lg bg-[#0057c8] px-4 py-2 text-base font-medium tracking-[-0.18px] text-[#d1f6ff] transition hover:brightness-110"
                             >
                                 {t('nav.dashboard')}
                             </Link>
@@ -84,13 +84,13 @@ export function FrontendHeader() {
                             <>
                                 <Link
                                     href={register()}
-                                    className="rounded-lg border border-[#323981] px-4 py-2 text-base font-medium tracking-[-0.18px] text-[#323981] transition hover:bg-[#323981]/5"
+                                    className="rounded-lg border border-[#0057c8] px-4 py-2 text-base font-medium tracking-[-0.18px] text-[#0057c8] transition hover:bg-[#0057c8]/5"
                                 >
                                     {t('nav.register')}
                                 </Link>
                                 <Link
                                     href={login()}
-                                    className="rounded-lg bg-[#323981] px-4 py-2 text-base font-medium tracking-[-0.18px] text-[#ffebf5] transition hover:brightness-110"
+                                    className="rounded-lg bg-[#0057c8] px-4 py-2 text-base font-medium tracking-[-0.18px] text-[#d1f6ff] transition hover:brightness-110"
                                 >
                                     {t('nav.login')}
                                 </Link>
@@ -100,7 +100,7 @@ export function FrontendHeader() {
 
                     <button
                         type="button"
-                        className="inline-flex size-10 items-center justify-center rounded-lg text-[#323981] lg:hidden"
+                        className="inline-flex size-10 items-center justify-center rounded-lg text-[#0057c8] lg:hidden"
                         onClick={() => setMobileOpen((open) => !open)}
                         aria-label={t('nav.toggle_menu')}
                     >
@@ -129,13 +129,13 @@ export function FrontendHeader() {
                             <div className="mt-4 flex gap-2">
                                 <Link
                                     href={register()}
-                                    className="flex-1 rounded-lg border border-[#323981] px-4 py-2 text-center text-sm font-medium text-[#323981]"
+                                    className="flex-1 rounded-lg border border-[#0057c8] px-4 py-2 text-center text-sm font-medium text-[#0057c8]"
                                 >
                                     {t('nav.register')}
                                 </Link>
                                 <Link
                                     href={login()}
-                                    className="flex-1 rounded-lg bg-[#323981] px-4 py-2 text-center text-sm font-medium text-white"
+                                    className="flex-1 rounded-lg bg-[#0057c8] px-4 py-2 text-center text-sm font-medium text-white"
                                 >
                                     {t('nav.login')}
                                 </Link>

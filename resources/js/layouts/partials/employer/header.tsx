@@ -33,7 +33,7 @@ export function EmployerHeader({
             <div className="flex items-center gap-2">
                 <Link
                     href="/"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#ffebf5] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#d1f6ff] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white"
                 >
                     <ExternalLink className="size-3.5" />
                     Public Website
@@ -42,7 +42,7 @@ export function EmployerHeader({
                 <button
                     type="button"
                     onClick={() => setLocale(switchLocale)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#ffebf5] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#d1f6ff] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white"
                 >
                     <Globe className="size-3.5" />
                     {localeLabel}

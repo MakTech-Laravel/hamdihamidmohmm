@@ -38,7 +38,7 @@ export default function JobSeekerSettings() {
 
             <div className="space-y-6 p-6">
                 <div>
-                    <h1 className="text-2xl font-extrabold text-[#1e3a8a]">
+                    <h1 className="text-2xl font-extrabold text-[#0057c8]">
                         Account Settings
                     </h1>
                     <p className="mt-1 text-sm text-[#6a7282]">

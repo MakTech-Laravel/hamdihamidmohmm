@@ -110,10 +110,10 @@ export default function Jobs({ jobs, filters }: Props) {
         <FrontendLayout>
             <Head title={`${t('jobs_page.title')} - RR Job Portal`} />
 
-            <section className="bg-[#ffebf5] px-4 py-10 sm:px-6 lg:px-8">
+            <section className="bg-[#d1f6ff] px-4 py-10 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px]">
                     <nav className="flex flex-wrap items-center gap-2 text-sm text-[#6a7282]">
-                        <Link href={home()} className="transition hover:text-[#323981]">
+                        <Link href={home()} className="transition hover:text-[#0057c8]">
                             {t('nav.home')}
                         </Link>
                         <img
@@ -123,7 +123,7 @@ export default function Jobs({ jobs, filters }: Props) {
                             width={16}
                             height={16}
                         />
-                        <span className="font-medium text-[#323981]">{t('nav.jobs')}</span>
+                        <span className="font-medium text-[#0057c8]">{t('nav.jobs')}</span>
                     </nav>
 
                     <h1 className="mt-4 text-3xl font-bold tracking-[-0.3px] text-[#050315] sm:text-[40px] sm:leading-[56px]">
@@ -147,7 +147,7 @@ export default function Jobs({ jobs, filters }: Props) {
                                 value={keyword}
                                 onChange={(event) => setKeyword(event.target.value)}
                                 placeholder={t('jobs_page.search_placeholder')}
-                                className="h-[46px] w-full rounded-xl border border-[#e2e8f0] bg-[#f9fafb] pe-4 ps-9 text-sm text-[#374151] outline-none placeholder:text-[rgba(55,65,81,0.5)] focus:border-[#323981]"
+                                className="h-[46px] w-full rounded-xl border border-[#e2e8f0] bg-[#f9fafb] pe-4 ps-9 text-sm text-[#374151] outline-none placeholder:text-[rgba(55,65,81,0.5)] focus:border-[#0057c8]"
                             />
                         </label>
 
@@ -186,7 +186,7 @@ export default function Jobs({ jobs, filters }: Props) {
 
                         <button
                             type="submit"
-                            className="h-[46px] rounded-xl bg-[#323981] px-6 text-sm font-semibold text-white transition hover:brightness-110"
+                            className="h-[46px] rounded-xl bg-[#0057c8] px-6 text-sm font-semibold text-white transition hover:brightness-110"
                         >
                             {t('jobs_page.search')}
                         </button>
@@ -197,7 +197,7 @@ export default function Jobs({ jobs, filters }: Props) {
             <section className="px-4 py-8 sm:px-6 lg:px-8">
                 <div className="mx-auto flex max-w-[1280px] flex-col gap-6 lg:flex-row lg:items-start">
                     <aside className="w-full shrink-0 lg:w-64">
-                        <div className="rounded-2xl border border-[#ffebf5] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
+                        <div className="rounded-2xl border border-[#d1f6ff] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-base font-bold text-[#101828]">
                                     {t('jobs_page.filters')}
@@ -205,7 +205,7 @@ export default function Jobs({ jobs, filters }: Props) {
                                 <button
                                     type="button"
                                     onClick={clearFilters}
-                                    className="text-sm font-medium text-[#323981] transition hover:underline"
+                                    className="text-sm font-medium text-[#0057c8] transition hover:underline"
                                 >
                                     {t('jobs_page.clear_all')}
                                 </button>
@@ -284,7 +284,7 @@ export default function Jobs({ jobs, filters }: Props) {
                                                 type="checkbox"
                                                 checked={selectedTypes.includes(type)}
                                                 onChange={() => toggleType(type)}
-                                                className="size-4 rounded-[2px] border-[#767676] text-[#323981] accent-[#323981]"
+                                                className="size-4 rounded-[2px] border-[#767676] text-[#0057c8] accent-[#0057c8]"
                                             />
                                             <span>{t(`jobs.${type}`)}</span>
                                         </label>
@@ -337,7 +337,7 @@ export default function Jobs({ jobs, filters }: Props) {
                                             className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
                                             style={{
                                                 backgroundImage:
-                                                    'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                    'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
                                             }}
                                         >
                                             {job.initials}
@@ -375,13 +375,13 @@ export default function Jobs({ jobs, filters }: Props) {
 
                                     <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#f1f5f9] pt-3">
                                         <div className="min-w-0">
-                                            <p className="mt-0.5 truncate text-sm font-semibold text-[#1e3a8a]">
+                                            <p className="mt-0.5 truncate text-sm font-semibold text-[#0057c8]">
                                                 {job.salary}
                                             </p>
                                         </div>
                                         <Link
                                             href={jobShow.url(job.slug)}
-                                            className="shrink-0 rounded-xl bg-[#1e3a8a] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110"
+                                            className="shrink-0 rounded-xl bg-[#0057c8] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110"
                                         >
                                             {t('jobs_page.apply')}
                                         </Link>
@@ -401,7 +401,7 @@ export default function Jobs({ jobs, filters }: Props) {
                                 <button
                                     type="button"
                                     onClick={clearFilters}
-                                    className="mt-5 rounded-xl bg-[#323981] px-5 py-2.5 text-sm font-semibold text-white"
+                                    className="mt-5 rounded-xl bg-[#0057c8] px-5 py-2.5 text-sm font-semibold text-white"
                                 >
                                     {t('jobs_page.clear_all')}
                                 </button>
@@ -416,7 +416,7 @@ export default function Jobs({ jobs, filters }: Props) {
                                         href={link.url ?? ''}
                                         className={`inline-flex min-w-9 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold ${
                                             link.active
-                                                ? 'bg-[#323981] text-white'
+                                                ? 'bg-[#0057c8] text-white'
                                                 : 'bg-white text-[#364153] hover:bg-[#f1f5f9]'
                                         } ${link.url ? '' : 'pointer-events-none opacity-40'}`}
                                         dangerouslySetInnerHTML={{

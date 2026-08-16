@@ -24,7 +24,7 @@ export default function RegisterForm({
     isEmployer,
 }: RegisterFormProps) {
     const { t } = useLocale();
-    const accent = isEmployer ? '#e57124' : '#323981';
+    const accent = isEmployer ? '#e57124' : '#0057c8';
     const title = isEmployer
         ? t('auth.create_employer_account')
         : t('auth.create_job_seeker_account');
@@ -37,7 +37,7 @@ export default function RegisterForm({
             <Head title={title} />
 
             <div className="mb-4 flex justify-end">
-                <div className="rounded-lg bg-[#323981]">
+                <div className="rounded-lg bg-[#0057c8]">
                     <LanguageSwitcher variant="header" />
                 </div>
             </div>
@@ -45,7 +45,7 @@ export default function RegisterForm({
             <div>
                 <Link
                     href={register()}
-                    className="text-sm font-semibold text-[#323981] hover:underline"
+                    className="text-sm font-semibold text-[#0057c8] hover:underline"
                 >
                     {t('auth.back')}
                 </Link>
@@ -99,7 +99,7 @@ export default function RegisterForm({
                                     required
                                     autoFocus
                                     placeholder={t('auth.full_name_placeholder')}
-                                    className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
+                                    className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#0057c8] focus-visible:ring-[#0057c8]/30"
                                 />
                                 <InputError message={errors.name} />
                             </div>
@@ -119,7 +119,7 @@ export default function RegisterForm({
                                 required
                                 autoComplete="username"
                                 placeholder={t('auth.email_address_placeholder')}
-                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
+                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#0057c8] focus-visible:ring-[#0057c8]/30"
                             />
                             <InputError message={errors.email} />
                         </div>
@@ -137,7 +137,7 @@ export default function RegisterForm({
                                 required
                                 autoComplete="new-password"
                                 placeholder={t('auth.create_password_placeholder')}
-                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
+                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#0057c8] focus-visible:ring-[#0057c8]/30"
                             />
                             <InputError message={errors.password} />
                         </div>
@@ -155,7 +155,7 @@ export default function RegisterForm({
                                 required
                                 autoComplete="new-password"
                                 placeholder={t('auth.confirm_password_placeholder')}
-                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
+                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#0057c8] focus-visible:ring-[#0057c8]/30"
                             />
                             <InputError message={errors.password_confirmation} />
                         </div>
@@ -166,7 +166,7 @@ export default function RegisterForm({
                                 name="terms"
                                 value="1"
                                 required
-                                className="mt-0.5 size-4 shrink-0 rounded-[2px] border-[#767676] text-[#323981] focus:ring-[#323981]"
+                                className="mt-0.5 size-4 shrink-0 rounded-[2px] border-[#767676] text-[#0057c8] focus:ring-[#0057c8]"
                             />
                             <span>{t('auth.terms')}</span>
                         </label>

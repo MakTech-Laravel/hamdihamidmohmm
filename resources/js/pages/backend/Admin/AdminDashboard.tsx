@@ -202,14 +202,14 @@ export default function AdminDashboard({
                     className="flex flex-col gap-6 rounded-2xl p-7 text-white shadow-[0px_4px_10px_rgba(0,87,200,0.2)] lg:flex-row lg:items-center lg:justify-between"
                     style={{
                         backgroundImage:
-                            'linear-gradient(120deg, #0057c8 0%, #3977a6 55%, #e57124 140%)',
+                            'linear-gradient(176deg, rgb(50, 57, 129) 0%, rgb(229, 113, 36) 100%)',
                     }}
                 >
                     <div>
                         <h1 className="text-3xl font-extrabold text-white">
                             Welcome back, {firstName}
                         </h1>
-                        <p className="mt-2 max-w-xl text-sm text-white/80">
+                        <p className="mt-2 max-w-xl text-sm text-[#d1f6ff]">
                             Manage the entire RR Job Portal ecosystem from one
                             centralized workspace.
                         </p>
@@ -236,7 +236,7 @@ export default function AdminDashboard({
                                 <p className="text-xl font-extrabold">
                                     {item.value}
                                 </p>
-                                <p className="text-xs text-[#bfdbfe]">
+                                <p className="text-xs text-[#d1f6ff]">
                                     {item.label}
                                 </p>
                             </div>

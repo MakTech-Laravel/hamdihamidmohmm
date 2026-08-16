@@ -66,7 +66,7 @@ export default function EmployerJobs({ jobs, stats }: Props) {
             <div className="space-y-5 p-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-[#323981]">
+                        <h1 className="text-2xl font-bold text-[#0057c8]">
                             My Jobs
                         </h1>
                         <p className="mt-1 text-sm text-[#475569]">
@@ -87,7 +87,7 @@ export default function EmployerJobs({ jobs, stats }: Props) {
 
                 <div className="grid gap-4 sm:grid-cols-4">
                     {[
-                        ['Total Jobs', stats.total, 'bg-[#eeeffe] text-[#323981]'],
+                        ['Total Jobs', stats.total, 'bg-[#e6f0fb] text-[#0057c8]'],
                         ['Active', stats.active, 'bg-[#dcfce7] text-[#166534]'],
                         ['Pending', stats.pending, 'bg-[#fff7ed] text-[#c2410c]'],
                         ['Expired', stats.expired, 'bg-[#fef2f2] text-[#b91c1c]'],

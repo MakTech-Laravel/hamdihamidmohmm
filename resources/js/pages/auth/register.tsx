@@ -16,7 +16,7 @@ export default function Register() {
             <Head title={t('auth.register')} />
 
             <div className="mb-4 flex justify-end">
-                <div className="rounded-lg bg-[#323981]">
+                <div className="rounded-lg bg-[#0057c8]">
                     <LanguageSwitcher variant="header" />
                 </div>
             </div>
@@ -28,9 +28,9 @@ export default function Register() {
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
                 <Link
                     href={registerRole.url('job-seeker')}
-                    className="group flex flex-col rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:border-[#323981]/40 hover:shadow-md"
+                    className="group flex flex-col rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:border-[#0057c8]/40 hover:shadow-md"
                 >
-                    <div className="flex size-14 items-center justify-center rounded-2xl bg-[#eff6ff] text-[#323981]">
+                    <div className="flex size-14 items-center justify-center rounded-2xl bg-[#eff6ff] text-[#0057c8]">
                         <UserRound className="size-7" strokeWidth={1.75} />
                     </div>
                     <h2 className="mt-4 text-base font-extrabold text-[#050315]">
@@ -39,7 +39,7 @@ export default function Register() {
                     <p className="mt-2 flex-1 text-sm leading-[22.75px] text-[#6a7282]">
                         {t('auth.job_seeker_description')}
                     </p>
-                    <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#323981]">
+                    <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#0057c8]">
                         {t('auth.register_as_job_seeker')}
                         <ArrowRight className="size-4 transition group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
                     </span>
@@ -69,7 +69,7 @@ export default function Register() {
                 {t('auth.already_have_account')}{' '}
                 <TextLink
                     href={login()}
-                    className="font-bold text-[#323981] no-underline hover:underline"
+                    className="font-bold text-[#0057c8] no-underline hover:underline"
                 >
                     {t('auth.login')}
                 </TextLink>

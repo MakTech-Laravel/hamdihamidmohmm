@@ -114,7 +114,7 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
     return (
         <aside
             className={cn(
-                'flex h-full w-[240px] shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-[#ffebf5]',
+                'flex h-full w-[240px] shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-white',
                 className,
             )}
         >
@@ -149,8 +149,8 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
                         const className = cn(
                             'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium tracking-[-0.16px] transition-colors',
                             active
-                                ? 'bg-[rgba(50,57,129,0.1)] text-[#0057c8]'
-                                : 'text-[#3977a6] hover:bg-[rgba(50,57,129,0.06)]',
+                                ? 'bg-[rgba(0,87,200,0.1)] text-[#0057c8]'
+                                : 'text-[#3977a6] hover:bg-[rgba(0,87,200,0.06)]',
                         );
 
                         return (
@@ -175,7 +175,7 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
                 <button
                     type="button"
                     onClick={() => router.post('/logout')}
-                    className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium text-[#3977a6] transition-colors hover:bg-[rgba(50,57,129,0.06)]"
+                    className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium text-[#3977a6] transition-colors hover:bg-[rgba(0,87,200,0.06)]"
                 >
                     <AdminIcon
                         src="/images/admin/nav-logout.svg"

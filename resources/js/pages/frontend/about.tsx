@@ -73,10 +73,10 @@ export default function About() {
         <FrontendLayout>
             <Head title={`${t('about.title')} - RR Job Portal`} />
 
-            <section className="bg-[#ffebf5] px-4 py-12 sm:px-6 lg:px-8">
+            <section className="bg-[#d1f6ff] px-4 py-12 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px]">
                     <nav className="flex flex-wrap items-center gap-2 text-sm">
-                        <Link href={home()} className="text-[#050315] transition hover:text-[#323981]">
+                        <Link href={home()} className="text-[#050315] transition hover:text-[#0057c8]">
                             {t('nav.home')}
                         </Link>
                         <img
@@ -152,7 +152,7 @@ export default function About() {
                                 className="flex size-40 items-center justify-center rounded-full"
                                 style={{
                                     backgroundImage:
-                                        'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                        'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
                                 }}
                             >
                                 <img
@@ -275,10 +275,10 @@ export default function About() {
                                 <div className="mt-6 space-y-3">
                                     {seekerSteps.map((step, index) => (
                                         <div key={step} className="flex items-center gap-4">
-                                            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a] text-sm font-bold text-white">
+                                            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-sm font-bold text-white">
                                                 {index + 1}
                                             </span>
-                                            <span className="h-px flex-1 bg-[#ffebf5]" />
+                                            <span className="h-px flex-1 bg-[#d1f6ff]" />
                                             <span className="rounded-xl border border-[#e2e8f0] bg-white px-4 py-2.5 text-sm font-medium tracking-[-0.16px] text-[#050315]">
                                                 {step}
                                             </span>
@@ -302,7 +302,7 @@ export default function About() {
                                             <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-[#f97316] text-sm font-bold text-white">
                                                 {index + 1}
                                             </span>
-                                            <span className="h-px flex-1 bg-[#ffebf5]" />
+                                            <span className="h-px flex-1 bg-[#d1f6ff]" />
                                             <span className="rounded-xl border border-[#e2e8f0] bg-white px-4 py-2.5 text-sm font-medium tracking-[-0.16px] text-[#050315]">
                                                 {step}
                                             </span>
@@ -320,7 +320,7 @@ export default function About() {
                         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
                             <Link
                                 href={jobs()}
-                                className="inline-flex items-center justify-center rounded-xl bg-[#323981] px-8 py-3.5 text-sm font-bold text-white transition hover:brightness-110"
+                                className="inline-flex items-center justify-center rounded-xl bg-[#0057c8] px-8 py-3.5 text-sm font-bold text-white transition hover:brightness-110"
                             >
                                 {t('about.cta_find_jobs')}
                             </Link>

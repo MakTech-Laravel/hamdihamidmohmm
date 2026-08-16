@@ -30,7 +30,7 @@ export default function JobSeekerApplications({ applications, stats }: Props) {
             <Head title="My Applications" />
 
             <div className="space-y-5 p-6">
-                <h1 className="text-2xl font-extrabold text-[#1e3a8a]">
+                <h1 className="text-2xl font-extrabold text-[#0057c8]">
                     My Applications
                 </h1>
                 <div className="grid gap-4 sm:grid-cols-4">
@@ -44,7 +44,7 @@ export default function JobSeekerApplications({ applications, stats }: Props) {
                             key={label}
                             className="rounded-2xl border bg-white p-4"
                         >
-                            <p className="text-2xl font-bold text-[#1e3a8a]">
+                            <p className="text-2xl font-bold text-[#0057c8]">
                                 {value}
                             </p>
                             <p className="text-sm text-[#6a7282]">{label}</p>

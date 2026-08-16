@@ -107,7 +107,7 @@ export const applicationToneClass: Record<string, string> = {
     interview: 'bg-[#fdf4ff] text-[#7e22ce]',
     shortlisted: 'bg-[#f0fdf4] text-[#15803d]',
     underReview: 'bg-[#fff7ed] text-[#c2410c]',
-    applied: 'bg-[#eeeffe] text-[#323981]',
+    applied: 'bg-[#e6f0fb] text-[#0057c8]',
     rejected: 'bg-[#fef2f2] text-[#b91c1c]',
 };
 
@@ -389,7 +389,7 @@ export const JOB_STATUS_TONE: Record<JobStatus, string> = {
     Active: 'bg-[#dcfce7] text-[#166534]',
     Draft: 'bg-[#f3f4f6] text-[#6b7280]',
     Expired: 'bg-[#fef2f2] text-[#b91c1c]',
-    Closed: 'bg-[#eeeffe] text-[#323981]',
+    Closed: 'bg-[#e6f0fb] text-[#0057c8]',
 };
 
 export type ApplicationStatus =
@@ -479,7 +479,7 @@ export const APPLICATION_STATUS_TONE: Record<ApplicationStatus, string> = {
     Interview: 'bg-[#fdf4ff] text-[#7e22ce]',
     Shortlisted: 'bg-[#f0fdf4] text-[#15803d]',
     'Under Review': 'bg-[#fff7ed] text-[#c2410c]',
-    Applied: 'bg-[#eeeffe] text-[#323981]',
+    Applied: 'bg-[#e6f0fb] text-[#0057c8]',
     Rejected: 'bg-[#fef2f2] text-[#b91c1c]',
 };
 

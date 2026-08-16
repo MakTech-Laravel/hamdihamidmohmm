@@ -44,7 +44,7 @@ export default function EmployerApplications({
             <Head title="Applications" />
 
             <div className="space-y-5 p-6">
-                <h1 className="text-2xl font-bold text-[#323981]">
+                <h1 className="text-2xl font-bold text-[#0057c8]">
                     Applications
                 </h1>
                 <div className="grid gap-4 sm:grid-cols-4">

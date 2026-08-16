@@ -28,7 +28,7 @@ export default function EmployerNotifications({
 
             <div className="space-y-5 p-6">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-[#323981]">
+                    <h1 className="text-2xl font-bold text-[#0057c8]">
                         Notifications
                     </h1>
                     {unread > 0 && (

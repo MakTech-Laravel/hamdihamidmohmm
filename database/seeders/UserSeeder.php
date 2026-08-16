@@ -40,8 +40,5 @@ class UserSeeder extends Seeder
         );
 
         RoleAssigner::assign($employer, UserRole::Employer);
-
-        User::factory(20)->jobSeeker()->create();
-        User::factory(10)->employer()->create();
     }
 }

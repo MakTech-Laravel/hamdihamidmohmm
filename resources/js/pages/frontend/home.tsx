@@ -164,7 +164,7 @@ export default function Home() {
             <Head title="RR Job Portal" />
 
             {/* Hero */}
-            <section className="relative bg-[#ffebf5]">
+            <section className="relative bg-[#d1f6ff]">
                 <div className="mx-auto max-w-[1344px] px-4 pb-20 pt-14 sm:px-6 sm:pt-16 lg:px-8 lg:pb-24 lg:pt-20">
                     <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
                         <div className="animate-fadeInUp">
@@ -186,7 +186,7 @@ export default function Home() {
                             <div className="mt-8 flex flex-wrap gap-3">
                                 <Link
                                     href={jobs()}
-                                    className="inline-flex items-center gap-[7px] rounded-xl bg-[#323981] px-8 py-4 text-base font-medium tracking-[-0.18px] text-white shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] transition hover:brightness-110"
+                                    className="inline-flex items-center gap-[7px] rounded-xl bg-[#0057c8] px-8 py-4 text-base font-medium tracking-[-0.18px] text-white shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] transition hover:brightness-110"
                                 >
                                     {t('hero.find_jobs')}
                                     <img
@@ -221,7 +221,7 @@ export default function Home() {
                                         className="flex size-12 shrink-0 items-center justify-center rounded-xl text-base font-bold text-white"
                                         style={{
                                             backgroundImage:
-                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
                                         }}
                                     >
                                         TC
@@ -252,7 +252,7 @@ export default function Home() {
                                     </p>
                                     <button
                                         type="button"
-                                        className="rounded-lg bg-[#1e3a8a] px-4 py-2 text-xs font-semibold text-white"
+                                        className="rounded-lg bg-[#0057c8] px-4 py-2 text-xs font-semibold text-white"
                                     >
                                         {t('hero.preview.apply')}
                                     </button>
@@ -261,14 +261,14 @@ export default function Home() {
 
                             <div className="absolute start-0 top-[70%] z-10 hidden w-[107px] -translate-x-1/4 rounded-xl border border-[#e2e8f0] bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block rtl:translate-x-1/4">
                                 <p className="text-xs text-[#6a7282]">{t('hero.preview.active_jobs')}</p>
-                                <p dir="ltr" className="text-xl font-extrabold leading-7 text-[#1e3a8a]">
+                                <p dir="ltr" className="text-xl font-extrabold leading-7 text-[#0057c8]">
                                     12,450+
                                 </p>
                             </div>
 
                             <div className="absolute end-0 top-[40%] z-10 hidden w-[99px] translate-x-1/4 rounded-xl border border-[#e2e8f0] bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block rtl:-translate-x-1/4">
                                 <p className="text-xs text-[#6a7282]">{t('hero.preview.companies')}</p>
-                                <p dir="ltr" className="text-xl font-extrabold leading-7 text-[#1e3a8a]">
+                                <p dir="ltr" className="text-xl font-extrabold leading-7 text-[#0057c8]">
                                     3,200+
                                 </p>
                             </div>
@@ -331,7 +331,7 @@ export default function Home() {
 
                     <button
                         type="submit"
-                        className="inline-flex items-center justify-center gap-3 rounded-xl bg-[#323981] px-8 py-3 text-base font-medium tracking-[-0.18px] text-white transition hover:brightness-110 lg:min-w-[180px]"
+                        className="inline-flex items-center justify-center gap-3 rounded-xl bg-[#0057c8] px-8 py-3 text-base font-medium tracking-[-0.18px] text-white transition hover:brightness-110 lg:min-w-[180px]"
                     >
                         <img
                             src="/images/home/search-btn.svg"
@@ -387,9 +387,9 @@ export default function Home() {
             </section>
 
             {/* Stats */}
-            <section className="bg-[#ffebf5] py-20">
+            <section className="bg-[#d1f6ff] py-20">
                 <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
-                    <h2 className="text-center text-3xl font-bold tracking-[-0.3px] text-[#323981] sm:text-[40px] sm:leading-[48px]">
+                    <h2 className="text-center text-3xl font-bold tracking-[-0.3px] text-[#0057c8] sm:text-[40px] sm:leading-[48px]">
                         {t('stats.title')}
                     </h2>
                     <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -424,7 +424,7 @@ export default function Home() {
                         </div>
                         <Link
                             href={jobs()}
-                            className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-[#323981] transition hover:underline"
+                            className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-[#0057c8] transition hover:underline"
                         >
                             {t('jobs.view_all')}
                             <img
@@ -448,7 +448,7 @@ export default function Home() {
                                         className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
                                         style={{
                                             backgroundImage:
-                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
                                         }}
                                     >
                                         {job.initials}
@@ -482,13 +482,13 @@ export default function Home() {
                                         <p className="text-xs tracking-[-0.12px] text-[#3977a6]">
                                             {job.posted}
                                         </p>
-                                        <p className="mt-0.5 truncate text-sm font-semibold tracking-[-0.16px] text-[#323981]">
+                                        <p className="mt-0.5 truncate text-sm font-semibold tracking-[-0.16px] text-[#0057c8]">
                                             {job.salary}
                                         </p>
                                     </div>
                                     <Link
                                         href={jobShow.url(job.slug)}
-                                        className="shrink-0 rounded-xl bg-[#323981] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110"
+                                        className="shrink-0 rounded-xl bg-[#0057c8] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110"
                                     >
                                         {t('jobs.apply_now')}
                                     </Link>
@@ -504,7 +504,7 @@ export default function Home() {
                 <div className="mx-auto max-w-[1344px] overflow-hidden rounded-3xl bg-white shadow-[0px_8px_40px_0px_rgba(30,58,138,0.1)]">
                     <div className="grid lg:grid-cols-2">
                         <div className="p-8 sm:p-12 lg:p-14">
-                            <span className="inline-flex rounded-full bg-[#eff6ff] px-3 py-1.5 text-xs font-semibold text-[#1e3a8a]">
+                            <span className="inline-flex rounded-full bg-[#eff6ff] px-3 py-1.5 text-xs font-semibold text-[#0057c8]">
                                 {t('seeker.badge')}
                             </span>
                             <h2 className="mt-4 text-3xl font-bold tracking-[-0.3px] text-[#050315] sm:text-[40px] sm:leading-[48px]">
@@ -535,7 +535,7 @@ export default function Home() {
                             <div className="mt-8 flex flex-wrap gap-3">
                                 <Link
                                     href={registerRole.url('job-seeker')}
-                                    className="rounded-xl bg-[#323981] px-6 py-3 text-sm font-bold text-white transition hover:brightness-110"
+                                    className="rounded-xl bg-[#0057c8] px-6 py-3 text-sm font-bold text-white transition hover:brightness-110"
                                 >
                                     {t('seeker.cta_primary')}
                                 </Link>
@@ -548,13 +548,13 @@ export default function Home() {
                             </div>
                         </div>
 
-                        <div className="relative flex min-h-[280px] items-center justify-center bg-[rgba(50,57,129,0.08)] p-12">
+                        <div className="relative flex min-h-[280px] items-center justify-center bg-[rgba(0,87,200,0.08)] p-12">
                             <div className="relative">
                                 <div
                                     className="flex size-48 items-center justify-center rounded-full"
                                     style={{
                                         backgroundImage:
-                                            'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                            'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
                                     }}
                                 >
                                     <img
@@ -567,7 +567,7 @@ export default function Home() {
                                 </div>
                                 <div className="absolute -top-3 -end-8 hidden w-[95px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
                                     <p className="text-xs text-[#6a7282]">{t('seeker.stat_applications')}</p>
-                                    <p className="text-lg font-extrabold leading-7 text-[#1e3a8a]">
+                                    <p className="text-lg font-extrabold leading-7 text-[#0057c8]">
                                         95K+
                                     </p>
                                 </div>
@@ -585,7 +585,7 @@ export default function Home() {
 
             {/* Employer CTA */}
             <section id="pricing" className="scroll-mt-28 px-4 py-20 sm:px-6 lg:px-8">
-                <div className="mx-auto max-w-[1344px] overflow-hidden rounded-3xl bg-[#ffebf5] shadow-[0px_8px_6px_0px_rgba(15,23,42,0.12)]">
+                <div className="mx-auto max-w-[1344px] overflow-hidden rounded-3xl bg-[#d1f6ff] shadow-[0px_8px_6px_0px_rgba(15,23,42,0.12)]">
                     <div className="grid lg:grid-cols-2">
                         <div className="relative order-2 flex min-h-[280px] items-center justify-center p-12 lg:order-1">
                             <div className="relative">
@@ -606,7 +606,7 @@ export default function Home() {
                                 </div>
                                 <div className="absolute -bottom-2 -end-6 hidden w-[92px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
                                     <p className="text-xs text-[#6a7282]">{t('employer.stat_hired_today')}</p>
-                                    <p className="text-lg font-extrabold leading-7 text-[#1e3a8a]">
+                                    <p className="text-lg font-extrabold leading-7 text-[#0057c8]">
                                         +85
                                     </p>
                                 </div>
@@ -645,7 +645,7 @@ export default function Home() {
                             <div className="mt-8 flex flex-wrap gap-3">
                                 <Link
                                     href={registerRole.url('employer')}
-                                    className="rounded-xl bg-[#323981] px-6 py-3 text-sm font-bold text-[#ffebf5] transition hover:brightness-110"
+                                    className="rounded-xl bg-[#0057c8] px-6 py-3 text-sm font-bold text-[#d1f6ff] transition hover:brightness-110"
                                 >
                                     {t('employer.cta_primary')}
                                 </Link>
@@ -680,11 +680,11 @@ export default function Home() {
                             value={email}
                             onChange={(event) => setEmail(event.target.value)}
                             placeholder={t('newsletter.placeholder')}
-                            className="h-[46px] flex-1 rounded-xl border border-[#e2e8f0] bg-white px-4 text-sm text-[#374151] outline-none placeholder:text-[rgba(55,65,81,0.5)] focus:border-[#323981]"
+                            className="h-[46px] flex-1 rounded-xl border border-[#e2e8f0] bg-white px-4 text-sm text-[#374151] outline-none placeholder:text-[rgba(55,65,81,0.5)] focus:border-[#0057c8]"
                         />
                         <button
                             type="submit"
-                            className="h-[46px] shrink-0 rounded-xl bg-[#323981] px-8 text-sm font-bold text-white transition hover:brightness-110"
+                            className="h-[46px] shrink-0 rounded-xl bg-[#0057c8] px-8 text-sm font-bold text-white transition hover:brightness-110"
                         >
                             {t('newsletter.submit')}
                         </button>

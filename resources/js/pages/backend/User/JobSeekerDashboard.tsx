@@ -85,7 +85,7 @@ export default function JobSeekerDashboard({
                     className="flex flex-col gap-6 rounded-2xl p-7 shadow-[0px_4px_10px_rgba(30,58,138,0.2)] lg:flex-row lg:items-center lg:justify-between"
                     style={{
                         backgroundImage:
-                            'linear-gradient(174deg, rgb(57, 119, 166) 0%, rgb(30, 58, 138) 100%)',
+                            'linear-gradient(174deg, rgb(57, 119, 166) 0%, rgb(0, 87, 200) 100%)',
                     }}
                 >
                     <div>
@@ -155,7 +155,7 @@ export default function JobSeekerDashboard({
                             </h2>
                             <Link
                                 href="/job-seeker/applications"
-                                className="text-xs font-bold text-[#1e3a8a]"
+                                className="text-xs font-bold text-[#0057c8]"
                             >
                                 View All →
                             </Link>
@@ -166,7 +166,7 @@ export default function JobSeekerDashboard({
                                     key={application.id}
                                     className="flex items-center gap-3 rounded-xl border border-[#f1f5f9] p-3"
                                 >
-                                    <div className="flex size-9 items-center justify-center rounded-lg bg-[#1e3a8a] text-xs font-bold text-white">
+                                    <div className="flex size-9 items-center justify-center rounded-lg bg-[#0057c8] text-xs font-bold text-white">
                                         {getInitials(
                                             application.company || 'JP',
                                         )}

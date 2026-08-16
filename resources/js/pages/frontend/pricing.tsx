@@ -123,12 +123,12 @@ export default function Pricing() {
         <FrontendLayout>
             <Head title={`${t('pricing.title')} - RR Job Portal`} />
 
-            <section className="bg-[#ffebf5] px-4 py-10 sm:px-6 lg:px-8">
+            <section className="bg-[#d1f6ff] px-4 py-10 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px] text-center">
                     <nav className="flex flex-wrap items-center justify-center gap-2 text-sm">
                         <Link
                             href={home()}
-                            className="text-[#050315] transition hover:text-[#323981]"
+                            className="text-[#050315] transition hover:text-[#0057c8]"
                         >
                             {t('nav.home')}
                         </Link>
@@ -166,7 +166,7 @@ export default function Pricing() {
                             <div className="mt-5 flex items-end gap-2">
                                 <span
                                     dir="ltr"
-                                    className="text-5xl font-extrabold leading-none text-[#1e3a8a]"
+                                    className="text-5xl font-extrabold leading-none text-[#0057c8]"
                                 >
                                     299
                                 </span>
@@ -207,7 +207,7 @@ export default function Pricing() {
 
                             <Link
                                 href={registerRole.url('employer')}
-                                className="mt-7 inline-flex h-12 items-center justify-center rounded-xl bg-[#323981] text-base font-medium tracking-[-0.18px] text-white transition hover:brightness-110"
+                                className="mt-7 inline-flex h-12 items-center justify-center rounded-xl bg-[#0057c8] text-base font-medium tracking-[-0.18px] text-white transition hover:brightness-110"
                             >
                                 {t('pricing.buy_now')}
                             </Link>
@@ -260,7 +260,7 @@ export default function Pricing() {
 
                             <Link
                                 href={registerRole.url('employer')}
-                                className="mt-7 inline-flex h-12 items-center justify-center rounded-xl bg-white text-base font-medium tracking-[-0.18px] text-[#1e3a8a] transition hover:bg-[#f8faff]"
+                                className="mt-7 inline-flex h-12 items-center justify-center rounded-xl bg-white text-base font-medium tracking-[-0.18px] text-[#0057c8] transition hover:bg-[#f8faff]"
                             >
                                 {t('pricing.buy_now')}
                             </Link>
@@ -273,14 +273,14 @@ export default function Pricing() {
                             {t('pricing.comparison_title')}
                         </h2>
 
-                        <div className="mt-8 overflow-x-auto rounded-2xl border border-[#ffebf5] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.06)]">
+                        <div className="mt-8 overflow-x-auto rounded-2xl border border-[#d1f6ff] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.06)]">
                             <table className="w-full min-w-[720px] border-collapse text-sm">
                                 <thead>
                                     <tr className="border-b border-[#f1f5f9]">
                                         <th className="p-4 text-start font-semibold text-[#6a7282]">
                                             {t('pricing.features')}
                                         </th>
-                                        <th className="p-4 text-center font-semibold text-[#323981]">
+                                        <th className="p-4 text-center font-semibold text-[#0057c8]">
                                             {t('pricing.single.name')}
                                         </th>
                                         <th className="bg-[#fff7ed] p-4 text-center font-semibold text-[#e57124]">

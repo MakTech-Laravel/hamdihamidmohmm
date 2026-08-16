@@ -24,7 +24,7 @@ export function LanguageSwitcher({
                 type="button"
                 onClick={() => setLocale(nextLocale)}
                 className={cn(
-                    'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-[#ffebf5] transition hover:bg-white/10',
+                    'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-[#d1f6ff] transition hover:bg-white/10',
                     className,
                 )}
                 aria-label={label}
@@ -54,7 +54,7 @@ export function LanguageSwitcher({
                         className={cn(
                             'inline-flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
                             isActive
-                                ? 'bg-[#3977a6] text-[#ffebf5]'
+                                ? 'bg-[#3977a6] text-[#d1f6ff]'
                                 : 'text-[rgba(5,3,21,0.9)] hover:bg-white/50',
                         )}
                         aria-pressed={isActive}

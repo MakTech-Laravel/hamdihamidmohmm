@@ -59,7 +59,7 @@ export function EmployerSidebar() {
     const companyName = user.company_name || 'Employer';
 
     return (
-        <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-[#ffebf5]">
+        <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-white">
             <div className="flex h-[60px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
                 <img
                     src="/images/admin/logo.png"
@@ -89,7 +89,7 @@ export function EmployerSidebar() {
                             className={cn(
                                 'relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors',
                                 active
-                                    ? 'bg-[rgba(50,57,129,0.1)] text-[#0057c8]'
+                                    ? 'bg-[rgba(0,87,200,0.1)] text-[#0057c8]'
                                     : 'text-[#3977a6] hover:bg-white/60',
                             )}
                         >

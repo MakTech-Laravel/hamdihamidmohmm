@@ -1,7 +1,11 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Briefcase, Check, Download, Eye, Search, Star, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import {
+    CandidatePreviewDrawer,
+    type CandidatePreview,
+} from '@/components/admin-portal/candidate-preview-drawer';
 import {
     AdminFilterChip,
     AdminPageHeader,
@@ -39,6 +43,7 @@ type JobRow = {
     featured: boolean;
     created: string | null;
     can_review: boolean;
+    preview: CandidatePreview;
 };
 
 type Props = {
@@ -88,6 +93,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
     const { flash } = usePage<SharedData>().props;
     const [search, setSearch] = useState(filters.search ?? '');
     const [rejecting, setRejecting] = useState<JobRow | null>(null);
+    const [previewing, setPreviewing] = useState<JobRow | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
 
     const query = useMemo(() => {
@@ -239,13 +245,14 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                 </td>
                                 <td className="px-3 py-3">
                                     <div className="flex items-center gap-1.5">
-                                        <Link
-                                            href={`/admin/jobs/${row.id}`}
+                                        <button
+                                            type="button"
                                             className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8faff]"
-                                            aria-label="View job"
+                                            aria-label="View applicant"
+                                            onClick={() => setPreviewing(row)}
                                         >
                                             <Eye className="size-4" />
-                                        </Link>
+                                        </button>
                                         <button
                                             type="button"
                                             className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#fff7ed]"
@@ -373,6 +380,16 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <CandidatePreviewDrawer
+                open={previewing !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPreviewing(null);
+                    }
+                }}
+                preview={previewing?.preview ?? null}
+            />
         </AdminPortalLayout>
     );
 }

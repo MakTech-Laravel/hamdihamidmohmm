@@ -21,6 +21,8 @@ class JobApplication extends Model
         'job_seeker_id',
         'status',
         'cover_letter',
+        'resume_path',
+        'resume_original_name',
     ];
 
     /**

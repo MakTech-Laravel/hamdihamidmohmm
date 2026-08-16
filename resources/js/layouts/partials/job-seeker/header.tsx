@@ -64,7 +64,7 @@ export function JobSeekerHeader({
                     type="button"
                     className="flex items-center gap-2 rounded-xl p-1 transition-colors hover:bg-white"
                 >
-                    <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-xs font-bold text-white">
+                    <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-[#0057c8] to-[#3b82f6] text-xs font-bold text-white">
                         {initials}
                     </div>
                     <span className="text-sm font-semibold text-[#364153]">

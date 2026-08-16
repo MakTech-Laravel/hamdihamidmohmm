@@ -30,7 +30,7 @@ export default function Login({
             <Head title={t('auth.login')} />
 
             <div className="mb-4 flex justify-end">
-                <div className="rounded-lg bg-[#323981]">
+                <div className="rounded-lg bg-[#0057c8]">
                     <LanguageSwitcher variant="header" />
                 </div>
             </div>
@@ -45,7 +45,7 @@ export default function Login({
             </div>
 
             {status && (
-                <div className="mt-4 rounded-xl bg-[#eff6ff] px-4 py-3 text-sm text-[#323981]">
+                <div className="mt-4 rounded-xl bg-[#eff6ff] px-4 py-3 text-sm text-[#0057c8]">
                     {status}
                 </div>
             )}
@@ -72,7 +72,7 @@ export default function Login({
                                 autoFocus
                                 autoComplete="username"
                                 placeholder={t('auth.email_placeholder')}
-                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
+                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#0057c8] focus-visible:ring-[#0057c8]/30"
                             />
                             <InputError message={errors.email} />
                         </div>
@@ -90,7 +90,7 @@ export default function Login({
                                 required
                                 autoComplete="current-password"
                                 placeholder={t('auth.password_placeholder')}
-                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#323981] focus-visible:ring-[#323981]/30"
+                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#0057c8] focus-visible:ring-[#0057c8]/30"
                             />
                             <InputError message={errors.password} />
                         </div>
@@ -100,7 +100,7 @@ export default function Login({
                                 <input
                                     type="checkbox"
                                     name="remember"
-                                    className="size-4 rounded-[2px] border-[#767676] text-[#323981] focus:ring-[#323981]"
+                                    className="size-4 rounded-[2px] border-[#767676] text-[#0057c8] focus:ring-[#0057c8]"
                                 />
                                 {t('auth.remember_me')}
                             </label>
@@ -108,7 +108,7 @@ export default function Login({
                             {showReset && (
                                 <TextLink
                                     href={request()}
-                                    className="text-sm font-semibold text-[#323981] no-underline hover:underline"
+                                    className="text-sm font-semibold text-[#0057c8] no-underline hover:underline"
                                 >
                                     {t('auth.forgot_password')}
                                 </TextLink>
@@ -118,7 +118,7 @@ export default function Login({
                         <button
                             type="submit"
                             disabled={processing}
-                            className="flex h-12 w-full items-center justify-center rounded-xl bg-[#323981] text-base font-medium tracking-[-0.18px] text-white transition hover:brightness-110 disabled:opacity-70"
+                            className="flex h-12 w-full items-center justify-center rounded-xl bg-[#0057c8] text-base font-medium tracking-[-0.18px] text-white transition hover:brightness-110 disabled:opacity-70"
                         >
                             {processing ? <Spinner className="h-4 w-4" /> : t('auth.login')}
                         </button>
@@ -130,7 +130,7 @@ export default function Login({
                 {t('auth.no_account')}{' '}
                 <TextLink
                     href={register()}
-                    className="font-bold text-[#323981] no-underline hover:underline"
+                    className="font-bold text-[#0057c8] no-underline hover:underline"
                 >
                     {t('auth.register')}
                 </TextLink>

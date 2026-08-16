@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             PackageSeeder::class,
             PlatformSettingSeeder::class,
+            AdminPortalDemoSeeder::class,
         ]);
     }
 }

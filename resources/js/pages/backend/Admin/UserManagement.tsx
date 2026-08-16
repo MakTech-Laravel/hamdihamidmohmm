@@ -204,7 +204,7 @@ export default function UserManagement({
                                     >
                                         <td className="px-3 py-3">
                                             <div className="flex items-center gap-3">
-                                                <div className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-xs font-bold text-white">
+                                                <div className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-[#0057c8] to-[#3b82f6] text-xs font-bold text-white">
                                                     {user.name
                                                         .slice(0, 2)
                                                         .toUpperCase()}

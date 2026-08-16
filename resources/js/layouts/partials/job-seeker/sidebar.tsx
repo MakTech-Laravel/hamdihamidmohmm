@@ -62,7 +62,7 @@ export function JobSeekerSidebar({
     return (
         <aside
             className={cn(
-                'relative flex h-full shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-[#ffebf5] transition-all duration-300',
+                'relative flex h-full shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-white transition-all duration-300',
                 collapsed ? 'w-[72px]' : 'w-[240px]',
                 'hidden md:flex',
             )}
@@ -99,7 +99,7 @@ export function JobSeekerSidebar({
                             className={cn(
                                 'relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors',
                                 active
-                                    ? 'bg-[rgba(50,57,129,0.1)] text-[#0057c8]'
+                                    ? 'bg-[rgba(0,87,200,0.1)] text-[#0057c8]'
                                     : 'text-[#3977a6] hover:bg-white/60',
                                 collapsed && 'justify-center px-2',
                             )}
@@ -117,7 +117,7 @@ export function JobSeekerSidebar({
             <div className="border-t border-[rgba(57,119,166,0.2)] p-3">
                 {!collapsed && (
                     <div className="mb-2 flex items-center gap-3 rounded-xl bg-white p-2">
-                        <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-xs font-bold text-white">
+                        <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-[#0057c8] to-[#3b82f6] text-xs font-bold text-white">
                             {initials}
                         </div>
                         <div className="min-w-0">

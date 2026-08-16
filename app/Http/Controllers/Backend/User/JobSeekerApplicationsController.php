@@ -43,15 +43,24 @@ class JobSeekerApplicationsController extends Controller
     {
         abort_unless($jobPost->effectiveStatus() === JobPostStatus::Active, 403);
 
+        $payload = [
+            'status' => JobApplicationStatus::Applied,
+            'cover_letter' => $request->string('cover_letter')->toString() ?: null,
+        ];
+
+        if ($request->hasFile('resume')) {
+            $resume = $request->file('resume');
+            $userId = $request->user()?->id ?? 0;
+            $payload['resume_path'] = $resume->store('resumes/'.$userId, 'local');
+            $payload['resume_original_name'] = $resume->getClientOriginalName();
+        }
+
         JobApplication::query()->firstOrCreate(
             [
                 'job_post_id' => $jobPost->id,
                 'job_seeker_id' => $request->user()?->id,
             ],
-            [
-                'status' => JobApplicationStatus::Applied,
-                'cover_letter' => $request->string('cover_letter')->toString() ?: null,
-            ],
+            $payload,
         );
 
         return back()->with('success', 'Application submitted.');

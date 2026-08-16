@@ -46,7 +46,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
 
             <div className="space-y-6 p-6">
                 <div>
-                    <h1 className="text-2xl font-extrabold text-[#1e3a8a]">
+                    <h1 className="text-2xl font-extrabold text-[#0057c8]">
                         My Profile
                     </h1>
                     <p className="text-sm text-[#64748b]">

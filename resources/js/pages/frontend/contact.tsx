@@ -11,7 +11,7 @@ import type { SharedData } from '@/types';
 const MESSAGE_MAX = 500;
 
 const fieldClassName =
-    'h-[46px] w-full rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#050315] outline-none transition placeholder:text-[rgba(55,65,81,0.5)] focus:border-[#323981]';
+    'h-[46px] w-full rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#050315] outline-none transition placeholder:text-[rgba(55,65,81,0.5)] focus:border-[#0057c8]';
 
 const labelClassName =
     'text-sm font-semibold tracking-[-0.16px] text-[#050315]';
@@ -25,12 +25,12 @@ export default function Contact() {
         <FrontendLayout>
             <Head title={`${t('contact.title')} - RR Job Portal`} />
 
-            <section className="bg-[#ffebf5] px-8 py-16">
+            <section className="bg-[#d1f6ff] px-8 py-16">
                 <div className="mx-auto flex max-w-[1280px] flex-col items-center text-center">
                     <nav className="flex flex-wrap items-center justify-center gap-2 text-sm">
                         <Link
                             href={home()}
-                            className="text-[#050315] transition hover:text-[#323981]"
+                            className="text-[#050315] transition hover:text-[#0057c8]"
                         >
                             {t('nav.home')}
                         </Link>
@@ -55,13 +55,13 @@ export default function Contact() {
 
             <section className="bg-[#f8faff] px-8 py-16">
                 <div className="mx-auto w-full max-w-[672px]">
-                    <div className="rounded-2xl border border-[#ffebf5] bg-white p-8 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
+                    <div className="rounded-2xl border border-[#d1f6ff] bg-white p-8 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
                         <h2 className="text-xl font-bold leading-6 text-[#050315]">
                             {t('contact.form_title')}
                         </h2>
 
                         {flash?.success && (
-                            <div className="mt-6 rounded-xl bg-[#eff6ff] px-4 py-3 text-sm text-[#323981]">
+                            <div className="mt-6 rounded-xl bg-[#eff6ff] px-4 py-3 text-sm text-[#0057c8]">
                                 {t('contact.success')}
                             </div>
                         )}
@@ -133,7 +133,7 @@ export default function Contact() {
                                             onChange={(event) =>
                                                 setMessageLength(event.target.value.length)
                                             }
-                                            className="h-[126px] w-full resize-none rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 py-3 text-sm leading-5 text-[#050315] outline-none transition placeholder:text-[rgba(55,65,81,0.5)] focus:border-[#323981]"
+                                            className="h-[126px] w-full resize-none rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 py-3 text-sm leading-5 text-[#050315] outline-none transition placeholder:text-[rgba(55,65,81,0.5)] focus:border-[#0057c8]"
                                         />
                                         <p className="pt-1 text-xs leading-4 text-[#99a1af]">
                                             {messageLength}/{MESSAGE_MAX}
@@ -144,7 +144,7 @@ export default function Contact() {
                                     <button
                                         type="submit"
                                         disabled={processing}
-                                        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#323981] text-base font-medium tracking-[-0.18px] text-white transition hover:brightness-110 disabled:opacity-70"
+                                        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0057c8] text-base font-medium tracking-[-0.18px] text-white transition hover:brightness-110 disabled:opacity-70"
                                     >
                                         <img
                                             src="/images/contact/send.svg"

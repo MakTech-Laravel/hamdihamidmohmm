@@ -60,6 +60,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/job-seekers/{user}/reactivate', [JobSeekerManagementController::class, 'reactivate'])->name('job-seekers.reactivate');
         Route::get('/jobs/export', [JobManagementController::class, 'export'])->name('jobs.export');
         Route::get('/jobs', [JobManagementController::class, 'index'])->name('jobs.index');
+        Route::get('/jobs/{jobPost}/applicants/{user}/resume', [JobManagementController::class, 'downloadApplicantResume'])->name('jobs.applicant-resume');
         Route::get('/jobs/{jobPost}', [JobManagementController::class, 'show'])->name('jobs.show');
         Route::post('/jobs/{jobPost}/approve', [JobManagementController::class, 'approve'])->name('jobs.approve');
         Route::post('/jobs/{jobPost}/reject', [JobManagementController::class, 'reject'])->name('jobs.reject');

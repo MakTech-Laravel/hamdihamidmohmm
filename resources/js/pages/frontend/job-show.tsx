@@ -138,12 +138,12 @@ export default function JobShow({
         <FrontendLayout>
             <Head title={`${job.title} - RR Job Portal`} />
 
-            <section className="bg-[#ffebf5] px-4 py-8 sm:px-6 lg:px-8">
+            <section className="bg-[#d1f6ff] px-4 py-8 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px]">
                     <nav className="flex flex-wrap items-center gap-2 text-sm">
                         <Link
                             href={home()}
-                            className="text-[#050315] transition hover:text-[#323981]"
+                            className="text-[#050315] transition hover:text-[#0057c8]"
                         >
                             {t('nav.home')}
                         </Link>
@@ -156,7 +156,7 @@ export default function JobShow({
                         />
                         <Link
                             href={jobsRoute()}
-                            className="text-[#050315] transition hover:text-[#323981]"
+                            className="text-[#050315] transition hover:text-[#0057c8]"
                         >
                             {t('nav.jobs')}
                         </Link>
@@ -178,7 +178,7 @@ export default function JobShow({
                         <div>
                             <Link
                                 href={jobsRoute()}
-                                className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[#323981] transition hover:underline"
+                                className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[#0057c8] transition hover:underline"
                             >
                                 <img
                                     src="/images/job-detail/back-arrow.svg"
@@ -196,7 +196,7 @@ export default function JobShow({
                                         className="flex size-16 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white"
                                         style={{
                                             backgroundImage:
-                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
                                         }}
                                     >
                                         {job.initials || 'JP'}
@@ -246,14 +246,14 @@ export default function JobShow({
                                             onClick={() =>
                                                 router.post(`/jobs/${job.slug}/apply`)
                                             }
-                                            className="inline-flex h-[46px] flex-1 items-center justify-center rounded-xl bg-[#323981] text-sm font-semibold text-white transition hover:brightness-110"
+                                            className="inline-flex h-[46px] flex-1 items-center justify-center rounded-xl bg-[#0057c8] text-sm font-semibold text-white transition hover:brightness-110"
                                         >
                                             {t('job_detail.apply_now')}
                                         </button>
                                     ) : (
                                         <Link
                                             href={applied ? '/job-seeker/applications' : applyHref}
-                                            className="inline-flex h-[46px] flex-1 items-center justify-center rounded-xl bg-[#323981] text-sm font-semibold text-white transition hover:brightness-110"
+                                            className="inline-flex h-[46px] flex-1 items-center justify-center rounded-xl bg-[#0057c8] text-sm font-semibold text-white transition hover:brightness-110"
                                         >
                                             {applied
                                                 ? 'Applied'
@@ -265,7 +265,7 @@ export default function JobShow({
                                         <button
                                             type="button"
                                             onClick={() => setShareOpen((open) => !open)}
-                                            className="inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-[#323981] px-5 text-sm font-semibold text-[#323981] transition hover:bg-[#323981]/5 sm:w-[106px]"
+                                            className="inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-[#0057c8] px-5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#0057c8]/5 sm:w-[106px]"
                                         >
                                             <img
                                                 src="/images/job-detail/share.svg"
@@ -418,7 +418,7 @@ export default function JobShow({
                                         className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
                                         style={{
                                             backgroundImage:
-                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
                                         }}
                                     >
                                         {job.initials || 'JP'}
@@ -439,7 +439,7 @@ export default function JobShow({
                                     href={job.company_website}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#323981] transition hover:underline"
+                                    className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#0057c8] transition hover:underline"
                                 >
                                     <img
                                         src="/images/job-detail/external-link.svg"
@@ -458,7 +458,7 @@ export default function JobShow({
                                         </p>
                                         <Link
                                             href={login()}
-                                            className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#323981] text-sm font-semibold text-white transition hover:brightness-110"
+                                            className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#0057c8] text-sm font-semibold text-white transition hover:brightness-110"
                                         >
                                             {t('job_detail.login_to_apply')}
                                         </Link>
@@ -481,7 +481,7 @@ export default function JobShow({
                                                 className="flex size-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
                                                 style={{
                                                     backgroundImage:
-                                                        'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                        'linear-gradient(135deg, rgb(0, 87, 200) 0%, rgb(37, 99, 235) 100%)',
                                                 }}
                                             >
                                                 {item.initials}
