@@ -27,8 +27,11 @@ class JobPost extends Model
         'category',
         'location',
         'employment_type',
+        'experience_level',
         'salary_range',
         'description',
+        'requirements',
+        'skills',
         'status',
         'featured',
         'views',
@@ -45,6 +48,7 @@ class JobPost extends Model
             'status' => JobPostStatus::class,
             'featured' => 'boolean',
             'views' => 'integer',
+            'skills' => 'array',
             'expires_at' => 'datetime',
         ];
     }

@@ -71,6 +71,7 @@ export interface User {
     name: string;
     email: string;
     company_name?: string | null;
+    contact_name?: string | null;
     avatar?: string;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;

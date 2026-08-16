@@ -48,6 +48,38 @@ class JobSeekerProfile extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function experienceYears(): ?int
+    {
+        if (! is_array($this->experience) || $this->experience === []) {
+            return null;
+        }
+
+        $years = 0;
+
+        foreach ($this->experience as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            if (isset($item['years'])) {
+                $years += (int) $item['years'];
+            }
+        }
+
+        return $years > 0 ? $years : null;
+    }
+
+    public function experienceLabel(): string
+    {
+        $years = $this->experienceYears();
+
+        if ($years === null) {
+            return '—';
+        }
+
+        return $years === 1 ? '1 year' : $years.' years';
+    }
+
     public function completionPercent(): int
     {
         $checks = [

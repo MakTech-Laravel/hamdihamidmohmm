@@ -27,13 +27,24 @@ class JobPostFactory extends Factory
             'category' => fake()->randomElement(['Technology', 'Construction', 'Finance', 'Retail', 'Healthcare', 'Logistics']),
             'location' => fake()->randomElement(['Dubai, UAE', 'Abu Dhabi, UAE', 'Sharjah, UAE', 'Remote']),
             'employment_type' => fake()->randomElement(['Full-time', 'Part-time', 'Contract', 'Remote']),
+            'experience_level' => fake()->randomElement(['Entry Level', 'Mid Level', 'Senior']),
             'salary_range' => 'AED '.fake()->numberBetween(5, 12).',000 - '.fake()->numberBetween(13, 25).',000',
             'description' => fake()->paragraphs(3, true),
+            'requirements' => fake()->paragraph(),
+            'skills' => fake()->randomElements(['React', 'TypeScript', 'Laravel', 'PHP', 'Figma'], 3),
             'status' => JobPostStatus::Active,
             'featured' => false,
             'views' => fake()->numberBetween(0, 500),
             'expires_at' => now()->addDays(30),
         ];
+    }
+
+    public function draft(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => JobPostStatus::Draft,
+            'expires_at' => null,
+        ]);
     }
 
     public function pending(): static

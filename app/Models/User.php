@@ -34,7 +34,12 @@ class User extends Authenticatable
         'name',
         'company_name',
         'industry',
+        'company_size',
+        'founded_year',
         'website',
+        'linkedin_url',
+        'x_url',
+        'instagram_url',
         'about',
         'address',
         'contact_name',
@@ -91,6 +96,7 @@ class User extends Authenticatable
             'resume_status' => JobSeekerResumeStatus::class,
             'package' => EmployerPackage::class,
             'verified_at' => 'datetime',
+            'founded_year' => 'integer',
         ];
     }
 

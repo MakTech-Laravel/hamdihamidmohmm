@@ -12,6 +12,15 @@ class UpdateEmployerProfileRequest extends FormRequest
         return $this->user()?->isEmployer() === true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $year = $this->input('founded_year');
+
+        if ($year === '' || $year === null) {
+            $this->merge(['founded_year' => null]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -21,7 +30,12 @@ class UpdateEmployerProfileRequest extends FormRequest
             'company_name' => ['required', 'string', 'max:255'],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:255'],
+            'company_size' => ['nullable', 'string', 'max:50'],
+            'founded_year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
             'website' => ['nullable', 'string', 'max:255'],
+            'linkedin_url' => ['nullable', 'string', 'max:255'],
+            'x_url' => ['nullable', 'string', 'max:255'],
+            'instagram_url' => ['nullable', 'string', 'max:255'],
             'about' => ['nullable', 'string'],
             'address' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],

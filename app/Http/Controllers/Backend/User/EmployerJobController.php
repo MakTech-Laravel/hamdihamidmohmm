@@ -7,8 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\StoreEmployerJobRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerJobRequest;
 use App\Models\JobPost;
+use App\Models\User;
+use App\Support\EmployerPlanSnapshot;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,63 +19,256 @@ class EmployerJobController extends Controller
 {
     public function index(Request $request): Response
     {
+        $employer = $request->user();
+
         $jobs = JobPost::query()
-            ->where('employer_id', $request->user()?->id)
-            ->withCount('applications')
+            ->where('employer_id', $employer?->id)
+            ->withCount([
+                'applications',
+                'applications as new_applications_count' => fn ($query) => $query->where('created_at', '>=', now()->subDays(7)),
+            ])
             ->latest()
             ->get()
-            ->map(fn (JobPost $job) => [
-                'id' => $job->id,
-                'title' => $job->title,
-                'location' => $job->location,
-                'type' => $job->employment_type,
-                'status' => $job->effectiveStatus()->label(),
-                'status_value' => $job->effectiveStatus()->value,
-                'applications' => $job->applications_count,
-                'expires_at' => $job->expires_at?->toDateString(),
-                'created_at' => $job->created_at?->toDateString(),
-            ]);
+            ->map(fn (JobPost $job) => $this->listRow($job));
 
         return Inertia::render('backend/User/EmployerJobs', [
             'jobs' => $jobs,
+            'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
             'stats' => [
                 'total' => $jobs->count(),
                 'active' => $jobs->where('status_value', JobPostStatus::Active->value)->count(),
-                'pending' => $jobs->where('status_value', JobPostStatus::Pending->value)->count(),
+                'draft' => $jobs->whereIn('status_value', [JobPostStatus::Draft->value, JobPostStatus::Pending->value])->count(),
                 'expired' => $jobs->where('status_value', JobPostStatus::Expired->value)->count(),
             ],
         ]);
     }
 
+    public function create(Request $request): Response
+    {
+        $employer = $request->user();
+
+        return Inertia::render('backend/User/EmployerJobEditor', [
+            'job' => null,
+            'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
+            'options' => $this->formOptions(),
+        ]);
+    }
+
     public function store(StoreEmployerJobRequest $request): RedirectResponse
     {
+        $employer = $request->user();
+        abort_unless($employer !== null, 403);
+
+        $publish = $request->boolean('publish', true);
+        $featured = $request->boolean('featured');
+
+        $creditError = $this->creditError($employer, $publish, $featured);
+
+        if ($creditError !== null) {
+            return back()->withErrors(['title' => $creditError]);
+        }
+
         JobPost::query()->create([
-            ...$request->validated(),
-            'employer_id' => $request->user()?->id,
-            'status' => JobPostStatus::Pending,
-            'expires_at' => $request->date('expires_at') ?? now()->addDays(30),
+            ...$request->safe()->except(['publish']),
+            'employer_id' => $employer->id,
+            'status' => $publish ? JobPostStatus::Pending : JobPostStatus::Draft,
+            'expires_at' => $request->date('expires_at') ?? ($publish ? now()->addDays(30) : null),
         ]);
 
-        return back()->with('success', 'Job submitted for review.');
+        return redirect()
+            ->route('employer.jobs')
+            ->with('success', $publish ? 'Job submitted for review.' : 'Draft saved.');
+    }
+
+    public function edit(Request $request, JobPost $job): Response
+    {
+        $this->authorizeJob($request, $job);
+
+        $employer = $request->user();
+
+        return Inertia::render('backend/User/EmployerJobEditor', [
+            'job' => [
+                'id' => $job->id,
+                'title' => $job->title,
+                'category' => $job->category,
+                'location' => $job->location,
+                'employment_type' => $job->employment_type,
+                'experience_level' => $job->experience_level,
+                'salary_range' => $job->salary_range,
+                'description' => $job->description,
+                'requirements' => $job->requirements,
+                'skills' => $job->skills ?? [],
+                'expires_at' => $job->expires_at?->toDateString(),
+                'featured' => $job->featured,
+                'status' => $job->effectiveStatus()->value,
+            ],
+            'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
+            'options' => $this->formOptions(),
+        ]);
     }
 
     public function update(UpdateEmployerJobRequest $request, JobPost $job): RedirectResponse
     {
-        $job->update($request->validated());
+        $employer = $request->user();
+        abort_unless($employer !== null, 403);
 
-        if ($job->status === JobPostStatus::Rejected) {
-            $job->forceFill(['status' => JobPostStatus::Pending, 'rejection_reason' => null])->save();
+        $publish = $request->boolean('publish', $job->status !== JobPostStatus::Draft);
+        $featured = $request->boolean('featured', $job->featured);
+
+        $creditError = $this->creditError(
+            $employer,
+            $publish && $job->status === JobPostStatus::Draft,
+            $featured && ! $job->featured,
+        );
+
+        if ($creditError !== null) {
+            return back()->withErrors(['title' => $creditError]);
         }
 
-        return back()->with('success', 'Job updated.');
+        $job->update([
+            ...$request->safe()->except(['publish']),
+            'featured' => $featured,
+        ]);
+
+        if ($publish && in_array($job->status, [JobPostStatus::Draft, JobPostStatus::Rejected], true)) {
+            $job->forceFill([
+                'status' => JobPostStatus::Pending,
+                'rejection_reason' => null,
+                'expires_at' => $job->expires_at ?? now()->addDays(30),
+            ])->save();
+        }
+
+        return redirect()
+            ->route('employer.jobs')
+            ->with('success', 'Job updated.');
+    }
+
+    public function duplicate(Request $request, JobPost $job): RedirectResponse
+    {
+        $this->authorizeJob($request, $job);
+
+        $copy = $job->replicate(['slug', 'views', 'rejection_reason', 'expires_at']);
+        $copy->forceFill([
+            'title' => $job->title.' (Copy)',
+            'slug' => Str::slug($job->title).'-'.Str::lower(Str::random(6)),
+            'status' => JobPostStatus::Draft,
+            'featured' => false,
+            'views' => 0,
+            'expires_at' => null,
+        ])->save();
+
+        return redirect()
+            ->route('employer.jobs.edit', $copy)
+            ->with('success', 'Job duplicated as a draft.');
+    }
+
+    public function pause(Request $request, JobPost $job): RedirectResponse
+    {
+        $this->authorizeJob($request, $job);
+
+        abort_unless($job->effectiveStatus() === JobPostStatus::Active, 422);
+
+        $job->forceFill(['status' => JobPostStatus::Draft])->save();
+
+        return back()->with('success', 'Job paused.');
+    }
+
+    public function publish(Request $request, JobPost $job): RedirectResponse
+    {
+        $this->authorizeJob($request, $job);
+
+        $employer = $request->user();
+        abort_unless($employer !== null, 403);
+
+        $creditError = $this->creditError($employer, true, false);
+
+        if ($creditError !== null) {
+            return back()->withErrors(['title' => $creditError]);
+        }
+
+        $job->forceFill([
+            'status' => JobPostStatus::Pending,
+            'rejection_reason' => null,
+            'expires_at' => $job->expires_at ?? now()->addDays(30),
+        ])->save();
+
+        return back()->with('success', 'Job submitted for review.');
     }
 
     public function destroy(Request $request, JobPost $job): RedirectResponse
     {
-        abort_unless($job->employer_id === $request->user()?->id, 403);
+        $this->authorizeJob($request, $job);
 
         $job->delete();
 
         return back()->with('success', 'Job deleted.');
+    }
+
+    /**
+     * @return array{
+     *     id: int,
+     *     title: string,
+     *     category: string|null,
+     *     location: string|null,
+     *     type: string|null,
+     *     salary_range: string|null,
+     *     status: string,
+     *     status_value: string,
+     *     applications: int,
+     *     new_applications: int,
+     *     views: int,
+     *     expires_at: string|null,
+     *     created_at: string|null
+     * }
+     */
+    private function listRow(JobPost $job): array
+    {
+        return [
+            'id' => $job->id,
+            'title' => $job->title,
+            'category' => $job->category,
+            'location' => $job->location,
+            'type' => $job->employment_type,
+            'salary_range' => $job->salary_range,
+            'status' => $job->effectiveStatus()->label(),
+            'status_value' => $job->effectiveStatus()->value,
+            'applications' => (int) $job->applications_count,
+            'new_applications' => (int) $job->new_applications_count,
+            'views' => (int) $job->views,
+            'expires_at' => $job->expires_at?->toFormattedDateString(),
+            'created_at' => $job->created_at?->toFormattedDateString(),
+        ];
+    }
+
+    /**
+     * @return array{categories: list<string>, types: list<string>, experience_levels: list<string>}
+     */
+    private function formOptions(): array
+    {
+        return [
+            'categories' => ['Technology', 'Design', 'Marketing', 'Finance', 'Healthcare', 'Construction', 'Logistics', 'Retail'],
+            'types' => ['Full-time', 'Part-time', 'Contract', 'Remote'],
+            'experience_levels' => ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'],
+        ];
+    }
+
+    private function authorizeJob(Request $request, JobPost $job): void
+    {
+        abort_unless($job->employer_id === $request->user()?->id, 403);
+    }
+
+    private function creditError(User $employer, bool $needsJobCredit, bool $needsFeaturedCredit): ?string
+    {
+        $plan = EmployerPlanSnapshot::for($employer);
+
+        if ($needsJobCredit && ! $plan['can_post_job']) {
+            return 'You have no job credits remaining. Upgrade your plan to post more jobs.';
+        }
+
+        if ($needsFeaturedCredit && ! $plan['can_feature_job']) {
+            return 'You have no featured credits remaining on your current plan.';
+        }
+
+        return null;
     }
 }

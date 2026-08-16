@@ -1,6 +1,22 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Check, Download } from 'lucide-react';
 
 import EmployerLayout from '@/layouts/employer-layout';
+import { cn } from '@/lib/utils';
+import type { SharedData } from '@/types';
+
+type Plan = {
+    slug: string | null;
+    label: string | null;
+    job_credits: number;
+    featured_credits: number;
+    jobs_posted: number;
+    featured_used: number;
+    credits_remaining: number;
+    featured_remaining: number;
+    expires_on: string | null;
+    days_remaining: number | null;
+};
 
 type PackageRow = {
     id: number;
@@ -11,7 +27,9 @@ type PackageRow = {
     billing_period: string;
     job_credits: number;
     featured_credits: number;
+    is_featured: boolean;
     current: boolean;
+    features: Array<{ key: string; label: string; included: boolean }>;
 };
 
 type Invoice = {
@@ -19,89 +37,299 @@ type Invoice = {
     reference: string;
     package: string;
     amount: number;
+    currency: string;
     status: string;
+    status_value: string | null;
     date: string | null;
 };
 
 type Props = {
-    current: string | null;
-    current_label: string | null;
+    plan: Plan;
     packages: PackageRow[];
     invoices: Invoice[];
 };
 
-export default function EmployerPackages({
-    current_label,
-    packages,
-    invoices,
-}: Props) {
-    return (
-        <EmployerLayout title="Packages">
-            <Head title="Packages" />
+export default function EmployerPackages({ plan, packages, invoices }: Props) {
+    const { flash } = usePage<SharedData>().props;
+    const usagePercent =
+        plan.job_credits > 0
+            ? Math.min(100, Math.round((plan.jobs_posted / plan.job_credits) * 100))
+            : 0;
+    const jobsPercent =
+        plan.job_credits > 0
+            ? Math.min(100, Math.round((plan.jobs_posted / plan.job_credits) * 100))
+            : 0;
+    const featuredPercent =
+        plan.featured_credits > 0
+            ? Math.min(
+                100,
+                Math.round((plan.featured_used / plan.featured_credits) * 100),
+            )
+            : 0;
+    const remainingPercent =
+        plan.job_credits > 0
+            ? Math.min(
+                100,
+                Math.round((plan.credits_remaining / plan.job_credits) * 100),
+            )
+            : 0;
 
-            <div className="space-y-6 p-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-[#0057c8]">
-                        Packages
-                    </h1>
-                    <p className="mt-1 text-sm text-[#64748b]">
-                        Current plan: {current_label || 'None'}
-                    </p>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    {packages.map((item) => (
-                        <div
-                            key={item.id}
-                            className={`rounded-2xl border p-5 ${item.current ? 'border-[#0057c8] bg-[#eff6ff]' : 'bg-white'}`}
-                        >
-                            <h2 className="text-lg font-bold">{item.name}</h2>
+    return (
+        <EmployerLayout title="Packages & Billing">
+            <Head title="Packages & Billing" />
+
+            <div className="space-y-6 px-4 py-6 sm:px-6">
+                <h1 className="text-[28px] font-extrabold tracking-tight text-[#050315]">
+                    Billing & Packages
+                </h1>
+
+                {flash.success && (
+                    <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
+                        {typeof flash.success === 'string'
+                            ? flash.success
+                            : 'Saved successfully.'}
+                    </div>
+                )}
+
+                <section className="rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h2 className="text-xl font-bold text-[#050315]">
+                                    {plan.label || 'No package assigned'}
+                                </h2>
+                                {plan.slug && (
+                                    <span className="rounded-full bg-[#dcfce7] px-2.5 py-0.5 text-xs font-semibold text-[#166534]">
+                                        Active
+                                    </span>
+                                )}
+                            </div>
                             <p className="mt-1 text-sm text-[#64748b]">
-                                {item.currency} {item.price} /{' '}
-                                {item.billing_period}
+                                {plan.expires_on
+                                    ? `Expires ${plan.expires_on}`
+                                    : 'No renewal date yet'}
+                                {plan.days_remaining !== null
+                                    ? ` · ${plan.days_remaining} days remaining`
+                                    : ''}
                             </p>
-                            <p className="mt-3 text-sm">
-                                {item.job_credits} job credits
-                            </p>
-                            <p className="text-sm">
-                                {item.featured_credits} featured credits
-                            </p>
-                            {item.current && (
-                                <p className="mt-3 text-xs font-bold text-[#0057c8]">
-                                    Current plan
-                                </p>
-                            )}
                         </div>
-                    ))}
-                    {packages.length === 0 && (
-                        <p className="text-sm text-[#99a1af]">
-                            No packages available.
-                        </p>
-                    )}
-                </div>
-                <div className="rounded-2xl border bg-white p-5">
-                    <h2 className="mb-4 text-base font-bold">Invoices</h2>
-                    <div className="space-y-2">
-                        {invoices.map((invoice) => (
+                        <Link
+                            href="#available-plans"
+                            className="inline-flex cursor-pointer items-center rounded-xl bg-[#0057c8] px-5 py-2.5 text-sm font-semibold text-white"
+                        >
+                            Upgrade
+                        </Link>
+                    </div>
+                    <div className="mt-6">
+                        <div className="mb-2 flex items-center justify-between text-sm">
+                            <span className="text-[#64748b]">Credits used</span>
+                            <span className="font-semibold text-[#050315]">
+                                {plan.jobs_posted} / {plan.job_credits}
+                            </span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-[#f1f5f9]">
                             <div
-                                key={invoice.id}
-                                className="flex flex-wrap justify-between gap-2 border-b py-2 text-sm last:border-0"
-                            >
-                                <span>{invoice.reference}</span>
-                                <span>{invoice.package}</span>
-                                <span>
-                                    AED {invoice.amount.toLocaleString()}
-                                </span>
-                                <span>{invoice.status}</span>
-                                <span>{invoice.date}</span>
+                                className="h-full rounded-full bg-[#e57124]"
+                                style={{ width: `${usagePercent}%` }}
+                            />
+                        </div>
+                        <p className="mt-2 text-xs text-[#64748b]">
+                            {plan.credits_remaining} credits remaining
+                        </p>
+                    </div>
+                </section>
+
+                <section className="rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
+                    <h2 className="mb-5 text-base font-bold text-[#050315]">
+                        Credit Usage
+                    </h2>
+                    <div className="space-y-4">
+                        {[
+                            [
+                                'Jobs Posted',
+                                `${plan.jobs_posted}/${plan.job_credits}`,
+                                jobsPercent,
+                                'bg-[#0057c8]',
+                            ],
+                            [
+                                'Featured Credits',
+                                `${plan.featured_used}/${plan.featured_credits}`,
+                                featuredPercent,
+                                'bg-[#3977a6]',
+                            ],
+                            [
+                                'Remaining Credits',
+                                `${plan.credits_remaining}/${plan.job_credits}`,
+                                remainingPercent,
+                                'bg-[#16a34a]',
+                            ],
+                        ].map(([label, value, percent, bar]) => (
+                            <div key={label as string}>
+                                <div className="mb-1.5 flex items-center justify-between text-sm">
+                                    <span className="text-[#64748b]">
+                                        {label}
+                                    </span>
+                                    <span className="font-semibold text-[#050315]">
+                                        {value}
+                                    </span>
+                                </div>
+                                <div className="h-2 overflow-hidden rounded-full bg-[#f1f5f9]">
+                                    <div
+                                        className={cn('h-full rounded-full', bar)}
+                                        style={{ width: `${percent}%` }}
+                                    />
+                                </div>
                             </div>
                         ))}
-                        {invoices.length === 0 && (
+                    </div>
+                </section>
+
+                <section id="available-plans">
+                    <h2 className="mb-4 text-base font-bold text-[#050315]">
+                        Available Plans
+                    </h2>
+                    <div className="grid gap-4 lg:grid-cols-3">
+                        {packages.map((item) => (
+                            <article
+                                key={item.id}
+                                className={cn(
+                                    'relative flex h-full flex-col rounded-2xl border bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]',
+                                    item.current
+                                        ? 'border-[#e57124]'
+                                        : 'border-[#e8d5e8]',
+                                )}
+                            >
+                                {item.current && (
+                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#e57124] px-3 py-1 text-xs font-semibold text-white">
+                                        Current Plan
+                                    </span>
+                                )}
+                                <h3 className="text-lg font-bold text-[#050315]">
+                                    {item.name}
+                                </h3>
+                                <p className="mt-1 text-2xl font-extrabold text-[#050315]">
+                                    {item.currency} {item.price.toLocaleString()}
+                                    <span className="text-sm font-medium text-[#64748b]">
+                                        {' '}
+                                        / {item.billing_period}
+                                    </span>
+                                </p>
+                                <ul className="mt-4 flex-1 space-y-2">
+                                    {item.features
+                                        .filter((feature) => feature.included)
+                                        .map((feature) => (
+                                            <li
+                                                key={feature.key}
+                                                className="flex items-start gap-2 text-sm text-[#364153]"
+                                            >
+                                                <Check className="mt-0.5 size-4 shrink-0 text-[#16a34a]" />
+                                                {feature.label}
+                                            </li>
+                                        ))}
+                                </ul>
+                                <div className="mt-auto pt-6">
+                                    <button
+                                        type="button"
+                                        disabled={item.current}
+                                        onClick={() =>
+                                            router.post(
+                                                `/employer/packages/${item.id}/select`,
+                                            )
+                                        }
+                                        className={cn(
+                                            'w-full cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold',
+                                            item.current
+                                                ? 'bg-[#ffedd5] text-[#c2410c]'
+                                                : 'bg-[#0057c8] text-white hover:opacity-90',
+                                        )}
+                                    >
+                                        {item.current
+                                            ? 'Current Plan'
+                                            : 'Select Plan'}
+                                    </button>
+                                </div>
+                            </article>
+                        ))}
+                        {packages.length === 0 && (
                             <p className="text-sm text-[#99a1af]">
+                                No public plans are available yet.
+                            </p>
+                        )}
+                    </div>
+                </section>
+
+                <section className="rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
+                    <h2 className="mb-4 text-base font-bold text-[#050315]">
+                        Invoice History
+                    </h2>
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[640px] text-left text-sm">
+                            <thead className="text-xs tracking-wide text-[#64748b] uppercase">
+                                <tr>
+                                    <th className="pb-3 font-semibold">
+                                        Invoice ID
+                                    </th>
+                                    <th className="pb-3 font-semibold">Date</th>
+                                    <th className="pb-3 font-semibold">
+                                        Description
+                                    </th>
+                                    <th className="pb-3 font-semibold">
+                                        Amount
+                                    </th>
+                                    <th className="pb-3 font-semibold">
+                                        Status
+                                    </th>
+                                    <th className="pb-3 font-semibold">
+                                        Action
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {invoices.map((invoice) => (
+                                    <tr
+                                        key={invoice.id}
+                                        className="border-t border-[#f1f5f9]"
+                                    >
+                                        <td className="py-3 font-medium text-[#050315]">
+                                            {invoice.reference}
+                                        </td>
+                                        <td className="py-3 text-[#64748b]">
+                                            {invoice.date}
+                                        </td>
+                                        <td className="py-3 text-[#364153]">
+                                            {invoice.package}
+                                        </td>
+                                        <td className="py-3 font-semibold text-[#050315]">
+                                            {invoice.currency}{' '}
+                                            {invoice.amount.toLocaleString()}
+                                        </td>
+                                        <td className="py-3">
+                                            <span
+                                                className={cn(
+                                                    'rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                                                    invoice.status_value ===
+                                                        'completed'
+                                                        ? 'bg-[#dcfce7] text-[#166534]'
+                                                        : 'bg-[#fff7ed] text-[#c2410c]',
+                                                )}
+                                            >
+                                                {invoice.status}
+                                            </span>
+                                        </td>
+                                        <td className="py-3">
+                                            <Download className="size-4 text-[#94a3b8]" />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {invoices.length === 0 && (
+                            <p className="py-6 text-sm text-[#99a1af]">
                                 No invoices yet.
                             </p>
                         )}
                     </div>
-                </div>
+                </section>
             </div>
         </EmployerLayout>
     );

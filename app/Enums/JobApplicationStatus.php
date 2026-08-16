@@ -59,4 +59,16 @@ enum JobApplicationStatus: string
     {
         return ! in_array($this, [self::Hired, self::Rejected, self::Withdrawn], true);
     }
+
+    public function next(): ?self
+    {
+        $timeline = self::Applied->timeline();
+        $index = array_search($this, $timeline, true);
+
+        if ($index === false) {
+            return null;
+        }
+
+        return $timeline[$index + 1] ?? null;
+    }
 }

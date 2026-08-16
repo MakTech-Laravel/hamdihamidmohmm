@@ -37,17 +37,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', EmployerDashboardController::class)->name('dashboard');
         Route::get('/profile', [EmployerProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [EmployerProfileController::class, 'update'])->name('profile.update');
-        Route::get('/packages', EmployerPackageController::class)->name('packages');
+        Route::get('/packages', [EmployerPackageController::class, 'index'])->name('packages');
+        Route::post('/packages/{package}/select', [EmployerPackageController::class, 'select'])->name('packages.select');
         Route::get('/jobs', [EmployerJobController::class, 'index'])->name('jobs');
+        Route::get('/jobs/create', [EmployerJobController::class, 'create'])->name('jobs.create');
         Route::post('/jobs', [EmployerJobController::class, 'store'])->name('jobs.store');
+        Route::get('/jobs/{job}/edit', [EmployerJobController::class, 'edit'])->name('jobs.edit');
         Route::put('/jobs/{job}', [EmployerJobController::class, 'update'])->name('jobs.update');
+        Route::post('/jobs/{job}/duplicate', [EmployerJobController::class, 'duplicate'])->name('jobs.duplicate');
+        Route::post('/jobs/{job}/pause', [EmployerJobController::class, 'pause'])->name('jobs.pause');
+        Route::post('/jobs/{job}/publish', [EmployerJobController::class, 'publish'])->name('jobs.publish');
         Route::delete('/jobs/{job}', [EmployerJobController::class, 'destroy'])->name('jobs.destroy');
         Route::get('/applications', [EmployerApplicationController::class, 'index'])->name('applications');
         Route::put('/applications/{application}', [EmployerApplicationController::class, 'update'])->name('applications.update');
         Route::get('/notifications', [EmployerPortalPageController::class, 'notifications'])->name('notifications');
         Route::post('/notifications/read-all', [EmployerPortalPageController::class, 'markAllRead'])->name('notifications.read-all');
         Route::post('/notifications/{notification}/read', [EmployerPortalPageController::class, 'markRead'])->name('notifications.read');
+        Route::delete('/notifications/{notification}', [EmployerPortalPageController::class, 'destroyNotification'])->name('notifications.destroy');
         Route::get('/settings', [EmployerPortalPageController::class, 'settings'])->name('settings');
+        Route::put('/settings', [EmployerPortalPageController::class, 'updateSettings'])->name('settings.update');
     });
 
     Route::get('/profile', [UserProfileController::class, 'edit'])->name('user-profile.edit');
