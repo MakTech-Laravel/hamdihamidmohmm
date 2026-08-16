@@ -222,12 +222,12 @@ export function AdminTableShell({
     return (
         <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-[#e2e8f0]">
+                <thead className="border-b border-[#d1f6ff]">
                     <tr>
                         {headers.map((header) => (
                             <th
                                 key={header}
-                                className="px-3 py-2 text-[11px] font-bold tracking-wide text-[#3977a6] uppercase"
+                                className="px-4 py-2.5 text-[11px] font-semibold tracking-[0.55px] text-[#3977a6] uppercase"
                             >
                                 {header}
                             </th>

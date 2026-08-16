@@ -40,7 +40,7 @@ test('job management includes the latest applicant preview for the drawer', func
     $this->actingAs($admin)
         ->get(route('admin.jobs.index'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/JobManagement')
             ->where('jobs.data.0.preview.name', 'Ahmed Al-Rashidi')
             ->where('jobs.data.0.preview.title', 'Senior Frontend Developer')
@@ -52,7 +52,24 @@ test('job management includes the latest applicant preview for the drawer', func
             ->where('jobs.data.0.preview.resume_url', route('admin.jobs.applicant-resume', [$job, $seeker]))
             ->where('jobs.data.0.preview.timeline.3.label', 'Interview')
             ->where('jobs.data.0.preview.timeline.3.state', 'current')
-            ->where('jobs.data.0.preview.timeline.4.state', 'pending'));
+            ->where('jobs.data.0.preview.timeline.4.state', 'pending')
+            ->where('jobs.data.0.created', $job->created_at?->toDateString())
+            ->missing('stats.featured')
+            ->missing('jobs.data.0.featured'));
+});
+
+test('admins cannot toggle featured status from job management', function () {
+    $admin = User::factory()->admin()->create();
+    $job = JobPost::factory()->create([
+        'status' => JobPostStatus::Active,
+        'featured' => false,
+    ]);
+
+    $this->actingAs($admin)
+        ->post('/admin/jobs/'.$job->id.'/feature')
+        ->assertNotFound();
+
+    expect($job->fresh()->featured)->toBeFalse();
 });
 
 test('job management falls back to a job preview when there are no applications', function () {
@@ -68,7 +85,7 @@ test('job management falls back to a job preview when there are no applications'
     $this->actingAs($admin)
         ->get(route('admin.jobs.index'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/JobManagement')
             ->where('jobs.data.0.id', $job->id)
             ->where('jobs.data.0.preview.name', 'Site Engineer')

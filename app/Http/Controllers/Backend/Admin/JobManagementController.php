@@ -45,7 +45,7 @@ class JobManagementController extends Controller
                         ->orWhere(function ($expired): void {
                             $expired->where('status', JobPostStatus::Active)
                                 ->whereNotNull('expires_at')
-                                ->where('expires_at', '<', now());
+                                ->where('expires_at', '<', now()->startOfDay());
                         });
                 });
             } else {
@@ -68,7 +68,7 @@ class JobManagementController extends Controller
         $jobs = $jobsQuery
             ->paginate(12)
             ->withQueryString()
-            ->through(fn (JobPost $job) => $this->row($job));
+            ->through(fn(JobPost $job) => $this->row($job));
 
         return Inertia::render('backend/Admin/JobManagement', [
             'jobs' => $jobs,
@@ -100,10 +100,7 @@ class JobManagementController extends Controller
     {
         abort_unless($request->user()?->canManageJobs(), 403);
 
-        $jobPost->forceFill([
-            'status' => JobPostStatus::Active,
-            'rejection_reason' => null,
-        ])->save();
+        $jobPost->activateFromReview();
 
         return back()->with('success', 'Job approved.');
     }
@@ -145,20 +142,11 @@ class JobManagementController extends Controller
         ]);
     }
 
-    public function feature(Request $request, JobPost $jobPost): RedirectResponse
-    {
-        abort_unless($request->user()?->canManageJobs(), 403);
-
-        $jobPost->forceFill(['featured' => ! $jobPost->featured])->save();
-
-        return back()->with('success', $jobPost->featured ? 'Job featured.' : 'Feature removed.');
-    }
-
     public function export(Request $request): StreamedResponse
     {
         abort_unless($request->user()?->canManageJobs(), 403);
 
-        $filename = 'jobs-'.now()->format('Y-m-d-His').'.csv';
+        $filename = 'jobs-' . now()->format('Y-m-d-His') . '.csv';
 
         return response()->streamDownload(function (): void {
             $handle = fopen('php://output', 'w');
@@ -204,7 +192,6 @@ class JobManagementController extends Controller
             'views' => $job->views,
             'status' => $status->label(),
             'status_value' => $status->value,
-            'featured' => $job->featured,
             'created' => $job->created_at?->toDateString(),
             'can_review' => $job->status === JobPostStatus::Pending,
             'preview' => $this->preview($job),
@@ -277,7 +264,7 @@ class JobManagementController extends Controller
             'location' => $location,
             'skills' => array_values(array_filter(
                 $skills,
-                fn (mixed $skill): bool => is_string($skill) && $skill !== '',
+                fn(mixed $skill): bool => is_string($skill) && $skill !== '',
             )),
             'resume_url' => $seeker instanceof User
                 ? route('admin.jobs.applicant-resume', [$job, $seeker])
@@ -387,9 +374,9 @@ class JobManagementController extends Controller
             return $place;
         }
 
-        $suffix = $years === 1 ? '1 year' : $years.' years';
+        $suffix = $years === 1 ? '1 year' : $years . ' years';
 
-        return $place === '—' ? $suffix : $place.' · '.$suffix;
+        return $place === '—' ? $suffix : $place . ' · ' . $suffix;
     }
 
     private function experienceYears(mixed $experience): ?int
@@ -414,7 +401,7 @@ class JobManagementController extends Controller
     }
 
     /**
-     * @return array{total: int, active: int, pending: int, rejected: int, expired: int, featured: int}
+     * @return array{total: int, active: int, pending: int, rejected: int, expired: int}
      */
     private function stats(): array
     {
@@ -429,11 +416,10 @@ class JobManagementController extends Controller
                         ->orWhere(function ($expired): void {
                             $expired->where('status', JobPostStatus::Active)
                                 ->whereNotNull('expires_at')
-                                ->where('expires_at', '<', now());
+                                ->where('expires_at', '<', now()->startOfDay());
                         });
                 })
                 ->count(),
-            'featured' => JobPost::query()->where('featured', true)->count(),
         ];
     }
 }

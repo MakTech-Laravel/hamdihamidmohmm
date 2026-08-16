@@ -32,7 +32,6 @@ type Job = {
     applications: number;
     views: number;
     status: string;
-    featured: boolean;
     created: string | null;
     description: string | null;
     employment_type: string | null;
@@ -60,13 +59,6 @@ export default function JobShow({ job }: { job: Job }) {
                             <Link href="/admin/jobs">
                                 <AdminSecondaryButton>Back</AdminSecondaryButton>
                             </Link>
-                            <AdminSecondaryButton
-                                onClick={() =>
-                                    router.post(`/admin/jobs/${job.id}/feature`)
-                                }
-                            >
-                                {job.featured ? 'Unfeature' : 'Feature'}
-                            </AdminSecondaryButton>
                             {job.can_review && (
                                 <>
                                     <AdminPrimaryButton

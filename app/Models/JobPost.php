@@ -57,7 +57,7 @@ class JobPost extends Model
     {
         static::creating(function (JobPost $job): void {
             if (blank($job->slug)) {
-                $job->slug = Str::slug($job->title).'-'.Str::lower(Str::random(6));
+                $job->slug = Str::slug($job->title) . '-' . Str::lower(Str::random(6));
             }
         });
     }
@@ -95,17 +95,41 @@ class JobPost extends Model
         return $query->where('status', JobPostStatus::Active)
             ->where(function (Builder $builder): void {
                 $builder->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
+                    ->orWhere('expires_at', '>=', now()->startOfDay());
             });
     }
 
     public function effectiveStatus(): JobPostStatus
     {
-        if ($this->status === JobPostStatus::Active && $this->expires_at !== null && $this->expires_at->isPast()) {
+        if ($this->status === JobPostStatus::Active && $this->listingHasEnded()) {
             return JobPostStatus::Expired;
         }
 
         return $this->status ?? JobPostStatus::Pending;
+    }
+
+    public function activateFromReview(int $listingDays = 30): void
+    {
+        $expiresAt = $this->expires_at;
+
+        if ($expiresAt === null || ! $expiresAt->isFuture()) {
+            $expiresAt = now()->addDays($listingDays);
+        }
+
+        $this->forceFill([
+            'status' => JobPostStatus::Active,
+            'rejection_reason' => null,
+            'expires_at' => $expiresAt,
+        ])->save();
+    }
+
+    public function listingHasEnded(): bool
+    {
+        if ($this->expires_at === null) {
+            return false;
+        }
+
+        return $this->expires_at->copy()->endOfDay()->isPast();
     }
 
     public function incrementViews(): void

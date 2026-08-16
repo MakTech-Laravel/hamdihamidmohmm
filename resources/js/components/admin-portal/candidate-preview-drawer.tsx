@@ -130,7 +130,7 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                         <a
                             href={preview.resume_url ?? '#'}
                             download
-                            className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg bg-[#0057c8] px-3.5 text-[13.6px] font-semibold text-white hover:bg-[#0046a3]"
+                            className="inline-flex h-[38px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3.5 text-[13.6px] font-semibold text-white hover:bg-[#0046a3]"
                         >
                             <Download
                                 className="size-3.5"
@@ -142,7 +142,7 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                         <button
                             type="button"
                             disabled
-                            className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg bg-[#0057c8] px-3.5 text-[13.6px] font-semibold text-white opacity-50"
+                            className="inline-flex h-[38px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3.5 text-[13.6px] font-semibold text-white opacity-50"
                         >
                             <Download
                                 className="size-3.5"

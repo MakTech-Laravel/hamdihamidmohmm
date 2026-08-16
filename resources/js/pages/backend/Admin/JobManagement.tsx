@@ -1,18 +1,20 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { Briefcase, Check, Download, Eye, Search, Star, X } from 'lucide-react';
+import { Check, Download, Eye, Search, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import {
+    approve,
+    exportMethod,
+    index,
+    reject,
+} from '@/actions/App/Http/Controllers/Backend/Admin/JobManagementController';
 import {
     CandidatePreviewDrawer,
     type CandidatePreview,
 } from '@/components/admin-portal/candidate-preview-drawer';
 import {
-    AdminFilterChip,
-    AdminPageHeader,
     AdminPagination,
     AdminPanel,
-    AdminSecondaryButton,
-    AdminStatCard,
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
@@ -28,6 +30,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
+import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
 type JobRow = {
@@ -40,7 +43,6 @@ type JobRow = {
     views: number;
     status: string;
     status_value: string;
-    featured: boolean;
     created: string | null;
     can_review: boolean;
     preview: CandidatePreview;
@@ -61,7 +63,6 @@ type Props = {
         pending: number;
         rejected: number;
         expired: number;
-        featured: number;
     };
 };
 
@@ -89,6 +90,10 @@ function jobStatusTone(
     return 'neutral';
 }
 
+function jobReference(id: number): string {
+    return `JOB-${String(id).padStart(4, '0')}`;
+}
+
 export default function JobManagement({ jobs, filters, stats }: Props) {
     const { flash } = usePage<SharedData>().props;
     const [search, setSearch] = useState(filters.search ?? '');
@@ -114,13 +119,15 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
 
     const visitList = (status: string, searchValue = search): void => {
         router.get(
-            '/admin/jobs',
-            {
-                ...(status !== 'all' && status !== '' ? { status } : {}),
-                ...(searchValue.trim() !== ''
-                    ? { search: searchValue.trim() }
-                    : {}),
-            },
+            index.url({
+                query: {
+                    ...(status !== 'all' && status !== '' ? { status } : {}),
+                    ...(searchValue.trim() !== ''
+                        ? { search: searchValue.trim() }
+                        : {}),
+                },
+            }),
+            {},
             { preserveState: true, replace: true },
         );
     };
@@ -130,18 +137,23 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
             <Head title="Job Management" />
 
             <div className="space-y-6 p-6">
-                <AdminPageHeader
-                    title="Job Management"
-                    subtitle="Review, approve, moderate, and feature job listings."
-                    actions={
-                        <a href={`/admin/jobs/export${query}`}>
-                            <AdminSecondaryButton>
-                                <Download className="size-4" />
-                                Export
-                            </AdminSecondaryButton>
-                        </a>
-                    }
-                />
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-[22px] leading-[33px] font-bold text-[#0f172a]">
+                            Job Management
+                        </h1>
+                        <p className="pt-1 text-[13px] leading-[19.5px] text-[#94a3b8]">
+                            Review, approve, and moderate job listings.
+                        </p>
+                    </div>
+                    <a
+                        href={`${exportMethod.url()}${query}`}
+                        className="inline-flex h-[34px] items-center justify-center gap-1.5 rounded-[6px] border border-[#e2e8f0] bg-[#f1f5f9] px-[14px] py-[7px] text-[13px] font-semibold text-[#475569] hover:bg-white"
+                    >
+                        <Download className="size-3.5" strokeWidth={2} />
+                        Export
+                    </a>
+                </div>
 
                 {flash.success && (
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
@@ -151,154 +163,197 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                     </div>
                 )}
 
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-                    {[
-                        ['Total Jobs', stats.total, 'text-[#0057c8]'],
-                        ['Active', stats.active, 'text-[#10b981]'],
-                        ['Pending', stats.pending, 'text-[#e57124]'],
-                        ['Rejected', stats.rejected, 'text-[#ef4444]'],
-                        ['Expired', stats.expired, 'text-[#64748b]'],
-                        ['Featured', stats.featured, 'text-[#7c3aed]'],
-                    ].map(([label, value, tone]) => (
-                        <AdminStatCard
+                <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-5">
+                    {(
+                        [
+                            [
+                                'Total Jobs',
+                                stats.total,
+                                'text-[#0057c8]',
+                            ],
+                            [
+                                'Active Jobs',
+                                stats.active,
+                                'text-[#e57124]',
+                            ],
+                            [
+                                'Pending Jobs',
+                                stats.pending,
+                                'text-[#f59e0b]',
+                            ],
+                            [
+                                'Rejected Jobs',
+                                stats.rejected,
+                                'text-[#ef4444]',
+                            ],
+                            [
+                                'Expired Jobs',
+                                stats.expired,
+                                'text-[#94a3b8]',
+                            ],
+                        ] as const
+                    ).map(([label, value, tone]) => (
+                        <div
                             key={label}
-                            label={label}
-                            value={Number(value).toLocaleString()}
-                            valueClassName={tone}
-                            icon={Briefcase}
-                        />
+                            className="rounded-[8px] border border-[#e2e8f0] bg-white px-[14px] py-[12px]"
+                        >
+                            <p
+                                className={cn(
+                                    'text-[18px] leading-[27px] font-bold',
+                                    tone,
+                                )}
+                            >
+                                {Number(value).toLocaleString()}
+                            </p>
+                            <p className="pt-0.5 text-[11px] leading-[16.5px] text-[#94a3b8]">
+                                {label}
+                            </p>
+                        </div>
                     ))}
                 </div>
 
-                <AdminPanel>
-                    <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <AdminPanel className="rounded-[8px] p-0 shadow-none">
+                    <div className="flex flex-col gap-2.5 border-b border-[#e2e8f0] px-4 py-3.5 lg:flex-row lg:items-center">
                         <form
-                            className="relative max-w-md flex-1"
+                            className="relative min-w-[200px] flex-1"
                             onSubmit={(event) => {
                                 event.preventDefault();
                                 visitList(filters.status || 'all');
                             }}
                         >
-                            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#94a3b8]" />
+                            <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#94a3b8]" />
                             <input
                                 type="search"
-                                placeholder="Search jobs..."
+                                placeholder="Search by title, employer…"
                                 value={search}
                                 onChange={(event) =>
                                     setSearch(event.target.value)
                                 }
-                                className="w-full rounded-xl border border-[#e2e8f0] bg-[#f8faff] py-2.5 pr-4 pl-10 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
+                                className="h-[34px] w-full rounded-[6px] border border-[#e2e8f0] bg-white py-2 pr-3 pl-8 text-[13px] text-[#0f172a] outline-none placeholder:text-[#0f172a]/50 focus:border-[#0057c8]"
                             />
                         </form>
-                        <div className="flex flex-wrap items-center gap-2">
-                            {filterChips.map(([key, label]) => (
-                                <AdminFilterChip
-                                    key={key}
-                                    label={label}
-                                    active={(filters.status || 'all') === key}
-                                    onClick={() => visitList(key)}
-                                />
-                            ))}
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            {filterChips.map(([key, label]) => {
+                                const active =
+                                    (filters.status || 'all') === key;
+
+                                return (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => visitList(key)}
+                                        className={cn(
+                                            'h-[34px] cursor-pointer rounded-[6px] px-2.5 py-[5px] text-[12px] font-semibold',
+                                            active
+                                                ? 'bg-[#0057c8] text-white'
+                                                : 'border border-[#e2e8f0] bg-[#f1f5f9] text-[#475569]',
+                                        )}
+                                    >
+                                        {label}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
                     <AdminTableShell
                         headers={[
-                            'Title',
+                            'Job Title',
                             'Employer',
                             'Category',
                             'Location',
-                            'Apps',
+                            'Applications',
                             'Views',
                             'Status',
+                            'Created',
                             'Actions',
                         ]}
                     >
                         {jobs.data.map((row) => (
                             <tr
                                 key={row.id}
-                                className="border-b border-[#e2e8f0] last:border-0 hover:bg-[#f8faff]"
+                                className="border-b border-[#f1f5f9] last:border-0"
                             >
-                                <td className="px-3 py-3 font-semibold text-[#050315]">
-                                    {row.title}
+                                <td className="px-3 py-2.5">
+                                    <p className="text-[13px] leading-[19.5px] font-semibold text-[#0f172a]">
+                                        {row.title}
+                                    </p>
+                                    <p className="text-[11px] leading-[16.5px] text-[#94a3b8]">
+                                        {jobReference(row.id)}
+                                    </p>
                                 </td>
-                                <td className="px-3 py-3 text-[#64748b]">
+                                <td className="px-4 py-3 text-[12px] text-[#64748b]">
                                     {row.employer}
                                 </td>
-                                <td className="px-3 py-3 text-[#64748b]">
-                                    {row.category}
+                                <td className="px-4 py-3">
+                                    <span className="inline-flex rounded-full bg-[#dbeafe] px-2 py-0.5 text-[11px] font-semibold tracking-[0.22px] text-[#1e40af]">
+                                        {row.category}
+                                    </span>
                                 </td>
-                                <td className="px-3 py-3 text-[#64748b]">
+                                <td className="px-4 py-3 text-[12px] text-[#0f172a]">
                                     {row.location}
                                 </td>
-                                <td className="px-3 py-3 font-semibold text-[#050315]">
+                                <td className="px-4 py-3 text-[12px] font-semibold text-[#0f172a]">
                                     {row.applications}
                                 </td>
-                                <td className="px-3 py-3 text-[#64748b]">
+                                <td className="px-4 py-3 text-[12px] text-[#64748b]">
                                     {row.views}
                                 </td>
-                                <td className="px-3 py-3">
+                                <td className="px-4 py-3">
                                     <AdminStatusBadge
                                         label={row.status}
                                         tone={jobStatusTone(row.status)}
                                     />
                                 </td>
-                                <td className="px-3 py-3">
-                                    <div className="flex items-center gap-1.5">
+                                <td className="px-4 py-3 text-[12px] text-[#64748b]">
+                                    {row.created ?? '—'}
+                                </td>
+                                <td className="px-1 py-3">
+                                    <div className="flex items-center gap-1">
                                         <button
                                             type="button"
-                                            className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8faff]"
+                                            className="flex h-[23px] items-center rounded-[6px] px-2.5 py-[5px] text-[#64748b] hover:bg-[#f8fafc]"
                                             aria-label="View applicant"
                                             onClick={() => setPreviewing(row)}
                                         >
-                                            <Eye className="size-4" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#fff7ed]"
-                                            aria-label="Toggle featured"
-                                            onClick={() =>
-                                                router.post(
-                                                    `/admin/jobs/${row.id}/feature`,
-                                                )
-                                            }
-                                        >
-                                            <Star
-                                                className="size-4"
-                                                fill={
-                                                    row.featured
-                                                        ? '#e57124'
-                                                        : 'none'
-                                                }
+                                            <Eye
+                                                className="size-[13px]"
+                                                strokeWidth={2}
                                             />
                                         </button>
-                                        {row.can_review && (
+                                        {row.can_review ? (
                                             <>
                                                 <button
                                                     type="button"
-                                                    className="flex size-8 items-center justify-center rounded-lg border border-[#d1fae5] bg-[#d1fae5] text-[#065f46] hover:bg-[#a7f3d0]"
+                                                    className="flex h-[23px] items-center rounded-[6px] bg-[#d1fae5] px-2.5 py-[5px] text-[#065f46] hover:bg-[#a7f3d0]"
                                                     aria-label="Approve job"
                                                     onClick={() =>
                                                         router.post(
-                                                            `/admin/jobs/${row.id}/approve`,
+                                                            approve.url(row.id),
                                                         )
                                                     }
                                                 >
-                                                    <Check className="size-4" />
+                                                    <Check
+                                                        className="size-[11px]"
+                                                        strokeWidth={2.5}
+                                                    />
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className="flex size-8 items-center justify-center rounded-lg border border-[#fee2e2] bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca]"
+                                                    className="flex h-[23px] items-center rounded-[6px] bg-[#fee2e2] px-2.5 py-[5px] text-[#991b1b] hover:bg-[#fecaca]"
                                                     aria-label="Reject job"
                                                     onClick={() => {
                                                         setRejectionReason('');
                                                         setRejecting(row);
                                                     }}
                                                 >
-                                                    <X className="size-4" />
+                                                    <X
+                                                        className="size-[11px]"
+                                                        strokeWidth={2.5}
+                                                    />
                                                 </button>
                                             </>
-                                        )}
+                                        ) : null}
                                     </div>
                                 </td>
                             </tr>
@@ -311,10 +366,12 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                         </p>
                     )}
 
-                    <AdminPagination
-                        showingLabel={`Showing ${jobs.from ?? 0}-${jobs.to ?? 0} of ${jobs.total}`}
-                        links={jobs.links}
-                    />
+                    <div className="px-4 pb-4">
+                        <AdminPagination
+                            showingLabel={`Showing ${jobs.to ?? 0} of ${jobs.total}`}
+                            links={jobs.links}
+                        />
+                    </div>
                 </AdminPanel>
             </div>
 
@@ -364,7 +421,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                 }
 
                                 router.post(
-                                    `/admin/jobs/${rejecting.id}/reject`,
+                                    reject.url(rejecting.id),
                                     {
                                         rejection_reason:
                                             rejectionReason.trim(),

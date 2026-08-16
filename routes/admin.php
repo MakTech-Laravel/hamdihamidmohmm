@@ -64,7 +64,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/jobs/{jobPost}', [JobManagementController::class, 'show'])->name('jobs.show');
         Route::post('/jobs/{jobPost}/approve', [JobManagementController::class, 'approve'])->name('jobs.approve');
         Route::post('/jobs/{jobPost}/reject', [JobManagementController::class, 'reject'])->name('jobs.reject');
-        Route::post('/jobs/{jobPost}/feature', [JobManagementController::class, 'feature'])->name('jobs.feature');
 
         Route::get('/applications/export', [ApplicationMonitoringController::class, 'export'])->name('applications.export');
         Route::get('/applications', [ApplicationMonitoringController::class, 'index'])->name('applications.index');
