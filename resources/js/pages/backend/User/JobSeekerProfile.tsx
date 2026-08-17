@@ -23,6 +23,7 @@ import {
 } from '@/actions/App/Http/Controllers/Backend/User/JobSeekerProfileController';
 import { getInitials } from '@/components/job-seeker/demo-data';
 import { NativeSelect } from '@/components/ui/native-select';
+import { useLocale } from '@/hooks/use-locale';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -124,68 +125,100 @@ function isKnownLanguageLevel(
 
 const sectionMeta: Array<{
     id: SectionId;
-    label: string;
+    labelKey: string;
     icon: typeof UserRound;
     emoji: string;
     tone: string;
 }> = [
         {
             id: 'personal',
-            label: 'Personal Information',
+            labelKey: 'job_seeker.profile.personal',
             icon: UserRound,
             emoji: '👤',
             tone: 'bg-[#dcfce7] text-[#15803d]',
         },
         {
             id: 'professional',
-            label: 'Professional Information',
+            labelKey: 'job_seeker.profile.professional',
             icon: Briefcase,
             emoji: '💼',
             tone: 'bg-[#ffedd5] text-[#c2410c]',
         },
         {
             id: 'education',
-            label: 'Education',
+            labelKey: 'job_seeker.profile.education',
             icon: GraduationCap,
             emoji: '🎓',
             tone: 'bg-[#dbeafe] text-[#1d4ed8]',
         },
         {
             id: 'experience',
-            label: 'Work Experience',
+            labelKey: 'job_seeker.profile.experience',
             icon: Briefcase,
             emoji: '🏢',
             tone: 'bg-[#ffedd5] text-[#c2410c]',
         },
         {
             id: 'skills',
-            label: 'Skills',
+            labelKey: 'job_seeker.profile.skills',
             icon: Sparkles,
             emoji: '⚡',
             tone: 'bg-[#dbeafe] text-[#1d4ed8]',
         },
         {
             id: 'languages',
-            label: 'Languages',
+            labelKey: 'job_seeker.profile.languages',
             icon: Languages,
             emoji: '🌐',
             tone: 'bg-[#dcfce7] text-[#15803d]',
         },
         {
             id: 'certifications',
-            label: 'Certifications',
+            labelKey: 'job_seeker.profile.certifications',
             icon: Award,
             emoji: '🏅',
             tone: 'bg-[#fee2e2] text-[#b91c1c]',
         },
         {
             id: 'resume',
-            label: 'Resume & Documents',
+            labelKey: 'job_seeker.profile.resume',
             icon: Download,
             emoji: '📄',
             tone: 'bg-[#dcfce7] text-[#15803d]',
         },
     ];
+
+const availabilityLabelKeys: Record<(typeof availabilityOptions)[number], string> = {
+    'Full Time': 'jobs.full_time',
+    'Part Time': 'jobs.part_time',
+    Remote: 'jobs.remote',
+    Freelance: 'jobs.freelance',
+};
+
+function translatedOrRaw(
+    t: (key: string, replacements?: Record<string, string | number>) => string,
+    key: string,
+    raw: string,
+): string {
+    const value = t(key);
+
+    return value === key ? raw : value;
+}
+
+function availabilityLabel(t: (key: string) => string, option: string): string {
+    const key =
+        availabilityLabelKeys[option as (typeof availabilityOptions)[number]];
+
+    return key ? t(key) : option;
+}
+
+function languageLevelLabel(t: (key: string) => string, level: string): string {
+    return translatedOrRaw(
+        t,
+        `job_seeker.profile.language_level.${level.toLowerCase()}`,
+        level,
+    );
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
     return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -436,6 +469,7 @@ function cleanCertifications(
 
 export default function JobSeekerProfile({ profile }: { profile: Profile }) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [editing, setEditing] = useState<SectionId | null>(null);
 
     const form = useForm(profileToFormData(profile));
@@ -500,15 +534,15 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
     };
 
     return (
-        <JobSeekerLayout title="My Profile">
-            <Head title="My Profile" />
+        <JobSeekerLayout title={t('job_seeker.profile.title')}>
+            <Head title={t('job_seeker.profile.title')} />
 
             <div className="space-y-6 p-6">
                 {flash.success && (
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('job_seeker.profile.saved')}
                     </div>
                 )}
 
@@ -521,14 +555,19 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#0057c8] to-[#3977a6] p-6 text-white shadow-[0px_4px_10px_rgba(30,58,138,0.2)]">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                         <div className="flex size-[88px] shrink-0 items-center justify-center rounded-full bg-white/15 text-2xl font-extrabold">
-                            {getInitials(profile.name || 'JS')}
+                            {getInitials(
+                                profile.name ||
+                                    t('job_seeker.profile.fallback_name'),
+                            )}
                         </div>
                         <div className="min-w-0 flex-1">
                             <h1 className="text-2xl font-extrabold">
-                                {profile.name || 'Job Seeker'}
+                                {profile.name ||
+                                    t('job_seeker.profile.fallback_name')}
                             </h1>
                             <p className="pt-1 text-sm text-[#bfdbfe]">
-                                {profile.headline || 'Add a professional headline'}
+                                {profile.headline ||
+                                    t('job_seeker.profile.add_headline')}
                             </p>
                             {profile.location ? (
                                 <p className="flex items-center gap-1.5 pt-2 text-sm text-[#dbeafe]">
@@ -539,7 +578,9 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                             <div className="mt-4 max-w-md">
                                 <div className="mb-1 flex items-center justify-between text-xs font-semibold text-[#bedbff]">
                                     <span>
-                                        {profile.completion}% Profile Completion
+                                        {t('job_seeker.profile.completion', {
+                                            percent: profile.completion,
+                                        })}
                                     </span>
                                 </div>
                                 <div className="h-2 overflow-hidden rounded-full bg-white/25">
@@ -569,7 +610,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                 )}
                             >
                                 <section.icon className="size-3.5" />
-                                {section.label}
+                                {t(section.labelKey)}
                                 {complete ? (
                                     <Check className="size-3.5" strokeWidth={3} />
                                 ) : (
@@ -582,7 +623,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
 
                 <SectionCard
                     id="personal"
-                    title="Personal Information"
+                    title={t('job_seeker.profile.personal')}
                     emoji="👤"
                     complete={completeMap.personal ?? false}
                     editing={editing === 'personal'}
@@ -594,19 +635,19 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     {editing === 'personal' ? (
                         <div className="grid gap-4 md:grid-cols-2">
                             <Field
-                                label="Full Name"
+                                label={t('job_seeker.profile.full_name')}
                                 value={form.data.name}
                                 onChange={(value) => form.setData('name', value)}
                             />
                             <Field
-                                label="Professional Headline"
+                                label={t('job_seeker.profile.headline')}
                                 value={form.data.headline}
                                 onChange={(value) =>
                                     form.setData('headline', value)
                                 }
                             />
                             <Field
-                                label="Location"
+                                label={t('job_seeker.profile.location')}
                                 value={form.data.location}
                                 onChange={(value) =>
                                     form.setData('location', value)
@@ -614,36 +655,40 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                             />
                             <div>
                                 <p className="pb-1.5 text-xs font-semibold text-[#4a5565]">
-                                    Email Address
+                                    {t('job_seeker.profile.email')}
                                 </p>
                                 <div className="flex h-[42px] items-center rounded-lg border border-[#e8d5e8] bg-[#f8fafc] px-3 text-base text-[#64748b]">
                                     {profile.email || '—'}
                                 </div>
                             </div>
                             <Field
-                                label="Phone Number"
+                                label={t('job_seeker.profile.phone')}
                                 value={form.data.phone}
                                 onChange={(value) => form.setData('phone', value)}
                             />
                             <Field
-                                label="LinkedIn Profile"
+                                label={t('job_seeker.profile.linkedin')}
                                 value={form.data.linkedin_url}
                                 onChange={(value) =>
                                     form.setData('linkedin_url', value)
                                 }
-                                placeholder="linkedin.com/in/username"
+                                placeholder={t(
+                                    'job_seeker.profile.linkedin_placeholder',
+                                )}
                             />
                             <Field
-                                label="GitHub Profile"
+                                label={t('job_seeker.profile.github')}
                                 value={form.data.github_url}
                                 onChange={(value) =>
                                     form.setData('github_url', value)
                                 }
-                                placeholder="github.com/username"
+                                placeholder={t(
+                                    'job_seeker.profile.github_placeholder',
+                                )}
                             />
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-semibold text-[#4a5565]">
-                                    Bio
+                                    {t('job_seeker.profile.bio')}
                                     <textarea
                                         className="mt-1.5 min-h-24 w-full rounded-lg border border-[#e8d5e8] px-3 py-2 text-base text-[#050315] outline-none transition focus:border-[#0057c8] focus:ring-[3px] focus:ring-[#0057c8]/15"
                                         value={form.data.bio}
@@ -659,33 +704,39 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                         </div>
                     ) : (
                         <div className="grid gap-4 md:grid-cols-2">
-                            <ReadOnlyField label="Full Name" value={profile.name} />
                             <ReadOnlyField
-                                label="Professional Headline"
+                                label={t('job_seeker.profile.full_name')}
+                                value={profile.name}
+                            />
+                            <ReadOnlyField
+                                label={t('job_seeker.profile.headline')}
                                 value={profile.headline}
                             />
                             <ReadOnlyField
-                                label="Location"
+                                label={t('job_seeker.profile.location')}
                                 value={profile.location}
                             />
                             <ReadOnlyField
-                                label="Email Address"
+                                label={t('job_seeker.profile.email')}
                                 value={profile.email}
                             />
                             <ReadOnlyField
-                                label="Phone Number"
+                                label={t('job_seeker.profile.phone')}
                                 value={profile.phone}
                             />
                             <ReadOnlyField
-                                label="LinkedIn Profile"
+                                label={t('job_seeker.profile.linkedin')}
                                 value={profile.linkedin_url}
                             />
                             <ReadOnlyField
-                                label="GitHub Profile"
+                                label={t('job_seeker.profile.github')}
                                 value={profile.github_url}
                             />
                             <div className="md:col-span-2">
-                                <ReadOnlyField label="Bio" value={profile.bio} />
+                                <ReadOnlyField
+                                    label={t('job_seeker.profile.bio')}
+                                    value={profile.bio}
+                                />
                             </div>
                         </div>
                     )}
@@ -693,7 +744,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
 
                 <SectionCard
                     id="professional"
-                    title="Professional Information"
+                    title={t('job_seeker.profile.professional')}
                     emoji="💼"
                     complete={completeMap.professional ?? false}
                     editing={editing === 'professional'}
@@ -706,29 +757,29 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                         <div className="space-y-4">
                             <div className="grid gap-4 md:grid-cols-2">
                                 <Field
-                                    label="Current Job Title"
+                                    label={t('job_seeker.profile.current_title')}
                                     value={form.data.current_title}
                                     onChange={(value) =>
                                         form.setData('current_title', value)
                                     }
                                 />
                                 <Field
-                                    label="Years of Experience"
+                                    label={t('job_seeker.profile.years_experience')}
                                     value={form.data.experience_years}
                                     onChange={(value) =>
                                         form.setData('experience_years', value)
                                     }
-                                    placeholder="e.g. 6"
+                                    placeholder={t('job_seeker.profile.years_placeholder')}
                                 />
                                 <Field
-                                    label="Industry"
+                                    label={t('job_seeker.profile.industry')}
                                     value={form.data.industry}
                                     onChange={(value) =>
                                         form.setData('industry', value)
                                     }
                                 />
                                 <Field
-                                    label="Expected Salary"
+                                    label={t('job_seeker.profile.expected_salary')}
                                     value={form.data.expected_salary}
                                     onChange={(value) =>
                                         form.setData('expected_salary', value)
@@ -737,7 +788,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                             </div>
                             <div>
                                 <p className="text-xs font-semibold text-[#4a5565]">
-                                    Available For
+                                    {t('job_seeker.profile.available_for')}
                                 </p>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {availabilityOptions.map((option) => {
@@ -774,7 +825,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                                         : 'border-[#e5e7eb] bg-white text-[#374151] hover:border-[#0057c8]/40',
                                                 )}
                                             >
-                                                {option}
+                                                {availabilityLabel(t, option)}
                                             </button>
                                         );
                                     })}
@@ -784,24 +835,24 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     ) : (
                         <div className="grid gap-4 md:grid-cols-2">
                             <ReadOnlyField
-                                label="Current Job Title"
+                                label={t('job_seeker.profile.current_title')}
                                 value={profile.current_title}
                             />
                             <ReadOnlyField
-                                label="Years of Experience"
+                                label={t('job_seeker.profile.years_experience')}
                                 value={profile.experience_years_label}
                             />
                             <ReadOnlyField
-                                label="Industry"
+                                label={t('job_seeker.profile.industry')}
                                 value={profile.industry}
                             />
                             <ReadOnlyField
-                                label="Expected Salary"
+                                label={t('job_seeker.profile.expected_salary')}
                                 value={profile.expected_salary}
                             />
                             <div className="md:col-span-2">
                                 <p className="text-xs font-semibold text-[#4a5565]">
-                                    Available For
+                                    {t('job_seeker.profile.available_for')}
                                 </p>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {(profile.availability ?? []).length ===
@@ -815,7 +866,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                                 key={item}
                                                 className="rounded-lg bg-[#dbeafe] px-3 py-1.5 text-sm font-semibold text-[#1d4ed8]"
                                             >
-                                                {item}
+                                                {availabilityLabel(t, item)}
                                             </span>
                                         ))
                                     )}
@@ -827,7 +878,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
 
                 <SectionCard
                     id="education"
-                    title="Education"
+                    title={t('job_seeker.profile.education')}
                     emoji="🎓"
                     complete={completeMap.education ?? false}
                     editing={editing === 'education'}
@@ -839,8 +890,8 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     {editing === 'education' ? (
                         <EntryEditor
                             entries={form.data.education}
-                            emptyLabel="No education added yet."
-                            addLabel="+ Add Education"
+                            emptyLabel={t('job_seeker.profile.no_education')}
+                            addLabel={t('job_seeker.profile.add_education')}
                             accent="blue"
                             onAdd={() =>
                                 form.setData('education', [
@@ -859,7 +910,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                             renderFields={(entry, index) => (
                                 <div className="grid gap-3 md:grid-cols-2">
                                     <Field
-                                        label="Degree"
+                                        label={t('job_seeker.profile.degree')}
                                         value={entry.degree}
                                         onChange={(value) => {
                                             const next = [
@@ -873,7 +924,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                         }}
                                     />
                                     <Field
-                                        label="School / University"
+                                        label={t('job_seeker.profile.school')}
                                         value={entry.school}
                                         onChange={(value) => {
                                             const next = [
@@ -887,7 +938,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                         }}
                                     />
                                     <Field
-                                        label="Field of Study"
+                                        label={t('job_seeker.profile.field_of_study')}
                                         value={entry.field}
                                         onChange={(value) => {
                                             const next = [
@@ -902,7 +953,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                     />
                                     <div className="grid grid-cols-2 gap-2">
                                         <Field
-                                            label="From"
+                                            label={t('job_seeker.profile.from')}
                                             value={entry.from}
                                             onChange={(value) => {
                                                 const next = [
@@ -917,7 +968,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                             placeholder="2015"
                                         />
                                         <Field
-                                            label="To"
+                                            label={t('job_seeker.profile.to')}
                                             value={entry.to}
                                             onChange={(value) => {
                                                 const next = [
@@ -938,7 +989,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     ) : (
                         <TimelineList
                             items={profile.education}
-                            empty="No education added yet."
+                            empty={t('job_seeker.profile.no_education')}
                             accent="blue"
                             titleKeys={['degree', 'title']}
                             subtitleKeys={['school', 'institution']}
@@ -949,7 +1000,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
 
                 <SectionCard
                     id="experience"
-                    title="Work Experience"
+                    title={t('job_seeker.profile.experience')}
                     emoji="🏢"
                     complete={completeMap.experience ?? false}
                     editing={editing === 'experience'}
@@ -961,8 +1012,8 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     {editing === 'experience' ? (
                         <EntryEditor
                             entries={form.data.experience}
-                            emptyLabel="No work experience added yet."
-                            addLabel="+ Add Work Experience"
+                            emptyLabel={t('job_seeker.profile.no_experience')}
+                            addLabel={t('job_seeker.profile.add_experience')}
                             accent="orange"
                             onAdd={() =>
                                 form.setData('experience', [
@@ -982,7 +1033,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                 <div className="space-y-3">
                                     <div className="grid gap-3 md:grid-cols-2">
                                         <Field
-                                            label="Job Title"
+                                            label={t('job_seeker.profile.job_title')}
                                             value={entry.title}
                                             onChange={(value) => {
                                                 const next = [
@@ -996,7 +1047,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                             }}
                                         />
                                         <Field
-                                            label="Company"
+                                            label={t('job_seeker.profile.company')}
                                             value={entry.company}
                                             onChange={(value) => {
                                                 const next = [
@@ -1010,7 +1061,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                             }}
                                         />
                                         <Field
-                                            label="From"
+                                            label={t('job_seeker.profile.from')}
                                             value={entry.from}
                                             onChange={(value) => {
                                                 const next = [
@@ -1026,7 +1077,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                         />
                                         {!entry.present ? (
                                             <Field
-                                                label="To"
+                                                label={t('job_seeker.profile.to')}
                                                 value={entry.to}
                                                 onChange={(value) => {
                                                     const next = [
@@ -1067,10 +1118,10 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                             }}
                                             className="size-3.5 rounded border-[#767676] accent-[#0057c8]"
                                         />
-                                        Present
+                                        {t('job_seeker.profile.present')}
                                     </label>
                                     <label className="block text-xs font-semibold text-[#4a5565]">
-                                        Description
+                                        {t('job_seeker.profile.description')}
                                         <textarea
                                             className="mt-1.5 min-h-[74px] w-full rounded-lg border border-[#e8d5e8] px-3 py-2 text-base text-[#050315] outline-none transition focus:border-[#0057c8] focus:ring-[3px] focus:ring-[#0057c8]/15"
                                             value={entry.description}
@@ -1093,7 +1144,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     ) : (
                         <TimelineList
                             items={profile.experience}
-                            empty="No work experience added yet."
+                            empty={t('job_seeker.profile.no_experience')}
                             accent="orange"
                             titleKeys={['title', 'role']}
                             subtitleKeys={['company']}
@@ -1105,7 +1156,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
 
                 <SectionCard
                     id="skills"
-                    title="Skills"
+                    title={t('job_seeker.profile.skills')}
                     emoji="⚡"
                     complete={completeMap.skills ?? false}
                     editing={editing === 'skills'}
@@ -1116,18 +1167,18 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 >
                     {editing === 'skills' ? (
                         <ChipListEditor
-                            label="Skills"
+                            label={t('job_seeker.profile.skills')}
                             items={form.data.skills}
-                            addLabel="Add skill"
-                            emptyLabel="No skills listed."
-                            placeholder="e.g. React"
+                            addLabel={t('job_seeker.profile.add_skill')}
+                            emptyLabel={t('job_seeker.profile.no_skills')}
+                            placeholder={t('job_seeker.profile.skill_placeholder')}
                             onChange={(items) => form.setData('skills', items)}
                         />
                     ) : (
                         <div className="flex flex-wrap gap-2">
                             {(profile.skills ?? []).length === 0 ? (
                                 <p className="text-sm text-[#99a1af]">
-                                    No skills listed.
+                                    {t('job_seeker.profile.no_skills')}
                                 </p>
                             ) : (
                                 profile.skills.map((skill) => (
@@ -1145,7 +1196,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
 
                 <SectionCard
                     id="languages"
-                    title="Languages"
+                    title={t('job_seeker.profile.languages')}
                     emoji="🌐"
                     complete={completeMap.languages ?? false}
                     editing={editing === 'languages'}
@@ -1158,7 +1209,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                         <div className="space-y-3">
                             {form.data.languages.length === 0 ? (
                                 <p className="text-sm text-[#99a1af]">
-                                    No languages listed.
+                                    {t('job_seeker.profile.no_languages')}
                                 </p>
                             ) : (
                                 form.data.languages.map((entry, index) => (
@@ -1184,7 +1235,9 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                                 };
                                                 form.setData('languages', next);
                                             }}
-                                            placeholder="Language"
+                                            placeholder={t(
+                                                'job_seeker.profile.language_placeholder',
+                                            )}
                                             className="h-[42px] min-w-0 flex-1 rounded-lg border border-[#e8d5e8] bg-white px-3 text-base text-[#050315] outline-none transition placeholder:text-[rgba(5,3,21,0.5)] focus:border-[#0057c8] focus:ring-[3px] focus:ring-[#0057c8]/15"
                                         />
                                         <NativeSelect
@@ -1206,14 +1259,19 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                                 };
                                                 form.setData('languages', next);
                                             }}
-                                            aria-label="Proficiency"
+                                            aria-label={t(
+                                                'job_seeker.profile.proficiency',
+                                            )}
                                         >
                                             {entry.level !== '' &&
                                                 !isKnownLanguageLevel(
                                                     entry.level,
                                                 ) ? (
                                                 <option value={entry.level}>
-                                                    {entry.level}
+                                                    {languageLevelLabel(
+                                                        t,
+                                                        entry.level,
+                                                    )}
                                                 </option>
                                             ) : null}
                                             {languageLevels.map((level) => (
@@ -1221,14 +1279,26 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                                     key={level}
                                                     value={level}
                                                 >
-                                                    {level}
+                                                    {languageLevelLabel(
+                                                        t,
+                                                        level,
+                                                    )}
                                                 </option>
                                             ))}
                                         </NativeSelect>
                                         <button
                                             type="button"
                                             className="shrink-0 px-1 text-base leading-6 text-[#fb2c36]"
-                                            aria-label={`Remove ${entry.name || 'language'}`}
+                                            aria-label={t(
+                                                'job_seeker.profile.remove_language',
+                                                {
+                                                    name:
+                                                        entry.name ||
+                                                        t(
+                                                            'job_seeker.profile.language_fallback',
+                                                        ),
+                                                },
+                                            )}
                                             onClick={() =>
                                                 form.setData(
                                                     'languages',
@@ -1254,14 +1324,14 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                     ])
                                 }
                             >
-                                + Add Language
+                                {t('job_seeker.profile.add_language')}
                             </button>
                         </div>
                     ) : (
                         <div className="space-y-2">
                             {(profile.languages ?? []).length === 0 ? (
                                 <p className="text-sm text-[#99a1af]">
-                                    No languages listed.
+                                    {t('job_seeker.profile.no_languages')}
                                 </p>
                             ) : (
                                 profile.languages.map((item, index) => {
@@ -1280,7 +1350,10 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                             </span>
                                             {level ? (
                                                 <span className="rounded-full bg-[#dcfce7] px-2.5 py-0.5 text-xs font-semibold text-[#15803d]">
-                                                    {level}
+                                                    {languageLevelLabel(
+                                                        t,
+                                                        level,
+                                                    )}
                                                 </span>
                                             ) : null}
                                         </div>
@@ -1293,7 +1366,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
 
                 <SectionCard
                     id="certifications"
-                    title="Certifications"
+                    title={t('job_seeker.profile.certifications')}
                     emoji="🏅"
                     complete={completeMap.certifications ?? false}
                     editing={editing === 'certifications'}
@@ -1305,8 +1378,8 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     {editing === 'certifications' ? (
                         <EntryEditor
                             entries={form.data.certifications}
-                            emptyLabel="No certifications added yet."
-                            addLabel="Add certification"
+                            emptyLabel={t('job_seeker.profile.no_certifications')}
+                            addLabel={t('job_seeker.profile.add_certification')}
                             onAdd={() =>
                                 form.setData('certifications', [
                                     ...form.data.certifications,
@@ -1324,7 +1397,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                             renderFields={(entry, index) => (
                                 <div className="grid gap-3 md:grid-cols-2">
                                     <Field
-                                        label="Certification"
+                                        label={t('job_seeker.profile.certification')}
                                         value={entry.name}
                                         onChange={(value) => {
                                             const next = [
@@ -1341,7 +1414,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                         }}
                                     />
                                     <Field
-                                        label="Issuer"
+                                        label={t('job_seeker.profile.issuer')}
                                         value={entry.issuer}
                                         onChange={(value) => {
                                             const next = [
@@ -1358,7 +1431,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                         }}
                                     />
                                     <Field
-                                        label="Date"
+                                        label={t('job_seeker.profile.date')}
                                         value={entry.date}
                                         onChange={(value) => {
                                             const next = [
@@ -1373,7 +1446,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                                 next,
                                             );
                                         }}
-                                        hint="e.g. 2024-03"
+                                        hint={t('job_seeker.profile.date_hint')}
                                     />
                                 </div>
                             )}
@@ -1382,7 +1455,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                         <div className="space-y-3">
                             {(profile.certifications ?? []).length === 0 ? (
                                 <p className="text-sm text-[#99a1af]">
-                                    No certifications added yet.
+                                    {t('job_seeker.profile.no_certifications')}
                                 </p>
                             ) : (
                                 profile.certifications.map((item, index) => {
@@ -1430,7 +1503,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
 
                 <SectionCard
                     id="resume"
-                    title="Resume & Documents"
+                    title={t('job_seeker.profile.resume')}
                     emoji="📄"
                     complete={completeMap.resume ?? false}
                     editing={false}
@@ -1460,6 +1533,7 @@ function ResumeUploader({
     resumeStatus: string | null;
     resumeUrl: string | null;
 }) {
+    const { t } = useLocale();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const resumeForm = useForm<{ resume: File | null }>({
         resume: null,
@@ -1508,14 +1582,21 @@ function ResumeUploader({
                 <div className="flex flex-col gap-3 rounded-xl border border-[#e2e8f0] p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-center gap-3">
                         <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#fee2e2] text-sm font-bold text-[#fb2c36]">
-                            PDF
+                            {t('job_seeker.profile.pdf')}
                         </div>
                         <div className="min-w-0">
                             <p className="truncate text-base font-semibold text-[#101828]">
                                 {resumeName}
                             </p>
                             <p className="text-xs text-[#99a1af]">
-                                {resumeStatus || 'Uploaded'}
+                                {translatedOrRaw(
+                                    t,
+                                    `job_seeker.profile.resume_status.${(resumeStatus ?? 'uploaded').toLowerCase()}`,
+                                    resumeStatus ||
+                                        t(
+                                            'job_seeker.profile.resume_status.uploaded',
+                                        ),
+                                )}
                             </p>
                         </div>
                     </div>
@@ -1524,7 +1605,7 @@ function ResumeUploader({
                             href={resumeUrl}
                             className="inline-flex items-center justify-center rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
                         >
-                            Download
+                            {t('job_seeker.profile.download')}
                         </a>
                         <button
                             type="button"
@@ -1532,7 +1613,9 @@ function ResumeUploader({
                             onClick={pickFile}
                             className="inline-flex items-center justify-center rounded-lg bg-[#0057c8] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
                         >
-                            {resumeForm.processing ? 'Uploading…' : 'Replace'}
+                            {resumeForm.processing
+                                ? t('job_seeker.profile.uploading')
+                                : t('job_seeker.profile.replace')}
                         </button>
                         <button
                             type="button"
@@ -1543,7 +1626,7 @@ function ResumeUploader({
                                 })
                             }
                         >
-                            Remove
+                            {t('job_seeker.profile.remove')}
                         </button>
                     </div>
                 </div>
@@ -1557,10 +1640,10 @@ function ResumeUploader({
             >
                 <FileUp className="size-8 text-[#64748b]" />
                 <p className="mt-2 text-base font-semibold text-[#364153]">
-                    Upload Resume
+                    {t('job_seeker.profile.upload_resume')}
                 </p>
                 <p className="mt-1 text-sm text-[#99a1af]">
-                    PDF, DOC, DOCX up to 5MB
+                    {t('job_seeker.profile.resume_hint')}
                 </p>
             </button>
         </div>
@@ -1592,6 +1675,8 @@ function SectionCard({
     hideEdit?: boolean;
     children: ReactNode;
 }) {
+    const { t } = useLocale();
+
     return (
         <section
             id={`section-${id}`}
@@ -1625,14 +1710,16 @@ function SectionCard({
                                 className="rounded-lg bg-[#0057c8] px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
                                 onClick={onSave}
                             >
-                                {processing ? 'Saving…' : 'Save Changes'}
+                                {processing
+                                    ? t('job_seeker.profile.saving')
+                                    : t('job_seeker.profile.save')}
                             </button>
                             <button
                                 type="button"
                                 className="rounded-lg border border-[#0057c8] px-4 py-1.5 text-sm font-normal text-[#0057c8]"
                                 onClick={onCancel}
                             >
-                                Cancel
+                                {t('job_seeker.profile.cancel')}
                             </button>
                         </div>
                     ) : (
@@ -1642,7 +1729,7 @@ function SectionCard({
                             onClick={onEdit}
                         >
                             <Pencil className="size-3.5" />
-                            Edit
+                            {t('job_seeker.profile.edit')}
                         </button>
                     ))}
             </div>
@@ -1714,6 +1801,7 @@ function ChipListEditor({
     placeholder: string;
     onChange: (items: string[]) => void;
 }) {
+    const { t } = useLocale();
     const [draft, setDraft] = useState('');
 
     const addItem = (): void => {
@@ -1750,7 +1838,9 @@ function ChipListEditor({
                             <button
                                 type="button"
                                 className="rounded-full p-0.5 text-[#64748b] hover:bg-white/70 hover:text-[#b91c1c]"
-                                aria-label={`Remove ${item}`}
+                                aria-label={t('job_seeker.profile.remove_item', {
+                                    name: item,
+                                })}
                                 onClick={() =>
                                     onChange(
                                         items.filter(
@@ -1808,6 +1898,8 @@ function EntryEditor<T>({
     renderFields: (entry: T, index: number) => ReactNode;
     accent?: 'blue' | 'orange';
 }) {
+    const { t } = useLocale();
+
     return (
         <div className="space-y-5">
             {entries.length === 0 ? (
@@ -1837,7 +1929,7 @@ function EntryEditor<T>({
                             className="mt-3 text-sm font-semibold text-[#fb2c36]"
                             onClick={() => onRemove(index)}
                         >
-                            Delete
+                            {t('job_seeker.profile.delete')}
                         </button>
                     </div>
                 ))

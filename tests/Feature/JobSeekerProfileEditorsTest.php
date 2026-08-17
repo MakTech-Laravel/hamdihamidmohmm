@@ -78,12 +78,36 @@ test('job seekers can update education experience languages and certifications w
     $this->actingAs($seeker)
         ->get(route('job-seeker.profile'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/JobSeekerProfile')
             ->where('profile.education.0.degree', 'BSc Software Engineering')
             ->where('profile.experience.0.title', 'Backend Developer')
             ->where('profile.languages.0.name', 'Arabic')
             ->where('profile.certifications.0.name', 'Laravel Certified')
             ->where('profile.experience_years', '5')
-            ->where('profile.experience_years_label', '5 years'));
+            ->where('profile.experience_years_label', '5 years')
+            ->where('translations', fn($translations) => ($translations['job_seeker.profile.title'] ?? null) === 'My Profile'
+                && ($translations['job_seeker.profile.add_language'] ?? null) === '+ Add Language'
+                && ($translations['job_seeker.profile.save'] ?? null) === 'Save Changes'));
+});
+
+test('job seeker profile translation keys exist in english and arabic', function () {
+    $english = json_decode((string) file_get_contents(lang_path('en.json')), true);
+    $arabic = json_decode((string) file_get_contents(lang_path('ar.json')), true);
+
+    expect($english)->toBeArray()
+        ->and($arabic)->toBeArray();
+
+    $keys = array_values(array_filter(
+        array_keys($english),
+        fn(string $key): bool => str_starts_with($key, 'job_seeker.profile.'),
+    ));
+
+    expect($keys)->not->toBeEmpty();
+
+    foreach ($keys as $key) {
+        expect($arabic)->toHaveKey($key)
+            ->and($english[$key])->not->toBe('')
+            ->and($arabic[$key])->not->toBe('');
+    }
 });

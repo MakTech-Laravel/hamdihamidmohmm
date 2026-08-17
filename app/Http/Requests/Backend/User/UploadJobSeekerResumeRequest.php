@@ -27,9 +27,9 @@ class UploadJobSeekerResumeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'resume.required' => 'Please choose a resume file to upload.',
-            'resume.mimes' => 'Please upload a PDF, DOC, or DOCX resume.',
-            'resume.max' => 'The resume may not be larger than 5MB.',
+            'resume.required' => __('job_seeker.profile.resume_required'),
+            'resume.mimes' => __('job_seeker.profile.resume_mimes'),
+            'resume.max' => __('job_seeker.profile.resume_max'),
         ];
     }
 }
