@@ -1,8 +1,12 @@
 import { Head, router } from '@inertiajs/react';
+import { useMemo, useState } from 'react';
 
+import { ApplicationDetailDrawer } from '@/components/job-seeker/application-detail-drawer';
+import { getInitials } from '@/components/job-seeker/demo-data';
 import { StatusBadge } from '@/components/job-seeker/status-badge';
 import type { ApplicationStatus } from '@/components/job-seeker/demo-data';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
+import { cn } from '@/lib/utils';
 
 type ApplicationRow = {
     id: number;
@@ -11,6 +15,8 @@ type ApplicationRow = {
     location: string | null;
     salary: string | null;
     type: string | null;
+    slug: string | null;
+    job_url: string | null;
     status: string | null;
     status_value: string | null;
     progress: number;
@@ -21,54 +27,127 @@ type ApplicationRow = {
 
 type Props = {
     applications: ApplicationRow[];
-    stats: { total: number; active: number; interviews: number; offers: number };
+    stats: {
+        total: number;
+        active: number;
+        interviews: number;
+        offers: number;
+    };
+    filters: Array<{ value: string; label: string; count: number }>;
 };
 
-export default function JobSeekerApplications({ applications, stats }: Props) {
+export default function JobSeekerApplications({
+    applications,
+    stats,
+    filters,
+}: Props) {
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [viewing, setViewing] = useState<ApplicationRow | null>(null);
+
+    const filtered = useMemo(() => {
+        if (statusFilter === 'all') {
+            return applications;
+        }
+
+        return applications.filter(
+            (row) => row.status_value === statusFilter,
+        );
+    }, [applications, statusFilter]);
+
+    const filterChips = [
+        { value: 'all', label: 'All', count: stats.total },
+        ...filters,
+    ];
+
     return (
         <JobSeekerLayout title="My Applications">
             <Head title="My Applications" />
 
             <div className="space-y-5 p-6">
-                <h1 className="text-2xl font-extrabold text-[#0057c8]">
-                    My Applications
-                </h1>
-                <div className="grid gap-4 sm:grid-cols-4">
-                    {[
-                        ['Total', stats.total],
-                        ['Active', stats.active],
-                        ['Interviews', stats.interviews],
-                        ['Offers', stats.offers],
-                    ].map(([label, value]) => (
+                <div>
+                    <h1 className="text-2xl font-extrabold text-[#050315]">
+                        My Applications
+                    </h1>
+                    <p className="pt-1 text-sm text-[#6a7282]">
+                        Track the status of all your job applications
+                    </p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {(
+                        [
+                            ['Total Applications', stats.total, 'text-[#0057c8]'],
+                            ['Active', stats.active, 'text-[#e57124]'],
+                            ['Interviews', stats.interviews, 'text-[#15803d]'],
+                            ['Offers', stats.offers, 'text-[#7e22ce]'],
+                        ] as const
+                    ).map(([label, value, tone]) => (
                         <div
                             key={label}
-                            className="rounded-2xl border bg-white p-4"
+                            className="rounded-2xl border border-[#e2e8f0] bg-white px-5 py-4 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]"
                         >
-                            <p className="text-2xl font-bold text-[#0057c8]">
+                            <p className={cn('text-2xl font-extrabold', tone)}>
                                 {value}
                             </p>
-                            <p className="text-sm text-[#6a7282]">{label}</p>
+                            <p className="pt-0.5 text-sm text-[#6a7282]">
+                                {label}
+                            </p>
                         </div>
                     ))}
                 </div>
+
+                <div className="flex flex-wrap gap-2">
+                    {filterChips.map((chip) => {
+                        const active = statusFilter === chip.value;
+
+                        return (
+                            <button
+                                key={chip.value}
+                                type="button"
+                                onClick={() => setStatusFilter(chip.value)}
+                                className={cn(
+                                    'cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-semibold',
+                                    active
+                                        ? 'bg-[#0f172a] text-white'
+                                        : 'bg-white text-[#475569] ring-1 ring-[#e2e8f0]',
+                                )}
+                            >
+                                {chip.label} ({chip.count})
+                            </button>
+                        );
+                    })}
+                </div>
+
                 <div className="space-y-4">
-                    {applications.map((application) => (
+                    {filtered.map((application) => (
                         <div
                             key={application.id}
-                            className="rounded-2xl border bg-white p-5"
+                            className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]"
                         >
                             <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                    <h2 className="text-base font-bold">
-                                        {application.title}
-                                    </h2>
-                                    <p className="text-sm text-[#64748b]">
-                                        {application.company} ·{' '}
-                                        {application.location}
-                                    </p>
-                                    <p className="text-xs text-[#99a1af]">
-                                        Applied {application.applied_at}
-                                    </p>
+                                <div className="flex min-w-0 items-start gap-3">
+                                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#0057c8] text-sm font-bold text-white">
+                                        {getInitials(
+                                            application.company || 'JP',
+                                        )}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h2 className="text-base font-bold text-[#050315]">
+                                            {application.title}
+                                        </h2>
+                                        <p className="text-sm text-[#64748b]">
+                                            {application.company}
+                                            {application.location
+                                                ? ` · ${application.location}`
+                                                : ''}
+                                        </p>
+                                        <p className="pt-1 text-xs text-[#99a1af]">
+                                            Applied: {application.applied_at}
+                                            {application.salary
+                                                ? ` · ${application.salary}`
+                                                : ''}
+                                        </p>
+                                    </div>
                                 </div>
                                 <StatusBadge
                                     status={
@@ -77,38 +156,62 @@ export default function JobSeekerApplications({ applications, stats }: Props) {
                                     }
                                 />
                             </div>
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                {application.timeline.map((step) => (
+
+                            <div className="mt-4 flex gap-1.5">
+                                {Array.from({ length: 5 }).map((_, index) => (
                                     <span
-                                        key={step.label}
-                                        className="rounded-full bg-[#f8faff] px-2.5 py-1 text-xs text-[#475569]"
-                                    >
-                                        {step.label}
-                                    </span>
+                                        key={index}
+                                        className={cn(
+                                            'h-1.5 flex-1 rounded-full',
+                                            index < application.progress
+                                                ? 'bg-[#0f172a]'
+                                                : 'bg-[#e2e8f0]',
+                                        )}
+                                    />
                                 ))}
                             </div>
-                            {application.can_withdraw && (
+
+                            <div className="mt-4 flex flex-wrap gap-2">
                                 <button
                                     type="button"
-                                    className="mt-4 text-sm font-semibold text-[#ef4444]"
-                                    onClick={() =>
-                                        router.post(
-                                            `/job-seeker/applications/${application.id}/withdraw`,
-                                        )
-                                    }
+                                    className="inline-flex h-[34px] cursor-pointer items-center rounded-lg bg-[#0057c8] px-3.5 text-sm font-semibold text-white hover:bg-[#0046a3]"
+                                    onClick={() => setViewing(application)}
                                 >
-                                    Withdraw
+                                    View Details
                                 </button>
-                            )}
+                                {application.can_withdraw && (
+                                    <button
+                                        type="button"
+                                        className="inline-flex h-[34px] cursor-pointer items-center rounded-lg border border-[#bfdbfe] bg-white px-3.5 text-sm font-semibold text-[#0057c8] hover:bg-[#f8faff]"
+                                        onClick={() =>
+                                            router.post(
+                                                `/job-seeker/applications/${application.id}/withdraw`,
+                                            )
+                                        }
+                                    >
+                                        Withdraw
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     ))}
-                    {applications.length === 0 && (
-                        <p className="text-center text-sm text-[#99a1af]">
-                            You have not applied to any jobs yet.
+                    {filtered.length === 0 && (
+                        <p className="rounded-2xl border border-[#e2e8f0] bg-white py-10 text-center text-sm text-[#99a1af]">
+                            No applications match this filter.
                         </p>
                     )}
                 </div>
             </div>
+
+            <ApplicationDetailDrawer
+                open={viewing !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setViewing(null);
+                    }
+                }}
+                application={viewing}
+            />
         </JobSeekerLayout>
     );
 }

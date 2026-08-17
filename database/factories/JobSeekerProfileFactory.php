@@ -19,12 +19,36 @@ class JobSeekerProfileFactory extends Factory
         return [
             'user_id' => User::factory()->jobSeeker(),
             'headline' => fake()->jobTitle(),
+            'current_title' => fake()->jobTitle(),
+            'experience_years' => (string) fake()->numberBetween(1, 12),
             'bio' => fake()->paragraph(),
+            'linkedin_url' => 'https://linkedin.com/in/'.fake()->userName(),
+            'github_url' => 'https://github.com/'.fake()->userName(),
+            'industry' => 'Information Technology',
+            'expected_salary' => 'SAR '.fake()->numberBetween(10, 18).',000 - '.fake()->numberBetween(19, 28).',000',
+            'availability' => ['Full Time', 'Remote'],
             'skills' => ['PHP', 'Laravel', 'React'],
-            'education' => [['school' => fake()->company(), 'degree' => 'BSc']],
-            'experience' => [['company' => fake()->company(), 'title' => fake()->jobTitle()]],
-            'languages' => ['English', 'Arabic'],
-            'certifications' => [],
+            'education' => [[
+                'degree' => 'Bachelor of Science in Computer Science',
+                'school' => 'King Fahd University',
+                'years' => '2015 - 2019',
+            ]],
+            'experience' => [[
+                'title' => fake()->jobTitle(),
+                'company' => fake()->company(),
+                'years' => 3,
+                'dates' => '2021 - Present',
+                'description' => fake()->sentence(),
+            ]],
+            'languages' => [
+                ['name' => 'Arabic', 'level' => 'Native'],
+                ['name' => 'English', 'level' => 'Advanced'],
+            ],
+            'certifications' => [[
+                'name' => 'AWS Certified Developer',
+                'issuer' => 'Amazon Web Services',
+                'date' => '2024-03',
+            ]],
         ];
     }
 }

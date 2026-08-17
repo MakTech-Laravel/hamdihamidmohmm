@@ -125,7 +125,7 @@ export function JobSeekerSidebar({
                                 {user.name}
                             </p>
                             <p className="truncate text-xs text-[#3977a6]">
-                                Job Seeker
+                                {user.headline || 'Job Seeker'}
                             </p>
                         </div>
                     </div>

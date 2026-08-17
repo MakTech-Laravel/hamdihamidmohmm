@@ -47,6 +47,8 @@ class User extends Authenticatable
         'phone',
         'location',
         'resume_status',
+        'resume_path',
+        'resume_original_name',
         'avatar',
         'password',
         'role',

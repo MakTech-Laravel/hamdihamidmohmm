@@ -11,12 +11,15 @@ test('employers see live application table props matching the Figma page', funct
     $employer = User::factory()->employer()->create();
     $seeker = User::factory()->jobSeeker()->create([
         'name' => 'Ahmed Al-Rashidi',
+        'email' => 'ahmed.rashidi@email.com',
+        'phone' => '+966 50 123 4567',
         'location' => 'Riyadh',
     ]);
 
     JobSeekerProfile::factory()->create([
         'user_id' => $seeker->id,
-        'headline' => 'Frontend Engineer',
+        'headline' => 'Senior Frontend Developer',
+        'skills' => ['React', 'TypeScript', 'Tailwind CSS', 'Node.js'],
         'experience' => [
             ['company' => 'TechCorp', 'title' => 'Developer', 'years' => 6],
         ],
@@ -50,9 +53,67 @@ test('employers see live application table props matching the Figma page', funct
             ->where('applications.0.location', 'Riyadh')
             ->where('applications.0.status', 'Interview')
             ->where('applications.0.date', 'Aug 3, 2026')
+            ->where('applications.0.phone', '+966 50 123 4567')
+            ->where('applications.0.skills', ['React', 'TypeScript', 'Tailwind CSS', 'Node.js'])
+            ->where('applications.0.preview_location', 'Riyadh · 6 years')
+            ->where('applications.0.timeline.3.label', 'Interview')
+            ->where('applications.0.timeline.3.state', 'current')
             ->where('applications.0.next_status', JobApplicationStatus::Offer->value)
             ->where('applications.0.can_move', true)
-            ->where('applications.0.can_reject', true));
+            ->where('applications.0.can_reject', true)
+            ->has('applications.0.resume_url'));
+});
+
+test('employers can download an applicant resume from the applications drawer', function () {
+    $employer = User::factory()->employer()->create();
+    $seeker = User::factory()->jobSeeker()->create([
+        'name' => 'Ahmed Al-Rashidi',
+        'email' => 'ahmed.rashidi@email.com',
+    ]);
+
+    JobSeekerProfile::factory()->create([
+        'user_id' => $seeker->id,
+        'headline' => 'Senior Frontend Developer',
+        'skills' => ['React', 'TypeScript'],
+    ]);
+
+    $job = JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'status' => JobPostStatus::Active,
+    ]);
+
+    $application = JobApplication::factory()->create([
+        'job_post_id' => $job->id,
+        'job_seeker_id' => $seeker->id,
+        'status' => JobApplicationStatus::Interview,
+    ]);
+
+    $response = $this->actingAs($employer)
+        ->get(route('employer.applications.resume', $application));
+
+    $response->assertOk()->assertDownload('ahmed-al-rashidi-resume.pdf');
+
+    expect($response->streamedContent())
+        ->toStartWith('%PDF-1.4')
+        ->toContain('Ahmed Al-Rashidi')
+        ->toContain('Senior Frontend Developer');
+});
+
+test('employers cannot download a resume for another company application', function () {
+    $employer = User::factory()->employer()->create();
+    $other = User::factory()->employer()->create();
+    $job = JobPost::factory()->create([
+        'employer_id' => $other->id,
+        'status' => JobPostStatus::Active,
+    ]);
+    $application = JobApplication::factory()->create([
+        'job_post_id' => $job->id,
+        'status' => JobApplicationStatus::Applied,
+    ]);
+
+    $this->actingAs($employer)
+        ->get(route('employer.applications.resume', $application))
+        ->assertForbidden();
 });
 
 test('employers can move an application to the next hiring stage', function () {

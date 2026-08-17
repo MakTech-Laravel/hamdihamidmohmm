@@ -10,6 +10,7 @@ use App\Models\JobApplication;
 use App\Models\JobPost;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -22,7 +23,7 @@ class JobSeekerApplicationsController extends Controller
             ->with(['jobPost:id,title,location,employment_type,salary_range,slug,employer_id', 'jobPost.employer:id,name,company_name'])
             ->latest()
             ->get()
-            ->map(fn (JobApplication $application) => $this->row($application));
+            ->map(fn(JobApplication $application) => $this->row($application));
 
         return Inertia::render('backend/User/JobSeekerApplications', [
             'applications' => $applications,
@@ -36,6 +37,17 @@ class JobSeekerApplicationsController extends Controller
                 'interviews' => $applications->where('status_value', JobApplicationStatus::Interview->value)->count(),
                 'offers' => $applications->where('status_value', JobApplicationStatus::Offer->value)->count(),
             ],
+            'filters' => collect([
+                JobApplicationStatus::Applied,
+                JobApplicationStatus::UnderReview,
+                JobApplicationStatus::Shortlisted,
+                JobApplicationStatus::Interview,
+                JobApplicationStatus::Rejected,
+            ])->map(fn(JobApplicationStatus $status) => [
+                'value' => $status->value,
+                'label' => $status->label(),
+                'count' => $applications->where('status_value', $status->value)->count(),
+            ])->values(),
         ]);
     }
 
@@ -51,8 +63,21 @@ class JobSeekerApplicationsController extends Controller
         if ($request->hasFile('resume')) {
             $resume = $request->file('resume');
             $userId = $request->user()?->id ?? 0;
-            $payload['resume_path'] = $resume->store('resumes/'.$userId, 'local');
+            $payload['resume_path'] = $resume->store('resumes/' . $userId, 'local');
             $payload['resume_original_name'] = $resume->getClientOriginalName();
+        } elseif (
+            filled($request->user()?->resume_path)
+            && Storage::disk('local')->exists((string) $request->user()->resume_path)
+        ) {
+            $user = $request->user();
+            $source = (string) $user->resume_path;
+            $extension = pathinfo($source, PATHINFO_EXTENSION) ?: 'pdf';
+            $copyPath = 'resumes/' . $user->id . '/application-' . uniqid('', true) . '.' . $extension;
+
+            Storage::disk('local')->copy($source, $copyPath);
+
+            $payload['resume_path'] = $copyPath;
+            $payload['resume_original_name'] = $user->resume_original_name ?: basename($source);
         }
 
         JobApplication::query()->firstOrCreate(
@@ -88,10 +113,14 @@ class JobSeekerApplicationsController extends Controller
             'location' => $application->jobPost?->location,
             'salary' => $application->jobPost?->salary_range,
             'type' => $application->jobPost?->employment_type,
+            'slug' => $application->jobPost?->slug,
+            'job_url' => $application->jobPost?->slug
+                ? route('jobs.show', $application->jobPost->slug)
+                : null,
             'status' => $application->status?->label(),
             'status_value' => $application->status?->value,
-            'progress' => $application->status?->progress() ?? 1,
-            'applied_at' => $application->created_at?->toFormattedDateString(),
+            'progress' => min($application->status?->progress() ?? 1, 5),
+            'applied_at' => $application->created_at?->format('M j, Y'),
             'can_withdraw' => $application->status?->canWithdraw() === true,
             'timeline' => $application->timeline(),
         ];

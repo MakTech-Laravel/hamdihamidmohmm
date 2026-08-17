@@ -31,6 +31,12 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         $locale = app()->getLocale();
 
+        $seekerHeadline = null;
+
+        if ($user?->isJobSeeker()) {
+            $seekerHeadline = $user->jobSeekerProfile()->value('headline');
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -67,6 +73,7 @@ class HandleInertiaRequests extends Middleware
                         'can_manage_users' => $user->canManageUsers(),
                         'can_manage_admins' => $user->canManageAdmins(),
                         'avatar_url' => $user->avatar_url,
+                        'headline' => $seekerHeadline,
                     ]
                 ) : null,
             ],

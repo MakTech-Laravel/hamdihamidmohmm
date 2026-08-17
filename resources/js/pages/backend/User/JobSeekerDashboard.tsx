@@ -1,25 +1,46 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import {
+    Briefcase,
+    Check,
+    FileText,
+    Search,
+    Star,
+    UserRound,
+    X,
+} from 'lucide-react';
 
-import { firstName, getInitials } from '@/components/job-seeker/demo-data';
+import {
+    firstName,
+    getInitials,
+    type ApplicationStatus,
+} from '@/components/job-seeker/demo-data';
 import { StatusBadge } from '@/components/job-seeker/status-badge';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
+import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
-import type { ApplicationStatus } from '@/components/job-seeker/demo-data';
+
+type ChecklistItem = {
+    id: string;
+    label: string;
+    complete: boolean;
+};
 
 type Props = {
     first_name: string;
     completion: number;
     stats: {
         total: number;
-        active: number;
-        interviews: number;
-        offers: number;
+        under_review: number;
+        shortlisted: number;
+        completion: number;
     };
+    checklist: ChecklistItem[];
     applications: Array<{
         id: number;
         title: string | null;
         company: string | null;
         status: string | null;
+        status_value: string | null;
         date: string | null;
     }>;
     notifications: Array<{
@@ -27,6 +48,7 @@ type Props = {
         title: string;
         message: string;
         created_at: string | null;
+        read: boolean;
     }>;
 };
 
@@ -34,6 +56,7 @@ export default function JobSeekerDashboard({
     first_name,
     completion,
     stats,
+    checklist,
     applications,
     notifications,
 }: Props) {
@@ -49,29 +72,33 @@ export default function JobSeekerDashboard({
         {
             value: String(stats.total),
             label: 'Applications',
-            icon: '📋',
+            icon: FileText,
             iconBg: 'bg-[#dbeafe]',
+            iconClass: 'text-[#1d4ed8]',
             valueClass: 'text-[#1d4ed8]',
         },
         {
-            value: String(stats.active),
-            label: 'Active',
-            icon: '🔍',
-            iconBg: 'bg-[#fed7aa]',
+            value: String(stats.under_review),
+            label: 'Under Review',
+            icon: Search,
+            iconBg: 'bg-[#ffedd5]',
+            iconClass: 'text-[#c2410c]',
             valueClass: 'text-[#c2410c]',
         },
         {
-            value: String(stats.interviews),
-            label: 'Interviews',
-            icon: '⭐',
-            iconBg: 'bg-[#e9d5ff]',
+            value: String(stats.shortlisted),
+            label: 'Shortlisted',
+            icon: Star,
+            iconBg: 'bg-[#f3e8ff]',
+            iconClass: 'text-[#7e22ce]',
             valueClass: 'text-[#7e22ce]',
         },
         {
-            value: String(completion),
+            value: String(stats.completion),
             label: 'Profile %',
-            icon: '👤',
-            iconBg: 'bg-[#bbf7d0]',
+            icon: UserRound,
+            iconBg: 'bg-[#dcfce7]',
+            iconClass: 'text-[#15803d]',
             valueClass: 'text-[#15803d]',
         },
     ];
@@ -99,7 +126,7 @@ export default function JobSeekerDashboard({
                         <div className="mt-3 flex items-center gap-3">
                             <div className="h-1.5 w-32 max-w-[128px] overflow-hidden rounded-full bg-white/32">
                                 <div
-                                    className="h-full rounded-full bg-[#0057c8]"
+                                    className="h-full rounded-full bg-[#93c5fd]"
                                     style={{ width: `${completion}%` }}
                                 />
                             </div>
@@ -111,13 +138,13 @@ export default function JobSeekerDashboard({
                     <div className="flex flex-wrap gap-2">
                         <Link
                             href="/jobs"
-                            className="inline-flex items-center justify-center rounded-xl bg-[#e57124] px-4 py-2.5 text-base font-medium text-white"
+                            className="inline-flex items-center justify-center rounded-xl bg-[#e57124] px-4 py-2.5 text-base font-medium text-white hover:brightness-110"
                         >
                             Browse Jobs
                         </Link>
                         <Link
                             href="/job-seeker/profile"
-                            className="inline-flex items-center justify-center rounded-xl border border-white/30 px-4 py-2.5 text-base font-medium text-white"
+                            className="inline-flex items-center justify-center rounded-xl border border-white/30 px-4 py-2.5 text-base font-medium text-white hover:bg-white/10"
                         >
                             Complete Profile
                         </Link>
@@ -125,93 +152,228 @@ export default function JobSeekerDashboard({
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                    {statCards.map((stat) => (
-                        <div
-                            key={stat.label}
-                            className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]"
-                        >
+                    {statCards.map((stat) => {
+                        const Icon = stat.icon;
+
+                        return (
                             <div
-                                className={`flex size-10 items-center justify-center rounded-xl text-lg ${stat.iconBg}`}
+                                key={stat.label}
+                                className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]"
                             >
-                                {stat.icon}
+                                <div
+                                    className={cn(
+                                        'flex size-10 items-center justify-center rounded-xl',
+                                        stat.iconBg,
+                                    )}
+                                >
+                                    <Icon
+                                        className={cn('size-5', stat.iconClass)}
+                                        strokeWidth={1.75}
+                                    />
+                                </div>
+                                <p
+                                    className={cn(
+                                        'mt-3 text-[30px] leading-9 font-extrabold',
+                                        stat.valueClass,
+                                    )}
+                                >
+                                    {stat.value}
+                                </p>
+                                <p className="mt-0.5 text-xs font-medium text-[#6a7282]">
+                                    {stat.label}
+                                </p>
                             </div>
-                            <p
-                                className={`mt-3 text-[30px] leading-9 font-extrabold ${stat.valueClass}`}
-                            >
-                                {stat.value}
-                            </p>
-                            <p className="mt-0.5 text-xs font-medium text-[#6a7282]">
-                                {stat.label}
-                            </p>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 <div className="grid gap-5 xl:grid-cols-[1fr_414px]">
-                    <div className="rounded-2xl border border-[#e2e8f0] bg-white">
-                        <div className="flex items-center justify-between border-b border-[#f1f5f9] p-5">
-                            <h2 className="text-base font-bold">
-                                Recent Applications
-                            </h2>
-                            <Link
-                                href="/job-seeker/applications"
-                                className="text-xs font-bold text-[#0057c8]"
-                            >
-                                View All →
-                            </Link>
-                        </div>
-                        <div className="space-y-3 p-4">
-                            {applications.map((application) => (
-                                <div
-                                    key={application.id}
-                                    className="flex items-center gap-3 rounded-xl border border-[#f1f5f9] p-3"
+                    <div className="space-y-5">
+                        <div className="rounded-2xl border border-[#e2e8f0] bg-white shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
+                            <div className="flex items-center justify-between border-b border-[#f1f5f9] p-5">
+                                <h2 className="text-base font-bold text-[#050315]">
+                                    Recent Applications
+                                </h2>
+                                <Link
+                                    href="/job-seeker/applications"
+                                    className="text-xs font-bold text-[#0057c8]"
                                 >
-                                    <div className="flex size-9 items-center justify-center rounded-lg bg-[#0057c8] text-xs font-bold text-white">
-                                        {getInitials(
-                                            application.company || 'JP',
-                                        )}
+                                    View All →
+                                </Link>
+                            </div>
+                            <div className="space-y-3 p-4">
+                                {applications.map((application) => (
+                                    <div
+                                        key={application.id}
+                                        className="flex items-center gap-3 rounded-xl border border-[#f1f5f9] p-3"
+                                    >
+                                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#0057c8] text-xs font-bold text-white">
+                                            {getInitials(
+                                                application.company || 'JP',
+                                            )}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-semibold text-[#050315]">
+                                                {application.title}
+                                            </p>
+                                            <p className="text-xs text-[#99a1af]">
+                                                {application.company}
+                                                {application.date
+                                                    ? ` · ${application.date}`
+                                                    : ''}
+                                            </p>
+                                        </div>
+                                        <StatusBadge
+                                            status={
+                                                (application.status ||
+                                                    'Applied') as ApplicationStatus
+                                            }
+                                        />
                                     </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-semibold">
-                                            {application.title}
-                                        </p>
-                                        <p className="text-xs text-[#99a1af]">
-                                            {application.company}
-                                        </p>
-                                    </div>
-                                    <StatusBadge
-                                        status={
-                                            (application.status ||
-                                                'Applied') as ApplicationStatus
-                                        }
-                                    />
-                                </div>
-                            ))}
-                            {applications.length === 0 && (
-                                <p className="text-sm text-[#99a1af]">
-                                    You have not applied to any jobs yet.
-                                </p>
-                            )}
+                                ))}
+                                {applications.length === 0 && (
+                                    <p className="text-sm text-[#99a1af]">
+                                        You have not applied to any jobs yet.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
+                            <h2 className="text-base font-bold text-[#050315]">
+                                Quick Actions
+                            </h2>
+                            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                                <Link
+                                    href="/job-seeker/profile"
+                                    className="flex items-center gap-3 rounded-xl border border-[#e2e8f0] bg-[#f8faff] px-4 py-3 text-sm font-semibold text-[#0057c8] hover:bg-white"
+                                >
+                                    <UserRound className="size-4" />
+                                    Update Profile
+                                </Link>
+                                <Link
+                                    href="/jobs"
+                                    className="flex items-center gap-3 rounded-xl border border-[#e2e8f0] bg-[#f8faff] px-4 py-3 text-sm font-semibold text-[#0057c8] hover:bg-white"
+                                >
+                                    <Briefcase className="size-4" />
+                                    Browse Jobs
+                                </Link>
+                                <Link
+                                    href="/job-seeker/applications"
+                                    className="flex items-center gap-3 rounded-xl border border-[#e2e8f0] bg-[#f8faff] px-4 py-3 text-sm font-semibold text-[#0057c8] hover:bg-white"
+                                >
+                                    <FileText className="size-4" />
+                                    My Applications
+                                </Link>
+                            </div>
                         </div>
                     </div>
-                    <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                        <h3 className="text-base font-bold">Notifications</h3>
-                        <div className="mt-4 space-y-3">
-                            {notifications.map((item) => (
-                                <div key={item.id}>
-                                    <p className="text-sm font-semibold">
-                                        {item.title}
-                                    </p>
-                                    <p className="text-xs text-[#99a1af]">
-                                        {item.created_at}
-                                    </p>
-                                </div>
-                            ))}
-                            {notifications.length === 0 && (
-                                <p className="text-sm text-[#99a1af]">
-                                    No notifications yet.
+
+                    <div className="space-y-5">
+                        <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-base font-bold text-[#050315]">
+                                    Profile Completion
+                                </h3>
+                                <p className="text-sm font-bold text-[#0057c8]">
+                                    {completion}%
                                 </p>
-                            )}
+                            </div>
+                            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#e2e8f0]">
+                                <div
+                                    className="h-full rounded-full bg-[#0057c8]"
+                                    style={{ width: `${completion}%` }}
+                                />
+                            </div>
+                            <ul className="mt-4 space-y-2.5">
+                                {checklist.map((item) => (
+                                    <li
+                                        key={item.id}
+                                        className="flex items-center justify-between gap-2"
+                                    >
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <span
+                                                className={cn(
+                                                    'flex size-5 shrink-0 items-center justify-center rounded-full',
+                                                    item.complete
+                                                        ? 'bg-[#dcfce7] text-[#15803d]'
+                                                        : 'bg-[#fee2e2] text-[#b91c1c]',
+                                                )}
+                                            >
+                                                {item.complete ? (
+                                                    <Check
+                                                        className="size-3"
+                                                        strokeWidth={3}
+                                                    />
+                                                ) : (
+                                                    <X
+                                                        className="size-3"
+                                                        strokeWidth={3}
+                                                    />
+                                                )}
+                                            </span>
+                                            <span className="truncate text-sm text-[#374151]">
+                                                {item.label}
+                                            </span>
+                                        </div>
+                                        {!item.complete && (
+                                            <Link
+                                                href="/job-seeker/profile"
+                                                className="shrink-0 text-xs font-bold text-[#0057c8]"
+                                            >
+                                                Complete Now
+                                            </Link>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-base font-bold text-[#050315]">
+                                    Latest Notifications
+                                </h3>
+                                <Link
+                                    href="/job-seeker/notifications"
+                                    className="text-xs font-bold text-[#0057c8]"
+                                >
+                                    View All →
+                                </Link>
+                            </div>
+                            <div className="mt-4 space-y-2">
+                                {notifications.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className={cn(
+                                            'rounded-xl px-3 py-2.5',
+                                            item.read
+                                                ? 'bg-white'
+                                                : 'bg-[#eff6ff]',
+                                        )}
+                                    >
+                                        <div className="flex items-start gap-2">
+                                            {!item.read && (
+                                                <span className="mt-1.5 size-2 shrink-0 rounded-full bg-[#0057c8]" />
+                                            )}
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-semibold text-[#050315]">
+                                                    {item.title}
+                                                </p>
+                                                <p className="truncate text-xs text-[#99a1af]">
+                                                    {item.message ||
+                                                        item.created_at}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {notifications.length === 0 && (
+                                    <p className="text-sm text-[#99a1af]">
+                                        No notifications yet.
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

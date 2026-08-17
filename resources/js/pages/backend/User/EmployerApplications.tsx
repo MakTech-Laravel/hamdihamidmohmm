@@ -1,15 +1,15 @@
 import { Head, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { index, update } from '@/actions/App/Http/Controllers/Backend/User/EmployerApplicationController';
-import { getInitials } from '@/components/employer/demo-data';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+    index,
+    update,
+} from '@/actions/App/Http/Controllers/Backend/User/EmployerApplicationController';
+import {
+    ApplicationPreviewDrawer,
+    type ApplicationPreview,
+} from '@/components/employer/application-preview-drawer';
+import { getInitials } from '@/components/employer/demo-data';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,7 @@ type ApplicationRow = {
     id: number;
     name: string | null;
     email: string | null;
+    phone: string | null;
     location: string | null;
     job: string | null;
     job_id: number | null;
@@ -26,6 +27,10 @@ type ApplicationRow = {
     experience: string | null;
     cover_letter: string | null;
     headline: string | null;
+    skills: string[];
+    resume_url: string | null;
+    timeline: ApplicationPreview['timeline'];
+    preview_location: string | null;
     next_status: string | null;
     can_move: boolean;
     can_reject: boolean;
@@ -34,7 +39,12 @@ type ApplicationRow = {
 type Props = {
     applications: ApplicationRow[];
     filters: { status: string; search: string };
-    stats: { total: number; new: number; shortlisted: number; interview: number };
+    stats: {
+        total: number;
+        new: number;
+        shortlisted: number;
+        interview: number;
+    };
     statuses: Array<{ value: string; label: string }>;
 };
 
@@ -52,6 +62,22 @@ const statusTone: Record<string, string> = {
 const actionClass =
     'inline-flex h-[30px] cursor-pointer items-center justify-center rounded-[6.4px] px-2.5 text-xs font-semibold';
 
+function toPreview(row: ApplicationRow): ApplicationPreview {
+    return {
+        id: row.id,
+        name: row.name || 'Candidate',
+        title: row.headline || row.job || 'Applicant',
+        status: row.status || 'Applied',
+        status_value: row.status_value || 'applied',
+        email: row.email || '—',
+        phone: row.phone || '—',
+        location: row.preview_location || row.location || '—',
+        skills: row.skills ?? [],
+        resume_url: row.resume_url,
+        timeline: row.timeline ?? [],
+    };
+}
+
 export default function EmployerApplications({
     applications,
     filters,
@@ -61,6 +87,18 @@ export default function EmployerApplications({
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
     const [viewing, setViewing] = useState<ApplicationRow | null>(null);
+
+    useEffect(() => {
+        if (viewing === null) {
+            return;
+        }
+
+        const fresh = applications.find((row) => row.id === viewing.id);
+
+        if (fresh) {
+            setViewing(fresh);
+        }
+    }, [applications, viewing?.id]);
 
     const filtered = useMemo(() => {
         const query = search.toLowerCase();
@@ -72,8 +110,7 @@ export default function EmployerApplications({
                 (row.email ?? '').toLowerCase().includes(query) ||
                 (row.job ?? '').toLowerCase().includes(query);
 
-            const matchesStatus =
-                status === '' || row.status_value === status;
+            const matchesStatus = status === '' || row.status_value === status;
 
             return matchesQuery && matchesStatus;
         });
@@ -93,8 +130,12 @@ export default function EmployerApplications({
         );
     };
 
-    const updateStatus = (row: ApplicationRow, nextStatus: string): void => {
-        router.put(update.url(row.id), { status: nextStatus }, { preserveScroll: true });
+    const updateStatus = (rowId: number, nextStatus: string): void => {
+        router.put(
+            update.url(rowId),
+            { status: nextStatus },
+            { preserveScroll: true },
+        );
     };
 
     return (
@@ -218,10 +259,10 @@ export default function EmployerApplications({
                                                     className={cn(
                                                         'inline-flex rounded-full px-2.5 py-px text-xs font-semibold',
                                                         statusTone[
-                                                            row.status_value ??
-                                                                ''
+                                                        row.status_value ??
+                                                        ''
                                                         ] ??
-                                                            'bg-[#f8faff] text-[#0057c8]',
+                                                        'bg-[#f8faff] text-[#0057c8]',
                                                     )}
                                                 >
                                                     {row.status}
@@ -259,9 +300,11 @@ export default function EmployerApplications({
                                                                     'border border-[#0057c8] bg-[#0057c8] text-white',
                                                                 )}
                                                                 onClick={() => {
-                                                                    if (row.next_status) {
+                                                                    if (
+                                                                        row.next_status
+                                                                    ) {
                                                                         updateStatus(
-                                                                            row,
+                                                                            row.id,
                                                                             row.next_status,
                                                                         );
                                                                     }
@@ -279,7 +322,7 @@ export default function EmployerApplications({
                                                             )}
                                                             onClick={() =>
                                                                 updateStatus(
-                                                                    row,
+                                                                    row.id,
                                                                     'rejected',
                                                                 )
                                                             }
@@ -303,66 +346,17 @@ export default function EmployerApplications({
                 </div>
             </div>
 
-            <Dialog
+            <ApplicationPreviewDrawer
                 open={viewing !== null}
                 onOpenChange={(open) => {
                     if (!open) {
                         setViewing(null);
                     }
                 }}
-            >
-                <DialogContent className="rounded-2xl border-[#e8d5e8] sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle className="text-[#050315]">
-                            {viewing?.name}
-                        </DialogTitle>
-                        <DialogDescription className="text-[#6b7280]">
-                            {viewing?.headline ||
-                                viewing?.job ||
-                                'Candidate details'}
-                        </DialogDescription>
-                    </DialogHeader>
-                    {viewing && (
-                        <div className="space-y-3 text-sm">
-                            <p className="text-[#374151]">
-                                <span className="font-semibold text-[#050315]">
-                                    Job applied:{' '}
-                                </span>
-                                {viewing.job || '—'}
-                            </p>
-                            <p className="text-[#374151]">
-                                <span className="font-semibold text-[#050315]">
-                                    Email:{' '}
-                                </span>
-                                {viewing.email || '—'}
-                            </p>
-                            <p className="text-[#374151]">
-                                <span className="font-semibold text-[#050315]">
-                                    Location:{' '}
-                                </span>
-                                {viewing.location || '—'}
-                            </p>
-                            <p className="text-[#374151]">
-                                <span className="font-semibold text-[#050315]">
-                                    Experience:{' '}
-                                </span>
-                                {viewing.experience || '—'}
-                            </p>
-                            <p className="text-[#374151]">
-                                <span className="font-semibold text-[#050315]">
-                                    Applied:{' '}
-                                </span>
-                                {viewing.date || '—'}
-                            </p>
-                            {viewing.cover_letter && (
-                                <p className="rounded-xl border border-[#e8d5e8] bg-[#f8faff] p-3 leading-6 text-[#374151]">
-                                    {viewing.cover_letter}
-                                </p>
-                            )}
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
+                preview={viewing ? toPreview(viewing) : null}
+                statuses={statuses}
+                onUpdateStatus={updateStatus}
+            />
         </EmployerLayout>
     );
 }

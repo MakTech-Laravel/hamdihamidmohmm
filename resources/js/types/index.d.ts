@@ -90,6 +90,7 @@ export interface User {
     can_manage_users?: boolean;
     can_manage_admins?: boolean;
     avatar_url?: string;
+    headline?: string | null;
     [key: string]: unknown;
 }
 
