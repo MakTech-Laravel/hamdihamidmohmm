@@ -10,7 +10,23 @@ import { jobs, pricing } from '@/routes';
 import { show as jobShow } from '@/routes/jobs';
 import { role as registerRole } from '@/routes/register';
 
-export default function Home({ packages = [] }: { packages?: PricingPackage[] }) {
+export default function Home({
+    packages = [],
+    recommendedJobs = [],
+}: {
+    packages?: PricingPackage[];
+    recommendedJobs?: Array<{
+        slug: string;
+        initials: string;
+        title: string;
+        company: string;
+        type: string;
+        location: string;
+        experience: string;
+        posted: string;
+        salary: string;
+    }>;
+}) {
     const { t } = useLocale();
     const [keyword, setKeyword] = useState('');
     const [location, setLocation] = useState('all');
@@ -56,83 +72,15 @@ export default function Home({ packages = [] }: { packages?: PricingPackage[] })
         [t],
     );
 
-    const featuredJobs = useMemo(
-        () => [
-            {
-                slug: 'senior-frontend-developer',
-                initials: 'TC',
-                title: 'Senior Frontend Developer',
-                company: 'TechCorp Solutions',
-                type: t('jobs.full_time'),
-                typeClass: 'bg-[#dcfce7] text-[#16a34a]',
-                location: '📍 Riyadh, Saudi Arabia',
-                experience: '💼 3–5 Years',
-                posted: '2 days ago',
-                salary: 'SAR 15,000 – 20,000',
-            },
-            {
-                slug: 'marketing-manager',
-                initials: 'BH',
-                title: 'Marketing Manager',
-                company: 'BrandHouse Agency',
-                type: t('jobs.full_time'),
-                typeClass: 'bg-[#dcfce7] text-[#16a34a]',
-                location: '📍 Jeddah, Saudi Arabia',
-                experience: '💼 5–7 Years',
-                posted: '1 day ago',
-                salary: 'SAR 18,000 – 25,000',
-            },
-            {
-                slug: 'financial-analyst',
-                initials: 'GF',
-                title: 'Financial Analyst',
-                company: 'Gulf Finance Group',
-                type: t('jobs.full_time'),
-                typeClass: 'bg-[#dcfce7] text-[#16a34a]',
-                location: '📍 Dubai, UAE',
-                experience: '💼 2–4 Years',
-                posted: '3 days ago',
-                salary: 'AED 12,000 – 16,000',
-            },
-            {
-                slug: 'ux-ui-designer',
-                initials: 'PC',
-                title: 'UX/UI Designer',
-                company: 'PixelCraft Studio',
-                type: t('jobs.remote'),
-                typeClass: 'bg-[#dbeafe] text-[#2563eb]',
-                location: '📍 Remote',
-                experience: '💼 2–3 Years',
-                posted: '4 days ago',
-                salary: 'SAR 10,000 – 14,000',
-            },
-            {
-                slug: 'hr-business-partner',
-                initials: 'NC',
-                title: 'HR Business Partner',
-                company: 'NovaCorp International',
-                type: t('jobs.full_time'),
-                typeClass: 'bg-[#dcfce7] text-[#16a34a]',
-                location: '📍 Riyadh, Saudi Arabia',
-                experience: '💼 4–6 Years',
-                posted: '5 days ago',
-                salary: 'SAR 16,000 – 22,000',
-            },
-            {
-                slug: 'sales-representative',
-                initials: 'AR',
-                title: 'Sales Representative',
-                company: 'AlphaRetail Group',
-                type: t('jobs.full_time'),
-                typeClass: 'bg-[#dcfce7] text-[#16a34a]',
-                location: '📍 Dammam, Saudi Arabia',
-                experience: '💼 1–3 Years',
-                posted: '1 week ago',
-                salary: 'SAR 7,000 – 10,000 + Commission',
-            },
-        ],
-        [t],
-    );
+    const typeClass = (type: string): string => {
+        const normalized = type.toLowerCase();
+
+        if (normalized.includes('remote')) {
+            return 'bg-[#dbeafe] text-[#2563eb]';
+        }
+
+        return 'bg-[#dcfce7] text-[#16a34a]';
+    };
 
     const seekerBenefits = useMemo(
         () => [
@@ -413,7 +361,7 @@ export default function Home({ packages = [] }: { packages?: PricingPackage[] })
                 </div>
             </section>
 
-            {/* Featured Jobs */}
+            {/* Recommended Jobs */}
             <section id="jobs" className="scroll-mt-28 bg-white py-20">
                 <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -440,65 +388,76 @@ export default function Home({ packages = [] }: { packages?: PricingPackage[] })
                         </Link>
                     </div>
 
-                    <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {featuredJobs.map((job) => (
-                            <article
-                                key={`${job.company}-${job.title}`}
-                                className="flex h-full flex-col rounded-2xl border border-[rgba(57,119,166,0.52)] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:shadow-md"
-                            >
-                                <div className="flex items-start gap-3">
-                                    <div
-                                        className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-                                        style={{
-                                            backgroundImage:
-                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
-                                        }}
-                                    >
-                                        {job.initials}
+                    {recommendedJobs.length === 0 ? (
+                        <div className="mt-10 rounded-2xl border border-dashed border-[#e2e8f0] bg-[#f8faff] px-6 py-16 text-center">
+                            <p className="text-base font-semibold text-[#050315]">
+                                No recommended jobs yet.
+                            </p>
+                            <p className="mt-2 text-sm text-[#64748b]">
+                                Check back soon for the latest opportunities.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {recommendedJobs.map((job) => (
+                                <article
+                                    key={job.slug}
+                                    className="flex h-full flex-col rounded-2xl border border-[rgba(57,119,166,0.52)] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:shadow-md"
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div
+                                            className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+                                            style={{
+                                                backgroundImage:
+                                                    'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                            }}
+                                        >
+                                            {job.initials}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="truncate text-sm font-medium tracking-[-0.16px] text-[#050315]">
+                                                {job.title}
+                                            </h3>
+                                            <p className="mt-0.5 truncate text-xs text-[#6a7282]">
+                                                {job.company}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="min-w-0">
-                                        <h3 className="truncate text-sm font-medium tracking-[-0.16px] text-[#050315]">
-                                            {job.title}
-                                        </h3>
-                                        <p className="mt-0.5 truncate text-xs text-[#6a7282]">
-                                            {job.company}
-                                        </p>
-                                    </div>
-                                </div>
 
-                                <div className="mt-3 flex flex-wrap gap-1.5">
-                                    <span
-                                        className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${job.typeClass}`}
-                                    >
-                                        {job.type}
-                                    </span>
-                                    <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
-                                        {job.location}
-                                    </span>
-                                    <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
-                                        {job.experience}
-                                    </span>
-                                </div>
-
-                                <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#f1f5f9] pt-3">
-                                    <div className="min-w-0">
-                                        <p className="text-xs tracking-[-0.12px] text-[#3977a6]">
-                                            {job.posted}
-                                        </p>
-                                        <p className="mt-0.5 truncate text-sm font-semibold tracking-[-0.16px] text-[#0057c8]">
-                                            {job.salary}
-                                        </p>
+                                    <div className="mt-3 flex flex-wrap gap-1.5">
+                                        <span
+                                            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeClass(job.type)}`}
+                                        >
+                                            {job.type}
+                                        </span>
+                                        <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
+                                            📍 {job.location}
+                                        </span>
+                                        <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
+                                            💼 {job.experience}
+                                        </span>
                                     </div>
-                                    <Link
-                                        href={jobShow.url(job.slug)}
-                                        className="shrink-0 rounded-xl bg-[#0057c8] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110"
-                                    >
-                                        {t('jobs.apply_now')}
-                                    </Link>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
+
+                                    <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#f1f5f9] pt-3">
+                                        <div className="min-w-0">
+                                            <p className="text-xs tracking-[-0.12px] text-[#3977a6]">
+                                                {job.posted}
+                                            </p>
+                                            <p className="mt-0.5 truncate text-sm font-semibold tracking-[-0.16px] text-[#0057c8]">
+                                                {job.salary}
+                                            </p>
+                                        </div>
+                                        <Link
+                                            href={jobShow.url(job.slug)}
+                                            className="shrink-0 rounded-xl bg-[#0057c8] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110"
+                                        >
+                                            {t('jobs.apply_now')}
+                                        </Link>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </section>
 

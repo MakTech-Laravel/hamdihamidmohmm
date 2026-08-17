@@ -197,7 +197,7 @@ export const jobDemo = {
         { label: 'Pending Jobs', value: '134', tone: 'text-[#f59e0b]' },
         { label: 'Rejected Jobs', value: '482', tone: 'text-[#ef4444]' },
         { label: 'Expired Jobs', value: '3,891', tone: 'text-[#64748b]' },
-        { label: 'Featured Jobs', value: '89', tone: 'text-[#0ea5e9]' },
+        { label: 'Active Jobs', value: '89', tone: 'text-[#0ea5e9]' },
         { label: 'Reported Jobs', value: '12', tone: 'text-[#c2410c]' },
     ],
     rows: [

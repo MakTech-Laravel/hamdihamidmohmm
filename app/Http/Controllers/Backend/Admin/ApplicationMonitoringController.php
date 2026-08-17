@@ -5,7 +5,12 @@ namespace App\Http\Controllers\Backend\Admin;
 use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
+use App\Models\User;
+use App\Support\ApplicantProfilePreview;
+use App\Support\JobSeekerResume;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -19,7 +24,12 @@ class ApplicationMonitoringController extends Controller
         $status = $request->string('status')->toString();
 
         $appsQuery = JobApplication::query()
-            ->with(['jobPost:id,title,employer_id', 'jobPost.employer:id,name,company_name', 'jobSeeker:id,name,email'])
+            ->with([
+                'jobPost:id,title,employer_id',
+                'jobPost.employer:id,name,company_name',
+                'jobSeeker',
+                'jobSeeker.jobSeekerProfile',
+            ])
             ->latest();
 
         if (JobApplicationStatus::tryFrom($status) instanceof JobApplicationStatus) {
@@ -45,6 +55,34 @@ class ApplicationMonitoringController extends Controller
             'filters' => ['status' => $status],
             'stats' => $this->stats(),
             'trend' => $trend,
+        ]);
+    }
+
+    public function downloadResume(Request $request, JobApplication $application): StreamedResponse
+    {
+        abort_unless($request->user()?->canManageJobs(), 403);
+
+        $application->loadMissing(['jobSeeker.jobSeekerProfile']);
+
+        $seeker = $application->jobSeeker;
+        abort_unless($seeker instanceof User && $seeker->isJobSeeker(), 404);
+
+        if (filled($application->resume_path) && Storage::disk('local')->exists($application->resume_path)) {
+            $downloadName = $application->resume_original_name ?: basename($application->resume_path);
+
+            return Storage::disk('local')->download($application->resume_path, $downloadName);
+        }
+
+        if (filled($seeker->resume_path) && Storage::disk('local')->exists((string) $seeker->resume_path)) {
+            $downloadName = $seeker->resume_original_name ?: basename((string) $seeker->resume_path);
+
+            return Storage::disk('local')->download((string) $seeker->resume_path, $downloadName);
+        }
+
+        return response()->streamDownload(function () use ($seeker): void {
+            echo JobSeekerResume::pdf($seeker);
+        }, JobSeekerResume::filename($seeker), [
+            'Content-Type' => 'application/pdf',
         ]);
     }
 
@@ -83,16 +121,78 @@ class ApplicationMonitoringController extends Controller
      */
     private function row(JobApplication $application): array
     {
-        return [
+        $seeker = $application->jobSeeker;
+        $base = [
             'id' => $application->id,
-            'seeker' => $application->jobSeeker?->name,
-            'email' => $application->jobSeeker?->email,
+            'seeker' => $seeker?->name,
+            'email' => $seeker?->email,
             'job' => $application->jobPost?->title,
-            'employer' => $application->jobPost?->employer?->company_name ?: $application->jobPost?->employer?->name,
+            'employer' => $application->jobPost?->employer?->company_name
+                ?: $application->jobPost?->employer?->name,
             'status' => $application->status?->label(),
             'status_value' => $application->status?->value,
             'date' => $application->created_at?->toDateString(),
+            'resume_url' => route('admin.applications.resume', $application),
+            'timeline' => $this->formatTimeline($application->timeline()),
         ];
+
+        if (! $seeker instanceof User) {
+            return [
+                ...$base,
+                'preview' => [
+                    'is_applicant' => true,
+                    'name' => 'Applicant',
+                    'title' => $application->jobPost?->title ?: 'Applicant',
+                    'status' => $application->status?->label() ?: 'Applied',
+                    'email' => '—',
+                    'phone' => '—',
+                    'location' => '—',
+                    'skills' => [],
+                    'education' => [],
+                    'experience' => [],
+                    'languages' => [],
+                    'certifications' => [],
+                    'cover_letter' => $application->cover_letter,
+                    'resume_name' => null,
+                    'resume_url' => $base['resume_url'],
+                    'timeline' => $base['timeline'],
+                ],
+            ];
+        }
+
+        $preview = ApplicantProfilePreview::from($seeker, $application);
+
+        return [
+            ...$base,
+            'preview' => [
+                ...$preview,
+                'is_applicant' => true,
+                'status' => $application->status?->label() ?: JobApplicationStatus::Applied->label(),
+                'title' => $preview['title'] !== 'Applicant'
+                    ? $preview['title']
+                    : ($application->jobPost?->title ?: 'Applicant'),
+                'location' => $preview['preview_location'],
+                'resume_url' => $base['resume_url'],
+                'timeline' => $base['timeline'],
+            ],
+        ];
+    }
+
+    /**
+     * @param  list<array{label: string, date: string|null, state: string}>  $steps
+     * @return list<array{label: string, date: string|null, state: string}>
+     */
+    private function formatTimeline(array $steps): array
+    {
+        return array_map(function (array $step): array {
+            return [
+                'label' => $step['label'],
+                'date' => $step['date'] !== null
+                    ? Carbon::parse($step['date'])->format('M j')
+                    : null,
+                'state' => $step['state'],
+            ];
+        }, $steps);
     }
 
     /**

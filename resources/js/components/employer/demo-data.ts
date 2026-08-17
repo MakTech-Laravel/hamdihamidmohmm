@@ -219,7 +219,7 @@ export const PACKAGE_PLANS: PackagePlan[] = [
         isCurrent: true,
         features: [
             '10 job postings per month',
-            'Featured job listings (2/month)',
+            'Priority job listings (2/month)',
             'Priority candidate matching',
             'Analytics dashboard',
             'Dedicated account manager',
@@ -232,7 +232,7 @@ export const PACKAGE_PLANS: PackagePlan[] = [
         currency: 'SAR',
         features: [
             'Unlimited job postings',
-            'Unlimited featured listings',
+            'Unlimited job listings',
             'AI-powered candidate screening',
             'Custom branding on listings',
             '24/7 premium support',
@@ -251,7 +251,6 @@ export const CURRENT_PACKAGE = {
     creditsRemaining: 5,
     creditBreakdown: {
         jobsPosted: 3,
-        featured: 2,
         remaining: 5,
     },
 };
@@ -282,7 +281,7 @@ export const INVOICE_HISTORY: InvoiceRow[] = [
     {
         id: 'INV-2026-0589',
         date: 'Jun 1, 2026',
-        description: 'Featured Job Listing Add-on',
+        description: 'Extra Job Listing Add-on',
         amount: 'SAR 350',
         status: 'Paid',
     },

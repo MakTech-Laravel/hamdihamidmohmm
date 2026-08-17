@@ -17,6 +17,14 @@ class FrontendController extends Controller
     {
         return Inertia::render('frontend/home', [
             'packages' => Package::publicCards(),
+            'recommendedJobs' => JobPost::query()
+                ->active()
+                ->with('employer:id,name,company_name')
+                ->latest()
+                ->limit(6)
+                ->get()
+                ->map(fn (JobPost $job) => $this->homeJobCard($job))
+                ->values(),
         ]);
     }
 
@@ -48,7 +56,6 @@ class FrontendController extends Controller
                 'type' => $job->employment_type,
                 'category' => $job->category,
                 'salary' => $job->salary_range,
-                'featured' => $job->featured,
             ]);
 
         return Inertia::render('frontend/jobs', [
@@ -123,6 +130,23 @@ class FrontendController extends Controller
     public function contact(): Response
     {
         return Inertia::render('frontend/contact');
+    }
+
+    private function homeJobCard(JobPost $job): array
+    {
+        $company = $job->employer?->company_name ?: $job->employer?->name;
+
+        return [
+            'slug' => $job->slug,
+            'initials' => $this->initials($company),
+            'title' => $job->title,
+            'company' => $company ?: 'Employer',
+            'type' => $job->employment_type ?: 'Full-time',
+            'location' => $job->location ?: '—',
+            'experience' => $job->experience_level ?: '—',
+            'posted' => $job->created_at?->diffForHumans() ?: '—',
+            'salary' => $job->salary_range ?: '—',
+        ];
     }
 
     private function initials(?string $name): string

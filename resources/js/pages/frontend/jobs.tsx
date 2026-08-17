@@ -27,7 +27,6 @@ type JobRow = {
     type: string | null;
     category: string | null;
     salary: string | null;
-    featured: boolean;
 };
 
 type Props = {
@@ -348,11 +347,6 @@ export default function Jobs({ jobs, filters }: Props) {
                                                 {job.company}
                                             </p>
                                         </div>
-                                        {job.featured && (
-                                            <span className="shrink-0 rounded-full bg-[#fef9c3] px-2.5 py-0.5 text-xs font-semibold text-[#92400e]">
-                                                ⭐
-                                            </span>
-                                        )}
                                     </div>
 
                                     <div className="mt-3 flex flex-wrap gap-1.5">

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\UpdateEmployerApplicationRequest;
 use App\Models\JobApplication;
 use App\Models\User;
+use App\Support\ApplicantProfilePreview;
 use App\Support\JobSeekerResume;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,8 +27,8 @@ class EmployerApplicationController extends Controller
         $appsQuery = JobApplication::query()
             ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id))
             ->with([
-                'jobSeeker:id,name,email,phone,location',
-                'jobSeeker.jobSeekerProfile:id,user_id,experience,headline,skills',
+                'jobSeeker',
+                'jobSeeker.jobSeekerProfile',
                 'jobPost:id,title',
             ])
             ->latest();
@@ -93,6 +94,12 @@ class EmployerApplicationController extends Controller
             return Storage::disk('local')->download($application->resume_path, $downloadName);
         }
 
+        if (filled($seeker->resume_path) && Storage::disk('local')->exists((string) $seeker->resume_path)) {
+            $downloadName = $seeker->resume_original_name ?: basename((string) $seeker->resume_path);
+
+            return Storage::disk('local')->download((string) $seeker->resume_path, $downloadName);
+        }
+
         return response()->streamDownload(function () use ($seeker): void {
             echo JobSeekerResume::pdf($seeker);
         }, JobSeekerResume::filename($seeker), [
@@ -107,32 +114,59 @@ class EmployerApplicationController extends Controller
     {
         $next = $application->status?->next();
         $seeker = $application->jobSeeker;
-        $profile = $seeker?->jobSeekerProfile;
-        $skills = is_array($profile?->skills) ? $profile->skills : [];
-        $experience = $profile?->experienceLabel() ?? '—';
-        $location = $seeker?->location ?: '—';
+
+        if (! $seeker instanceof User) {
+            return [
+                'id' => $application->id,
+                'name' => 'Applicant',
+                'title' => 'Applicant',
+                'headline' => null,
+                'current_title' => null,
+                'experience_years' => '—',
+                'email' => '—',
+                'phone' => '—',
+                'location' => '—',
+                'preview_location' => '—',
+                'bio' => null,
+                'linkedin_url' => null,
+                'github_url' => null,
+                'industry' => null,
+                'expected_salary' => null,
+                'availability' => [],
+                'skills' => [],
+                'education' => [],
+                'experience' => [],
+                'languages' => [],
+                'certifications' => [],
+                'cover_letter' => $application->cover_letter,
+                'resume_name' => null,
+                'has_resume_file' => false,
+                'job' => $application->jobPost?->title,
+                'job_id' => $application->job_post_id,
+                'status' => $application->status?->label(),
+                'status_value' => $application->status?->value,
+                'date' => $application->created_at?->format('M j, Y'),
+                'resume_url' => route('employer.applications.resume', $application),
+                'timeline' => $this->formatTimeline($application->timeline()),
+                'next_status' => $next?->value,
+                'can_move' => $next instanceof JobApplicationStatus,
+                'can_reject' => $application->status !== JobApplicationStatus::Withdrawn
+                    && $application->status !== JobApplicationStatus::Rejected,
+            ];
+        }
+
+        $preview = ApplicantProfilePreview::from($seeker, $application);
 
         return [
+            ...$preview,
             'id' => $application->id,
-            'name' => $seeker?->name,
-            'email' => $seeker?->email,
-            'phone' => $seeker?->phone ?: '—',
-            'location' => $location,
             'job' => $application->jobPost?->title,
             'job_id' => $application->job_post_id,
             'status' => $application->status?->label(),
             'status_value' => $application->status?->value,
             'date' => $application->created_at?->format('M j, Y'),
-            'experience' => $experience,
-            'cover_letter' => $application->cover_letter,
-            'headline' => $profile?->headline,
-            'skills' => array_values(array_filter(
-                $skills,
-                fn (mixed $skill): bool => is_string($skill) && $skill !== '',
-            )),
             'resume_url' => route('employer.applications.resume', $application),
             'timeline' => $this->formatTimeline($application->timeline()),
-            'preview_location' => $this->previewLocation($location, $experience),
             'next_status' => $next?->value,
             'can_move' => $next instanceof JobApplicationStatus,
             'can_reject' => $application->status !== JobApplicationStatus::Withdrawn
@@ -155,18 +189,5 @@ class EmployerApplicationController extends Controller
                 'state' => $step['state'],
             ];
         }, $steps);
-    }
-
-    private function previewLocation(string $location, string $experience): string
-    {
-        if ($experience === '—' || $experience === '') {
-            return $location;
-        }
-
-        if ($location === '—') {
-            return $experience;
-        }
-
-        return $location.' · '.$experience;
     }
 }

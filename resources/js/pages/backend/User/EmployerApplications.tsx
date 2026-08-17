@@ -24,10 +24,22 @@ type ApplicationRow = {
     status: string | null;
     status_value: string | null;
     date: string | null;
-    experience: string | null;
+    experience_years: string | null;
     cover_letter: string | null;
     headline: string | null;
+    current_title: string | null;
+    industry: string | null;
+    expected_salary: string | null;
+    availability: string[];
+    bio: string | null;
+    linkedin_url: string | null;
+    github_url: string | null;
     skills: string[];
+    education: ApplicationPreview['education'];
+    experience: ApplicationPreview['experience'];
+    languages: ApplicationPreview['languages'];
+    certifications: ApplicationPreview['certifications'];
+    resume_name: string | null;
     resume_url: string | null;
     timeline: ApplicationPreview['timeline'];
     preview_location: string | null;
@@ -72,7 +84,21 @@ function toPreview(row: ApplicationRow): ApplicationPreview {
         email: row.email || '—',
         phone: row.phone || '—',
         location: row.preview_location || row.location || '—',
+        current_title: row.current_title,
+        experience_years: row.experience_years,
+        industry: row.industry,
+        expected_salary: row.expected_salary,
+        availability: row.availability ?? [],
+        bio: row.bio,
+        linkedin_url: row.linkedin_url,
+        github_url: row.github_url,
         skills: row.skills ?? [],
+        education: row.education ?? [],
+        experience: row.experience ?? [],
+        languages: row.languages ?? [],
+        certifications: row.certifications ?? [],
+        cover_letter: row.cover_letter,
+        resume_name: row.resume_name,
         resume_url: row.resume_url,
         timeline: row.timeline ?? [],
     };
@@ -272,7 +298,7 @@ export default function EmployerApplications({
                                                 {row.date || '—'}
                                             </td>
                                             <td className="px-4 py-[13px] text-sm leading-[21px] text-[#374151]">
-                                                {row.experience || '—'}
+                                                {row.experience_years || '—'}
                                             </td>
                                             <td className="px-4 py-[13px] text-sm leading-[21px] text-[#374151]">
                                                 {row.location || '—'}

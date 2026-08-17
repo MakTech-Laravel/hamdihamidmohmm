@@ -17,15 +17,12 @@ type JobForm = {
     requirements: string | null;
     skills: string[];
     expires_at: string | null;
-    featured: boolean;
     status: string;
 };
 
 type Plan = {
     credits_remaining: number;
-    featured_remaining: number;
     can_post_job: boolean;
-    can_feature_job: boolean;
     label: string | null;
 };
 
@@ -60,7 +57,6 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
         requirements: job?.requirements ?? '',
         skills: (job?.skills ?? []).join(', '),
         expires_at: job?.expires_at ?? '',
-        featured: job?.featured ?? false,
         publish: true,
     });
 
@@ -285,26 +281,6 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                     className={inputClass}
                                 />
                             </Field>
-                            <label className="flex items-center gap-2 text-sm font-medium text-[#050315]">
-                                <input
-                                    type="checkbox"
-                                    checked={form.data.featured}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'featured',
-                                            event.target.checked,
-                                        )
-                                    }
-                                    className="size-4 rounded border-[#e8d5e8] text-[#0057c8]"
-                                />
-                                Feature this job
-                                {plan && (
-                                    <span className="text-xs font-normal text-[#64748b]">
-                                        ({plan.featured_remaining} featured
-                                        credits left)
-                                    </span>
-                                )}
-                            </label>
                         </div>
                     )}
 
@@ -360,10 +336,6 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                     ],
                                     ['Salary', form.data.salary_range || '—'],
                                     ['Expires', form.data.expires_at || '30 days'],
-                                    [
-                                        'Featured',
-                                        form.data.featured ? 'Yes' : 'No',
-                                    ],
                                 ].map(([label, value]) => (
                                     <div key={label}>
                                         <dt className="text-xs text-[#94a3b8]">

@@ -9,11 +9,8 @@ type Plan = {
     slug: string | null;
     label: string | null;
     job_credits: number;
-    featured_credits: number;
     jobs_posted: number;
-    featured_used: number;
     credits_remaining: number;
-    featured_remaining: number;
     expires_on: string | null;
     days_remaining: number | null;
 };
@@ -58,13 +55,6 @@ export default function EmployerPackages({ plan, packages, invoices }: Props) {
     const jobsPercent =
         plan.job_credits > 0
             ? Math.min(100, Math.round((plan.jobs_posted / plan.job_credits) * 100))
-            : 0;
-    const featuredPercent =
-        plan.featured_credits > 0
-            ? Math.min(
-                100,
-                Math.round((plan.featured_used / plan.featured_credits) * 100),
-            )
             : 0;
     const remainingPercent =
         plan.job_credits > 0
@@ -150,12 +140,6 @@ export default function EmployerPackages({ plan, packages, invoices }: Props) {
                                 `${plan.jobs_posted}/${plan.job_credits}`,
                                 jobsPercent,
                                 'bg-[#0057c8]',
-                            ],
-                            [
-                                'Featured Credits',
-                                `${plan.featured_used}/${plan.featured_credits}`,
-                                featuredPercent,
-                                'bg-[#3977a6]',
                             ],
                             [
                                 'Remaining Credits',

@@ -66,6 +66,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/jobs/{jobPost}/reject', [JobManagementController::class, 'reject'])->name('jobs.reject');
 
         Route::get('/applications/export', [ApplicationMonitoringController::class, 'export'])->name('applications.export');
+        Route::get('/applications/{application}/resume', [ApplicationMonitoringController::class, 'downloadResume'])->name('applications.resume');
         Route::get('/applications', [ApplicationMonitoringController::class, 'index'])->name('applications.index');
 
         Route::get('/packages', [PackageManagementController::class, 'index'])->name('packages.index');

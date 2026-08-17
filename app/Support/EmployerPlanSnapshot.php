@@ -19,46 +19,33 @@ class EmployerPlanSnapshot
      *     slug: string|null,
      *     label: string|null,
      *     job_credits: int,
-     *     featured_credits: int,
      *     jobs_posted: int,
-     *     featured_used: int,
      *     credits_used: int,
      *     credits_remaining: int,
-     *     featured_remaining: int,
      *     expires_at: string|null,
      *     expires_on: string|null,
      *     days_remaining: int|null,
      *     is_verified: bool,
      *     verified_on: string|null,
-     *     can_post_job: bool,
-     *     can_feature_job: bool
+     *     can_post_job: bool
      * }
      */
     public static function for(User $employer): array
     {
         $catalog = static::catalogPackage($employer->package);
         $jobsPosted = static::jobsUsingCredits($employer);
-        $featuredUsed = JobPost::query()
-            ->where('employer_id', $employer->id)
-            ->where('featured', true)
-            ->count();
 
         $jobCredits = (int) ($catalog?->job_credits ?? 0);
-        $featuredCredits = (int) ($catalog?->featured_credits ?? 0);
         $creditsRemaining = max(0, $jobCredits - $jobsPosted);
-        $featuredRemaining = max(0, $featuredCredits - $featuredUsed);
         $expiresAt = static::expiresAt($employer);
 
         return [
             'slug' => $employer->package?->value,
             'label' => $catalog?->name ?? $employer->package?->label(),
             'job_credits' => $jobCredits,
-            'featured_credits' => $featuredCredits,
             'jobs_posted' => $jobsPosted,
-            'featured_used' => $featuredUsed,
             'credits_used' => $jobsPosted,
             'credits_remaining' => $creditsRemaining,
-            'featured_remaining' => $featuredRemaining,
             'expires_at' => $expiresAt?->toDateString(),
             'expires_on' => $expiresAt?->format('M j, Y'),
             'days_remaining' => $expiresAt instanceof Carbon
@@ -67,7 +54,6 @@ class EmployerPlanSnapshot
             'is_verified' => $employer->verification_status === EmployerVerificationStatus::Approved,
             'verified_on' => $employer->verified_at?->format('M j, Y'),
             'can_post_job' => $catalog === null ? true : $creditsRemaining > 0,
-            'can_feature_job' => $catalog === null ? false : $featuredRemaining > 0,
         ];
     }
 

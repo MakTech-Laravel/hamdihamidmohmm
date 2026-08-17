@@ -60,17 +60,17 @@ class EmployerJobController extends Controller
         abort_unless($employer !== null, 403);
 
         $publish = $request->boolean('publish', true);
-        $featured = $request->boolean('featured');
 
-        $creditError = $this->creditError($employer, $publish, $featured);
+        $creditError = $this->creditError($employer, $publish);
 
         if ($creditError !== null) {
             return back()->withErrors(['title' => $creditError]);
         }
 
         JobPost::query()->create([
-            ...$request->safe()->except(['publish']),
+            ...$request->safe()->except(['publish', 'featured']),
             'employer_id' => $employer->id,
+            'featured' => false,
             'status' => $publish ? JobPostStatus::Pending : JobPostStatus::Draft,
             'expires_at' => $request->date('expires_at') ?? ($publish ? now()->addDays(30) : null),
         ]);
@@ -99,7 +99,6 @@ class EmployerJobController extends Controller
                 'requirements' => $job->requirements,
                 'skills' => $job->skills ?? [],
                 'expires_at' => $job->expires_at?->toDateString(),
-                'featured' => $job->featured,
                 'status' => $job->effectiveStatus()->value,
             ],
             'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
@@ -113,12 +112,10 @@ class EmployerJobController extends Controller
         abort_unless($employer !== null, 403);
 
         $publish = $request->boolean('publish', $job->status !== JobPostStatus::Draft);
-        $featured = $request->boolean('featured', $job->featured);
 
         $creditError = $this->creditError(
             $employer,
             $publish && $job->status === JobPostStatus::Draft,
-            $featured && ! $job->featured,
         );
 
         if ($creditError !== null) {
@@ -126,8 +123,8 @@ class EmployerJobController extends Controller
         }
 
         $job->update([
-            ...$request->safe()->except(['publish']),
-            'featured' => $featured,
+            ...$request->safe()->except(['publish', 'featured']),
+            'featured' => false,
         ]);
 
         if ($publish && in_array($job->status, [JobPostStatus::Draft, JobPostStatus::Rejected], true)) {
@@ -257,16 +254,12 @@ class EmployerJobController extends Controller
         abort_unless($job->employer_id === $request->user()?->id, 403);
     }
 
-    private function creditError(User $employer, bool $needsJobCredit, bool $needsFeaturedCredit): ?string
+    private function creditError(User $employer, bool $needsJobCredit): ?string
     {
         $plan = EmployerPlanSnapshot::for($employer);
 
         if ($needsJobCredit && ! $plan['can_post_job']) {
             return 'You have no job credits remaining. Upgrade your plan to post more jobs.';
-        }
-
-        if ($needsFeaturedCredit && ! $plan['can_feature_job']) {
-            return 'You have no featured credits remaining on your current plan.';
         }
 
         return null;

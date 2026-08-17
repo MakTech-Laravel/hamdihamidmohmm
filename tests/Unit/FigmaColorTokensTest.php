@@ -46,6 +46,10 @@ test('the public home hero uses Figma accent and floating stat colors', function
         ->toContain('h-[60px]')
         ->toContain('text-[#1e3a8a]')
         ->toContain('text-[#f97316]')
+        ->toContain('recommendedJobs')
+        ->toContain('Recommended Jobs')
+        ->not->toContain('Featured Jobs')
+        ->not->toContain('featuredJobs')
         ->not->toContain('text-[#c2410c]');
 });
 
@@ -182,8 +186,11 @@ test('the employer applications page uses the Figma table layout', function () u
         ->toContain('Change Status')
         ->toContain('Schedule Interview')
         ->toContain('Send Message')
+        ->toContain('Professional')
+        ->toContain('Education')
+        ->toContain('Cover Letter')
         ->toContain('bg-[#d1f6ff]')
-        ->toContain('bg-[#e57124]')
+        ->toContain('bg-[#0057c8]')
         ->toContain('w-[400px]')
         ->not->toContain('#323981')
         ->not->toContain('#ffebf5');
@@ -227,6 +234,9 @@ test('the admin job management page uses the Figma list layout', function () use
     expect($drawer)->not->toBeFalse()
         ->toContain('Download Resume')
         ->toContain('Status Timeline')
+        ->toContain('Professional')
+        ->toContain('Education')
+        ->toContain('Cover Letter')
         ->toContain('bg-[#d1f6ff]')
         ->toContain('bg-[#fdf4ff]')
         ->toContain('w-[400px]');

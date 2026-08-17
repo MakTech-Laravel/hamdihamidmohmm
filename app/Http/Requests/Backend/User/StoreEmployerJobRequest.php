@@ -26,7 +26,6 @@ class StoreEmployerJobRequest extends FormRequest
         }
 
         $this->merge([
-            'featured' => $this->boolean('featured'),
             'publish' => $this->boolean('publish', true),
         ]);
     }
@@ -48,7 +47,6 @@ class StoreEmployerJobRequest extends FormRequest
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:80'],
             'expires_at' => ['nullable', 'date'],
-            'featured' => ['sometimes', 'boolean'],
             'publish' => ['sometimes', 'boolean'],
         ];
     }

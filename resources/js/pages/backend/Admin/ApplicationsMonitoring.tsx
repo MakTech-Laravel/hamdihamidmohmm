@@ -1,6 +1,11 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { Download, FileText } from 'lucide-react';
+import { Download, Eye, FileText } from 'lucide-react';
+import { useState } from 'react';
 
+import {
+    CandidatePreviewDrawer,
+    type CandidatePreview,
+} from '@/components/admin-portal/candidate-preview-drawer';
 import {
     AdminFilterChip,
     AdminPageHeader,
@@ -23,6 +28,8 @@ type ApplicationRow = {
     status: string;
     status_value: string;
     date: string | null;
+    resume_url: string;
+    preview: CandidatePreview;
 };
 
 type Props = {
@@ -75,6 +82,7 @@ export default function ApplicationsMonitoring({
 }: Props) {
     const { flash } = usePage<SharedData>().props;
     const maxTrend = Math.max(...trend.map((item) => item.count), 1);
+    const [viewing, setViewing] = useState<ApplicationRow | null>(null);
 
     return (
         <AdminPortalLayout>
@@ -179,6 +187,7 @@ export default function ApplicationsMonitoring({
                             'Employer',
                             'Status',
                             'Date',
+                            'Actions',
                         ]}
                     >
                         {applications.data.map((row) => (
@@ -207,6 +216,16 @@ export default function ApplicationsMonitoring({
                                 <td className="px-3 py-3 text-[#64748b]">
                                     {row.date ?? '—'}
                                 </td>
+                                <td className="px-3 py-3">
+                                    <button
+                                        type="button"
+                                        className="inline-flex h-[30px] items-center justify-center gap-1.5 rounded-[6.4px] border border-[#bfdbfe] bg-white px-2.5 text-xs font-semibold text-[#0057c8] hover:bg-[#eff6ff]"
+                                        onClick={() => setViewing(row)}
+                                    >
+                                        <Eye className="size-3.5" />
+                                        Details
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                     </AdminTableShell>
@@ -223,6 +242,16 @@ export default function ApplicationsMonitoring({
                     />
                 </AdminPanel>
             </div>
+
+            <CandidatePreviewDrawer
+                open={viewing !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setViewing(null);
+                    }
+                }}
+                preview={viewing?.preview ?? null}
+            />
         </AdminPortalLayout>
     );
 }

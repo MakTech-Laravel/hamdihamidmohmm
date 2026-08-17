@@ -19,6 +19,7 @@ test('employers see live application table props matching the Figma page', funct
     JobSeekerProfile::factory()->create([
         'user_id' => $seeker->id,
         'headline' => 'Senior Frontend Developer',
+        'experience_years' => '6',
         'skills' => ['React', 'TypeScript', 'Tailwind CSS', 'Node.js'],
         'experience' => [
             ['company' => 'TechCorp', 'title' => 'Developer', 'years' => 6],
@@ -49,12 +50,15 @@ test('employers see live application table props matching the Figma page', funct
             ->where('stats.shortlisted', 0)
             ->where('applications.0.name', 'Ahmed Al-Rashidi')
             ->where('applications.0.job', 'Senior Frontend Developer')
-            ->where('applications.0.experience', '6 years')
+            ->where('applications.0.experience_years', '6 years')
             ->where('applications.0.location', 'Riyadh')
             ->where('applications.0.status', 'Interview')
             ->where('applications.0.date', 'Aug 3, 2026')
             ->where('applications.0.phone', '+966 50 123 4567')
             ->where('applications.0.skills', ['React', 'TypeScript', 'Tailwind CSS', 'Node.js'])
+            ->where('applications.0.current_title', fn ($value) => filled($value))
+            ->where('applications.0.experience.0.title', 'Developer')
+            ->where('applications.0.cover_letter', 'I would like to join the frontend team.')
             ->where('applications.0.preview_location', 'Riyadh · 6 years')
             ->where('applications.0.timeline.3.label', 'Interview')
             ->where('applications.0.timeline.3.state', 'current')

@@ -1,5 +1,14 @@
-import { CalendarDays, Download, Mail, MapPin, Phone, Send, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+    CalendarDays,
+    Download,
+    ExternalLink,
+    Mail,
+    MapPin,
+    Phone,
+    Send,
+    X,
+} from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { getInitials } from '@/components/employer/demo-data';
 import {
@@ -17,6 +26,13 @@ export type ApplicationPreviewTimelineStep = {
     state: 'done' | 'current' | 'pending' | string;
 };
 
+export type ProfileEntry = {
+    title: string;
+    subtitle: string | null;
+    meta: string | null;
+    body: string | null;
+};
+
 export type ApplicationPreview = {
     id: number;
     name: string;
@@ -26,7 +42,25 @@ export type ApplicationPreview = {
     email: string;
     phone: string;
     location: string;
+    current_title: string | null;
+    experience_years: string | null;
+    industry: string | null;
+    expected_salary: string | null;
+    availability: string[];
+    bio: string | null;
+    linkedin_url: string | null;
+    github_url: string | null;
     skills: string[];
+    education: ProfileEntry[];
+    experience: ProfileEntry[];
+    languages: Array<{ name: string; level: string | null }>;
+    certifications: Array<{
+        name: string;
+        issuer: string | null;
+        date: string | null;
+    }>;
+    cover_letter: string | null;
+    resume_name: string | null;
     resume_url: string | null;
     timeline: ApplicationPreviewTimelineStep[];
 };
@@ -119,26 +153,62 @@ function DrawerBody({
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5">
-                <section>
-                    <h3 className="text-[12.8px] font-bold tracking-[0.512px] text-[#3977a6] uppercase">
-                        Contact
-                    </h3>
-                    <div className="flex flex-col gap-[4.8px] pt-2">
+                <Section title="Contact">
+                    <div className="flex flex-col gap-[4.8px]">
                         <ContactRow icon={Mail} value={preview.email} />
                         <ContactRow icon={Phone} value={preview.phone} />
                         <ContactRow icon={MapPin} value={preview.location} />
                     </div>
-                </section>
+                </Section>
 
-                <section>
-                    <h3 className="text-[12.8px] font-bold tracking-[0.512px] text-[#3977a6] uppercase">
-                        Skills
-                    </h3>
-                    <div className="flex flex-wrap gap-[6.4px] pt-2">
+                <Section title="Professional">
+                    <DetailGrid
+                        items={[
+                            ['Current title', preview.current_title],
+                            ['Experience', preview.experience_years],
+                            ['Industry', preview.industry],
+                            ['Expected salary', preview.expected_salary],
+                        ]}
+                    />
+                    {(preview.availability ?? []).length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 pt-2">
+                            {preview.availability.map((item) => (
+                                <span
+                                    key={item}
+                                    className="rounded-full bg-[#dbeafe] px-2.5 py-0.5 text-[11px] font-semibold text-[#1d4ed8]"
+                                >
+                                    {item}
+                                </span>
+                            ))}
+                        </div>
+                    ) : null}
+                </Section>
+
+                {preview.bio ? (
+                    <Section title="About">
+                        <p className="text-[13.6px] leading-5 text-[#050315]">
+                            {preview.bio}
+                        </p>
+                    </Section>
+                ) : null}
+
+                {(preview.linkedin_url || preview.github_url) && (
+                    <Section title="Links">
+                        <div className="flex flex-col gap-1.5">
+                            {preview.linkedin_url ? (
+                                <LinkRow href={preview.linkedin_url} label="LinkedIn" />
+                            ) : null}
+                            {preview.github_url ? (
+                                <LinkRow href={preview.github_url} label="GitHub" />
+                            ) : null}
+                        </div>
+                    </Section>
+                )}
+
+                <Section title="Skills">
+                    <div className="flex flex-wrap gap-[6.4px]">
                         {preview.skills.length === 0 ? (
-                            <p className="text-[13.6px] text-[#3977a6]">
-                                No skills listed.
-                            </p>
+                            <EmptyText>No skills listed.</EmptyText>
                         ) : (
                             preview.skills.map((skill) => (
                                 <span
@@ -150,12 +220,70 @@ function DrawerBody({
                             ))
                         )}
                     </div>
-                </section>
+                </Section>
 
-                <section>
-                    <h3 className="pb-2 text-[12.8px] font-bold tracking-[0.512px] text-[#3977a6] uppercase">
-                        Resume
-                    </h3>
+                <EntriesSection title="Experience" entries={preview.experience} />
+                <EntriesSection title="Education" entries={preview.education} />
+
+                <Section title="Languages">
+                    {preview.languages.length === 0 ? (
+                        <EmptyText>No languages listed.</EmptyText>
+                    ) : (
+                        <div className="space-y-2">
+                            {preview.languages.map((language) => (
+                                <div
+                                    key={language.name}
+                                    className="flex items-center justify-between gap-2 rounded-lg border border-[#f1f5f9] px-3 py-2"
+                                >
+                                    <span className="text-[13.6px] font-semibold text-[#050315]">
+                                        {language.name}
+                                    </span>
+                                    {language.level ? (
+                                        <span className="rounded-full bg-[#dcfce7] px-2 py-0.5 text-[11px] font-semibold text-[#15803d]">
+                                            {language.level}
+                                        </span>
+                                    ) : null}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </Section>
+
+                <Section title="Certifications">
+                    {preview.certifications.length === 0 ? (
+                        <EmptyText>No certifications listed.</EmptyText>
+                    ) : (
+                        <div className="space-y-2">
+                            {preview.certifications.map((item) => (
+                                <div key={item.name}>
+                                    <p className="text-[13.6px] font-semibold text-[#050315]">
+                                        {item.name}
+                                    </p>
+                                    <p className="text-[12px] text-[#3977a6]">
+                                        {[item.issuer, item.date]
+                                            .filter(Boolean)
+                                            .join(' · ') || '—'}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </Section>
+
+                {preview.cover_letter ? (
+                    <Section title="Cover Letter">
+                        <p className="whitespace-pre-wrap text-[13.6px] leading-5 text-[#050315]">
+                            {preview.cover_letter}
+                        </p>
+                    </Section>
+                ) : null}
+
+                <Section title="Resume">
+                    {preview.resume_name ? (
+                        <p className="pb-2 text-[12.8px] text-[#3977a6]">
+                            {preview.resume_name}
+                        </p>
+                    ) : null}
                     {resumeEnabled ? (
                         <a
                             href={preview.resume_url ?? '#'}
@@ -175,13 +303,10 @@ function DrawerBody({
                             Download Resume
                         </button>
                     )}
-                </section>
+                </Section>
 
-                <section>
-                    <h3 className="text-[12.8px] font-bold tracking-[0.512px] text-[#3977a6] uppercase">
-                        Status Timeline
-                    </h3>
-                    <ol className="flex flex-col pt-3">
+                <Section title="Status Timeline">
+                    <ol className="flex flex-col">
                         {preview.timeline.map((step, index) => (
                             <TimelineStep
                                 key={`${step.label}-${index}`}
@@ -190,70 +315,179 @@ function DrawerBody({
                             />
                         ))}
                     </ol>
-                </section>
+                </Section>
 
-                <section>
-                    <h3 className="pb-2 text-[12.8px] font-bold tracking-[0.512px] text-[#3977a6] uppercase">
-                        Change Status
-                    </h3>
+                <Section title="Change Status">
                     <div className="flex items-center gap-2">
                         <select
                             value={selectedStatus}
                             onChange={(event) =>
                                 setSelectedStatus(event.target.value)
                             }
-                            className="h-[38px] min-w-0 flex-1 cursor-pointer rounded-[8px] border border-[#e8d5e8] bg-white px-3 text-[13.6px] text-[#050315] outline-none focus:border-[#0057c8]"
+                            className="h-[38px] flex-1 rounded-[8px] border border-[#e2e8f0] bg-white px-3 text-[13.6px] text-[#050315]"
                         >
-                            {statuses.map((item) => (
-                                <option key={item.value} value={item.value}>
-                                    {item.label}
+                            {statuses.map((status) => (
+                                <option key={status.value} value={status.value}>
+                                    {status.label}
                                 </option>
                             ))}
                         </select>
                         <button
                             type="button"
-                            className="inline-flex h-[38px] shrink-0 cursor-pointer items-center justify-center rounded-[8px] bg-[#e57124] px-4 text-[13.6px] font-semibold text-white hover:bg-[#cf6218]"
+                            className="inline-flex h-[38px] items-center justify-center gap-1.5 rounded-[8px] bg-[#0057c8] px-3 text-[13.6px] font-semibold text-white hover:bg-[#0046a3]"
                             onClick={() =>
                                 onUpdateStatus(preview.id, selectedStatus)
                             }
                         >
+                            <Send className="size-3.5" strokeWidth={2} />
                             Update
                         </button>
                     </div>
-                </section>
+                </Section>
             </div>
 
-            <div className="flex shrink-0 gap-2 border-t border-[#e8d5e8] p-5">
-                <button
-                    type="button"
-                    className="inline-flex h-10 min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-white px-3 text-[13px] font-semibold text-[#0057c8] hover:bg-[#f8faff]"
-                    onClick={() =>
-                        onUpdateStatus(preview.id, 'interview')
-                    }
-                >
-                    <CalendarDays className="size-3.5" strokeWidth={2} />
-                    Schedule Interview
-                </button>
+            <div className="flex shrink-0 gap-2 border-t border-[#e2e8f0] p-4">
+                {mailto ? (
+                    <a
+                        href={`${mailto}?subject=${encodeURIComponent('Interview invitation')}`}
+                        className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] text-[13.6px] font-semibold text-[#0057c8]"
+                    >
+                        <CalendarDays className="size-3.5" />
+                        Schedule Interview
+                    </a>
+                ) : (
+                    <button
+                        type="button"
+                        disabled
+                        className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] text-[13.6px] font-semibold text-[#0057c8] opacity-50"
+                    >
+                        <CalendarDays className="size-3.5" />
+                        Schedule Interview
+                    </button>
+                )}
                 {mailto ? (
                     <a
                         href={mailto}
-                        className="inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#e57124] px-3 text-[13px] font-semibold text-white hover:bg-[#cf6218]"
+                        className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#0057c8] text-[13.6px] font-semibold text-white"
                     >
-                        <Send className="size-3.5" strokeWidth={2} />
+                        <Mail className="size-3.5" />
                         Send Message
                     </a>
                 ) : (
                     <button
                         type="button"
                         disabled
-                        className="inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#e57124] px-3 text-[13px] font-semibold text-white opacity-50"
+                        className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#0057c8] text-[13.6px] font-semibold text-white opacity-50"
                     >
-                        <Send className="size-3.5" strokeWidth={2} />
+                        <Mail className="size-3.5" />
                         Send Message
                     </button>
                 )}
             </div>
         </div>
+    );
+}
+
+function Section({
+    title,
+    children,
+}: {
+    title: string;
+    children: ReactNode;
+}) {
+    return (
+        <section>
+            <h3 className="pb-2 text-[12.8px] font-bold tracking-[0.512px] text-[#3977a6] uppercase">
+                {title}
+            </h3>
+            {children}
+        </section>
+    );
+}
+
+function EmptyText({ children }: { children: ReactNode }) {
+    return <p className="text-[13.6px] text-[#3977a6]">{children}</p>;
+}
+
+function DetailGrid({
+    items,
+}: {
+    items: Array<[string, string | null | undefined]>;
+}) {
+    const visible = items.filter(([, value]) => value && value !== '—');
+
+    if (visible.length === 0) {
+        return <EmptyText>No professional details yet.</EmptyText>;
+    }
+
+    return (
+        <div className="grid grid-cols-2 gap-3">
+            {visible.map(([label, value]) => (
+                <div key={label}>
+                    <p className="text-[11px] font-semibold text-[#64748b]">
+                        {label}
+                    </p>
+                    <p className="pt-0.5 text-[13.6px] font-medium text-[#050315]">
+                        {value}
+                    </p>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function EntriesSection({
+    title,
+    entries,
+}: {
+    title: string;
+    entries: ProfileEntry[];
+}) {
+    return (
+        <Section title={title}>
+            {entries.length === 0 ? (
+                <EmptyText>No {title.toLowerCase()} listed.</EmptyText>
+            ) : (
+                <ol className="space-y-3">
+                    {entries.map((entry, index) => (
+                        <li key={`${entry.title}-${index}`}>
+                            <p className="text-[13.6px] font-semibold text-[#050315]">
+                                {entry.title}
+                            </p>
+                            {entry.subtitle ? (
+                                <p className="text-[12.8px] text-[#3977a6]">
+                                    {entry.subtitle}
+                                </p>
+                            ) : null}
+                            {entry.meta ? (
+                                <p className="text-[11.5px] text-[#64748b]">
+                                    {entry.meta}
+                                </p>
+                            ) : null}
+                            {entry.body ? (
+                                <p className="pt-1 text-[12.8px] text-[#374151]">
+                                    {entry.body}
+                                </p>
+                            ) : null}
+                        </li>
+                    ))}
+                </ol>
+            )}
+        </Section>
+    );
+}
+
+function LinkRow({ href, label }: { href: string; label: string }) {
+    return (
+        <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-[13.6px] font-semibold text-[#0057c8]"
+        >
+            <ExternalLink className="size-3.5" />
+            {label}
+        </a>
     );
 }
 
@@ -281,43 +515,38 @@ function TimelineStep({
 }) {
     const isDone = step.state === 'done';
     const isCurrent = step.state === 'current';
-    const isPending = step.state === 'pending';
 
     return (
         <li className="flex gap-3">
             <div className="flex flex-col items-center">
                 <span
                     className={cn(
-                        'size-[14px] shrink-0 rounded-[7px] border-2',
-                        isDone && 'border-[#0057c8] bg-[#0057c8]',
-                        isCurrent && 'border-[#e57124] bg-[#e57124]',
-                        isPending && 'border-[#e8d5e8] bg-[#e8d5e8]',
+                        'mt-1 size-2.5 rounded-full',
+                        isDone || isCurrent ? 'bg-[#0057c8]' : 'bg-[#cbd5e1]',
                     )}
                 />
-                {isLast ? null : (
+                {!isLast ? (
                     <span
                         className={cn(
-                            'h-6 w-0.5',
-                            isDone ? 'bg-[#0057c8]' : 'bg-[#e8d5e8]',
+                            'mt-1 w-0.5 flex-1',
+                            isDone ? 'bg-[#0057c8]' : 'bg-[#e2e8f0]',
                         )}
                     />
-                )}
+                ) : null}
             </div>
-            <div className={cn('min-w-0', isLast ? '' : 'pb-2')}>
+            <div className={cn('min-w-0 pb-4', isLast && 'pb-0')}>
                 <p
                     className={cn(
-                        'text-[12.8px] leading-[19.2px]',
-                        isPending && 'font-semibold text-[#9ca3af]',
-                        isCurrent && 'font-bold text-[#050315]',
-                        isDone && 'font-semibold text-[#050315]',
+                        'text-[13.6px] font-semibold',
+                        isCurrent || isDone
+                            ? 'text-[#050315]'
+                            : 'text-[#94a3b8]',
                     )}
                 >
                     {step.label}
                 </p>
                 {step.date ? (
-                    <p className="text-[11.52px] leading-[17.28px] text-[#3977a6]">
-                        {step.date}
-                    </p>
+                    <p className="text-[11.5px] text-[#64748b]">{step.date}</p>
                 ) : null}
             </div>
         </li>

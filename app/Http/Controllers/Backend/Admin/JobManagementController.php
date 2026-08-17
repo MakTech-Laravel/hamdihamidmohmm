@@ -9,6 +9,7 @@ use App\Http\Requests\Backend\Admin\RejectJobPostRequest;
 use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\User;
+use App\Support\ApplicantProfilePreview;
 use App\Support\JobSeekerResume;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,8 +31,8 @@ class JobManagementController extends Controller
         $jobsQuery = JobPost::query()
             ->with([
                 'employer:id,name,company_name,email,phone',
-                'latestApplication.jobSeeker:id,name,email,phone,location',
-                'latestApplication.jobSeeker.jobSeekerProfile:id,user_id,headline,skills,experience',
+                'latestApplication.jobSeeker',
+                'latestApplication.jobSeeker.jobSeekerProfile',
             ])
             ->withCount('applications')
             ->latest();
@@ -68,7 +69,7 @@ class JobManagementController extends Controller
         $jobs = $jobsQuery
             ->paginate(12)
             ->withQueryString()
-            ->through(fn(JobPost $job) => $this->row($job));
+            ->through(fn (JobPost $job) => $this->row($job));
 
         return Inertia::render('backend/Admin/JobManagement', [
             'jobs' => $jobs,
@@ -133,6 +134,12 @@ class JobManagementController extends Controller
             return Storage::disk('local')->download($application->resume_path, $downloadName);
         }
 
+        if (filled($user->resume_path) && Storage::disk('local')->exists((string) $user->resume_path)) {
+            $downloadName = $user->resume_original_name ?: basename((string) $user->resume_path);
+
+            return Storage::disk('local')->download((string) $user->resume_path, $downloadName);
+        }
+
         $user->loadMissing('jobSeekerProfile');
 
         return response()->streamDownload(function () use ($user): void {
@@ -146,7 +153,7 @@ class JobManagementController extends Controller
     {
         abort_unless($request->user()?->canManageJobs(), 403);
 
-        $filename = 'jobs-' . now()->format('Y-m-d-His') . '.csv';
+        $filename = 'jobs-'.now()->format('Y-m-d-His').'.csv';
 
         return response()->streamDownload(function (): void {
             $handle = fopen('php://output', 'w');
@@ -251,51 +258,57 @@ class JobManagementController extends Controller
     private function applicantPreview(JobApplication $application, JobPost $job): array
     {
         $seeker = $application->jobSeeker;
-        $profile = $seeker?->jobSeekerProfile;
-        $skills = is_array($profile?->skills) ? $profile->skills : [];
-        $location = $this->locationLine($seeker?->location, $profile?->experience);
+
+        if (! $seeker instanceof User) {
+            return $this->jobPreview($job);
+        }
+
+        $preview = ApplicantProfilePreview::from($seeker, $application);
 
         return [
-            'name' => $seeker?->name ?: 'Applicant',
-            'title' => $profile?->headline ?: $job->title,
+            ...$preview,
+            'is_applicant' => true,
             'status' => $application->status?->label() ?: JobApplicationStatus::Applied->label(),
-            'email' => $seeker?->email ?: '—',
-            'phone' => $seeker?->phone ?: '—',
-            'location' => $location,
-            'skills' => array_values(array_filter(
-                $skills,
-                fn(mixed $skill): bool => is_string($skill) && $skill !== '',
-            )),
-            'resume_url' => $seeker instanceof User
-                ? route('admin.jobs.applicant-resume', [$job, $seeker])
-                : null,
+            'title' => $preview['title'] !== 'Applicant'
+                ? $preview['title']
+                : ($job->title ?: 'Applicant'),
+            'location' => $preview['preview_location'],
+            'resume_url' => route('admin.jobs.applicant-resume', [$job, $seeker]),
             'timeline' => $this->formatTimeline($application->timeline()),
         ];
     }
 
     /**
-     * @return array{
-     *     name: string,
-     *     title: string,
-     *     status: string,
-     *     email: string,
-     *     phone: string,
-     *     location: string,
-     *     skills: list<string>,
-     *     resume_url: string|null,
-     *     timeline: list<array{label: string, date: string|null, state: string}>
-     * }
+     * @return array<string, mixed>
      */
     private function jobPreview(JobPost $job): array
     {
         return [
+            'is_applicant' => false,
             'name' => $job->title,
             'title' => $job->employer?->company_name ?: $job->employer?->name ?: 'Employer',
+            'headline' => null,
+            'current_title' => null,
+            'experience_years' => '—',
             'status' => $job->effectiveStatus()->label(),
             'email' => $job->employer?->email ?: '—',
             'phone' => $job->employer?->phone ?: '—',
             'location' => $job->location ?: '—',
+            'preview_location' => $job->location ?: '—',
+            'bio' => null,
+            'linkedin_url' => null,
+            'github_url' => null,
+            'industry' => null,
+            'expected_salary' => null,
+            'availability' => [],
             'skills' => array_values(array_filter([$job->category, $job->employment_type])),
+            'education' => [],
+            'experience' => [],
+            'languages' => [],
+            'certifications' => [],
+            'cover_letter' => null,
+            'resume_name' => null,
+            'has_resume_file' => false,
             'resume_url' => null,
             'timeline' => $this->jobTimeline($job),
         ];
@@ -363,41 +376,6 @@ class JobManagementController extends Controller
         }
 
         return $steps;
-    }
-
-    private function locationLine(?string $location, mixed $experience): string
-    {
-        $place = filled($location) ? $location : '—';
-        $years = $this->experienceYears($experience);
-
-        if ($years === null) {
-            return $place;
-        }
-
-        $suffix = $years === 1 ? '1 year' : $years . ' years';
-
-        return $place === '—' ? $suffix : $place . ' · ' . $suffix;
-    }
-
-    private function experienceYears(mixed $experience): ?int
-    {
-        if (! is_array($experience) || $experience === []) {
-            return null;
-        }
-
-        $years = 0;
-
-        foreach ($experience as $item) {
-            if (! is_array($item)) {
-                continue;
-            }
-
-            if (isset($item['years'])) {
-                $years += (int) $item['years'];
-            }
-        }
-
-        return $years > 0 ? $years : null;
     }
 
     /**

@@ -124,7 +124,7 @@ class AdminPortalDemoSeeder extends Seeder
                 'salary_range' => 'AED 18,000 - 25,000',
                 'description' => 'Build and maintain the RR Job Portal backend, APIs, and admin tooling.',
                 'status' => JobPostStatus::Active,
-                'featured' => true,
+                'featured' => false,
                 'views' => 128,
                 'expires_at' => now()->addDays(30),
             ]),
@@ -175,7 +175,7 @@ class AdminPortalDemoSeeder extends Seeder
             'title' => 'Ramadan hiring campaign',
             'slug' => 'ramadan-hiring-campaign-demo',
             'type' => ContentPageType::Announcement,
-            'body' => 'Featured listings are discounted 20% during the Ramadan hiring campaign.',
+            'body' => 'Job listings are discounted 20% during the Ramadan hiring campaign.',
             'status' => ContentPageStatus::Draft,
         ]);
 
@@ -284,7 +284,7 @@ class AdminPortalDemoSeeder extends Seeder
     {
         $seeker->loadMissing('jobSeekerProfile');
         $filename = JobSeekerResume::filename($seeker);
-        $path = 'resumes/'.$seeker->id.'/'.$filename;
+        $path = 'resumes/' . $seeker->id . '/' . $filename;
 
         Storage::disk('local')->put($path, JobSeekerResume::pdf($seeker));
 
@@ -352,7 +352,7 @@ class AdminPortalDemoSeeder extends Seeder
         $alreadySent = $admin->notifications()
             ->where('type', PortalNotification::class)
             ->get()
-            ->contains(fn ($notification): bool => ($notification->data['title'] ?? '') === $title);
+            ->contains(fn($notification): bool => ($notification->data['title'] ?? '') === $title);
 
         if ($alreadySent) {
             return;

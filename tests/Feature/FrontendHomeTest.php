@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\EmployerPackage;
+use App\Enums\JobPostStatus;
+use App\Models\JobPost;
 use App\Models\Package;
 use App\Models\User;
 use Database\Seeders\PackageSeeder;
@@ -8,7 +10,9 @@ use Database\Seeders\PackageSeeder;
 test('home page can be rendered', function () {
     $this->get(route('home'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('frontend/home'));
+        ->assertInertia(fn($page) => $page
+            ->component('frontend/home')
+            ->has('recommendedJobs'));
 });
 
 test('authenticated users can still view the home page', function () {
@@ -17,7 +21,7 @@ test('authenticated users can still view the home page', function () {
     $this->actingAs($user)
         ->get(route('home'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('frontend/home'));
+        ->assertInertia(fn($page) => $page->component('frontend/home'));
 });
 
 test('home page only shows active public packages', function () {
@@ -36,12 +40,44 @@ test('home page only shows active public packages', function () {
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/home')
             ->has('packages', 2)
-            ->where('packages', fn ($packages) => collect($packages)->pluck('name')->doesntContain('Single Posting')
+            ->where('packages', fn($packages) => collect($packages)->pluck('name')->doesntContain('Single Posting')
                 && collect($packages)->pluck('name')->doesntContain('Hidden Draft')
                 && collect($packages)->pluck('name')->doesntContain('Starter')
                 && collect($packages)->pluck('name')->contains('Business Package')
                 && collect($packages)->pluck('name')->contains('Enterprise')));
+});
+
+test('home page shows recommended active jobs dynamically', function () {
+    $employer = User::factory()->employer()->create(['company_name' => 'Nova Labs']);
+
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Recommended Laravel Engineer',
+        'status' => JobPostStatus::Active,
+        'employment_type' => 'Full-time',
+        'location' => 'Riyadh',
+        'experience_level' => 'Senior',
+        'salary_range' => 'SAR 15,000 - 20,000',
+        'featured' => true,
+    ]);
+
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Draft Should Hide',
+        'status' => JobPostStatus::Draft,
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn($page) => $page
+            ->component('frontend/home')
+            ->has('recommendedJobs', 1)
+            ->where('recommendedJobs.0.title', 'Recommended Laravel Engineer')
+            ->where('recommendedJobs.0.company', 'Nova Labs')
+            ->where('recommendedJobs.0.type', 'Full-time')
+            ->where('recommendedJobs.0.location', 'Riyadh')
+            ->missing('featuredJobs'));
 });

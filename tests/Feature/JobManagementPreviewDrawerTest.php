@@ -22,6 +22,7 @@ test('job management includes the latest applicant preview for the drawer', func
     JobSeekerProfile::factory()->create([
         'user_id' => $seeker->id,
         'headline' => 'Senior Frontend Developer',
+        'experience_years' => '6',
         'skills' => ['React', 'TypeScript', 'Tailwind CSS', 'Node.js'],
         'experience' => [['company' => 'Horizon', 'title' => 'Engineer', 'years' => 6]],
     ]);
@@ -49,6 +50,9 @@ test('job management includes the latest applicant preview for the drawer', func
             ->where('jobs.data.0.preview.phone', '+966 50 123 4567')
             ->where('jobs.data.0.preview.location', 'Riyadh · 6 years')
             ->where('jobs.data.0.preview.skills', ['React', 'TypeScript', 'Tailwind CSS', 'Node.js'])
+            ->where('jobs.data.0.preview.experience.0.title', 'Engineer')
+            ->where('jobs.data.0.preview.experience_years', '6 years')
+            ->where('jobs.data.0.preview.is_applicant', true)
             ->where('jobs.data.0.preview.resume_url', route('admin.jobs.applicant-resume', [$job, $seeker]))
             ->where('jobs.data.0.preview.timeline.3.label', 'Interview')
             ->where('jobs.data.0.preview.timeline.3.state', 'current')

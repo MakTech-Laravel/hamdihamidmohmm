@@ -30,10 +30,6 @@ class UpdateEmployerJobRequest extends FormRequest
             ]);
         }
 
-        if ($this->exists('featured')) {
-            $this->merge(['featured' => $this->boolean('featured')]);
-        }
-
         if ($this->exists('publish')) {
             $this->merge(['publish' => $this->boolean('publish')]);
         }
@@ -56,7 +52,6 @@ class UpdateEmployerJobRequest extends FormRequest
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:80'],
             'expires_at' => ['nullable', 'date'],
-            'featured' => ['sometimes', 'boolean'],
             'publish' => ['sometimes', 'boolean'],
         ];
     }
