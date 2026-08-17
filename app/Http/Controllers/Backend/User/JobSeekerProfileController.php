@@ -94,7 +94,7 @@ class JobSeekerProfileController extends Controller
             ],
         );
 
-        return back()->with('success', 'Profile updated.');
+        return back()->with('success', __('job_seeker.profile.updated'));
     }
 
     public function uploadResume(UploadJobSeekerResumeRequest $request): RedirectResponse
@@ -103,14 +103,14 @@ class JobSeekerProfileController extends Controller
         $resume = $request->file('resume');
 
         if ($user === null || $resume === null) {
-            return back()->withErrors(['resume' => 'Please choose a resume file to upload.']);
+            return back()->withErrors(['resume' => __('job_seeker.profile.resume_required')]);
         }
 
         if (filled($user->resume_path)) {
             Storage::disk('local')->delete($user->resume_path);
         }
 
-        $path = $resume->store('resumes/'.$user->id, 'local');
+        $path = $resume->store('resumes/' . $user->id, 'local');
 
         $user->forceFill([
             'resume_path' => $path,
@@ -118,7 +118,7 @@ class JobSeekerProfileController extends Controller
             'resume_status' => JobSeekerResumeStatus::Active,
         ])->save();
 
-        return back()->with('success', 'Resume uploaded.');
+        return back()->with('success', __('job_seeker.profile.resume_uploaded'));
     }
 
     public function downloadResume(Request $request): StreamedResponse
@@ -127,8 +127,8 @@ class JobSeekerProfileController extends Controller
 
         abort_unless(
             $user !== null
-            && filled($user->resume_path)
-            && Storage::disk('local')->exists((string) $user->resume_path),
+                && filled($user->resume_path)
+                && Storage::disk('local')->exists((string) $user->resume_path),
             404,
         );
 
@@ -153,6 +153,6 @@ class JobSeekerProfileController extends Controller
             'resume_status' => null,
         ])->save();
 
-        return back()->with('success', 'Resume removed.');
+        return back()->with('success', __('job_seeker.profile.resume_removed'));
     }
 }
