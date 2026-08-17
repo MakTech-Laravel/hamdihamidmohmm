@@ -23,6 +23,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -332,7 +333,7 @@ export default function PaymentsRevenue({
                     >
                         <div>
                             <Label>Employer</Label>
-                            <select
+                            <NativeSelect
                                 className="mt-1 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm"
                                 value={form.data.employer_id}
                                 onChange={(event) =>
@@ -348,11 +349,11 @@ export default function PaymentsRevenue({
                                         {employer.company_name || employer.name}
                                     </option>
                                 ))}
-                            </select>
+                            </NativeSelect>
                         </div>
                         <div>
                             <Label>Package</Label>
-                            <select
+                            <NativeSelect
                                 className="mt-1 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm"
                                 value={form.data.package_id}
                                 onChange={(event) => {
@@ -373,7 +374,7 @@ export default function PaymentsRevenue({
                                         {item.name} (AED {item.price})
                                     </option>
                                 ))}
-                            </select>
+                            </NativeSelect>
                         </div>
                         <div>
                             <Label>Amount</Label>
@@ -399,7 +400,7 @@ export default function PaymentsRevenue({
                         </div>
                         <div>
                             <Label>Status</Label>
-                            <select
+                            <NativeSelect
                                 className="mt-1 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm"
                                 value={form.data.status}
                                 onChange={(event) =>
@@ -409,7 +410,7 @@ export default function PaymentsRevenue({
                                 <option value="pending">Pending</option>
                                 <option value="completed">Completed</option>
                                 <option value="failed">Failed</option>
-                            </select>
+                            </NativeSelect>
                         </div>
                         <DialogFooter>
                             <Button type="submit" disabled={form.processing}>

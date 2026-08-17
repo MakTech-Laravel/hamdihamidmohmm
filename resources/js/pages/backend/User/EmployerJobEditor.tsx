@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
+import { NativeSelect } from '@/components/ui/native-select';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 
@@ -98,8 +99,8 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                         step === item.id
                                             ? 'bg-[#e57124] text-white'
                                             : step > item.id
-                                              ? 'bg-[#0057c8] text-white'
-                                              : 'bg-[#eef2ff] text-[#64748b]',
+                                                ? 'bg-[#0057c8] text-white'
+                                                : 'bg-[#eef2ff] text-[#64748b]',
                                     )}
                                 >
                                     {item.id}
@@ -164,7 +165,7 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                             </Field>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <Field label="Category *">
-                                    <select
+                                    <NativeSelect
                                         value={form.data.category}
                                         onChange={(event) =>
                                             form.setData(
@@ -172,7 +173,7 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                                 event.target.value,
                                             )
                                         }
-                                        className={inputClass}
+                                        className={selectClass}
                                     >
                                         <option value="">Select category</option>
                                         {options.categories.map((item) => (
@@ -180,10 +181,10 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                                 {item}
                                             </option>
                                         ))}
-                                    </select>
+                                    </NativeSelect>
                                 </Field>
                                 <Field label="Job Type *">
-                                    <select
+                                    <NativeSelect
                                         value={form.data.employment_type}
                                         onChange={(event) =>
                                             form.setData(
@@ -191,14 +192,14 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                                 event.target.value,
                                             )
                                         }
-                                        className={inputClass}
+                                        className={selectClass}
                                     >
                                         {options.types.map((item) => (
                                             <option key={item} value={item}>
                                                 {item}
                                             </option>
                                         ))}
-                                    </select>
+                                    </NativeSelect>
                                 </Field>
                                 <Field label="Location *">
                                     <input
@@ -214,7 +215,7 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                     />
                                 </Field>
                                 <Field label="Experience Level *">
-                                    <select
+                                    <NativeSelect
                                         value={form.data.experience_level}
                                         onChange={(event) =>
                                             form.setData(
@@ -222,7 +223,7 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                                 event.target.value,
                                             )
                                         }
-                                        className={inputClass}
+                                        className={selectClass}
                                     >
                                         <option value="">Select level</option>
                                         {options.experience_levels.map((item) => (
@@ -230,7 +231,7 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                                 {item}
                                             </option>
                                         ))}
-                                    </select>
+                                    </NativeSelect>
                                 </Field>
                             </div>
                         </div>
@@ -411,6 +412,9 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
 
 const inputClass =
     'mt-1 w-full rounded-xl border border-[#e8d5e8] bg-[#f8faff] px-3 py-2.5 text-sm text-[#050315] outline-none focus:border-[#0057c8]';
+
+const selectClass =
+    'mt-1 border-[#e8d5e8] bg-gradient-to-b from-white to-[#f8faff]';
 
 function Field({
     label,

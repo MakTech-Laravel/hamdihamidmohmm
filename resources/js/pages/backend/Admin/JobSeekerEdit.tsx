@@ -9,6 +9,7 @@ import {
 import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { PasswordInput } from '@/components/ui/password-input';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
@@ -107,7 +108,7 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="location">Location</Label>
-                                    <select
+                                    <NativeSelect
                                         id="location"
                                         name="location"
                                         defaultValue={
@@ -128,7 +129,7 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                                 {location}
                                             </option>
                                         ))}
-                                    </select>
+                                    </NativeSelect>
                                     <InputError message={errors.location} />
                                 </div>
                                 <div className="grid gap-4 sm:grid-cols-2">
@@ -136,7 +137,7 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                         <Label htmlFor="resume_status">
                                             Resume
                                         </Label>
-                                        <select
+                                        <NativeSelect
                                             id="resume_status"
                                             name="resume_status"
                                             defaultValue={jobSeeker.resume_value}
@@ -152,7 +153,7 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                                     </option>
                                                 ),
                                             )}
-                                        </select>
+                                        </NativeSelect>
                                         <InputError
                                             message={errors.resume_status}
                                         />
@@ -161,7 +162,7 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                         <Label htmlFor="account_status">
                                             Status
                                         </Label>
-                                        <select
+                                        <NativeSelect
                                             id="account_status"
                                             name="account_status"
                                             defaultValue={
@@ -178,7 +179,7 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                                     {status.label}
                                                 </option>
                                             ))}
-                                        </select>
+                                        </NativeSelect>
                                         <InputError
                                             message={errors.account_status}
                                         />

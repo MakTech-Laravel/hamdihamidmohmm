@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { cn } from '@/lib/utils';
@@ -117,11 +118,11 @@ export default function JobSeekerSettings() {
                                 <Label className="text-xs text-[#99a1af]">
                                     Timezone
                                 </Label>
-                                <select className="flex h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm text-[#101828]">
+                                <NativeSelect defaultValue="Asia/Riyadh (GMT+3)">
                                     <option>Asia/Riyadh (GMT+3)</option>
                                     <option>Asia/Dubai (GMT+4)</option>
                                     <option>UTC</option>
-                                </select>
+                                </NativeSelect>
                             </div>
                             <Button
                                 type="submit"
@@ -273,10 +274,10 @@ export default function JobSeekerSettings() {
                                 <Label className="text-xs text-[#99a1af]">
                                     Preferred Language
                                 </Label>
-                                <select className="flex h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm text-[#101828]">
+                                <NativeSelect defaultValue="English">
                                     <option>English</option>
                                     <option>العربية</option>
-                                </select>
+                                </NativeSelect>
                             </div>
                             <Button
                                 type="button"

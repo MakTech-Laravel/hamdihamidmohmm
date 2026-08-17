@@ -130,16 +130,24 @@
 
 .datatable-select {
     min-width: 150px;
-    background-color: var(--datatable-bg);
-    border: 1px solid var(--datatable-border);
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid #dbe4ef;
+    background: linear-gradient(to bottom, #ffffff, #f7faff);
     color: var(--datatable-text);
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(5, 3, 21, 0.04);
 }
 
 .datatable-select-small {
     width: 80px;
-    background-color: var(--datatable-bg);
-    border: 1px solid var(--datatable-border);
+    height: 2.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid #dbe4ef;
+    background: #ffffff;
     color: var(--datatable-text);
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(5, 3, 21, 0.04);
 }
 
 /* Table Wrapper */

@@ -48,6 +48,7 @@ test('the public home hero uses Figma accent and floating stat colors', function
         ->toContain('text-[#f97316]')
         ->toContain('recommendedJobs')
         ->toContain('Recommended Jobs')
+        ->toContain('NativeSelect')
         ->not->toContain('Featured Jobs')
         ->not->toContain('featuredJobs')
         ->not->toContain('text-[#c2410c]');

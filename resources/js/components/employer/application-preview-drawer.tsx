@@ -11,6 +11,7 @@ import {
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { getInitials } from '@/components/employer/demo-data';
+import { NativeSelect } from '@/components/ui/native-select';
 import {
     Sheet,
     SheetClose,
@@ -319,19 +320,21 @@ function DrawerBody({
 
                 <Section title="Change Status">
                     <div className="flex items-center gap-2">
-                        <select
+                        <NativeSelect
+                            variant="filter"
+                            className="flex-1"
                             value={selectedStatus}
                             onChange={(event) =>
                                 setSelectedStatus(event.target.value)
                             }
-                            className="h-[38px] flex-1 rounded-[8px] border border-[#e2e8f0] bg-white px-3 text-[13.6px] text-[#050315]"
+                            aria-label="Change application status"
                         >
                             {statuses.map((status) => (
                                 <option key={status.value} value={status.value}>
                                     {status.label}
                                 </option>
                             ))}
-                        </select>
+                        </NativeSelect>
                         <button
                             type="button"
                             className="inline-flex h-[38px] items-center justify-center gap-1.5 rounded-[8px] bg-[#0057c8] px-3 text-[13.6px] font-semibold text-white hover:bg-[#0046a3]"

@@ -7,6 +7,7 @@ import {
     AdminPrimaryButton,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import { NativeSelect } from '@/components/ui/native-select';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
@@ -49,7 +50,7 @@ export default function ReportsAnalytics({ reports, modules }: Props) {
                 <AdminPanel className="flex flex-col gap-3 sm:flex-row sm:items-end">
                     <label className="flex-1 text-sm font-semibold text-[#3977a6]">
                         Module
-                        <select
+                        <NativeSelect
                             className="mt-1 w-full rounded-xl border border-[#e2e8f0] bg-[#f8faff] px-3 py-2.5 text-sm text-[#050315]"
                             value={form.data.module}
                             onChange={(event) =>
@@ -61,7 +62,7 @@ export default function ReportsAnalytics({ reports, modules }: Props) {
                                     {module.replace('_', ' ')}
                                 </option>
                             ))}
-                        </select>
+                        </NativeSelect>
                     </label>
                     <AdminPrimaryButton
                         onClick={() => form.post('/admin/reports')}

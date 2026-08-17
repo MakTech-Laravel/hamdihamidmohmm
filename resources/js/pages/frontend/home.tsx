@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import PricingPackageCards, {
     type PricingPackage,
 } from '@/components/frontend/pricing-package-cards';
+import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
 import { jobs, pricing } from '@/routes';
@@ -234,7 +235,7 @@ export default function Home({
                     onSubmit={handleSearch}
                     className="mx-auto flex max-w-[1219px] flex-col gap-3 rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-[0px_20px_12.5px_rgba(0,0,0,0.1),0px_8px_5px_rgba(0,0,0,0.1)] sm:p-6 lg:flex-row lg:items-center"
                 >
-                    <label className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 py-3">
+                    <label className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-[#dbe4ef] bg-gradient-to-b from-[#f9fafb] to-[#f3f7fc] px-4 py-3 shadow-[0_1px_2px_rgba(5,3,21,0.04)] transition hover:border-[#3977a6]/40 focus-within:border-[#0057c8] focus-within:ring-[3px] focus-within:ring-[#0057c8]/15">
                         <img
                             src="/images/home/search.svg"
                             alt=""
@@ -247,11 +248,11 @@ export default function Home({
                             value={keyword}
                             onChange={(event) => setKeyword(event.target.value)}
                             placeholder={t('search.keyword_placeholder')}
-                            className="w-full bg-transparent text-sm text-[#374151] outline-none placeholder:text-[rgba(55,65,81,0.5)]"
+                            className="w-full bg-transparent text-sm font-medium text-[#374151] outline-none placeholder:text-[rgba(55,65,81,0.5)]"
                         />
                     </label>
 
-                    <label className="flex items-center gap-3 rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 py-3 lg:min-w-[220px]">
+                    <div className="flex items-center gap-3 rounded-xl border border-[#dbe4ef] bg-gradient-to-b from-[#f9fafb] to-[#f3f7fc] px-4 py-3 shadow-[0_1px_2px_rgba(5,3,21,0.04)] transition hover:border-[#3977a6]/40 focus-within:border-[#0057c8] focus-within:ring-[3px] focus-within:ring-[#0057c8]/15 lg:min-w-[240px]">
                         <img
                             src="/images/home/map-pin.svg"
                             alt=""
@@ -259,10 +260,11 @@ export default function Home({
                             width={20}
                             height={20}
                         />
-                        <select
+                        <NativeSelect
+                            variant="ghost"
                             value={location}
                             onChange={(event) => setLocation(event.target.value)}
-                            className="w-full appearance-none bg-transparent text-sm text-[#374151] outline-none"
+                            aria-label={t('search.all_locations')}
                         >
                             <option value="all">{t('search.all_locations')}</option>
                             <option value="riyadh">Riyadh</option>
@@ -270,15 +272,8 @@ export default function Home({
                             <option value="dammam">Dammam</option>
                             <option value="dubai">Dubai</option>
                             <option value="remote">Remote</option>
-                        </select>
-                        <img
-                            src="/images/home/chevron-down.svg"
-                            alt=""
-                            className="size-5 shrink-0"
-                            width={20}
-                            height={20}
-                        />
-                    </label>
+                        </NativeSelect>
+                    </div>
 
                     <button
                         type="submit"

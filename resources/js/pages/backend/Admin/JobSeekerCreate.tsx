@@ -9,6 +9,7 @@ import {
 import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { PasswordInput } from '@/components/ui/password-input';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 
@@ -78,7 +79,7 @@ export default function JobSeekerCreate({ options }: Props) {
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="location">Location</Label>
-                                    <select
+                                    <NativeSelect
                                         id="location"
                                         name="location"
                                         className="h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm"
@@ -95,14 +96,14 @@ export default function JobSeekerCreate({ options }: Props) {
                                                 {location}
                                             </option>
                                         ))}
-                                    </select>
+                                    </NativeSelect>
                                 </div>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="resume_status">
                                             Resume
                                         </Label>
-                                        <select
+                                        <NativeSelect
                                             id="resume_status"
                                             name="resume_status"
                                             defaultValue="warning"
@@ -118,7 +119,7 @@ export default function JobSeekerCreate({ options }: Props) {
                                                     </option>
                                                 ),
                                             )}
-                                        </select>
+                                        </NativeSelect>
                                         <InputError
                                             message={errors.resume_status}
                                         />
@@ -127,7 +128,7 @@ export default function JobSeekerCreate({ options }: Props) {
                                         <Label htmlFor="account_status">
                                             Status
                                         </Label>
-                                        <select
+                                        <NativeSelect
                                             id="account_status"
                                             name="account_status"
                                             defaultValue="active"
@@ -141,7 +142,7 @@ export default function JobSeekerCreate({ options }: Props) {
                                                     {status.label}
                                                 </option>
                                             ))}
-                                        </select>
+                                        </NativeSelect>
                                         <InputError
                                             message={errors.account_status}
                                         />

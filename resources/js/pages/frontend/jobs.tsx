@@ -1,6 +1,7 @@
-import { FormEvent, useMemo, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
+import { FormEvent, useMemo, useState } from 'react';
 
+import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
 import { home } from '@/routes';
@@ -150,7 +151,7 @@ export default function Jobs({ jobs, filters }: Props) {
                             />
                         </label>
 
-                        <label className="flex items-center gap-3 rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 py-3">
+                        <div className="flex items-center gap-3 rounded-xl border border-[#dbe4ef] bg-gradient-to-b from-[#f9fafb] to-[#f3f7fc] px-4 py-3 shadow-[0_1px_2px_rgba(5,3,21,0.04)] transition hover:border-[#3977a6]/40 focus-within:border-[#0057c8] focus-within:ring-[3px] focus-within:ring-[#0057c8]/15">
                             <img
                                 src="/images/jobs/map-pin.svg"
                                 alt=""
@@ -158,12 +159,13 @@ export default function Jobs({ jobs, filters }: Props) {
                                 width={20}
                                 height={20}
                             />
-                            <select
+                            <NativeSelect
+                                variant="ghost"
                                 value={location}
                                 onChange={(event) => {
                                     setLocation(event.target.value);
                                 }}
-                                className="w-full appearance-none bg-transparent text-sm text-[#374151] outline-none"
+                                aria-label={t('jobs_page.all_locations')}
                             >
                                 <option value="all">{t('jobs_page.all_locations')}</option>
                                 <option value="riyadh">Riyadh</option>
@@ -172,15 +174,8 @@ export default function Jobs({ jobs, filters }: Props) {
                                 <option value="dubai">Dubai</option>
                                 <option value="doha">Doha</option>
                                 <option value="remote">Remote</option>
-                            </select>
-                            <img
-                                src="/images/jobs/chevron-down.svg"
-                                alt=""
-                                className="size-2.5 shrink-0"
-                                width={10}
-                                height={6}
-                            />
-                        </label>
+                            </NativeSelect>
+                        </div>
 
                         <button
                             type="submit"
@@ -213,58 +208,42 @@ export default function Jobs({ jobs, filters }: Props) {
                                 <label className="mb-2 block text-sm font-medium text-[#364153]">
                                     {t('jobs_page.location')}
                                 </label>
-                                <div className="relative">
-                                    <select
-                                        value={location}
-                                        onChange={(event) => {
-                                            setLocation(event.target.value);
-                                        }}
-                                        className="h-[42px] w-full appearance-none rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 pe-8 text-sm text-[#374151] outline-none"
-                                    >
-                                        <option value="all">{t('jobs_page.all_locations')}</option>
-                                        <option value="riyadh">Riyadh</option>
-                                        <option value="jeddah">Jeddah</option>
-                                        <option value="dammam">Dammam</option>
-                                        <option value="dubai">Dubai</option>
-                                        <option value="doha">Doha</option>
-                                        <option value="remote">Remote</option>
-                                    </select>
-                                    <img
-                                        src="/images/jobs/chevron-down.svg"
-                                        alt=""
-                                        className="pointer-events-none absolute end-3 top-1/2 size-2.5 -translate-y-1/2"
-                                        width={10}
-                                        height={6}
-                                    />
-                                </div>
+                                <NativeSelect
+                                    variant="filter"
+                                    value={location}
+                                    onChange={(event) => {
+                                        setLocation(event.target.value);
+                                    }}
+                                    aria-label={t('jobs_page.location')}
+                                >
+                                    <option value="all">{t('jobs_page.all_locations')}</option>
+                                    <option value="riyadh">Riyadh</option>
+                                    <option value="jeddah">Jeddah</option>
+                                    <option value="dammam">Dammam</option>
+                                    <option value="dubai">Dubai</option>
+                                    <option value="doha">Doha</option>
+                                    <option value="remote">Remote</option>
+                                </NativeSelect>
                             </div>
 
                             <div className="mt-5">
                                 <label className="mb-2 block text-sm font-medium text-[#364153]">
                                     {t('jobs_page.category')}
                                 </label>
-                                <div className="relative">
-                                    <select
-                                        value={category}
-                                        onChange={(event) => setCategory(event.target.value)}
-                                        className="h-[42px] w-full appearance-none rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 pe-8 text-sm text-[#374151] outline-none"
-                                    >
-                                        <option value="all">{t('jobs_page.all_categories')}</option>
-                                        <option value="engineering">Engineering</option>
-                                        <option value="marketing">Marketing</option>
-                                        <option value="finance">Finance</option>
-                                        <option value="design">Design</option>
-                                        <option value="hr">HR</option>
-                                        <option value="sales">Sales</option>
-                                    </select>
-                                    <img
-                                        src="/images/jobs/chevron-down.svg"
-                                        alt=""
-                                        className="pointer-events-none absolute end-3 top-1/2 size-2.5 -translate-y-1/2"
-                                        width={10}
-                                        height={6}
-                                    />
-                                </div>
+                                <NativeSelect
+                                    variant="filter"
+                                    value={category}
+                                    onChange={(event) => setCategory(event.target.value)}
+                                    aria-label={t('jobs_page.category')}
+                                >
+                                    <option value="all">{t('jobs_page.all_categories')}</option>
+                                    <option value="engineering">Engineering</option>
+                                    <option value="marketing">Marketing</option>
+                                    <option value="finance">Finance</option>
+                                    <option value="design">Design</option>
+                                    <option value="hr">HR</option>
+                                    <option value="sales">Sales</option>
+                                </NativeSelect>
                             </div>
 
                             <div className="mt-5">
@@ -303,23 +282,16 @@ export default function Jobs({ jobs, filters }: Props) {
                                 <span className="text-sm text-[#6a7282]">
                                     {t('jobs_page.sort_by')}
                                 </span>
-                                <div className="relative">
-                                    <select
-                                        value={sort}
-                                        onChange={(event) => setSort(event.target.value)}
-                                        className="h-[34px] appearance-none rounded-lg border border-[#e2e8f0] bg-white px-4 pe-8 text-sm text-[#374151] outline-none"
-                                    >
-                                        <option value="latest">{t('jobs_page.sort_latest')}</option>
-                                        <option value="salary">{t('jobs_page.sort_salary')}</option>
-                                    </select>
-                                    <img
-                                        src="/images/jobs/chevron-down.svg"
-                                        alt=""
-                                        className="pointer-events-none absolute end-3 top-1/2 size-2.5 -translate-y-1/2"
-                                        width={10}
-                                        height={6}
-                                    />
-                                </div>
+                                <NativeSelect
+                                    variant="compact"
+                                    className="min-w-[140px]"
+                                    value={sort}
+                                    onChange={(event) => setSort(event.target.value)}
+                                    aria-label={t('jobs_page.sort_by')}
+                                >
+                                    <option value="latest">{t('jobs_page.sort_latest')}</option>
+                                    <option value="salary">{t('jobs_page.sort_salary')}</option>
+                                </NativeSelect>
                             </div>
                         </div>
 
@@ -406,11 +378,10 @@ export default function Jobs({ jobs, filters }: Props) {
                                     <Link
                                         key={link.label}
                                         href={link.url ?? ''}
-                                        className={`inline-flex min-w-9 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold ${
-                                            link.active
+                                        className={`inline-flex min-w-9 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold ${link.active
                                                 ? 'bg-[#0057c8] text-white'
                                                 : 'bg-white text-[#364153] hover:bg-[#f1f5f9]'
-                                        } ${link.url ? '' : 'pointer-events-none opacity-40'}`}
+                                            } ${link.url ? '' : 'pointer-events-none opacity-40'}`}
                                         dangerouslySetInnerHTML={{
                                             __html: link.label,
                                         }}

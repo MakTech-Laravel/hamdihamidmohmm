@@ -8,6 +8,7 @@ import {
 } from '@/components/admin-portal/ui';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
@@ -84,7 +85,7 @@ export default function AdminNotifications({
                         >
                             <div>
                                 <Label>Audience</Label>
-                                <select
+                                <NativeSelect
                                     className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
                                     value={form.data.audience}
                                     onChange={(event) =>
@@ -99,7 +100,7 @@ export default function AdminNotifications({
                                     <option value="job_seekers">
                                         Job seekers
                                     </option>
-                                </select>
+                                </NativeSelect>
                             </div>
                             <div>
                                 <Label>Category</Label>

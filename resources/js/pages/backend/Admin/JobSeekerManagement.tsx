@@ -19,6 +19,7 @@ import {
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import { NativeSelect } from '@/components/ui/native-select';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -219,7 +220,7 @@ export default function JobSeekerManagement({
                             />
                         </form>
                         <div className="flex flex-wrap gap-2">
-                            <select
+                            <NativeSelect
                                 value={filters.status || 'all'}
                                 onChange={(event) =>
                                     visitList(event.target.value)
@@ -235,8 +236,8 @@ export default function JobSeekerManagement({
                                         {status.label}
                                     </option>
                                 ))}
-                            </select>
-                            <select
+                            </NativeSelect>
+                            <NativeSelect
                                 value={filters.location || 'all'}
                                 onChange={(event) =>
                                     visitList(
@@ -253,7 +254,7 @@ export default function JobSeekerManagement({
                                         {location}
                                     </option>
                                 ))}
-                            </select>
+                            </NativeSelect>
                         </div>
                     </div>
 

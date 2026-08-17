@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
@@ -211,7 +212,7 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                         </div>
                         <div>
                             <Label>Type</Label>
-                            <select
+                            <NativeSelect
                                 className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
                                 value={form.data.type}
                                 onChange={(event) =>
@@ -222,11 +223,11 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                                 <option value="announcement">
                                     Announcement
                                 </option>
-                            </select>
+                            </NativeSelect>
                         </div>
                         <div>
                             <Label>Status</Label>
-                            <select
+                            <NativeSelect
                                 className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
                                 value={form.data.status}
                                 onChange={(event) =>
@@ -235,7 +236,7 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                             >
                                 <option value="draft">Draft</option>
                                 <option value="published">Published</option>
-                            </select>
+                            </NativeSelect>
                         </div>
                         <div>
                             <Label>Body</Label>

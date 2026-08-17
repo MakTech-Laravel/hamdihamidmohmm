@@ -10,6 +10,7 @@ import {
     type ApplicationPreview,
 } from '@/components/employer/application-preview-drawer';
 import { getInitials } from '@/components/employer/demo-data';
+import { NativeSelect } from '@/components/ui/native-select';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 
@@ -221,12 +222,15 @@ export default function EmployerApplications({
                                     className="h-[39px] w-full rounded-lg border border-[#e8d5e8] bg-white py-2 pr-3 pl-11 text-sm text-[#050315] outline-none placeholder:text-[#050315]/50"
                                 />
                             </div>
-                            <select
-                                className="h-[38px] w-[224px] shrink-0 cursor-pointer rounded-lg border border-[#e8d5e8] bg-white px-4 text-sm text-[#374151] outline-none"
+                            <NativeSelect
+                                variant="filter"
+                                wrapperClassName="w-[224px] shrink-0"
+                                className="border-[#e8d5e8]"
                                 value={status}
                                 onChange={(event) =>
                                     setStatusFilter(event.target.value)
                                 }
+                                aria-label="Filter by status"
                             >
                                 <option value="">All</option>
                                 {statuses.map((item) => (
@@ -234,7 +238,7 @@ export default function EmployerApplications({
                                         {item.label}
                                     </option>
                                 ))}
-                            </select>
+                            </NativeSelect>
                         </div>
 
                         <div className="overflow-x-auto">

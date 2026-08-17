@@ -5,6 +5,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { PasswordInput } from '@/components/ui/password-input';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
@@ -169,7 +170,7 @@ export default function UserEdit({
                                             />
                                         </>
                                     ) : (
-                                        <select
+                                        <NativeSelect
                                             id="role"
                                             name="role"
                                             defaultValue={
@@ -185,7 +186,7 @@ export default function UserEdit({
                                                     {role.label}
                                                 </option>
                                             ))}
-                                        </select>
+                                        </NativeSelect>
                                     )}
                                     <InputError message={errors.role} />
                                 </div>
