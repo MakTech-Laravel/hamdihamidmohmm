@@ -27,6 +27,7 @@ test('job seekers can update education experience languages and certifications w
             'education' => [[
                 'degree' => 'BSc Software Engineering',
                 'school' => 'King Abdulaziz University',
+                'field' => 'Software Engineering',
                 'years' => '2016 - 2020',
             ]],
             'experience' => [[
@@ -53,6 +54,7 @@ test('job seekers can update education experience languages and certifications w
     expect($profile?->education)->toBe([[
         'degree' => 'BSc Software Engineering',
         'school' => 'King Abdulaziz University',
+        'field' => 'Software Engineering',
         'years' => '2016 - 2020',
     ]])
         ->and($profile?->experience_years)->toBe('5')

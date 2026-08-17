@@ -11,7 +11,6 @@ import {
     Pencil,
     Plus,
     Sparkles,
-    Trash2,
     UserRound,
     X,
 } from 'lucide-react';
@@ -19,11 +18,11 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import {
     destroyResume,
-    downloadResume,
     update as updateProfile,
     uploadResume,
 } from '@/actions/App/Http/Controllers/Backend/User/JobSeekerProfileController';
 import { getInitials } from '@/components/job-seeker/demo-data';
+import { NativeSelect } from '@/components/ui/native-select';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -37,6 +36,9 @@ type ChecklistItem = {
 type EducationEntry = {
     degree: string;
     school: string;
+    field: string;
+    from: string;
+    to: string;
     years: string;
 };
 
@@ -44,6 +46,9 @@ type ExperienceEntry = {
     title: string;
     company: string;
     dates: string;
+    from: string;
+    to: string;
+    present: boolean;
     years: string;
     description: string;
 };
@@ -96,58 +101,88 @@ type SectionId =
     | 'certifications'
     | 'resume';
 
+const availabilityOptions = [
+    'Full Time',
+    'Part Time',
+    'Remote',
+    'Freelance',
+] as const;
+
+const languageLevels = [
+    'Native',
+    'Advanced',
+    'Intermediate',
+    'Conversational',
+    'Beginner',
+] as const;
+
+function isKnownLanguageLevel(
+    value: string,
+): value is (typeof languageLevels)[number] {
+    return (languageLevels as readonly string[]).includes(value);
+}
+
 const sectionMeta: Array<{
     id: SectionId;
     label: string;
     icon: typeof UserRound;
+    emoji: string;
     tone: string;
 }> = [
         {
             id: 'personal',
             label: 'Personal Information',
             icon: UserRound,
+            emoji: '👤',
             tone: 'bg-[#dcfce7] text-[#15803d]',
         },
         {
             id: 'professional',
             label: 'Professional Information',
             icon: Briefcase,
+            emoji: '💼',
             tone: 'bg-[#ffedd5] text-[#c2410c]',
         },
         {
             id: 'education',
             label: 'Education',
             icon: GraduationCap,
+            emoji: '🎓',
             tone: 'bg-[#dbeafe] text-[#1d4ed8]',
         },
         {
             id: 'experience',
             label: 'Work Experience',
             icon: Briefcase,
+            emoji: '🏢',
             tone: 'bg-[#ffedd5] text-[#c2410c]',
         },
         {
             id: 'skills',
             label: 'Skills',
             icon: Sparkles,
+            emoji: '⚡',
             tone: 'bg-[#dbeafe] text-[#1d4ed8]',
         },
         {
             id: 'languages',
             label: 'Languages',
             icon: Languages,
+            emoji: '🌐',
             tone: 'bg-[#dcfce7] text-[#15803d]',
         },
         {
             id: 'certifications',
             label: 'Certifications',
             icon: Award,
+            emoji: '🏅',
             tone: 'bg-[#fee2e2] text-[#b91c1c]',
         },
         {
             id: 'resume',
             label: 'Resume & Documents',
             icon: Download,
+            emoji: '📄',
             tone: 'bg-[#dcfce7] text-[#15803d]',
         },
     ];
@@ -184,35 +219,75 @@ function fieldString(value: unknown, ...keys: string[]): string {
     return '';
 }
 
-function splitList(value: string | string[]): string[] {
-    if (Array.isArray(value)) {
-        return value.filter(
-            (item): item is string => typeof item === 'string' && item.trim() !== '',
-        );
+function parseYearRange(value: string): { from: string; to: string; present: boolean } {
+    const trimmed = value.trim();
+
+    if (trimmed === '') {
+        return { from: '', to: '', present: false };
     }
 
-    return value
-        .split(/[\n,]+/)
-        .map((item) => item.trim())
-        .filter(Boolean);
+    const match = trimmed.match(/^(\d{4})\s*[-–—]\s*(.+)$/);
+
+    if (!match) {
+        return { from: trimmed, to: '', present: false };
+    }
+
+    const to = match[2].trim();
+    const present = /^present$/i.test(to);
+
+    return {
+        from: match[1],
+        to: present ? '' : to,
+        present,
+    };
+}
+
+function formatYearRange(from: string, to: string, present = false): string {
+    const start = from.trim();
+    const end = present ? 'Present' : to.trim();
+
+    if (start !== '' && end !== '') {
+        return `${start} - ${end}`;
+    }
+
+    return start || end;
 }
 
 function normalizeEducation(items: unknown[]): EducationEntry[] {
-    return items.map((item) => ({
-        degree: fieldString(item, 'degree', 'title'),
-        school: fieldString(item, 'school', 'institution'),
-        years: fieldString(item, 'years', 'dates'),
-    }));
+    return items.map((item) => {
+        const years = fieldString(item, 'years', 'dates');
+        const range = parseYearRange(years);
+
+        return {
+            degree: fieldString(item, 'degree', 'title'),
+            school: fieldString(item, 'school', 'institution'),
+            field: fieldString(item, 'field', 'field_of_study'),
+            from: fieldString(item, 'from') || range.from,
+            to: fieldString(item, 'to') || range.to,
+            years,
+        };
+    });
 }
 
 function normalizeExperience(items: unknown[]): ExperienceEntry[] {
-    return items.map((item) => ({
-        title: fieldString(item, 'title', 'role'),
-        company: fieldString(item, 'company'),
-        dates: fieldString(item, 'dates'),
-        years: fieldString(item, 'years'),
-        description: fieldString(item, 'description'),
-    }));
+    return items.map((item) => {
+        const dates = fieldString(item, 'dates');
+        const range = parseYearRange(dates);
+
+        return {
+            title: fieldString(item, 'title', 'role'),
+            company: fieldString(item, 'company'),
+            dates,
+            from: fieldString(item, 'from') || range.from,
+            to: fieldString(item, 'to') || range.to,
+            present:
+                Boolean(asRecord(item)?.present) ||
+                range.present ||
+                /^present$/i.test(fieldString(item, 'to')),
+            years: fieldString(item, 'years'),
+            description: fieldString(item, 'description'),
+        };
+    });
 }
 
 function normalizeLanguages(items: unknown[]): LanguageEntry[] {
@@ -235,7 +310,7 @@ function normalizeCertifications(items: unknown[]): CertificationEntry[] {
 }
 
 function emptyEducation(): EducationEntry {
-    return { degree: '', school: '', years: '' };
+    return { degree: '', school: '', field: '', from: '', to: '', years: '' };
 }
 
 function emptyExperience(): ExperienceEntry {
@@ -243,13 +318,16 @@ function emptyExperience(): ExperienceEntry {
         title: '',
         company: '',
         dates: '',
+        from: '',
+        to: '',
+        present: false,
         years: '',
         description: '',
     };
 }
 
 function emptyLanguage(): LanguageEntry {
-    return { name: '', level: '' };
+    return { name: '', level: 'Native' };
 }
 
 function emptyCertification(): CertificationEntry {
@@ -269,7 +347,7 @@ function profileToFormData(profile: Profile) {
         github_url: profile.github_url ?? '',
         industry: profile.industry ?? '',
         expected_salary: profile.expected_salary ?? '',
-        availability: (profile.availability ?? []).join(', '),
+        availability: [...(profile.availability ?? [])],
         skills: [...(profile.skills ?? [])],
         education: normalizeEducation(profile.education ?? []),
         experience: normalizeExperience(profile.experience ?? []),
@@ -278,28 +356,47 @@ function profileToFormData(profile: Profile) {
     };
 }
 
-function cleanEducation(entries: EducationEntry[]): EducationEntry[] {
+function cleanEducation(entries: EducationEntry[]): Array<{
+    degree: string;
+    school: string;
+    field: string;
+    years: string;
+}> {
     return entries
-        .map((entry) => ({
-            degree: entry.degree.trim(),
-            school: entry.school.trim(),
-            years: entry.years.trim(),
-        }))
-        .filter((entry) => entry.degree || entry.school || entry.years);
+        .map((entry) => {
+            const years = formatYearRange(entry.from, entry.to) || entry.years.trim();
+
+            return {
+                degree: entry.degree.trim(),
+                school: entry.school.trim(),
+                field: entry.field.trim(),
+                years,
+            };
+        })
+        .filter(
+            (entry) =>
+                entry.degree || entry.school || entry.field || entry.years,
+        );
 }
 
 function cleanExperience(entries: ExperienceEntry[]): Array<
-    Omit<ExperienceEntry, 'years'> & { years?: number }
+    Omit<ExperienceEntry, 'years' | 'from' | 'to' | 'present'> & {
+        years?: number;
+        dates: string;
+    }
 > {
     return entries
         .map((entry) => {
             const yearsRaw = entry.years.trim();
             const yearsNumber = Number(yearsRaw);
+            const dates =
+                formatYearRange(entry.from, entry.to, entry.present) ||
+                entry.dates.trim();
 
             return {
                 title: entry.title.trim(),
                 company: entry.company.trim(),
-                dates: entry.dates.trim(),
+                dates,
                 description: entry.description.trim(),
                 ...(yearsRaw !== '' && Number.isFinite(yearsNumber)
                     ? { years: yearsNumber }
@@ -384,7 +481,9 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
             github_url: data.github_url,
             industry: data.industry,
             expected_salary: data.expected_salary,
-            availability: splitList(data.availability),
+            availability: data.availability
+                .map((item) => item.trim())
+                .filter(Boolean),
             skills: data.skills
                 .map((skill) => skill.trim())
                 .filter(Boolean),
@@ -484,6 +583,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 <SectionCard
                     id="personal"
                     title="Personal Information"
+                    emoji="👤"
                     complete={completeMap.personal ?? false}
                     editing={editing === 'personal'}
                     onEdit={() => startEditing('personal')}
@@ -492,7 +592,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     processing={form.processing}
                 >
                     {editing === 'personal' ? (
-                        <div className="grid gap-3 md:grid-cols-2">
+                        <div className="grid gap-4 md:grid-cols-2">
                             <Field
                                 label="Full Name"
                                 value={form.data.name}
@@ -512,10 +612,14 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                     form.setData('location', value)
                                 }
                             />
-                            <ReadOnlyField
-                                label="Email Address"
-                                value={profile.email || '—'}
-                            />
+                            <div>
+                                <p className="pb-1.5 text-xs font-semibold text-[#4a5565]">
+                                    Email Address
+                                </p>
+                                <div className="flex h-[42px] items-center rounded-lg border border-[#e8d5e8] bg-[#f8fafc] px-3 text-base text-[#64748b]">
+                                    {profile.email || '—'}
+                                </div>
+                            </div>
                             <Field
                                 label="Phone Number"
                                 value={form.data.phone}
@@ -527,6 +631,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                 onChange={(value) =>
                                     form.setData('linkedin_url', value)
                                 }
+                                placeholder="linkedin.com/in/username"
                             />
                             <Field
                                 label="GitHub Profile"
@@ -534,12 +639,13 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                 onChange={(value) =>
                                     form.setData('github_url', value)
                                 }
+                                placeholder="github.com/username"
                             />
                             <div className="md:col-span-2">
-                                <label className="text-xs font-semibold text-[#64748b]">
+                                <label className="block text-xs font-semibold text-[#4a5565]">
                                     Bio
                                     <textarea
-                                        className="mt-1 min-h-24 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm text-[#050315]"
+                                        className="mt-1.5 min-h-24 w-full rounded-lg border border-[#e8d5e8] px-3 py-2 text-base text-[#050315] outline-none transition focus:border-[#0057c8] focus:ring-[3px] focus:ring-[#0057c8]/15"
                                         value={form.data.bio}
                                         onChange={(event) =>
                                             form.setData(
@@ -588,6 +694,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 <SectionCard
                     id="professional"
                     title="Professional Information"
+                    emoji="💼"
                     complete={completeMap.professional ?? false}
                     editing={editing === 'professional'}
                     onEdit={() => startEditing('professional')}
@@ -596,45 +703,82 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     processing={form.processing}
                 >
                     {editing === 'professional' ? (
-                        <div className="grid gap-3 md:grid-cols-2">
-                            <Field
-                                label="Current Job Title"
-                                value={form.data.current_title}
-                                onChange={(value) =>
-                                    form.setData('current_title', value)
-                                }
-                            />
-                            <Field
-                                label="Years of Experience"
-                                value={form.data.experience_years}
-                                onChange={(value) =>
-                                    form.setData('experience_years', value)
-                                }
-                                hint="e.g. 5 or 5 years"
-                            />
-                            <Field
-                                label="Industry"
-                                value={form.data.industry}
-                                onChange={(value) =>
-                                    form.setData('industry', value)
-                                }
-                            />
-                            <Field
-                                label="Expected Salary"
-                                value={form.data.expected_salary}
-                                onChange={(value) =>
-                                    form.setData('expected_salary', value)
-                                }
-                            />
-                            <div className="md:col-span-2">
+                        <div className="space-y-4">
+                            <div className="grid gap-4 md:grid-cols-2">
                                 <Field
-                                    label="Available For"
-                                    value={form.data.availability}
+                                    label="Current Job Title"
+                                    value={form.data.current_title}
                                     onChange={(value) =>
-                                        form.setData('availability', value)
+                                        form.setData('current_title', value)
                                     }
-                                    hint="Comma-separated, e.g. Full Time, Remote"
                                 />
+                                <Field
+                                    label="Years of Experience"
+                                    value={form.data.experience_years}
+                                    onChange={(value) =>
+                                        form.setData('experience_years', value)
+                                    }
+                                    placeholder="e.g. 6"
+                                />
+                                <Field
+                                    label="Industry"
+                                    value={form.data.industry}
+                                    onChange={(value) =>
+                                        form.setData('industry', value)
+                                    }
+                                />
+                                <Field
+                                    label="Expected Salary"
+                                    value={form.data.expected_salary}
+                                    onChange={(value) =>
+                                        form.setData('expected_salary', value)
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold text-[#4a5565]">
+                                    Available For
+                                </p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {availabilityOptions.map((option) => {
+                                        const selected =
+                                            form.data.availability.includes(
+                                                option,
+                                            );
+
+                                        return (
+                                            <button
+                                                key={option}
+                                                type="button"
+                                                onClick={() => {
+                                                    const next = selected
+                                                        ? form.data.availability.filter(
+                                                            (item) =>
+                                                                item !==
+                                                                option,
+                                                        )
+                                                        : [
+                                                            ...form.data
+                                                                .availability,
+                                                            option,
+                                                        ];
+                                                    form.setData(
+                                                        'availability',
+                                                        next,
+                                                    );
+                                                }}
+                                                className={cn(
+                                                    'rounded-lg border px-3 py-1.5 text-sm font-semibold transition',
+                                                    selected
+                                                        ? 'border-[#0057c8] bg-[#0057c8] text-white'
+                                                        : 'border-[#e5e7eb] bg-white text-[#374151] hover:border-[#0057c8]/40',
+                                                )}
+                                            >
+                                                {option}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
                     ) : (
@@ -656,7 +800,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                 value={profile.expected_salary}
                             />
                             <div className="md:col-span-2">
-                                <p className="text-xs font-semibold text-[#64748b]">
+                                <p className="text-xs font-semibold text-[#4a5565]">
                                     Available For
                                 </p>
                                 <div className="mt-2 flex flex-wrap gap-2">
@@ -669,7 +813,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                         profile.availability.map((item) => (
                                             <span
                                                 key={item}
-                                                className="rounded-full bg-[#dbeafe] px-2.5 py-1 text-xs font-semibold text-[#1d4ed8]"
+                                                className="rounded-lg bg-[#dbeafe] px-3 py-1.5 text-sm font-semibold text-[#1d4ed8]"
                                             >
                                                 {item}
                                             </span>
@@ -684,6 +828,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 <SectionCard
                     id="education"
                     title="Education"
+                    emoji="🎓"
                     complete={completeMap.education ?? false}
                     editing={editing === 'education'}
                     onEdit={() => startEditing('education')}
@@ -695,7 +840,8 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                         <EntryEditor
                             entries={form.data.education}
                             emptyLabel="No education added yet."
-                            addLabel="Add education"
+                            addLabel="+ Add Education"
+                            accent="blue"
                             onAdd={() =>
                                 form.setData('education', [
                                     ...form.data.education,
@@ -727,7 +873,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                         }}
                                     />
                                     <Field
-                                        label="School"
+                                        label="School / University"
                                         value={entry.school}
                                         onChange={(value) => {
                                             const next = [
@@ -741,20 +887,51 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                         }}
                                     />
                                     <Field
-                                        label="Years"
-                                        value={entry.years}
+                                        label="Field of Study"
+                                        value={entry.field}
                                         onChange={(value) => {
                                             const next = [
                                                 ...form.data.education,
                                             ];
                                             next[index] = {
                                                 ...entry,
-                                                years: value,
+                                                field: value,
                                             };
                                             form.setData('education', next);
                                         }}
-                                        hint="e.g. 2015 - 2019"
                                     />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Field
+                                            label="From"
+                                            value={entry.from}
+                                            onChange={(value) => {
+                                                const next = [
+                                                    ...form.data.education,
+                                                ];
+                                                next[index] = {
+                                                    ...entry,
+                                                    from: value,
+                                                };
+                                                form.setData('education', next);
+                                            }}
+                                            placeholder="2015"
+                                        />
+                                        <Field
+                                            label="To"
+                                            value={entry.to}
+                                            onChange={(value) => {
+                                                const next = [
+                                                    ...form.data.education,
+                                                ];
+                                                next[index] = {
+                                                    ...entry,
+                                                    to: value,
+                                                };
+                                                form.setData('education', next);
+                                            }}
+                                            placeholder="2019"
+                                        />
+                                    </div>
                                 </div>
                             )}
                         />
@@ -773,6 +950,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 <SectionCard
                     id="experience"
                     title="Work Experience"
+                    emoji="🏢"
                     complete={completeMap.experience ?? false}
                     editing={editing === 'experience'}
                     onEdit={() => startEditing('experience')}
@@ -784,7 +962,8 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                         <EntryEditor
                             entries={form.data.experience}
                             emptyLabel="No work experience added yet."
-                            addLabel="Add experience"
+                            addLabel="+ Add Work Experience"
+                            accent="orange"
                             onAdd={() =>
                                 form.setData('experience', [
                                     ...form.data.experience,
@@ -800,88 +979,114 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                 )
                             }
                             renderFields={(entry, index) => (
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    <Field
-                                        label="Job Title"
-                                        value={entry.title}
-                                        onChange={(value) => {
-                                            const next = [
-                                                ...form.data.experience,
-                                            ];
-                                            next[index] = {
-                                                ...entry,
-                                                title: value,
-                                            };
-                                            form.setData('experience', next);
-                                        }}
-                                    />
-                                    <Field
-                                        label="Company"
-                                        value={entry.company}
-                                        onChange={(value) => {
-                                            const next = [
-                                                ...form.data.experience,
-                                            ];
-                                            next[index] = {
-                                                ...entry,
-                                                company: value,
-                                            };
-                                            form.setData('experience', next);
-                                        }}
-                                    />
-                                    <Field
-                                        label="Dates"
-                                        value={entry.dates}
-                                        onChange={(value) => {
-                                            const next = [
-                                                ...form.data.experience,
-                                            ];
-                                            next[index] = {
-                                                ...entry,
-                                                dates: value,
-                                            };
-                                            form.setData('experience', next);
-                                        }}
-                                        hint="e.g. 2021 - Present"
-                                    />
-                                    <Field
-                                        label="Years (number)"
-                                        value={entry.years}
-                                        onChange={(value) => {
-                                            const next = [
-                                                ...form.data.experience,
-                                            ];
-                                            next[index] = {
-                                                ...entry,
-                                                years: value,
-                                            };
-                                            form.setData('experience', next);
-                                        }}
-                                        hint="Used for Years of Experience total"
-                                    />
-                                    <div className="md:col-span-2">
-                                        <label className="text-xs font-semibold text-[#64748b]">
-                                            Description
-                                            <textarea
-                                                className="mt-1 min-h-20 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm text-[#050315]"
-                                                value={entry.description}
-                                                onChange={(event) => {
+                                <div className="space-y-3">
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        <Field
+                                            label="Job Title"
+                                            value={entry.title}
+                                            onChange={(value) => {
+                                                const next = [
+                                                    ...form.data.experience,
+                                                ];
+                                                next[index] = {
+                                                    ...entry,
+                                                    title: value,
+                                                };
+                                                form.setData('experience', next);
+                                            }}
+                                        />
+                                        <Field
+                                            label="Company"
+                                            value={entry.company}
+                                            onChange={(value) => {
+                                                const next = [
+                                                    ...form.data.experience,
+                                                ];
+                                                next[index] = {
+                                                    ...entry,
+                                                    company: value,
+                                                };
+                                                form.setData('experience', next);
+                                            }}
+                                        />
+                                        <Field
+                                            label="From"
+                                            value={entry.from}
+                                            onChange={(value) => {
+                                                const next = [
+                                                    ...form.data.experience,
+                                                ];
+                                                next[index] = {
+                                                    ...entry,
+                                                    from: value,
+                                                };
+                                                form.setData('experience', next);
+                                            }}
+                                            placeholder="2021"
+                                        />
+                                        {!entry.present ? (
+                                            <Field
+                                                label="To"
+                                                value={entry.to}
+                                                onChange={(value) => {
                                                     const next = [
                                                         ...form.data.experience,
                                                     ];
                                                     next[index] = {
                                                         ...entry,
-                                                        description:
-                                                            event.target.value,
+                                                        to: value,
                                                     };
                                                     form.setData(
                                                         'experience',
                                                         next,
                                                     );
                                                 }}
+                                                placeholder="2024"
                                             />
-                                        </label>
+                                        ) : (
+                                            <div />
+                                        )}
                                     </div>
+                                    <label className="inline-flex items-center gap-2 text-sm text-[#050315]">
+                                        <input
+                                            type="checkbox"
+                                            checked={entry.present}
+                                            onChange={(event) => {
+                                                const next = [
+                                                    ...form.data.experience,
+                                                ];
+                                                next[index] = {
+                                                    ...entry,
+                                                    present:
+                                                        event.target.checked,
+                                                    to: event.target.checked
+                                                        ? ''
+                                                        : entry.to,
+                                                };
+                                                form.setData('experience', next);
+                                            }}
+                                            className="size-3.5 rounded border-[#767676] accent-[#0057c8]"
+                                        />
+                                        Present
+                                    </label>
+                                    <label className="block text-xs font-semibold text-[#4a5565]">
+                                        Description
+                                        <textarea
+                                            className="mt-1.5 min-h-[74px] w-full rounded-lg border border-[#e8d5e8] px-3 py-2 text-base text-[#050315] outline-none transition focus:border-[#0057c8] focus:ring-[3px] focus:ring-[#0057c8]/15"
+                                            value={entry.description}
+                                            onChange={(event) => {
+                                                const next = [
+                                                    ...form.data.experience,
+                                                ];
+                                                next[index] = {
+                                                    ...entry,
+                                                    description:
+                                                        event.target.value,
+                                                };
+                                                form.setData('experience', next);
+                                            }}
+                                        />
+                                    </label>
                                 </div>
                             )}
                         />
@@ -901,6 +1106,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 <SectionCard
                     id="skills"
                     title="Skills"
+                    emoji="⚡"
                     complete={completeMap.skills ?? false}
                     editing={editing === 'skills'}
                     onEdit={() => startEditing('skills')}
@@ -940,6 +1146,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 <SectionCard
                     id="languages"
                     title="Languages"
+                    emoji="🌐"
                     complete={completeMap.languages ?? false}
                     editing={editing === 'languages'}
                     onEdit={() => startEditing('languages')}
@@ -948,58 +1155,108 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     processing={form.processing}
                 >
                     {editing === 'languages' ? (
-                        <EntryEditor
-                            entries={form.data.languages}
-                            emptyLabel="No languages listed."
-                            addLabel="Add language"
-                            onAdd={() =>
-                                form.setData('languages', [
-                                    ...form.data.languages,
-                                    emptyLanguage(),
-                                ])
-                            }
-                            onRemove={(index) =>
-                                form.setData(
-                                    'languages',
-                                    form.data.languages.filter(
-                                        (_, itemIndex) => itemIndex !== index,
-                                    ),
-                                )
-                            }
-                            renderFields={(entry, index) => (
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    <Field
-                                        label="Language"
-                                        value={entry.name}
-                                        onChange={(value) => {
-                                            const next = [
-                                                ...form.data.languages,
-                                            ];
-                                            next[index] = {
-                                                ...entry,
-                                                name: value,
-                                            };
-                                            form.setData('languages', next);
-                                        }}
-                                    />
-                                    <Field
-                                        label="Level"
-                                        value={entry.level}
-                                        onChange={(value) => {
-                                            const next = [
-                                                ...form.data.languages,
-                                            ];
-                                            next[index] = {
-                                                ...entry,
-                                                level: value,
-                                            };
-                                            form.setData('languages', next);
-                                        }}
-                                        hint="e.g. Native, Advanced"
-                                    />
-                                </div>
+                        <div className="space-y-3">
+                            {form.data.languages.length === 0 ? (
+                                <p className="text-sm text-[#99a1af]">
+                                    No languages listed.
+                                </p>
+                            ) : (
+                                form.data.languages.map((entry, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-center gap-4 rounded-xl bg-[#f8fafc] p-3"
+                                    >
+                                        <span
+                                            className="shrink-0 text-xl leading-7"
+                                            aria-hidden
+                                        >
+                                            🌐
+                                        </span>
+                                        <input
+                                            value={entry.name}
+                                            onChange={(event) => {
+                                                const next = [
+                                                    ...form.data.languages,
+                                                ];
+                                                next[index] = {
+                                                    ...entry,
+                                                    name: event.target.value,
+                                                };
+                                                form.setData('languages', next);
+                                            }}
+                                            placeholder="Language"
+                                            className="h-[42px] min-w-0 flex-1 rounded-lg border border-[#e8d5e8] bg-white px-3 text-base text-[#050315] outline-none transition placeholder:text-[rgba(5,3,21,0.5)] focus:border-[#0057c8] focus:ring-[3px] focus:ring-[#0057c8]/15"
+                                        />
+                                        <NativeSelect
+                                            variant="compact"
+                                            wrapperClassName="w-[152px] shrink-0"
+                                            className="h-[42px] border-[#e8d5e8] bg-white text-base"
+                                            value={
+                                                entry.level === ''
+                                                    ? 'Native'
+                                                    : entry.level
+                                            }
+                                            onChange={(event) => {
+                                                const next = [
+                                                    ...form.data.languages,
+                                                ];
+                                                next[index] = {
+                                                    ...entry,
+                                                    level: event.target.value,
+                                                };
+                                                form.setData('languages', next);
+                                            }}
+                                            aria-label="Proficiency"
+                                        >
+                                            {entry.level !== '' &&
+                                                !isKnownLanguageLevel(
+                                                    entry.level,
+                                                ) ? (
+                                                <option value={entry.level}>
+                                                    {entry.level}
+                                                </option>
+                                            ) : null}
+                                            {languageLevels.map((level) => (
+                                                <option
+                                                    key={level}
+                                                    value={level}
+                                                >
+                                                    {level}
+                                                </option>
+                                            ))}
+                                        </NativeSelect>
+                                        <button
+                                            type="button"
+                                            className="shrink-0 px-1 text-base leading-6 text-[#fb2c36]"
+                                            aria-label={`Remove ${entry.name || 'language'}`}
+                                            onClick={() =>
+                                                form.setData(
+                                                    'languages',
+                                                    form.data.languages.filter(
+                                                        (_, itemIndex) =>
+                                                            itemIndex !== index,
+                                                    ),
+                                                )
+                                            }
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))
                             )}
-                        />
+                            <button
+                                type="button"
+                                className="text-sm font-semibold text-[#0057c8]"
+                                onClick={() =>
+                                    form.setData('languages', [
+                                        ...form.data.languages,
+                                        emptyLanguage(),
+                                    ])
+                                }
+                            >
+                                + Add Language
+                            </button>
+                        </div>
                     ) : (
                         <div className="space-y-2">
                             {(profile.languages ?? []).length === 0 ? (
@@ -1037,6 +1294,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 <SectionCard
                     id="certifications"
                     title="Certifications"
+                    emoji="🏅"
                     complete={completeMap.certifications ?? false}
                     editing={editing === 'certifications'}
                     onEdit={() => startEditing('certifications')}
@@ -1173,6 +1431,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 <SectionCard
                     id="resume"
                     title="Resume & Documents"
+                    emoji="📄"
                     complete={completeMap.resume ?? false}
                     editing={false}
                     onEdit={() => undefined}
@@ -1208,99 +1467,102 @@ function ResumeUploader({
 
     const hasResume = resumeUrl !== null && resumeName !== null;
 
-    return (
-        <div className="space-y-4">
-            <div className="flex flex-col gap-3 rounded-xl border border-[#e2e8f0] bg-[#f8faff] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#050315]">
-                        Resume status
-                    </p>
-                    <p className="truncate text-xs text-[#64748b]">
-                        {hasResume
-                            ? resumeName
-                            : 'Upload a PDF, DOC, or DOCX resume (max 5MB).'}
-                    </p>
-                </div>
-                <span
-                    className={cn(
-                        'shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold',
-                        hasResume
-                            ? 'bg-[#dcfce7] text-[#15803d]'
-                            : 'bg-[#dbeafe] text-[#1d4ed8]',
-                    )}
-                >
-                    {hasResume ? resumeStatus || 'Uploaded' : 'Not set'}
-                </span>
-            </div>
+    const pickFile = (): void => {
+        fileInputRef.current?.click();
+    };
 
+    return (
+        <div className="space-y-3">
             {resumeForm.errors.resume ? (
                 <p className="text-sm text-[#b91c1c]">{resumeForm.errors.resume}</p>
             ) : null}
 
-            <div className="flex flex-wrap gap-2">
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    className="hidden"
-                    onChange={(event) => {
-                        const file = event.target.files?.[0] ?? null;
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                className="hidden"
+                onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
 
-                        if (!file) {
-                            return;
-                        }
+                    if (!file) {
+                        return;
+                    }
 
-                        resumeForm.setData('resume', file);
-                        resumeForm.post(uploadResume.url(), {
-                            forceFormData: true,
-                            preserveScroll: true,
-                            onFinish: () => {
-                                resumeForm.setData('resume', null);
+                    resumeForm.setData('resume', file);
+                    resumeForm.post(uploadResume.url(), {
+                        forceFormData: true,
+                        preserveScroll: true,
+                        onFinish: () => {
+                            resumeForm.setData('resume', null);
 
-                                if (fileInputRef.current) {
-                                    fileInputRef.current.value = '';
-                                }
-                            },
-                        });
-                    }}
-                />
-                <button
-                    type="button"
-                    disabled={resumeForm.processing}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0057c8] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                    onClick={() => fileInputRef.current?.click()}
-                >
-                    <FileUp className="size-3.5" />
-                    {resumeForm.processing
-                        ? 'Uploading…'
-                        : hasResume
-                            ? 'Replace resume'
-                            : 'Upload resume'}
-                </button>
-                {hasResume ? (
-                    <>
+                            if (fileInputRef.current) {
+                                fileInputRef.current.value = '';
+                            }
+                        },
+                    });
+                }}
+            />
+
+            {hasResume ? (
+                <div className="flex flex-col gap-3 rounded-xl border border-[#e2e8f0] p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#fee2e2] text-sm font-bold text-[#fb2c36]">
+                            PDF
+                        </div>
+                        <div className="min-w-0">
+                            <p className="truncate text-base font-semibold text-[#101828]">
+                                {resumeName}
+                            </p>
+                            <p className="text-xs text-[#99a1af]">
+                                {resumeStatus || 'Uploaded'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
                         <a
-                            href={downloadResume.url()}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#bfdbfe] px-3 py-2 text-xs font-semibold text-[#0057c8]"
+                            href={resumeUrl}
+                            className="inline-flex items-center justify-center rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
                         >
-                            <Download className="size-3.5" />
                             Download
                         </a>
                         <button
                             type="button"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#fecaca] px-3 py-2 text-xs font-semibold text-[#b91c1c]"
+                            disabled={resumeForm.processing}
+                            onClick={pickFile}
+                            className="inline-flex items-center justify-center rounded-lg bg-[#0057c8] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                        >
+                            {resumeForm.processing ? 'Uploading…' : 'Replace'}
+                        </button>
+                        <button
+                            type="button"
+                            className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold text-[#fb2c36]"
                             onClick={() =>
                                 router.delete(destroyResume.url(), {
                                     preserveScroll: true,
                                 })
                             }
                         >
-                            <Trash2 className="size-3.5" />
                             Remove
                         </button>
-                    </>
-                ) : null}
-            </div>
+                    </div>
+                </div>
+            ) : null}
+
+            <button
+                type="button"
+                disabled={resumeForm.processing}
+                onClick={pickFile}
+                className="flex w-full flex-col items-center rounded-xl border-2 border-dashed border-[#cbd5e1] bg-[#f8fafc] px-8 py-8 text-center transition hover:border-[#0057c8]/40 disabled:opacity-60"
+            >
+                <FileUp className="size-8 text-[#64748b]" />
+                <p className="mt-2 text-base font-semibold text-[#364153]">
+                    Upload Resume
+                </p>
+                <p className="mt-1 text-sm text-[#99a1af]">
+                    PDF, DOC, DOCX up to 5MB
+                </p>
+            </button>
         </div>
     );
 }
@@ -1308,6 +1570,7 @@ function ResumeUploader({
 function SectionCard({
     id,
     title,
+    emoji,
     complete,
     onEdit,
     onCancel,
@@ -1319,6 +1582,7 @@ function SectionCard({
 }: {
     id: SectionId;
     title: string;
+    emoji: string;
     complete: boolean;
     editing: boolean;
     onEdit: () => void;
@@ -1331,27 +1595,25 @@ function SectionCard({
     return (
         <section
             id={`section-${id}`}
-            className="scroll-mt-24 rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]"
+            className="scroll-mt-24 overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-[0px_1px_1.5px_rgba(0,0,0,0.05)]"
         >
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-[#050315]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f1f5f9] px-5 py-5">
+                <div className="flex items-center gap-3">
+                    <span className="text-xl leading-7" aria-hidden>
+                        {emoji}
+                    </span>
+                    <h2 className="text-base font-bold text-[#101828]">
                         {title}
                     </h2>
                     <span
                         className={cn(
-                            'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold',
+                            'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
                             complete
                                 ? 'bg-[#dcfce7] text-[#15803d]'
-                                : 'bg-[#fee2e2] text-[#b91c1c]',
+                                : 'bg-[#fef2f2] text-[#b91c1c]',
                         )}
                     >
-                        {complete ? (
-                            <Check className="mr-1 size-3" strokeWidth={3} />
-                        ) : (
-                            <X className="mr-1 size-3" strokeWidth={3} />
-                        )}
-                        {complete ? 'Complete' : 'Incomplete'}
+                        {complete ? '✓' : '!'}
                     </span>
                 </div>
                 {!hideEdit &&
@@ -1359,24 +1621,24 @@ function SectionCard({
                         <div className="flex gap-2">
                             <button
                                 type="button"
-                                className="rounded-lg border border-[#e2e8f0] px-3 py-1.5 text-xs font-semibold text-[#64748b]"
-                                onClick={onCancel}
+                                disabled={processing}
+                                className="rounded-lg bg-[#0057c8] px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+                                onClick={onSave}
                             >
-                                Cancel
+                                {processing ? 'Saving…' : 'Save Changes'}
                             </button>
                             <button
                                 type="button"
-                                disabled={processing}
-                                className="rounded-lg bg-[#0057c8] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
-                                onClick={onSave}
+                                className="rounded-lg border border-[#0057c8] px-4 py-1.5 text-sm font-normal text-[#0057c8]"
+                                onClick={onCancel}
                             >
-                                {processing ? 'Saving…' : 'Save'}
+                                Cancel
                             </button>
                         </div>
                     ) : (
                         <button
                             type="button"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#bfdbfe] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#bfdbfe] px-3 py-1.5 text-sm font-semibold text-[#0057c8]"
                             onClick={onEdit}
                         >
                             <Pencil className="size-3.5" />
@@ -1384,7 +1646,7 @@ function SectionCard({
                         </button>
                     ))}
             </div>
-            {children}
+            <div className="p-5">{children}</div>
         </section>
     );
 }
@@ -1394,18 +1656,21 @@ function Field({
     value,
     onChange,
     hint,
+    placeholder,
 }: {
     label: string;
     value: string;
     onChange: (value: string) => void;
     hint?: string;
+    placeholder?: string;
 }) {
     return (
-        <label className="text-xs font-semibold text-[#64748b]">
+        <label className="block text-xs font-semibold text-[#4a5565]">
             {label}
             <input
-                className="mt-1 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm text-[#050315]"
+                className="mt-1.5 h-[42px] w-full rounded-lg border border-[#e8d5e8] px-3 text-base text-[#050315] outline-none transition placeholder:text-[rgba(5,3,21,0.5)] focus:border-[#0057c8] focus:ring-[3px] focus:ring-[#0057c8]/15"
                 value={value}
+                placeholder={placeholder}
                 onChange={(event) => onChange(event.target.value)}
             />
             {hint ? (
@@ -1426,8 +1691,8 @@ function ReadOnlyField({
 }) {
     return (
         <div>
-            <p className="text-xs font-semibold text-[#64748b]">{label}</p>
-            <p className="pt-1 text-sm font-medium text-[#050315]">
+            <p className="text-xs font-semibold text-[#4a5565]">{label}</p>
+            <p className="pt-1 text-base font-medium text-[#050315]">
                 {value && value !== '' ? value : '—'}
             </p>
         </div>
@@ -1479,7 +1744,7 @@ function ChipListEditor({
                     {items.map((item) => (
                         <span
                             key={item}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[#eeeffe] px-3 py-1 text-xs font-semibold text-[#0057c8]"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#dbeafe] px-3 py-1.5 text-sm font-semibold text-[#1d4ed8]"
                         >
                             {item}
                             <button
@@ -1502,7 +1767,7 @@ function ChipListEditor({
             )}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <input
-                    className="w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm text-[#050315] sm:flex-1"
+                    className="w-full rounded-lg border border-[#e8d5e8] px-3 py-2 text-base text-[#050315] outline-none transition focus:border-[#0057c8] focus:ring-[3px] focus:ring-[#0057c8]/15 sm:flex-1"
                     value={draft}
                     placeholder={placeholder}
                     onChange={(event) => setDraft(event.target.value)}
@@ -1533,6 +1798,7 @@ function EntryEditor<T>({
     onAdd,
     onRemove,
     renderFields,
+    accent = 'blue',
 }: {
     entries: T[];
     emptyLabel: string;
@@ -1540,40 +1806,47 @@ function EntryEditor<T>({
     onAdd: () => void;
     onRemove: (index: number) => void;
     renderFields: (entry: T, index: number) => ReactNode;
+    accent?: 'blue' | 'orange';
 }) {
     return (
-        <div className="space-y-4">
+        <div className="space-y-5">
             {entries.length === 0 ? (
                 <p className="text-sm text-[#99a1af]">{emptyLabel}</p>
             ) : (
                 entries.map((entry, index) => (
                     <div
                         key={index}
-                        className="rounded-xl border border-[#e2e8f0] bg-[#f8faff] p-4"
+                        className={cn(
+                            'relative border-l-2 pl-5',
+                            accent === 'blue'
+                                ? 'border-[#e3eff7]'
+                                : 'border-[#fde68a]',
+                        )}
                     >
-                        <div className="mb-3 flex items-center justify-between gap-2">
-                            <p className="text-xs font-bold text-[#64748b]">
-                                Entry {index + 1}
-                            </p>
-                            <button
-                                type="button"
-                                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-[#b91c1c]"
-                                onClick={() => onRemove(index)}
-                            >
-                                <Trash2 className="size-3.5" />
-                                Remove
-                            </button>
-                        </div>
+                        <span
+                            className={cn(
+                                'absolute top-0 -left-[7px] size-3 rounded-full',
+                                accent === 'blue'
+                                    ? 'bg-[#0057c8]'
+                                    : 'bg-[#f59e0b]',
+                            )}
+                        />
                         {renderFields(entry, index)}
+                        <button
+                            type="button"
+                            className="mt-3 text-sm font-semibold text-[#fb2c36]"
+                            onClick={() => onRemove(index)}
+                        >
+                            Delete
+                        </button>
                     </div>
                 ))
             )}
             <button
                 type="button"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#bfdbfe] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
+                className="text-sm font-semibold text-[#0057c8]"
                 onClick={onAdd}
             >
-                <Plus className="size-3.5" />
                 {addLabel}
             </button>
         </div>
