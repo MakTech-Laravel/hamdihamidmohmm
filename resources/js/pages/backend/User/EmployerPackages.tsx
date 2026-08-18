@@ -1,5 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Check, Download } from 'lucide-react';
+import { useState } from 'react';
 
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,8 @@ type Plan = {
     credits_remaining: number;
     expires_on: string | null;
     days_remaining: number | null;
+    subscription_status: string | null;
+    can_manage_billing: boolean;
 };
 
 type PackageRow = {
@@ -38,16 +41,30 @@ type Invoice = {
     status: string;
     status_value: string | null;
     date: string | null;
+    invoice_url: string | null;
 };
 
 type Props = {
     plan: Plan;
     packages: PackageRow[];
     invoices: Invoice[];
+    billing: {
+        enabled: boolean;
+        can_manage: boolean;
+    };
 };
 
-export default function EmployerPackages({ plan, packages, invoices }: Props) {
+export default function EmployerPackages({
+    plan,
+    packages,
+    invoices,
+    billing,
+}: Props) {
     const { flash } = usePage<SharedData>().props;
+    const [selectingPackageId, setSelectingPackageId] = useState<number | null>(
+        null,
+    );
+    const [openingPortal, setOpeningPortal] = useState(false);
     const usagePercent =
         plan.job_credits > 0
             ? Math.min(100, Math.round((plan.jobs_posted / plan.job_credits) * 100))
@@ -81,6 +98,14 @@ export default function EmployerPackages({ plan, packages, invoices }: Props) {
                     </div>
                 )}
 
+                {flash.error && (
+                    <div className="rounded-xl border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c]">
+                        {typeof flash.error === 'string'
+                            ? flash.error
+                            : 'Something went wrong.'}
+                    </div>
+                )}
+
                 <section className="rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
@@ -90,7 +115,15 @@ export default function EmployerPackages({ plan, packages, invoices }: Props) {
                                 </h2>
                                 {plan.slug && (
                                     <span className="rounded-full bg-[#dcfce7] px-2.5 py-0.5 text-xs font-semibold text-[#166534]">
-                                        Active
+                                        {plan.subscription_status === 'active'
+                                            ? 'Active'
+                                            : plan.subscription_status ===
+                                                'past_due'
+                                              ? 'Past due'
+                                              : plan.subscription_status ===
+                                                  'canceled'
+                                                ? 'Canceled'
+                                                : 'Active'}
                                     </span>
                                 )}
                             </div>
@@ -103,12 +136,38 @@ export default function EmployerPackages({ plan, packages, invoices }: Props) {
                                     : ''}
                             </p>
                         </div>
-                        <Link
-                            href="#available-plans"
-                            className="inline-flex cursor-pointer items-center rounded-xl bg-[#0057c8] px-5 py-2.5 text-sm font-semibold text-white"
-                        >
-                            Upgrade
-                        </Link>
+                        <div className="flex flex-wrap gap-2">
+                            {billing.can_manage ? (
+                                <button
+                                    type="button"
+                                    disabled={openingPortal}
+                                    onClick={() => {
+                                        setOpeningPortal(true);
+                                        router.post(
+                                            route(
+                                                'employer.packages.portal',
+                                            ),
+                                            {},
+                                            {
+                                                onFinish: () =>
+                                                    setOpeningPortal(false),
+                                            },
+                                        );
+                                    }}
+                                    className="inline-flex cursor-pointer items-center rounded-xl border border-[#0057c8] px-5 py-2.5 text-sm font-semibold text-[#0057c8] disabled:opacity-60"
+                                >
+                                    {openingPortal
+                                        ? 'Opening…'
+                                        : 'Manage Billing'}
+                                </button>
+                            ) : null}
+                            <Link
+                                href="#available-plans"
+                                className="inline-flex cursor-pointer items-center rounded-xl bg-[#0057c8] px-5 py-2.5 text-sm font-semibold text-white"
+                            >
+                                Upgrade
+                            </Link>
+                        </div>
                     </div>
                     <div className="mt-6">
                         <div className="mb-2 flex items-center justify-between text-sm">
@@ -214,14 +273,28 @@ export default function EmployerPackages({ plan, packages, invoices }: Props) {
                                 <div className="mt-auto pt-6">
                                     <button
                                         type="button"
-                                        disabled={item.current}
-                                        onClick={() =>
-                                            router.post(
-                                                `/employer/packages/${item.id}/select`,
-                                            )
+                                        disabled={
+                                            item.current ||
+                                            selectingPackageId !== null
                                         }
+                                        onClick={() => {
+                                            setSelectingPackageId(item.id);
+                                            router.post(
+                                                route(
+                                                    'employer.packages.select',
+                                                    item.id,
+                                                ),
+                                                {},
+                                                {
+                                                    onFinish: () =>
+                                                        setSelectingPackageId(
+                                                            null,
+                                                        ),
+                                                },
+                                            );
+                                        }}
                                         className={cn(
-                                            'w-full cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold',
+                                            'w-full cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold disabled:cursor-wait',
                                             item.current
                                                 ? 'bg-[#ffedd5] text-[#c2410c]'
                                                 : 'bg-[#0057c8] text-white hover:opacity-90',
@@ -229,7 +302,9 @@ export default function EmployerPackages({ plan, packages, invoices }: Props) {
                                     >
                                         {item.current
                                             ? 'Current Plan'
-                                            : 'Select Plan'}
+                                            : selectingPackageId === item.id
+                                              ? 'Redirecting…'
+                                              : 'Select Plan'}
                                     </button>
                                 </div>
                             </article>
@@ -301,7 +376,18 @@ export default function EmployerPackages({ plan, packages, invoices }: Props) {
                                             </span>
                                         </td>
                                         <td className="py-3">
-                                            <Download className="size-4 text-[#94a3b8]" />
+                                            {invoice.invoice_url ? (
+                                                <a
+                                                    href={invoice.invoice_url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="inline-flex text-[#0057c8]"
+                                                >
+                                                    <Download className="size-4" />
+                                                </a>
+                                            ) : (
+                                                <Download className="size-4 text-[#94a3b8]" />
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

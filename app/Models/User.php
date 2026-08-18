@@ -8,6 +8,7 @@ use App\Enums\EmployerVerificationStatus;
 use App\Enums\JobSeekerResumeStatus;
 use App\Enums\PermissionName;
 use App\Enums\RoleName;
+use App\Enums\SubscriptionStatus;
 use App\Enums\UserRole;
 use App\Support\RoleAssigner;
 use Database\Factories\UserFactory;
@@ -55,6 +56,13 @@ class User extends Authenticatable
         'verification_status',
         'account_status',
         'package',
+        'stripe_customer_id',
+        'stripe_subscription_id',
+        'subscription_status',
+        'subscription_ends_at',
+        'pending_package',
+        'pending_package_at',
+        'stripe_schedule_id',
         'rejection_reason',
         'verified_at',
         'created_at',
@@ -97,6 +105,10 @@ class User extends Authenticatable
             'account_status' => AccountStatusCast::class,
             'resume_status' => JobSeekerResumeStatus::class,
             'package' => EmployerPackage::class,
+            'subscription_status' => SubscriptionStatus::class,
+            'subscription_ends_at' => 'datetime',
+            'pending_package' => EmployerPackage::class,
+            'pending_package_at' => 'datetime',
             'verified_at' => 'datetime',
             'founded_year' => 'integer',
         ];

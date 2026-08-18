@@ -32,6 +32,11 @@ class Package extends Model
         'is_featured',
         'is_public',
         'sort_order',
+        'stripe_product_id',
+        'stripe_price_id',
+        'stripe_price_amount',
+        'stripe_price_currency',
+        'stripe_price_interval',
     ];
 
     /**
@@ -49,6 +54,7 @@ class Package extends Model
             'is_featured' => 'boolean',
             'is_public' => 'boolean',
             'sort_order' => 'integer',
+            'stripe_price_amount' => 'integer',
         ];
     }
 

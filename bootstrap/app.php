@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO);
 
+        $middleware->preventRequestForgery(except: [
+            'stripe/webhook',
+        ]);
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state', Locale::COOKIE]);
 
         $middleware->web(append: [

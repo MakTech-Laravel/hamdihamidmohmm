@@ -32,5 +32,8 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="VITE_ENABLED" value="false"/>
+        <env name="STRIPE_KEY" value="pk_test_fake"/>
+        <env name="STRIPE_SECRET" value=""/>
+        <env name="STRIPE_WEBHOOK_SECRET" value="whsec_test"/>
     </php>
 </phpunit>

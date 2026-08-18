@@ -2,25 +2,31 @@
 
 namespace App\Http\Controllers\Backend\User;
 
-use App\Enums\EmployerPackage;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\SelectEmployerPackageRequest;
 use App\Models\Package;
 use App\Models\Payment;
+use App\Services\Stripe\StripeSubscriptionService;
 use App\Support\EmployerPlanSnapshot;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
+use Stripe\Exception\ApiConnectionException;
+use Stripe\Exception\ApiErrorException;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class EmployerPackageController extends Controller
 {
+    public function __construct(private StripeSubscriptionService $subscriptions) {}
+
     public function index(Request $request): Response
     {
         $employer = $request->user();
         abort_unless($employer !== null, 403);
+        $employer->refresh();
 
         $plan = EmployerPlanSnapshot::for($employer);
 
@@ -63,41 +69,83 @@ class EmployerPackageController extends Controller
                 'status' => $payment->status === PaymentStatus::Completed ? 'Paid' : ($payment->status?->label() ?? '—'),
                 'status_value' => $payment->status?->value,
                 'date' => $payment->paid_at?->toFormattedDateString() ?? $payment->created_at?->toFormattedDateString(),
+                'invoice_url' => $payment->invoice_url,
             ]);
+
+        if ($request->string('checkout')->toString() === 'canceled') {
+            session()->now('error', 'Checkout was canceled. No payment was taken.');
+        }
 
         return Inertia::render('backend/User/EmployerPackages', [
             'plan' => $plan,
             'packages' => $packages,
             'invoices' => $invoices,
+            'billing' => [
+                'enabled' => $this->subscriptions->enabled(),
+                'can_manage' => filled($employer->stripe_customer_id),
+            ],
         ]);
     }
 
-    public function select(SelectEmployerPackageRequest $request, Package $package): RedirectResponse
+    public function select(SelectEmployerPackageRequest $request, Package $package): RedirectResponse|HttpResponse
     {
         $employer = $request->user();
         abort_unless($employer !== null, 403);
-        abort_unless($package->is_active && $package->is_public, 404);
+        $employer->refresh();
 
-        $enum = EmployerPackage::tryFrom($package->slug);
-        abort_unless($enum instanceof EmployerPackage, 422);
-
-        if ($employer->package === $enum) {
-            return back()->with('success', 'This is already your current plan.');
+        try {
+            $result = $this->subscriptions->startCheckout($employer, $package);
+        } catch (RuntimeException|ApiErrorException $exception) {
+            return back()->with('error', $this->billingErrorMessage($exception));
         }
 
-        $employer->forceFill(['package' => $enum])->save();
+        if (($result['status'] ?? null) === 'redirect' && is_string($result['url'] ?? null)) {
+            return Inertia::location($result['url']);
+        }
 
-        Payment::query()->create([
-            'employer_id' => $employer->id,
-            'package_id' => $package->id,
-            'amount' => $package->price,
-            'currency' => $package->currency,
-            'method' => 'invoice',
-            'status' => PaymentStatus::Completed,
-            'reference' => 'INV-'.now()->format('Y').'-'.Str::upper(Str::random(4)),
-            'paid_at' => now(),
-        ]);
+        return back()->with('success', $result['message']);
+    }
 
-        return back()->with('success', 'Your plan has been updated.');
+    public function checkoutSuccess(Request $request): RedirectResponse
+    {
+        $employer = $request->user();
+        abort_unless($employer !== null, 403);
+        $employer->refresh();
+
+        $sessionId = $request->string('session_id')->toString();
+
+        if ($sessionId === '') {
+            return redirect()->route('employer.packages')->with('error', 'Missing Stripe Checkout session.');
+        }
+
+        try {
+            $this->subscriptions->fulfillSessionId($sessionId);
+        } catch (RuntimeException|ApiErrorException $exception) {
+            return redirect()->route('employer.packages')->with('error', $this->billingErrorMessage($exception));
+        }
+
+        return redirect()->route('employer.packages')->with('success', 'Payment received. Your subscription is now active.');
+    }
+
+    public function portal(Request $request): RedirectResponse|HttpResponse
+    {
+        $employer = $request->user();
+        abort_unless($employer !== null, 403);
+        $employer->refresh();
+
+        try {
+            return Inertia::location($this->subscriptions->billingPortalUrl($employer));
+        } catch (RuntimeException|ApiErrorException $exception) {
+            return back()->with('error', $this->billingErrorMessage($exception));
+        }
+    }
+
+    private function billingErrorMessage(RuntimeException|ApiErrorException $exception): string
+    {
+        if ($exception instanceof ApiConnectionException || $exception->getPrevious() instanceof ApiConnectionException) {
+            return 'Could not reach Stripe. Check your internet connection, firewall, or VPN, then try again.';
+        }
+
+        return $exception->getMessage();
     }
 }

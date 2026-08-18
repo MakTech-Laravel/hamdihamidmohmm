@@ -49,6 +49,7 @@ export interface SharedData {
     features: Features;
     flash: {
         success?: boolean | string | null;
+        error?: boolean | string | null;
     };
     sidebarOpen: boolean;
     locale: string;

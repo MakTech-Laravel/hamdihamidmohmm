@@ -6,6 +6,7 @@ use App\Enums\EmployerPackage;
 use App\Enums\EmployerVerificationStatus;
 use App\Enums\JobPostStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\SubscriptionStatus;
 use App\Models\JobPost;
 use App\Models\Package;
 use App\Models\Payment;
@@ -25,6 +26,9 @@ class EmployerPlanSnapshot
      *     expires_at: string|null,
      *     expires_on: string|null,
      *     days_remaining: int|null,
+     *     subscription_status: string|null,
+     *     can_manage_billing: bool,
+     *     pending_change: array{slug: string, label: string|null, at: string|null}|null,
      *     is_verified: bool,
      *     verified_on: string|null,
      *     can_post_job: bool
@@ -39,6 +43,8 @@ class EmployerPlanSnapshot
         $creditsRemaining = max(0, $jobCredits - $jobsPosted);
         $expiresAt = static::expiresAt($employer);
 
+        $pendingCatalog = static::catalogPackage($employer->pending_package);
+
         return [
             'slug' => $employer->package?->value,
             'label' => $catalog?->name ?? $employer->package?->label(),
@@ -50,6 +56,15 @@ class EmployerPlanSnapshot
             'expires_on' => $expiresAt?->format('M j, Y'),
             'days_remaining' => $expiresAt instanceof Carbon
                 ? (int) max(0, now()->startOfDay()->diffInDays($expiresAt->copy()->startOfDay(), false))
+                : null,
+            'subscription_status' => $employer->subscription_status?->value,
+            'can_manage_billing' => filled($employer->stripe_customer_id),
+            'pending_change' => $employer->pending_package instanceof EmployerPackage
+                ? [
+                    'slug' => $employer->pending_package->value,
+                    'label' => $pendingCatalog?->name ?? $employer->pending_package->label(),
+                    'at' => $employer->pending_package_at?->format('M j, Y'),
+                ]
                 : null,
             'is_verified' => $employer->verification_status === EmployerVerificationStatus::Approved,
             'verified_on' => $employer->verified_at?->format('M j, Y'),
@@ -80,6 +95,14 @@ class EmployerPlanSnapshot
 
     public static function expiresAt(User $employer): ?Carbon
     {
+        if ($employer->subscription_ends_at !== null) {
+            return Carbon::parse($employer->subscription_ends_at);
+        }
+
+        if ($employer->subscription_status === SubscriptionStatus::Active) {
+            return now()->addMonth();
+        }
+
         $paidAt = Payment::query()
             ->where('employer_id', $employer->id)
             ->where('status', PaymentStatus::Completed)

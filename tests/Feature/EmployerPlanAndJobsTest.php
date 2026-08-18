@@ -208,7 +208,15 @@ test('employers can select a public plan and see it as current', function () {
 
     $this->actingAs($employer)
         ->post(route('employer.packages.select', $business))
-        ->assertRedirect();
+        ->assertRedirectContains('https://checkout.stripe.test/');
+
+    $payment = Payment::query()->where('employer_id', $employer->id)->firstOrFail();
+
+    $this->actingAs($employer)
+        ->get(route('employer.packages.checkout.success', [
+            'session_id' => $payment->stripe_checkout_session_id,
+        ]))
+        ->assertRedirect(route('employer.packages'));
 
     expect($employer->fresh()->package)->toBe(EmployerPackage::Premium);
 
@@ -222,7 +230,7 @@ test('employers can select a public plan and see it as current', function () {
             ->has('packages')
             ->has('invoices'));
 
-    expect(Payment::query()->where('employer_id', $employer->id)->first())
+    expect(Payment::query()->where('employer_id', $employer->id)->latest('id')->first())
         ->status->toBe(PaymentStatus::Completed)
         ->package_id->toBe($business->id);
 });
