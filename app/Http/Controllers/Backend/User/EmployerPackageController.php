@@ -31,31 +31,38 @@ class EmployerPackageController extends Controller
         $employer->refresh();
 
         $plan = EmployerPlanSnapshot::for($employer);
+        $currentCatalog = EmployerPlanSnapshot::catalogPackage($employer->package);
 
         $packages = Package::query()
             ->publicActive()
             ->get()
-            ->map(fn (Package $package) => [
-                'id' => $package->id,
-                'slug' => $package->slug,
-                'name' => Package::localizedLabel($package->name) ?? $package->name,
-                'description' => Package::localizedLabel($package->description),
-                'price' => $package->price,
-                'currency' => $package->currency,
-                'billing_period' => $package->billing_period,
-                'job_credits' => $package->job_credits,
-                'featured_credits' => $package->featured_credits,
-                'is_featured' => $package->is_featured,
-                'current' => $employer->package?->value === $package->slug,
-                'features' => collect($package->displayFeatures())
-                    ->map(fn (array $feature): array => [
-                        'key' => $feature['key'],
-                        'label' => Package::localizedLabel($feature['key']) ?? $feature['key'],
-                        'included' => $feature['included'],
-                    ])
-                    ->values()
-                    ->all(),
-            ]);
+            ->map(function (Package $package) use ($employer, $currentCatalog): array {
+                $action = EmployerPlanChange::action($currentCatalog, $package);
+
+                return [
+                    'id' => $package->id,
+                    'slug' => $package->slug,
+                    'name' => Package::localizedLabel($package->name) ?? $package->name,
+                    'description' => Package::localizedLabel($package->description),
+                    'price' => $package->price,
+                    'currency' => $package->currency,
+                    'billing_period' => $package->billing_period,
+                    'job_credits' => $package->job_credits,
+                    'featured_credits' => $package->featured_credits,
+                    'is_featured' => $package->is_featured,
+                    'current' => $action === PlanChangeAction::Current,
+                    'action' => $action->value,
+                    'scheduled' => $employer->pending_package?->value === $package->slug,
+                    'features' => collect($package->displayFeatures())
+                        ->map(fn (array $feature): array => [
+                            'key' => $feature['key'],
+                            'label' => Package::localizedLabel($feature['key']) ?? $feature['key'],
+                            'included' => $feature['included'],
+                        ])
+                        ->values()
+                        ->all(),
+                ];
+            });
 
         $invoices = Payment::query()
             ->where('employer_id', $employer->id)
