@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Support\EmployerPlanChange;
 use App\Support\EmployerPlanSnapshot;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -97,7 +98,7 @@ class StripeSubscriptionService
             'mode' => 'subscription',
             'customer' => $customerId,
             'client_reference_id' => (string) $employer->id,
-            'success_url' => route('employer.packages.checkout.success', [], true).'?session_id={CHECKOUT_SESSION_ID}',
+            'success_url' => route('employer.packages.checkout.success', [], true) . '?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => route('employer.packages', ['checkout' => 'canceled'], true),
             'line_items' => [
                 [
@@ -121,7 +122,7 @@ class StripeSubscriptionService
             ],
             'allow_promotion_codes' => true,
             'billing_address_collection' => 'auto',
-            'integration_identifier' => 'employer-checkout-'.Str::lower(Str::random(8)),
+            'integration_identifier' => 'employer-checkout-' . Str::lower(Str::random(8)),
         ]);
 
         $payment->forceFill([
@@ -689,7 +690,7 @@ class StripeSubscriptionService
         return $customer['id'];
     }
 
-    private function periodEndFromSubscription(?string $subscriptionId): ?Carbon
+    private function periodEndFromSubscription(?string $subscriptionId): ?CarbonInterface
     {
         if ($subscriptionId === null || $subscriptionId === '') {
             return now()->addMonth();
@@ -704,7 +705,7 @@ class StripeSubscriptionService
         return $this->timestampToCarbon($subscription['current_period_end']) ?? now()->addMonth();
     }
 
-    private function timestampToCarbon(mixed $value): ?Carbon
+    private function timestampToCarbon(mixed $value): ?CarbonInterface
     {
         if (! is_int($value) || $value <= 0) {
             return null;
@@ -715,6 +716,6 @@ class StripeSubscriptionService
 
     private function reference(): string
     {
-        return 'INV-'.now()->format('Y').'-'.Str::upper(Str::random(6));
+        return 'INV-' . now()->format('Y') . '-' . Str::upper(Str::random(6));
     }
 }

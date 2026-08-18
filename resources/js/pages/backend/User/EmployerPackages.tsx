@@ -16,6 +16,11 @@ type Plan = {
     days_remaining: number | null;
     subscription_status: string | null;
     can_manage_billing: boolean;
+    pending_change: {
+        slug: string;
+        label: string | null;
+        at: string | null;
+    } | null;
 };
 
 type PackageRow = {
@@ -29,6 +34,8 @@ type PackageRow = {
     featured_credits: number;
     is_featured: boolean;
     current: boolean;
+    action: 'select' | 'current' | 'upgrade' | 'downgrade';
+    scheduled: boolean;
     features: Array<{ key: string; label: string; included: boolean }>;
 };
 
@@ -53,6 +60,38 @@ type Props = {
         can_manage: boolean;
     };
 };
+
+function planButtonLabel(item: PackageRow, isSelecting: boolean): string {
+    if (item.current) {
+        return 'Current Plan';
+    }
+
+    if (item.scheduled) {
+        return isSelecting ? 'Scheduling…' : 'Scheduled';
+    }
+
+    if (isSelecting) {
+        if (item.action === 'upgrade') {
+            return 'Upgrading…';
+        }
+
+        if (item.action === 'downgrade') {
+            return 'Scheduling…';
+        }
+
+        return 'Redirecting…';
+    }
+
+    if (item.action === 'upgrade') {
+        return 'Upgrade Plan';
+    }
+
+    if (item.action === 'downgrade') {
+        return 'Downgrade Plan';
+    }
+
+    return 'Select Plan';
+}
 
 export default function EmployerPackages({
     plan,
@@ -103,6 +142,16 @@ export default function EmployerPackages({
                         {typeof flash.error === 'string'
                             ? flash.error
                             : 'Something went wrong.'}
+                    </div>
+                )}
+
+                {plan.pending_change && (
+                    <div className="rounded-xl border border-[#ffedd5] bg-[#fff7ed] px-4 py-3 text-sm text-[#c2410c]">
+                        Your plan will switch to {plan.pending_change.label}
+                        {plan.pending_change.at
+                            ? ` on ${plan.pending_change.at}`
+                            : ' at the end of the current billing period'}
+                        . You keep {plan.label} until then.
                     </div>
                 )}
 
@@ -275,6 +324,7 @@ export default function EmployerPackages({
                                         type="button"
                                         disabled={
                                             item.current ||
+                                            item.scheduled ||
                                             selectingPackageId !== null
                                         }
                                         onClick={() => {
@@ -295,16 +345,15 @@ export default function EmployerPackages({
                                         }}
                                         className={cn(
                                             'w-full cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold disabled:cursor-wait',
-                                            item.current
+                                            item.current || item.scheduled
                                                 ? 'bg-[#ffedd5] text-[#c2410c]'
                                                 : 'bg-[#0057c8] text-white hover:opacity-90',
                                         )}
                                     >
-                                        {item.current
-                                            ? 'Current Plan'
-                                            : selectingPackageId === item.id
-                                              ? 'Redirecting…'
-                                              : 'Select Plan'}
+                                        {planButtonLabel(
+                                            item,
+                                            selectingPackageId === item.id,
+                                        )}
                                     </button>
                                 </div>
                             </article>

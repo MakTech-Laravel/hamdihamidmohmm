@@ -37,7 +37,9 @@ class EmployerPackageController extends Controller
             ->publicActive()
             ->get()
             ->map(function (Package $package) use ($employer, $currentCatalog): array {
-                $action = EmployerPlanChange::action($currentCatalog, $package);
+                $action = $employer->package?->value === $package->slug
+                    ? PlanChangeAction::Current
+                    : EmployerPlanChange::action($currentCatalog, $package);
 
                 return [
                     'id' => $package->id,
