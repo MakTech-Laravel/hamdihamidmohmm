@@ -70,7 +70,7 @@ export default function PricingPackageCards({
                       )
                     : null;
                 const currencyLabel =
-                    item.currency === 'SAR'
+                    item.currency === 'SGD'
                         ? t('pricing.currency')
                         : item.currency;
 

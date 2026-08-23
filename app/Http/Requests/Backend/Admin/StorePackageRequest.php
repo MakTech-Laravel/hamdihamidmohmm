@@ -26,10 +26,10 @@ class StorePackageRequest extends FormRequest
             $slug = Str::slug($slug);
         }
 
-        $currency = strtoupper(trim((string) $this->input('currency', 'SAR')));
+        $currency = strtoupper(trim((string) $this->input('currency', 'SGD')));
 
         if (strlen($currency) !== 3) {
-            $currency = 'SAR';
+            $currency = 'SGD';
         }
 
         $description = $this->input('description');

@@ -16,7 +16,7 @@ test('the package seeder creates the Figma public pricing plans', function () {
         ->and($single)->not->toBeNull()
         ->and($single?->name)->toBe('Single Posting')
         ->and($single?->price)->toBe(299)
-        ->and($single?->currency)->toBe('SAR')
+        ->and($single?->currency)->toBe('SGD')
         ->and($single?->job_credits)->toBe(1)
         ->and($single?->is_public)->toBeTrue()
         ->and($single?->is_featured)->toBeFalse()

@@ -22,7 +22,7 @@ test('employers are redirected to stripe checkout when selecting a paid plan', f
         'slug' => EmployerPackage::Premium->value,
         'name' => EmployerPackage::Premium->label(),
         'price' => 999,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'job_credits' => 15,
         'featured_credits' => 2,
         'is_public' => true,
@@ -53,7 +53,7 @@ test('inertia checkout requests send the employer to stripe instead of following
     $business = Package::factory()->create([
         'slug' => EmployerPackage::Premium->value,
         'price' => 999,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
@@ -79,7 +79,7 @@ test('stripe checkout success activates the selected subscription', function () 
         'slug' => EmployerPackage::Premium->value,
         'name' => EmployerPackage::Premium->label(),
         'price' => 999,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'job_credits' => 15,
         'is_public' => true,
         'is_active' => true,
@@ -107,7 +107,7 @@ test('stripe checkout success activates the selected subscription', function () 
     $this->actingAs($employer)
         ->get(route('employer.packages'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerPackages')
             ->where('plan.slug', EmployerPackage::Premium->value)
             ->where('plan.job_credits', 15)
@@ -125,7 +125,7 @@ test('stripe webhook fulfills a pending checkout session', function () {
     $business = Package::factory()->create([
         'slug' => EmployerPackage::Premium->value,
         'price' => 999,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
@@ -171,7 +171,7 @@ test('complimentary packages activate without stripe checkout', function () {
         'slug' => EmployerPackage::Starter->value,
         'name' => EmployerPackage::Starter->label(),
         'price' => 0,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
@@ -194,14 +194,14 @@ test('employers with an active stripe subscription upgrade immediately without a
     $professional = Package::factory()->create([
         'slug' => EmployerPackage::Professional->value,
         'price' => 299,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
     $premium = Package::factory()->create([
         'slug' => EmployerPackage::Premium->value,
         'price' => 999,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
@@ -233,7 +233,7 @@ test('billing cards label the current plan and upgrade or downgrade actions', fu
         'slug' => EmployerPackage::Professional->value,
         'name' => EmployerPackage::Professional->label(),
         'price' => 299,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'sort_order' => 1,
         'is_public' => true,
         'is_active' => true,
@@ -242,7 +242,7 @@ test('billing cards label the current plan and upgrade or downgrade actions', fu
         'slug' => EmployerPackage::Premium->value,
         'name' => EmployerPackage::Premium->label(),
         'price' => 999,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'sort_order' => 2,
         'is_public' => true,
         'is_active' => true,
@@ -251,7 +251,7 @@ test('billing cards label the current plan and upgrade or downgrade actions', fu
         'slug' => EmployerPackage::Enterprise->value,
         'name' => EmployerPackage::Enterprise->label(),
         'price' => 1199,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'sort_order' => 3,
         'is_public' => true,
         'is_active' => true,
@@ -270,7 +270,7 @@ test('billing cards label the current plan and upgrade or downgrade actions', fu
     $this->actingAs($employer)
         ->get(route('employer.packages'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerPackages')
             ->where('plan.slug', EmployerPackage::Premium->value)
             ->where('plan.pending_change', null)
@@ -293,7 +293,7 @@ test('downgrades keep the current plan until the billing period ends', function 
         'slug' => EmployerPackage::Professional->value,
         'name' => EmployerPackage::Professional->label(),
         'price' => 299,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'sort_order' => 1,
         'is_public' => true,
         'is_active' => true,
@@ -302,7 +302,7 @@ test('downgrades keep the current plan until the billing period ends', function 
         'slug' => EmployerPackage::Premium->value,
         'name' => EmployerPackage::Premium->label(),
         'price' => 999,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'sort_order' => 2,
         'is_public' => true,
         'is_active' => true,
@@ -334,7 +334,7 @@ test('downgrades keep the current plan until the billing period ends', function 
     $this->actingAs($employer)
         ->get(route('employer.packages'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('plan.slug', EmployerPackage::Premium->value)
             ->where('plan.pending_change.slug', EmployerPackage::Professional->value)
             ->where('packages.0.scheduled', true));
@@ -347,14 +347,14 @@ test('a scheduled downgrade becomes the active plan when stripe renews the subsc
     $professional = Package::factory()->create([
         'slug' => EmployerPackage::Professional->value,
         'price' => 299,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
     $premium = Package::factory()->create([
         'slug' => EmployerPackage::Premium->value,
         'price' => 999,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
@@ -412,21 +412,21 @@ test('upgrading cancels a scheduled downgrade and switches immediately', functio
     $professional = Package::factory()->create([
         'slug' => EmployerPackage::Professional->value,
         'price' => 299,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
     $premium = Package::factory()->create([
         'slug' => EmployerPackage::Premium->value,
         'price' => 999,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
     $enterprise = Package::factory()->create([
         'slug' => EmployerPackage::Enterprise->value,
         'price' => 1199,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
@@ -464,7 +464,7 @@ test('employers can open the stripe billing portal after checkout', function () 
     $professional = Package::factory()->create([
         'slug' => EmployerPackage::Professional->value,
         'price' => 299,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
@@ -491,7 +491,7 @@ test('invoice paid webhooks record renewals without duplicating the first checko
     $professional = Package::factory()->create([
         'slug' => EmployerPackage::Professional->value,
         'price' => 299,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);
@@ -520,7 +520,7 @@ test('invoice paid webhooks record renewals without duplicating the first checko
                 'id' => 'in_test_first',
                 'billing_reason' => 'subscription_create',
                 'amount_paid' => 29900,
-                'currency' => 'sar',
+                'currency' => 'sgd',
                 'hosted_invoice_url' => 'https://invoice.stripe.test/in_test_first',
                 'customer' => $employer?->stripe_customer_id,
                 'subscription' => $employer?->stripe_subscription_id,
@@ -542,7 +542,7 @@ test('invoice paid webhooks record renewals without duplicating the first checko
                 'id' => 'in_test_renewal',
                 'billing_reason' => 'subscription_cycle',
                 'amount_paid' => 29900,
-                'currency' => 'sar',
+                'currency' => 'sgd',
                 'number' => 'INV-2026-REN',
                 'hosted_invoice_url' => 'https://invoice.stripe.test/in_test_renewal',
                 'customer' => $employer?->stripe_customer_id,
@@ -573,7 +573,7 @@ test('stripe connection failures return to billing with an error instead of cras
     $premium = Package::factory()->create([
         'slug' => EmployerPackage::Premium->value,
         'price' => 999,
-        'currency' => 'SAR',
+        'currency' => 'SGD',
         'is_public' => true,
         'is_active' => true,
     ]);

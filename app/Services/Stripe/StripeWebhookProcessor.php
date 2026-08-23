@@ -100,7 +100,7 @@ class StripeWebhookProcessor
             'employer_id' => $employer->id,
             'package_id' => $this->packageIdFor($employer),
             'amount' => $this->majorAmount($invoice, $employer),
-            'currency' => strtoupper((string) ($invoice['currency'] ?? $employer->payments()->latest()->value('currency') ?? 'SAR')),
+            'currency' => strtoupper((string) ($invoice['currency'] ?? $employer->payments()->latest()->value('currency') ?? 'SGD')),
             'method' => 'stripe',
             'status' => PaymentStatus::Completed,
             'reference' => is_string($invoice['number'] ?? null) ? $invoice['number'] : $invoiceId,

@@ -15,6 +15,7 @@ test('admins can view the designed admin dashboard', function () {
         ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/AdminDashboard')
             ->has('stats')
+            ->where('stats.currency', 'SGD')
             ->has('trends')
             ->has('chart')
             ->has('packages')
