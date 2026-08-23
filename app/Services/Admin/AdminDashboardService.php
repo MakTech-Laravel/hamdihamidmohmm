@@ -91,6 +91,7 @@ class AdminDashboardService
                 'pending_jobs' => $pendingJobs,
                 'applications_today' => $applicationsToday,
                 'monthly_revenue' => $monthlyRevenue,
+                'currency' => 'SGD',
             ],
             'trends' => [
                 'total_employers' => $this->registrationTrend($registrations, UserRole::Employer, $currentMonthStart, $previousMonthStart),

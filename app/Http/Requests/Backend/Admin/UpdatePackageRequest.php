@@ -16,11 +16,17 @@ class UpdatePackageRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $description = $this->input('description');
+        $currency = strtoupper(trim((string) $this->input('currency', 'SGD')));
+
+        if (strlen($currency) !== 3) {
+            $currency = 'SGD';
+        }
 
         $this->merge([
             'description' => is_string($description) && $description !== ''
                 ? Package::toStorageKey($description)
                 : $description,
+            'currency' => $currency,
             'features' => $this->storageLines('features'),
             'excluded_features' => $this->storageLines('excluded_features'),
         ]);

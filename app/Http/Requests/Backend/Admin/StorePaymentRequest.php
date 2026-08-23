@@ -13,6 +13,19 @@ class StorePaymentRequest extends FormRequest
         return $this->user()?->canManagePayments() === true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $currency = strtoupper(trim((string) $this->input('currency', 'SGD')));
+
+        if (strlen($currency) !== 3) {
+            $currency = 'SGD';
+        }
+
+        $this->merge([
+            'currency' => $currency,
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -22,6 +35,7 @@ class StorePaymentRequest extends FormRequest
             'employer_id' => ['required', 'integer', 'exists:users,id'],
             'package_id' => ['nullable', 'integer', 'exists:packages,id'],
             'amount' => ['required', 'integer', 'min:0'],
+            'currency' => ['nullable', 'string', 'size:3'],
             'method' => ['required', 'string', 'max:50'],
             'status' => ['required', 'string', Rule::in(collect(PaymentStatus::cases())->map->value->all())],
             'reference' => ['nullable', 'string', 'max:100'],

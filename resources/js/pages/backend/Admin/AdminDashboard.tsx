@@ -32,6 +32,7 @@ type DashboardProps = {
         pending_jobs: number;
         applications_today: number;
         monthly_revenue: number;
+        currency: string;
     };
     trends: Record<string, Trend>;
     quickStats: {
@@ -170,7 +171,7 @@ export default function AdminDashboard({
         {
             key: 'monthly_revenue',
             label: 'Monthly Revenue',
-            value: `AED ${stats.monthly_revenue.toLocaleString()}`,
+            value: `${stats.currency} ${stats.monthly_revenue.toLocaleString()}`,
             href: '/admin/payments',
             icon: '/images/admin/stat-monthly-revenue.svg',
             iconBg: 'bg-[#fff1f2]',

@@ -121,7 +121,7 @@ class AdminPortalDemoSeeder extends Seeder
                 'category' => 'Technology',
                 'location' => 'Dubai, UAE',
                 'employment_type' => 'Full-time',
-                'salary_range' => 'AED 18,000 - 25,000',
+                'salary_range' => 'SGD 18,000 - 25,000',
                 'description' => 'Build and maintain the RR Job Portal backend, APIs, and admin tooling.',
                 'status' => JobPostStatus::Active,
                 'featured' => false,
@@ -134,7 +134,7 @@ class AdminPortalDemoSeeder extends Seeder
                 'category' => 'Retail',
                 'location' => 'Abu Dhabi, UAE',
                 'employment_type' => 'Full-time',
-                'salary_range' => 'AED 12,000 - 16,000',
+                'salary_range' => 'SGD 12,000 - 16,000',
                 'description' => 'Lead store operations, staffing, and customer experience across two locations.',
                 'status' => JobPostStatus::Pending,
                 'featured' => false,
@@ -284,7 +284,7 @@ class AdminPortalDemoSeeder extends Seeder
     {
         $seeker->loadMissing('jobSeekerProfile');
         $filename = JobSeekerResume::filename($seeker);
-        $path = 'resumes/' . $seeker->id . '/' . $filename;
+        $path = 'resumes/'.$seeker->id.'/'.$filename;
 
         Storage::disk('local')->put($path, JobSeekerResume::pdf($seeker));
 
@@ -312,7 +312,7 @@ class AdminPortalDemoSeeder extends Seeder
             array_merge($attributes, [
                 'employer_id' => $employer->id,
                 'package_id' => $package?->id,
-                'currency' => 'AED',
+                'currency' => 'SGD',
             ]),
         );
     }
@@ -352,7 +352,7 @@ class AdminPortalDemoSeeder extends Seeder
         $alreadySent = $admin->notifications()
             ->where('type', PortalNotification::class)
             ->get()
-            ->contains(fn($notification): bool => ($notification->data['title'] ?? '') === $title);
+            ->contains(fn ($notification): bool => ($notification->data['title'] ?? '') === $title);
 
         if ($alreadySent) {
             return;

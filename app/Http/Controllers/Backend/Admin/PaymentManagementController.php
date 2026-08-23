@@ -42,7 +42,8 @@ class PaymentManagementController extends Controller
             'stats' => $this->stats(),
             'chart' => $this->chart($range),
             'employers' => User::query()->where('role', UserRole::Employer)->orderBy('company_name')->get(['id', 'name', 'company_name']),
-            'packages' => Package::query()->orderBy('name')->get(['id', 'name', 'price']),
+            'packages' => Package::query()->orderBy('name')->get(['id', 'name', 'price', 'currency']),
+            'currency' => 'SGD',
         ]);
     }
 
@@ -54,7 +55,7 @@ class PaymentManagementController extends Controller
             'employer_id' => $request->integer('employer_id'),
             'package_id' => $request->filled('package_id') ? $request->integer('package_id') : null,
             'amount' => $request->integer('amount'),
-            'currency' => 'AED',
+            'currency' => $request->string('currency')->toString() ?: 'SGD',
             'method' => $request->string('method')->toString(),
             'status' => $status,
             'reference' => $request->string('reference')->toString() ?: 'PAY-'.Str::upper(Str::random(8)),
@@ -151,6 +152,7 @@ class PaymentManagementController extends Controller
             'employer' => $payment->employer?->company_name ?: $payment->employer?->name,
             'package' => $payment->package?->name ?? '—',
             'amount' => $payment->amount,
+            'currency' => $payment->currency,
             'method' => $payment->method,
             'status' => $payment->status?->label() ?? 'Pending',
             'status_value' => $payment->status?->value,

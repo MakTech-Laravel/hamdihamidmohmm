@@ -34,6 +34,7 @@ type PaymentRow = {
     employer: string | null;
     package: string;
     amount: number;
+    currency: string;
     method: string;
     status: string;
     status_value: string | null;
@@ -52,7 +53,8 @@ type Props = {
     stats: { today: number; monthly: number; failed: number; refunded: number };
     chart: { range: string; labels: string[]; values: number[] };
     employers: Array<{ id: number; name: string; company_name: string | null }>;
-    packages: Array<{ id: number; name: string; price: number }>;
+    packages: Array<{ id: number; name: string; price: number; currency: string }>;
+    currency: string;
 };
 
 const rangeChips = [
@@ -85,6 +87,7 @@ export default function PaymentsRevenue({
     chart,
     employers,
     packages,
+    currency,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
     const [creating, setCreating] = useState(false);
@@ -143,13 +146,13 @@ export default function PaymentsRevenue({
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <AdminStatCard
                         label="Today's Revenue"
-                        value={`AED ${stats.today.toLocaleString()}`}
+                        value={`${currency} ${stats.today.toLocaleString()}`}
                         valueClassName="text-[#e57124]"
                         icon={CreditCard}
                     />
                     <AdminStatCard
                         label="Monthly Revenue"
-                        value={`AED ${stats.monthly.toLocaleString()}`}
+                        value={`${currency} ${stats.monthly.toLocaleString()}`}
                         valueClassName="text-[#0057c8]"
                         icon={CreditCard}
                     />
@@ -240,7 +243,7 @@ export default function PaymentsRevenue({
                                     {row.package}
                                 </td>
                                 <td className="px-3 py-3 font-semibold">
-                                    AED {row.amount.toLocaleString()}
+                                    {row.currency} {row.amount.toLocaleString()}
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
                                     {row.method}
@@ -371,7 +374,7 @@ export default function PaymentsRevenue({
                                 <option value="">None</option>
                                 {packages.map((item) => (
                                     <option key={item.id} value={item.id}>
-                                        {item.name} (AED {item.price})
+                                        {item.name} ({item.currency} {item.price})
                                     </option>
                                 ))}
                             </NativeSelect>
