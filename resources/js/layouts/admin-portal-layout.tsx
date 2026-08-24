@@ -1,9 +1,11 @@
+import { usePage } from '@inertiajs/react';
 import { type ReactNode, useState } from 'react';
 
 import { Toaster } from '@/components/ui/sonner';
 import { AdminPortalHeader } from '@/layouts/partials/admin-portal/header';
 import { AdminPortalSidebar } from '@/layouts/partials/admin-portal/sidebar';
 import { cn } from '@/lib/utils';
+import type { SharedData } from '@/types';
 
 export default function AdminPortalLayout({
     children,
@@ -11,6 +13,9 @@ export default function AdminPortalLayout({
     children: ReactNode;
 }) {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const unreadCount = Number(
+        usePage<SharedData>().props.unread_notifications ?? 0,
+    );
 
     return (
         <div className="flex h-svh overflow-hidden bg-[#f8faff]">
@@ -39,6 +44,7 @@ export default function AdminPortalLayout({
             <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
                 <AdminPortalHeader
                     onToggleSidebar={() => setMobileOpen((value) => !value)}
+                    unreadCount={unreadCount}
                 />
                 <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#f8faff]">
                     {children}

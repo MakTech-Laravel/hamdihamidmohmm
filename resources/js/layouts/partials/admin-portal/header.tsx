@@ -1,4 +1,4 @@
-import { usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 
 import { AdminIcon } from '@/components/admin-icon';
 import { getInitials } from '@/components/job-seeker/demo-data';
@@ -9,14 +9,17 @@ import type { SharedData } from '@/types';
 export function AdminPortalHeader({
     onToggleSidebar,
     className,
+    unreadCount,
 }: {
     onToggleSidebar?: () => void;
     className?: string;
+    unreadCount?: number;
 }) {
-    const { auth } = usePage<SharedData>().props;
+    const { auth, unread_notifications } = usePage<SharedData>().props;
     const { locale, setLocale } = useLocale();
     const user = auth.user;
     const initials = getInitials(user.name);
+    const badgeCount = unreadCount ?? Number(unread_notifications ?? 0);
     const now = new Intl.DateTimeFormat('en-US', {
         hour: 'numeric',
         minute: '2-digit',
@@ -70,16 +73,18 @@ export function AdminPortalHeader({
                     </span>
                 </div>
 
-                <button
-                    type="button"
+                <Link
+                    href="/admin/notifications"
                     className="relative rounded-lg p-1.5 text-[#3977a6] hover:bg-[#f8faff]"
                     aria-label="Notifications"
                 >
                     <AdminIcon src="/images/admin/header-bell.svg" size={18} />
-                    <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-[#ef4444] text-[9px] font-bold text-white">
-                        3
-                    </span>
-                </button>
+                    {badgeCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 flex size-4 min-w-4 items-center justify-center rounded-full bg-[#ef4444] px-0.5 text-[9px] font-bold text-white">
+                            {badgeCount > 9 ? '9+' : badgeCount}
+                        </span>
+                    )}
+                </Link>
 
                 <button
                     type="button"
