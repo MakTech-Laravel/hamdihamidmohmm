@@ -28,7 +28,7 @@ class JobPostFactory extends Factory
             'location' => fake()->randomElement(['Dubai, UAE', 'Abu Dhabi, UAE', 'Sharjah, UAE', 'Remote']),
             'employment_type' => fake()->randomElement(['Full-time', 'Part-time', 'Contract', 'Remote']),
             'experience_level' => fake()->randomElement(['Entry Level', 'Mid Level', 'Senior']),
-            'salary_range' => 'SGD '.fake()->numberBetween(5, 12).',000 - '.fake()->numberBetween(13, 25).',000',
+            'salary_range' => 'SDG '.fake()->numberBetween(5, 12).',000 - '.fake()->numberBetween(13, 25).',000',
             'description' => fake()->paragraphs(3, true),
             'requirements' => fake()->paragraph(),
             'skills' => fake()->randomElements(['React', 'TypeScript', 'Laravel', 'PHP', 'Figma'], 3),

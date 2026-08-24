@@ -85,7 +85,7 @@ class PackageManagementController extends Controller
     {
         $package = Package::query()->create([
             ...$request->safe()->except(['is_active', 'is_featured', 'is_public']),
-            'currency' => $request->string('currency')->toString() ?: 'SGD',
+            'currency' => $request->string('currency')->toString() ?: 'SDG',
             'is_active' => $request->boolean('is_active', true),
             'is_featured' => $request->boolean('is_featured'),
             'is_public' => $request->boolean('is_public', true),

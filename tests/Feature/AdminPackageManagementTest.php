@@ -12,23 +12,23 @@ test('admins can view seeded Figma packages', function () {
     $this->actingAs($admin)
         ->get(route('admin.packages.index'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/PackagesPricing')
             ->has('packages', 3)
             ->where('stats.most_popular', 'Business Package')
-            ->where('packages.0.currency', 'SGD')
-            ->where('packages.1.currency', 'SGD')
-            ->where('packages.2.currency', 'SGD')
-            ->where('packages', fn($packages) => collect($packages)->pluck('name')->doesntContain('Starter')
+            ->where('packages.0.currency', 'SDG')
+            ->where('packages.1.currency', 'SDG')
+            ->where('packages.2.currency', 'SDG')
+            ->where('packages', fn ($packages) => collect($packages)->pluck('name')->doesntContain('Starter')
                 && collect($packages)->contains('name', 'Single Posting')
                 && collect($packages)->contains('name', 'Business Package')
                 && collect($packages)->contains('name', 'Enterprise')
                 && collect($packages)->contains('price', 299)
                 && collect($packages)->contains('price', 999)
                 && collect($packages)->contains('price', 1199)
-                && collect($packages)->contains(fn($package) => $package['name'] === 'Single Posting'
+                && collect($packages)->contains(fn ($package) => $package['name'] === 'Single Posting'
                     && $package['description'] === 'Perfect for businesses with occasional hiring needs.')
-                && collect($packages)->contains(fn($package) => $package['name'] === 'Business Package'
+                && collect($packages)->contains(fn ($package) => $package['name'] === 'Business Package'
                     && $package['description'] === 'Ideal for growing companies with regular recruitment.')));
 });
 
@@ -43,7 +43,7 @@ test('admins can update a package and the public pricing page reflects it', func
             'name' => 'Single Posting Plus',
             'description' => 'Updated public description.',
             'price' => 350,
-            'currency' => 'SGD',
+            'currency' => 'SDG',
             'billing_period' => 'month',
             'job_credits' => 2,
             'featured_credits' => 0,
@@ -61,14 +61,14 @@ test('admins can update a package and the public pricing page reflects it', func
 
     $this->get(route('pricing'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('frontend/pricing')
             ->where('packages.0.name', 'Single Posting Plus')
             ->where('packages.0.price', 350)
             ->where('packages.0.description', 'Updated public description.'));
 });
 
-test('admins updating a package without a valid currency default to SGD', function () {
+test('admins updating a package without a valid currency default to SDG', function () {
     $this->seed(PackageSeeder::class);
     $admin = User::factory()->admin()->create();
     $package = Package::query()->where('slug', EmployerPackage::Professional->value)->firstOrFail();
@@ -92,7 +92,7 @@ test('admins updating a package without a valid currency default to SGD', functi
         ])
         ->assertRedirect();
 
-    expect($package->fresh()?->currency)->toBe('SGD');
+    expect($package->fresh()?->currency)->toBe('SDG');
 });
 
 test('admins can create a package without providing a slug', function () {
@@ -106,7 +106,7 @@ test('admins can create a package without providing a slug', function () {
             'slug' => '',
             'description' => 'For growing teams.',
             'price' => 499,
-            'currency' => 'SGD',
+            'currency' => 'SDG',
             'billing_period' => 'month',
             'job_credits' => 5,
             'featured_credits' => 1,

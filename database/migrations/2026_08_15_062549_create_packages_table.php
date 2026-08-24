@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('name');
             $table->unsignedInteger('price')->default(0);
-            $table->string('currency')->default('SGD');
+            $table->string('currency')->default('SDG');
             $table->string('billing_period')->default('month');
             $table->unsignedInteger('job_credits')->default(0);
             $table->unsignedInteger('featured_credits')->default(0);

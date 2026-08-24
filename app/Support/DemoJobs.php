@@ -99,7 +99,7 @@ class DemoJobs
                 'type' => 'Full Time',
                 'location' => 'Dubai, UAE',
                 'experience' => '2–4 Years',
-                'salary' => 'SGD 12,000 – 16,000',
+                'salary' => 'SDG 12,000 – 16,000',
                 'posted' => '3 days ago',
                 'industry' => 'Finance',
                 'overview' => 'Analyze financial performance and support strategic decision-making for key accounts.',

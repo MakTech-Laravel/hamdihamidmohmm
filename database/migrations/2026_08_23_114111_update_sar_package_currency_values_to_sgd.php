@@ -14,12 +14,12 @@ return new class extends Migration
         if (Schema::hasTable('packages')) {
             DB::table('packages')
                 ->where('currency', 'SAR')
-                ->update(['currency' => 'SGD']);
+                ->update(['currency' => 'SDG']);
 
             if (Schema::hasColumn('packages', 'stripe_price_currency')) {
                 DB::table('packages')
                     ->where('stripe_price_currency', 'sar')
-                    ->update(['stripe_price_currency' => 'sgd']);
+                    ->update(['stripe_price_currency' => 'sdg']);
             }
         }
     }
@@ -31,12 +31,12 @@ return new class extends Migration
     {
         if (Schema::hasTable('packages')) {
             DB::table('packages')
-                ->where('currency', 'SGD')
+                ->where('currency', 'SDG')
                 ->update(['currency' => 'SAR']);
 
             if (Schema::hasColumn('packages', 'stripe_price_currency')) {
                 DB::table('packages')
-                    ->where('stripe_price_currency', 'sgd')
+                    ->where('stripe_price_currency', 'sdg')
                     ->update(['stripe_price_currency' => 'sar']);
             }
         }

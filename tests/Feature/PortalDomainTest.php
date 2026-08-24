@@ -154,7 +154,7 @@ test('dashboard counts match created records', function () {
             ->where('stats.pending_jobs', 1)
             ->where('stats.applications_today', 1)
             ->where('stats.monthly_revenue', 799)
-            ->where('stats.currency', 'SGD'));
+            ->where('stats.currency', 'SDG'));
 
     $this->actingAs($employer)
         ->get(route('employer.dashboard'))

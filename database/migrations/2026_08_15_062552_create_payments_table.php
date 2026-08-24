@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('employer_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('package_id')->nullable()->constrained('packages')->nullOnDelete();
             $table->unsignedInteger('amount')->default(0);
-            $table->string('currency')->default('SGD');
+            $table->string('currency')->default('SDG');
             $table->string('method')->default('bank_transfer');
             $table->string('status')->default('pending');
             $table->string('reference')->nullable();

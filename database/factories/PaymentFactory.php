@@ -23,7 +23,7 @@ class PaymentFactory extends Factory
             'employer_id' => User::factory()->employer(),
             'package_id' => Package::factory(),
             'amount' => fake()->randomElement([299, 799, 1499, 2499]),
-            'currency' => 'SGD',
+            'currency' => 'SDG',
             'method' => fake()->randomElement(['bank_transfer', 'card', 'invoice']),
             'status' => PaymentStatus::Completed,
             'reference' => 'PAY-'.Str::upper(Str::random(8)),

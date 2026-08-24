@@ -61,7 +61,7 @@ const emptyForm = {
     name: '',
     description: '',
     price: 0,
-    currency: 'SGD',
+    currency: 'SDG',
     billing_period: 'month',
     job_credits: 0,
     featured_credits: 0,
@@ -239,7 +239,7 @@ export default function PackagesPricing({ packages, stats }: Props) {
                     />
                     <AdminStatCard
                         label="Completed Sales"
-                        value={`${packages[0]?.currency ?? 'SGD'} ${stats.monthly_sales.toLocaleString()}`}
+                        value={`${packages[0]?.currency ?? 'SDG'} ${stats.monthly_sales.toLocaleString()}`}
                         valueClassName="text-[#0057c8]"
                         icon={CreditCard}
                     />

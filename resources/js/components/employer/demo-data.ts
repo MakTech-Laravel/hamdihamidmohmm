@@ -203,7 +203,7 @@ export const PACKAGE_PLANS: PackagePlan[] = [
         id: 'starter',
         name: 'Starter',
         price: 450,
-        currency: 'SGD',
+        currency: 'SDG',
         features: [
             '3 job postings per month',
             'Basic candidate search',
@@ -215,7 +215,7 @@ export const PACKAGE_PLANS: PackagePlan[] = [
         id: 'business',
         name: 'Business',
         price: 1200,
-        currency: 'SGD',
+        currency: 'SDG',
         isCurrent: true,
         features: [
             '10 job postings per month',
@@ -229,7 +229,7 @@ export const PACKAGE_PLANS: PackagePlan[] = [
         id: 'enterprise',
         name: 'Enterprise',
         price: 2800,
-        currency: 'SGD',
+        currency: 'SDG',
         features: [
             'Unlimited job postings',
             'Unlimited job listings',

@@ -5,7 +5,7 @@ use App\Models\Package;
 use App\Models\Payment;
 use App\Models\User;
 
-test('admin payment index exposes SGD as the default currency', function () {
+test('admin payment index exposes SDG as the default currency', function () {
     $admin = User::factory()->admin()->create();
 
     $this->actingAs($admin)
@@ -13,10 +13,10 @@ test('admin payment index exposes SGD as the default currency', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/PaymentsRevenue')
-            ->where('currency', 'SGD'));
+            ->where('currency', 'SDG'));
 });
 
-test('admin can record a payment with default SGD currency', function () {
+test('admin can record a payment with default SDG currency', function () {
     $admin = User::factory()->admin()->create();
     $employer = User::factory()->employer()->create();
     $package = Package::factory()->create(['slug' => 'professional', 'price' => 299]);
@@ -31,7 +31,7 @@ test('admin can record a payment with default SGD currency', function () {
         ])
         ->assertRedirect();
 
-    expect(Payment::query()->first()?->currency)->toBe('SGD');
+    expect(Payment::query()->first()?->currency)->toBe('SDG');
 });
 
 test('admin can record a payment with an explicit currency', function () {
@@ -42,11 +42,11 @@ test('admin can record a payment with an explicit currency', function () {
         ->post(route('admin.payments.store'), [
             'employer_id' => $employer->id,
             'amount' => 150,
-            'currency' => 'SGD',
+            'currency' => 'SDG',
             'method' => 'bank_transfer',
             'status' => PaymentStatus::Pending->value,
         ])
         ->assertRedirect();
 
-    expect(Payment::query()->first()?->currency)->toBe('SGD');
+    expect(Payment::query()->first()?->currency)->toBe('SDG');
 });

@@ -23,7 +23,7 @@ class PackageFactory extends Factory
             'name' => $package->label(),
             'description' => null,
             'price' => fake()->randomElement([299, 999, 1199]),
-            'currency' => 'SGD',
+            'currency' => 'SDG',
             'billing_period' => 'month',
             'job_credits' => fake()->randomElement([1, 15, 30]),
             'featured_credits' => fake()->randomElement([0, 2, 10]),
