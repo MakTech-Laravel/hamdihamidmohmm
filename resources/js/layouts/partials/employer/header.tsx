@@ -1,6 +1,15 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { LogOut, UserRound } from 'lucide-react';
+import { useState } from 'react';
 
 import { firstName, getInitials } from '@/components/employer/demo-data';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useLocale } from '@/hooks/use-locale';
 import type { SharedData } from '@/types';
 
@@ -14,12 +23,14 @@ export function EmployerHeader({
     const { auth } = usePage<SharedData>().props;
     const { locale, setLocale } = useLocale();
     const user = auth.user;
-    const personName = user.contact_name || user.name;
+    const personName = user.name || user.contact_name || 'Employer';
     const initials = getInitials(personName);
     const shortName = firstName(personName);
     const companyName = user.company_name || 'Company';
     const switchLocale = locale === 'ar' ? 'en' : 'ar';
     const localeLabel = locale === 'ar' ? 'English' : 'العربية';
+    const [avatarFailed, setAvatarFailed] = useState(false);
+    const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
 
     return (
         <header className="sticky top-0 z-30 flex h-[60px] shrink-0 items-center justify-between border-b border-[rgba(57,119,166,0.2)] bg-white px-6 shadow-[0px_1px_2px_rgba(0,0,0,0.04)]">
@@ -81,29 +92,66 @@ export function EmployerHeader({
                     )}
                 </Link>
 
-                <button
-                    type="button"
-                    className="flex cursor-pointer items-center gap-2 rounded-xl p-1 transition-colors hover:bg-[#d1f6ff]"
-                >
-                    <div className="flex size-8 items-center justify-center rounded-full bg-[#0057c8] text-xs font-bold text-white">
-                        {initials}
-                    </div>
-                    <div className="hidden text-left sm:block">
-                        <p className="text-sm leading-[17.5px] font-semibold text-[#364153]">
-                            {shortName}
-                        </p>
-                        <p className="text-xs leading-[15px] text-[#99a1af]">
-                            {user.role_label}
-                        </p>
-                    </div>
-                    <img
-                        src="/images/employer/chevron.svg"
-                        alt=""
-                        width={16}
-                        height={16}
-                        className="size-4 shrink-0 object-contain"
-                    />
-                </button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button
+                            type="button"
+                            className="flex cursor-pointer items-center gap-2 rounded-xl p-1 transition-colors hover:bg-[#d1f6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0057c8]/30"
+                            aria-label="User menu"
+                        >
+                            {showAvatar ? (
+                                <img
+                                    src={user.avatar_url}
+                                    alt={personName}
+                                    onError={() => setAvatarFailed(true)}
+                                    className="size-8 rounded-full object-cover"
+                                />
+                            ) : (
+                                <div className="flex size-8 items-center justify-center rounded-full bg-[#0057c8] text-xs font-bold text-white">
+                                    {initials}
+                                </div>
+                            )}
+                            <div className="hidden text-left sm:block">
+                                <p className="text-sm leading-[17.5px] font-semibold text-[#364153]">
+                                    {shortName}
+                                </p>
+                                <p className="text-xs leading-[15px] text-[#99a1af]">
+                                    {user.role_label}
+                                </p>
+                            </div>
+                            <img
+                                src="/images/employer/chevron.svg"
+                                alt=""
+                                width={16}
+                                height={16}
+                                className="size-4 shrink-0 object-contain"
+                            />
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        align="end"
+                        sideOffset={8}
+                        className="w-48 rounded-xl border border-[#e2e8f0] bg-white p-1 shadow-[0px_8px_20px_rgba(5,3,21,0.08)]"
+                    >
+                        <DropdownMenuItem asChild>
+                            <Link
+                                href="/employer/profile"
+                                className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm text-[#364153]"
+                            >
+                                <UserRound className="size-4 text-[#0057c8]" />
+                                Profile
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-[#e2e8f0]" />
+                        <DropdownMenuItem
+                            className="cursor-pointer rounded-lg px-2 py-2 text-sm text-[#b91c1c] focus:bg-[#fef2f2] focus:text-[#b91c1c]"
+                            onSelect={() => router.post('/logout')}
+                        >
+                            <LogOut className="size-4" />
+                            Log out
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </header>
     );
