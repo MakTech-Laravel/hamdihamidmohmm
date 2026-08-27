@@ -1,4 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 
 import { getInitials } from '@/components/employer/demo-data';
 import { cn } from '@/lib/utils';
@@ -54,8 +55,10 @@ export function EmployerSidebar() {
     const { auth } = page.props;
     const currentUrl = page.url;
     const user = auth.user;
-    const personName = user.contact_name || user.name;
+    const personName = user.name || user.contact_name || 'Employer';
     const initials = getInitials(personName);
+    const [avatarFailed, setAvatarFailed] = useState(false);
+    const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
 
     return (
         <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-white">
@@ -107,9 +110,18 @@ export function EmployerSidebar() {
 
             <div className="border-t border-[rgba(57,119,166,0.2)] p-3">
                 <div className="mb-2 flex items-center gap-3 rounded-xl bg-white p-2">
-                    <div className="flex size-8 items-center justify-center rounded-full bg-[#0057c8] text-xs font-bold text-white">
-                        {initials}
-                    </div>
+                    {showAvatar ? (
+                        <img
+                            src={user.avatar_url}
+                            alt={personName}
+                            onError={() => setAvatarFailed(true)}
+                            className="size-8 rounded-full object-cover"
+                        />
+                    ) : (
+                        <div className="flex size-8 items-center justify-center rounded-full bg-[#0057c8] text-xs font-bold text-white">
+                            {initials}
+                        </div>
+                    )}
                     <div className="min-w-0">
                         <p className="truncate text-xs leading-4 font-medium tracking-[-0.12px] text-[#050315]">
                             {personName}
