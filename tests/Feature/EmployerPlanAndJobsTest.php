@@ -25,7 +25,7 @@ test('employer dashboard includes the live plan snapshot', function () {
     $this->actingAs($employer)
         ->get(route('employer.dashboard'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerDashboard')
             ->where('plan.slug', EmployerPackage::Professional->value)
             ->where('plan.jobs_posted', 1)
@@ -43,7 +43,7 @@ test('employers can open the post job wizard and edit an existing job', function
     $this->actingAs($employer)
         ->get(route('employer.jobs.create'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerJobEditor')
             ->where('job', null)
             ->has('options.categories'));
@@ -51,7 +51,7 @@ test('employers can open the post job wizard and edit an existing job', function
     $this->actingAs($employer)
         ->get(route('employer.jobs.edit', $job))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerJobEditor')
             ->where('job.title', 'Backend Engineer')
             ->where('job.id', $job->id));
@@ -151,7 +151,7 @@ test('employers can view the designed my jobs table with live stats', function (
     $this->actingAs($employer)
         ->get(route('employer.jobs'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerJobs')
             ->where('stats.total', 2)
             ->where('stats.active', 1)
@@ -223,7 +223,7 @@ test('employers can select a public plan and see it as current', function () {
     $this->actingAs($employer)
         ->get(route('employer.packages'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerPackages')
             ->where('plan.slug', EmployerPackage::Premium->value)
             ->where('plan.job_credits', 15)
@@ -263,7 +263,7 @@ test('employers can update company profile sections used by the dashboard', func
     $this->actingAs($employer)
         ->get(route('employer.profile'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('profile.company_name', 'TechCorp Solutions')
             ->where('completion.sections.social', true)
             ->has('completion.percent'));

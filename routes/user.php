@@ -48,6 +48,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', EmployerDashboardController::class)->name('dashboard');
         Route::get('/profile', [EmployerProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [EmployerProfileController::class, 'update'])->name('profile.update');
+        Route::post('/profile/photo', [EmployerProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
+        Route::delete('/profile/photo', [EmployerProfileController::class, 'destroyPhoto'])->name('profile.photo.destroy');
         Route::post('/profile/logo', [EmployerProfileController::class, 'uploadLogo'])->name('profile.logo.upload');
         Route::delete('/profile/logo', [EmployerProfileController::class, 'destroyLogo'])->name('profile.logo.destroy');
         Route::post('/profile/cover', [EmployerProfileController::class, 'uploadCover'])->name('profile.cover.upload');
