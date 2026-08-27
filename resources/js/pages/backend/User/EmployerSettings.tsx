@@ -13,6 +13,21 @@ type SettingsTab =
     | 'language'
     | 'danger';
 
+type Preferences = {
+    notifications: {
+        new_applications: boolean;
+        job_expiry: boolean;
+        billing_alerts: boolean;
+        system_updates: boolean;
+        weekly_report: boolean;
+    };
+    privacy: {
+        profile_visibility: 'public' | 'private';
+        show_salary: boolean;
+        show_contact_email: boolean;
+    };
+};
+
 const TABS: { id: SettingsTab; label: string; danger?: boolean }[] = [
     { id: 'account', label: 'Account' },
     { id: 'notifications', label: 'Notifications' },
@@ -76,6 +91,7 @@ function passwordStrength(password: string): number {
 
 export default function EmployerSettings({
     profile,
+    preferences,
 }: {
     profile: {
         contact_name: string | null;
@@ -83,6 +99,7 @@ export default function EmployerSettings({
         phone: string | null;
         company_name: string | null;
     };
+    preferences: Preferences;
 }) {
     const { auth, flash } = usePage<SharedData>().props;
     const { locale, setLocale } = useLocale();
@@ -98,16 +115,20 @@ export default function EmployerSettings({
         password: '',
         password_confirmation: '',
     });
-    const [newApplications, setNewApplications] = useState(true);
-    const [jobExpiry, setJobExpiry] = useState(true);
-    const [billingAlerts, setBillingAlerts] = useState(true);
-    const [systemUpdates, setSystemUpdates] = useState(false);
-    const [weeklyReport, setWeeklyReport] = useState(true);
-    const [profileVisibility, setProfileVisibility] = useState<
-        'public' | 'private'
-    >('public');
-    const [showSalary, setShowSalary] = useState(true);
-    const [showContactEmail, setShowContactEmail] = useState(false);
+    const notificationForm = useForm({
+        new_applications: preferences.notifications.new_applications,
+        job_expiry: preferences.notifications.job_expiry,
+        billing_alerts: preferences.notifications.billing_alerts,
+        system_updates: preferences.notifications.system_updates,
+        weekly_report: preferences.notifications.weekly_report,
+    });
+    const privacyForm = useForm({
+        profile_visibility: preferences.privacy.profile_visibility,
+        show_salary: preferences.privacy.show_salary,
+        show_contact_email: preferences.privacy.show_contact_email,
+    });
+    const deactivateForm = useForm({ password: '' });
+    const deleteForm = useForm({ password: '' });
 
     const strength = useMemo(
         () => passwordStrength(passwordForm.data.password),
@@ -133,6 +154,20 @@ export default function EmployerSettings({
                     onSuccess: () => passwordForm.reset(),
                 });
             },
+        });
+    };
+
+    const saveNotifications = (event: FormEvent): void => {
+        event.preventDefault();
+        notificationForm.put('/employer/settings/notifications', {
+            preserveScroll: true,
+        });
+    };
+
+    const savePrivacy = (event: FormEvent): void => {
+        event.preventDefault();
+        privacyForm.put('/employer/settings/privacy', {
+            preserveScroll: true,
         });
     };
 
@@ -164,8 +199,8 @@ export default function EmployerSettings({
                                             ? 'bg-[#fef2f2] text-[#ef4444]'
                                             : 'bg-[#0057c8]/10 text-[#0057c8]'
                                         : tab.danger
-                                            ? 'text-[#ef4444]'
-                                            : 'text-[#374151]',
+                                          ? 'text-[#ef4444]'
+                                          : 'text-[#374151]',
                                 )}
                             >
                                 {tab.label}
@@ -174,15 +209,16 @@ export default function EmployerSettings({
                     </nav>
 
                     <div className="min-w-0 w-full flex-1 rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
+                        {flash.success && (
+                            <div className="mb-5 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
+                                {typeof flash.success === 'string'
+                                    ? flash.success
+                                    : 'Saved successfully.'}
+                            </div>
+                        )}
+
                         {activeTab === 'account' && (
                             <form className="space-y-0" onSubmit={saveAccount}>
-                                {flash.success && (
-                                    <div className="mb-5 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
-                                        {typeof flash.success === 'string'
-                                            ? flash.success
-                                            : 'Saved successfully.'}
-                                    </div>
-                                )}
                                 <h2 className="text-[17.6px] leading-[26.4px] font-extrabold text-[#050315]">
                                     Account Information
                                 </h2>
@@ -337,49 +373,46 @@ export default function EmployerSettings({
                         )}
 
                         {activeTab === 'notifications' && (
-                            <div>
+                            <form onSubmit={saveNotifications}>
                                 <h2 className="text-[17.6px] leading-[26.4px] font-extrabold text-[#050315]">
                                     Notification Preferences
                                 </h2>
-                                {[
-                                    {
-                                        label: 'New Applications',
-                                        description:
-                                            'Get notified when candidates apply to your jobs',
-                                        checked: newApplications,
-                                        onChange: setNewApplications,
-                                    },
-                                    {
-                                        label: 'Job Expiry Reminders',
-                                        description:
-                                            'Remind me 7 days before a job listing expires',
-                                        checked: jobExpiry,
-                                        onChange: setJobExpiry,
-                                    },
-                                    {
-                                        label: 'Billing Alerts',
-                                        description:
-                                            'Receive payment and subscription notifications',
-                                        checked: billingAlerts,
-                                        onChange: setBillingAlerts,
-                                    },
-                                    {
-                                        label: 'System Updates',
-                                        description:
-                                            'Platform updates, maintenance, and announcements',
-                                        checked: systemUpdates,
-                                        onChange: setSystemUpdates,
-                                    },
-                                    {
-                                        label: 'Weekly Report',
-                                        description:
-                                            'Summary of applications and job performance',
-                                        checked: weeklyReport,
-                                        onChange: setWeeklyReport,
-                                    },
-                                ].map((item) => (
+                                {(
+                                    [
+                                        {
+                                            key: 'new_applications' as const,
+                                            label: 'New Applications',
+                                            description:
+                                                'Get notified when candidates apply to your jobs',
+                                        },
+                                        {
+                                            key: 'job_expiry' as const,
+                                            label: 'Job Expiry Reminders',
+                                            description:
+                                                'Remind me 7 days before a job listing expires',
+                                        },
+                                        {
+                                            key: 'billing_alerts' as const,
+                                            label: 'Billing Alerts',
+                                            description:
+                                                'Receive payment and subscription notifications',
+                                        },
+                                        {
+                                            key: 'system_updates' as const,
+                                            label: 'System Updates',
+                                            description:
+                                                'Platform updates, maintenance, and announcements',
+                                        },
+                                        {
+                                            key: 'weekly_report' as const,
+                                            label: 'Weekly Report',
+                                            description:
+                                                'Summary of applications and job performance',
+                                        },
+                                    ] as const
+                                ).map((item) => (
                                     <div
-                                        key={item.label}
+                                        key={item.key}
                                         className="flex items-center justify-between gap-4 border-b border-[#f1f5f9] py-4 last:border-b-0"
                                     >
                                         <div>
@@ -391,16 +424,30 @@ export default function EmployerSettings({
                                             </p>
                                         </div>
                                         <Toggle
-                                            checked={item.checked}
-                                            onChange={item.onChange}
+                                            checked={
+                                                notificationForm.data[item.key]
+                                            }
+                                            onChange={(value) =>
+                                                notificationForm.setData(
+                                                    item.key,
+                                                    value,
+                                                )
+                                            }
                                         />
                                     </div>
                                 ))}
-                            </div>
+                                <button
+                                    type="submit"
+                                    disabled={notificationForm.processing}
+                                    className="mt-6 inline-flex h-[42px] cursor-pointer items-center rounded-lg bg-[#0057c8] px-7 text-[14.4px] font-bold text-white"
+                                >
+                                    Save Preferences
+                                </button>
+                            </form>
                         )}
 
                         {activeTab === 'privacy' && (
-                            <div>
+                            <form onSubmit={savePrivacy}>
                                 <h2 className="text-[17.6px] leading-[26.4px] font-extrabold text-[#050315]">
                                     Privacy Settings
                                 </h2>
@@ -411,9 +458,15 @@ export default function EmployerSettings({
                                     <input
                                         type="radio"
                                         name="visibility"
-                                        checked={profileVisibility === 'public'}
+                                        checked={
+                                            privacyForm.data
+                                                .profile_visibility === 'public'
+                                        }
                                         onChange={() =>
-                                            setProfileVisibility('public')
+                                            privacyForm.setData(
+                                                'profile_visibility',
+                                                'public',
+                                            )
                                         }
                                         className="size-3.5 accent-[#0057c8]"
                                     />
@@ -426,10 +479,15 @@ export default function EmployerSettings({
                                         type="radio"
                                         name="visibility"
                                         checked={
-                                            profileVisibility === 'private'
+                                            privacyForm.data
+                                                .profile_visibility ===
+                                            'private'
                                         }
                                         onChange={() =>
-                                            setProfileVisibility('private')
+                                            privacyForm.setData(
+                                                'profile_visibility',
+                                                'private',
+                                            )
                                         }
                                         className="size-3.5 accent-[#0057c8]"
                                     />
@@ -448,8 +506,13 @@ export default function EmployerSettings({
                                         </p>
                                     </div>
                                     <Toggle
-                                        checked={showSalary}
-                                        onChange={setShowSalary}
+                                        checked={privacyForm.data.show_salary}
+                                        onChange={(value) =>
+                                            privacyForm.setData(
+                                                'show_salary',
+                                                value,
+                                            )
+                                        }
                                     />
                                 </div>
                                 <div className="mt-2 flex items-center justify-between gap-4 py-4">
@@ -463,11 +526,25 @@ export default function EmployerSettings({
                                         </p>
                                     </div>
                                     <Toggle
-                                        checked={showContactEmail}
-                                        onChange={setShowContactEmail}
+                                        checked={
+                                            privacyForm.data.show_contact_email
+                                        }
+                                        onChange={(value) =>
+                                            privacyForm.setData(
+                                                'show_contact_email',
+                                                value,
+                                            )
+                                        }
                                     />
                                 </div>
-                            </div>
+                                <button
+                                    type="submit"
+                                    disabled={privacyForm.processing}
+                                    className="mt-4 inline-flex h-[42px] cursor-pointer items-center rounded-lg bg-[#0057c8] px-7 text-[14.4px] font-bold text-white"
+                                >
+                                    Save Privacy Settings
+                                </button>
+                            </form>
                         )}
 
                         {activeTab === 'language' && (
@@ -532,24 +609,71 @@ export default function EmployerSettings({
                                     Irreversible actions — proceed with caution.
                                 </p>
                                 <div className="mt-6 space-y-4">
-                                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#e8d5e8] p-4">
-                                        <div>
-                                            <p className="font-semibold text-[#050315]">
-                                                Deactivate Account
-                                            </p>
-                                            <p className="text-sm text-[#6b7280]">
-                                                Temporarily disable your
-                                                employer account
-                                            </p>
+                                    <div className="rounded-2xl border border-[#e8d5e8] p-4">
+                                        <div className="flex flex-wrap items-center justify-between gap-4">
+                                            <div>
+                                                <p className="font-semibold text-[#050315]">
+                                                    Deactivate Account
+                                                </p>
+                                                <p className="text-sm text-[#6b7280]">
+                                                    Temporarily disable your
+                                                    employer account
+                                                </p>
+                                            </div>
                                         </div>
-                                        <button
-                                            type="button"
-                                            className="cursor-pointer rounded-lg border border-[#e8d5e8] px-4 py-2 text-sm font-semibold text-[#374151]"
+                                        <form
+                                            className="mt-4 flex flex-wrap items-end gap-3"
+                                            onSubmit={(event) => {
+                                                event.preventDefault();
+                                                deactivateForm.post(
+                                                    '/employer/settings/deactivate',
+                                                );
+                                            }}
                                         >
-                                            Deactivate Account
-                                        </button>
+                                            <label className="block min-w-[220px] flex-1">
+                                                <span className="text-xs font-semibold text-[#374151]">
+                                                    Confirm with password
+                                                </span>
+                                                <input
+                                                    type="password"
+                                                    value={
+                                                        deactivateForm.data
+                                                            .password
+                                                    }
+                                                    onChange={(event) =>
+                                                        deactivateForm.setData(
+                                                            'password',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                    className={cn(
+                                                        fieldClass,
+                                                        'mt-1.5 max-w-none',
+                                                    )}
+                                                />
+                                                {deactivateForm.errors
+                                                    .password && (
+                                                    <p className="mt-1 text-xs text-[#dc2626]">
+                                                        {
+                                                            deactivateForm
+                                                                .errors
+                                                                .password
+                                                        }
+                                                    </p>
+                                                )}
+                                            </label>
+                                            <button
+                                                type="submit"
+                                                disabled={
+                                                    deactivateForm.processing
+                                                }
+                                                className="cursor-pointer rounded-lg border border-[#e8d5e8] px-4 py-2 text-sm font-semibold text-[#374151]"
+                                            >
+                                                Deactivate Account
+                                            </button>
+                                        </form>
                                     </div>
-                                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#fecaca] bg-[#fef2f2] p-4">
+                                    <div className="rounded-2xl border border-[#fecaca] bg-[#fef2f2] p-4">
                                         <div>
                                             <p className="font-semibold text-[#050315]">
                                                 Delete All Data
@@ -559,12 +683,52 @@ export default function EmployerSettings({
                                                 data. This cannot be undone.
                                             </p>
                                         </div>
-                                        <button
-                                            type="button"
-                                            className="cursor-pointer rounded-lg bg-[#dc2626] px-4 py-2 text-sm font-semibold text-white"
+                                        <form
+                                            className="mt-4 flex flex-wrap items-end gap-3"
+                                            onSubmit={(event) => {
+                                                event.preventDefault();
+                                                deleteForm.delete(
+                                                    '/employer/settings',
+                                                );
+                                            }}
                                         >
-                                            Delete All Data
-                                        </button>
+                                            <label className="block min-w-[220px] flex-1">
+                                                <span className="text-xs font-semibold text-[#374151]">
+                                                    Confirm with password
+                                                </span>
+                                                <input
+                                                    type="password"
+                                                    value={
+                                                        deleteForm.data.password
+                                                    }
+                                                    onChange={(event) =>
+                                                        deleteForm.setData(
+                                                            'password',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                    className={cn(
+                                                        fieldClass,
+                                                        'mt-1.5 max-w-none',
+                                                    )}
+                                                />
+                                                {deleteForm.errors.password && (
+                                                    <p className="mt-1 text-xs text-[#dc2626]">
+                                                        {
+                                                            deleteForm.errors
+                                                                .password
+                                                        }
+                                                    </p>
+                                                )}
+                                            </label>
+                                            <button
+                                                type="submit"
+                                                disabled={deleteForm.processing}
+                                                className="cursor-pointer rounded-lg bg-[#dc2626] px-4 py-2 text-sm font-semibold text-white"
+                                            >
+                                                Delete All Data
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>

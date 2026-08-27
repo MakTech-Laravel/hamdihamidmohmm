@@ -8,6 +8,7 @@ import {
     Settings,
     UserRound,
 } from 'lucide-react';
+import { useState } from 'react';
 
 import { getInitials } from '@/components/job-seeker/demo-data';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,8 @@ export function JobSeekerSidebar({
     const currentUrl = page.url;
     const user = auth.user;
     const initials = getInitials(user.name);
+    const [avatarFailed, setAvatarFailed] = useState(false);
+    const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
 
     return (
         <aside
@@ -117,9 +120,18 @@ export function JobSeekerSidebar({
             <div className="border-t border-[rgba(57,119,166,0.2)] p-3">
                 {!collapsed && (
                     <div className="mb-2 flex items-center gap-3 rounded-xl bg-white p-2">
-                        <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-[#0057c8] to-[#3b82f6] text-xs font-bold text-white">
-                            {initials}
-                        </div>
+                        {showAvatar ? (
+                            <img
+                                src={user.avatar_url}
+                                alt={user.name}
+                                onError={() => setAvatarFailed(true)}
+                                className="size-8 rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-[#0057c8] to-[#3b82f6] text-xs font-bold text-white">
+                                {initials}
+                            </div>
+                        )}
                         <div className="min-w-0">
                             <p className="truncate text-xs font-medium text-[#050315]">
                                 {user.name}

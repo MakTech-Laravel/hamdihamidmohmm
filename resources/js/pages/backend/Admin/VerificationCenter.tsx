@@ -29,6 +29,9 @@ type PendingEmployer = {
     industry: string;
     created_at: string | null;
     can_review: boolean;
+    has_document: boolean;
+    document_name: string | null;
+    document_url: string | null;
 };
 
 type Props = {
@@ -53,7 +56,7 @@ export default function VerificationCenter({ pending, stats }: Props) {
             <div className="space-y-6 p-6">
                 <AdminPageHeader
                     title="Verification Center"
-                    subtitle="Review pending employer accounts. No uploaded documents are stored yet."
+                    subtitle="Review pending employer accounts and download uploaded verification documents."
                 />
 
                 {flash.success && (
@@ -107,6 +110,20 @@ export default function VerificationCenter({ pending, stats }: Props) {
                                 <p className="text-xs text-[#99a1af]">
                                     {item.industry} · {item.created_at}
                                 </p>
+                                <div className="mt-2">
+                                    {item.has_document && item.document_url ? (
+                                        <a
+                                            href={item.document_url}
+                                            className="inline-flex items-center rounded-full bg-[#e6f0fb] px-2.5 py-1 text-xs font-semibold text-[#0057c8]"
+                                        >
+                                            Document: {item.document_name || 'Download'}
+                                        </a>
+                                    ) : (
+                                        <span className="inline-flex items-center rounded-full bg-[#f1f5f9] px-2.5 py-1 text-xs font-semibold text-[#64748b]">
+                                            No document uploaded
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             {item.can_review && (
                                 <div className="flex gap-2">

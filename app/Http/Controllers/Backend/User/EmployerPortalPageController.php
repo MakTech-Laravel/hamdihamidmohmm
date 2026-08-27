@@ -2,10 +2,17 @@
 
 namespace App\Http\Controllers\Backend\User;
 
+use App\Enums\EmployerAccountStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Backend\User\DeactivateEmployerAccountRequest;
+use App\Http\Requests\Backend\User\DeleteEmployerAccountRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerAccountRequest;
+use App\Http\Requests\Backend\User\UpdateEmployerNotificationPreferencesRequest;
+use App\Http\Requests\Backend\User\UpdateEmployerPrivacyPreferencesRequest;
+use App\Support\PortalPreferences;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -53,6 +60,7 @@ class EmployerPortalPageController extends Controller
     public function settings(Request $request): Response
     {
         $user = $request->user();
+        $preferences = PortalPreferences::for($user);
 
         return Inertia::render('backend/User/EmployerSettings', [
             'profile' => [
@@ -60,6 +68,10 @@ class EmployerPortalPageController extends Controller
                 'email' => $user?->email,
                 'phone' => $user?->phone,
                 'company_name' => $user?->company_name,
+            ],
+            'preferences' => [
+                'notifications' => $preferences['notifications'],
+                'privacy' => $preferences['privacy'],
             ],
         ]);
     }
@@ -69,6 +81,59 @@ class EmployerPortalPageController extends Controller
         $request->user()?->forceFill($request->validated())->save();
 
         return back()->with('success', 'Account settings saved.');
+    }
+
+    public function updateNotificationPreferences(UpdateEmployerNotificationPreferencesRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user !== null, 403);
+
+        $user->forceFill([
+            'portal_preferences' => PortalPreferences::mergeNotifications($user, $request->validated()),
+        ])->save();
+
+        return back()->with('success', 'Notification preferences saved.');
+    }
+
+    public function updatePrivacyPreferences(UpdateEmployerPrivacyPreferencesRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user !== null, 403);
+
+        $user->forceFill([
+            'portal_preferences' => PortalPreferences::mergePrivacy($user, $request->validated()),
+        ])->save();
+
+        return back()->with('success', 'Privacy settings saved.');
+    }
+
+    public function deactivate(DeactivateEmployerAccountRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user !== null, 403);
+
+        $user->forceFill([
+            'account_status' => EmployerAccountStatus::Suspended,
+        ])->save();
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/')->with('success', 'Your employer account has been deactivated.');
+    }
+
+    public function destroy(DeleteEmployerAccountRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user !== null, 403);
+
+        Auth::logout();
+        $user->delete();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/')->with('success', 'Your employer account has been deleted.');
     }
 
     private function categoryKey(mixed $category): string

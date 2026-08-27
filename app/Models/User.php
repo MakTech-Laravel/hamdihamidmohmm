@@ -10,6 +10,7 @@ use App\Enums\PermissionName;
 use App\Enums\RoleName;
 use App\Enums\SubscriptionStatus;
 use App\Enums\UserRole;
+use App\Support\PortalPreferences;
 use App\Support\RoleAssigner;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -51,6 +53,12 @@ class User extends Authenticatable
         'resume_path',
         'resume_original_name',
         'avatar',
+        'company_logo_path',
+        'company_cover_path',
+        'verification_document_path',
+        'verification_document_original_name',
+        'timezone',
+        'portal_preferences',
         'password',
         'role',
         'verification_status',
@@ -111,7 +119,71 @@ class User extends Authenticatable
             'pending_package_at' => 'datetime',
             'verified_at' => 'datetime',
             'founded_year' => 'integer',
+            'portal_preferences' => 'array',
         ];
+    }
+
+    /**
+     * @return array{
+     *     notifications: array{
+     *         new_applications: bool,
+     *         job_expiry: bool,
+     *         billing_alerts: bool,
+     *         system_updates: bool,
+     *         weekly_report: bool
+     *     },
+     *     privacy: array{
+     *         profile_visibility: string,
+     *         show_salary: bool,
+     *         show_contact_email: bool
+     *     },
+     *     email_preferences: array{
+     *         application_status: bool,
+     *         interview_invitations: bool,
+     *         job_recommendations: bool,
+     *         platform_announcements: bool
+     *     }
+     * }
+     */
+    public function portalPreferences(): array
+    {
+        return PortalPreferences::for($this);
+    }
+
+    public function companyLogoUrl(): ?string
+    {
+        if (! $this->hasCompanyLogo()) {
+            return null;
+        }
+
+        return '/storage/'.$this->company_logo_path;
+    }
+
+    public function companyCoverUrl(): ?string
+    {
+        if (! $this->hasCompanyCover()) {
+            return null;
+        }
+
+        return '/storage/'.$this->company_cover_path;
+    }
+
+    public function hasVerificationDocument(): bool
+    {
+        return filled($this->verification_document_path)
+            && Storage::disk('local')->exists((string) $this->verification_document_path);
+    }
+
+    public function hasCompanyLogo(): bool
+    {
+        return filled($this->company_logo_path)
+            && Storage::disk('public')->exists((string) $this->company_logo_path);
+    }
+
+    public function hasCompanyCover(): bool
+    {
+        return filled($this->company_cover_path)
+            && Storage::disk('public')->exists((string) $this->company_cover_path);
     }
 
     protected function name(): Attribute
@@ -338,10 +410,15 @@ class User extends Authenticatable
             return str_replace('%s', 'medium', $this->avatar_urls['url']);
         }
 
-        if ($this->avatar) {
-            return asset('storage/'.$this->avatar);
+        if (! filled($this->avatar)) {
+            return null;
         }
 
-        return null;
+        if (! Storage::disk('public')->exists((string) $this->avatar)) {
+            return null;
+        }
+
+        // Relative URL avoids APP_URL host mismatches (localhost vs 127.0.0.1).
+        return '/storage/'.$this->avatar;
     }
 }

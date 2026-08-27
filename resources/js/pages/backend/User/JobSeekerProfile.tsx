@@ -14,11 +14,15 @@ import {
     UserRound,
     X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 
 import {
+    destroyCertificationDocument,
+    destroyPhoto,
     destroyResume,
     update as updateProfile,
+    uploadCertificationDocument,
+    uploadPhoto,
     uploadResume,
 } from '@/actions/App/Http/Controllers/Backend/User/JobSeekerProfileController';
 import { getInitials } from '@/components/job-seeker/demo-data';
@@ -63,6 +67,9 @@ type CertificationEntry = {
     name: string;
     issuer: string;
     date: string;
+    file_path: string | null;
+    file_name: string | null;
+    file_url: string | null;
 };
 
 type Profile = {
@@ -70,6 +77,7 @@ type Profile = {
     email: string | null;
     phone: string | null;
     location: string | null;
+    photo_url: string | null;
     headline: string | null;
     current_title: string | null;
     experience_years: string | null;
@@ -333,13 +341,23 @@ function normalizeLanguages(items: unknown[]): LanguageEntry[] {
 }
 
 function normalizeCertifications(items: unknown[]): CertificationEntry[] {
-    return items.map((item) => ({
-        name:
-            fieldString(item, 'name', 'title') ||
-            (typeof item === 'string' ? item : ''),
-        issuer: fieldString(item, 'issuer', 'org'),
-        date: fieldString(item, 'date', 'year'),
-    }));
+    return items.map((item) => {
+        const record = asRecord(item);
+
+        return {
+            name:
+                fieldString(item, 'name', 'title') ||
+                (typeof item === 'string' ? item : ''),
+            issuer: fieldString(item, 'issuer', 'org'),
+            date: fieldString(item, 'date', 'year'),
+            file_path:
+                typeof record?.file_path === 'string' ? record.file_path : null,
+            file_name:
+                typeof record?.file_name === 'string' ? record.file_name : null,
+            file_url:
+                typeof record?.file_url === 'string' ? record.file_url : null,
+        };
+    });
 }
 
 function emptyEducation(): EducationEntry {
@@ -364,7 +382,14 @@ function emptyLanguage(): LanguageEntry {
 }
 
 function emptyCertification(): CertificationEntry {
-    return { name: '', issuer: '', date: '' };
+    return {
+        name: '',
+        issuer: '',
+        date: '',
+        file_path: null,
+        file_name: null,
+        file_url: null,
+    };
 }
 
 function profileToFormData(profile: Profile) {
@@ -457,14 +482,41 @@ function cleanLanguages(entries: LanguageEntry[]): LanguageEntry[] {
 
 function cleanCertifications(
     entries: CertificationEntry[],
-): CertificationEntry[] {
+): Array<{
+    name: string;
+    issuer: string;
+    date: string;
+    file_path?: string;
+    file_name?: string;
+}> {
     return entries
-        .map((entry) => ({
-            name: entry.name.trim(),
-            issuer: entry.issuer.trim(),
-            date: entry.date.trim(),
-        }))
-        .filter((entry) => entry.name || entry.issuer || entry.date);
+        .map((entry) => {
+            const cleaned: {
+                name: string;
+                issuer: string;
+                date: string;
+                file_path?: string;
+                file_name?: string;
+            } = {
+                name: entry.name.trim(),
+                issuer: entry.issuer.trim(),
+                date: entry.date.trim(),
+            };
+
+            if (entry.file_path) {
+                cleaned.file_path = entry.file_path;
+                cleaned.file_name = entry.file_name ?? undefined;
+            }
+
+            return cleaned;
+        })
+        .filter(
+            (entry) =>
+                entry.name ||
+                entry.issuer ||
+                entry.date ||
+                entry.file_path,
+        );
 }
 
 export default function JobSeekerProfile({ profile }: { profile: Profile }) {
@@ -475,12 +527,19 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
     const form = useForm(profileToFormData(profile));
 
     useEffect(() => {
-        if (editing !== null) {
+        if (editing === null) {
+            form.setData(profileToFormData(profile));
+            form.clearErrors();
+
             return;
         }
 
-        form.setData(profileToFormData(profile));
-        form.clearErrors();
+        if (editing === 'certifications') {
+            form.setData(
+                'certifications',
+                normalizeCertifications(profile.certifications ?? []),
+            );
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- sync when server profile refreshes
     }, [profile, editing]);
 
@@ -554,12 +613,15 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
 
                 <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#0057c8] to-[#3977a6] p-6 text-white shadow-[0px_4px_10px_rgba(30,58,138,0.2)]">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                        <div className="flex size-[88px] shrink-0 items-center justify-center rounded-full bg-white/15 text-2xl font-extrabold">
-                            {getInitials(
+                        <ProfileAvatar
+                            photoUrl={profile.photo_url}
+                            name={
                                 profile.name ||
-                                    t('job_seeker.profile.fallback_name'),
-                            )}
-                        </div>
+                                t('job_seeker.profile.fallback_name')
+                            }
+                            sizeClassName="size-[88px] text-2xl"
+                            fallbackClassName="bg-white/15 text-white ring-2 ring-white/30"
+                        />
                         <div className="min-w-0 flex-1">
                             <h1 className="text-2xl font-extrabold">
                                 {profile.name ||
@@ -634,6 +696,12 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 >
                     {editing === 'personal' ? (
                         <div className="grid gap-4 md:grid-cols-2">
+                            <div className="md:col-span-2">
+                                <ProfilePhotoUploader
+                                    photoUrl={profile.photo_url}
+                                    name={profile.name}
+                                />
+                            </div>
                             <Field
                                 label={t('job_seeker.profile.full_name')}
                                 value={form.data.name}
@@ -704,6 +772,13 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                         </div>
                     ) : (
                         <div className="grid gap-4 md:grid-cols-2">
+                            <div className="md:col-span-2">
+                                <ProfilePhotoUploader
+                                    photoUrl={profile.photo_url}
+                                    name={profile.name}
+                                    readOnly
+                                />
+                            </div>
                             <ReadOnlyField
                                 label={t('job_seeker.profile.full_name')}
                                 value={profile.name}
@@ -1448,6 +1523,12 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                         }}
                                         hint={t('job_seeker.profile.date_hint')}
                                     />
+                                    <div className="md:col-span-2">
+                                        <CertificationFileUploader
+                                            index={index}
+                                            entry={entry}
+                                        />
+                                    </div>
                                 </div>
                             )}
                         />
@@ -1474,6 +1555,15 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                         'date',
                                         'year',
                                     );
+                                    const record = asRecord(item);
+                                    const fileName =
+                                        typeof record?.file_name === 'string'
+                                            ? record.file_name
+                                            : null;
+                                    const fileUrl =
+                                        typeof record?.file_url === 'string'
+                                            ? record.file_url
+                                            : null;
 
                                     return (
                                         <div
@@ -1483,7 +1573,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                             <div className="flex size-9 items-center justify-center rounded-lg bg-[#eff6ff] text-[#0057c8]">
                                                 <Award className="size-4" />
                                             </div>
-                                            <div>
+                                            <div className="min-w-0 flex-1">
                                                 <p className="text-sm font-semibold text-[#050315]">
                                                     {name}
                                                 </p>
@@ -1492,6 +1582,24 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                                         .filter(Boolean)
                                                         .join(' · ') || '—'}
                                                 </p>
+                                                {fileName ? (
+                                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                        <span className="text-xs font-medium text-[#0057c8]">
+                                                            {fileName}
+                                                        </span>
+                                                        {fileUrl ? (
+                                                            <a
+                                                                href={fileUrl}
+                                                                className="inline-flex items-center gap-1 text-xs font-semibold text-[#0057c8]"
+                                                            >
+                                                                <Download className="size-3.5" />
+                                                                {t(
+                                                                    'job_seeker.profile.download',
+                                                                )}
+                                                            </a>
+                                                        ) : null}
+                                                    </div>
+                                                ) : null}
                                             </div>
                                         </div>
                                     );
@@ -1521,6 +1629,228 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 </SectionCard>
             </div>
         </JobSeekerLayout>
+    );
+}
+
+function ProfileAvatar({
+    photoUrl,
+    name,
+    sizeClassName,
+    fallbackClassName,
+}: {
+    photoUrl: string | null;
+    name: string;
+    sizeClassName: string;
+    fallbackClassName: string;
+}) {
+    const [failed, setFailed] = useState(false);
+    const showImage = Boolean(photoUrl) && !failed;
+
+    if (showImage) {
+        return (
+            <img
+                src={photoUrl!}
+                alt={name}
+                onError={() => setFailed(true)}
+                className={cn(
+                    'shrink-0 rounded-full object-cover',
+                    sizeClassName,
+                )}
+            />
+        );
+    }
+
+    return (
+        <div
+            className={cn(
+                'flex shrink-0 items-center justify-center rounded-full font-extrabold',
+                sizeClassName,
+                fallbackClassName,
+            )}
+        >
+            {getInitials(name)}
+        </div>
+    );
+}
+
+function ProfilePhotoUploader({
+    photoUrl,
+    name,
+    readOnly = false,
+}: {
+    photoUrl: string | null;
+    name: string | null;
+    readOnly?: boolean;
+}) {
+    const { t } = useLocale();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const displayName = name || t('job_seeker.profile.fallback_name');
+
+    const onChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+
+        if (!file) {
+            return;
+        }
+
+        const data = new FormData();
+        data.append('photo', file);
+        setUploading(true);
+        router.post(uploadPhoto.url(), data, {
+            forceFormData: true,
+            preserveScroll: true,
+            onFinish: () => setUploading(false),
+        });
+    };
+
+    return (
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[#e8d5e8] bg-[#f8faff] p-4">
+            <ProfileAvatar
+                photoUrl={photoUrl}
+                name={displayName}
+                sizeClassName="size-16 text-lg"
+                fallbackClassName="bg-[#0057c8] text-white"
+            />
+            <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[#050315]">
+                    {t('job_seeker.profile.photo')}
+                </p>
+                <p className="text-xs text-[#64748b]">
+                    {t('job_seeker.profile.photo_hint')}
+                </p>
+                {!readOnly ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={onChange}
+                        />
+                        <button
+                            type="button"
+                            disabled={uploading}
+                            onClick={() => fileInputRef.current?.click()}
+                            className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
+                        >
+                            {uploading
+                                ? t('job_seeker.profile.uploading')
+                                : photoUrl
+                                    ? t('job_seeker.profile.replace')
+                                    : t('job_seeker.profile.upload_photo')}
+                        </button>
+                        {photoUrl ? (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    router.delete(destroyPhoto.url(), {
+                                        preserveScroll: true,
+                                    })
+                                }
+                                className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-[#b91c1c]"
+                            >
+                                {t('job_seeker.profile.remove')}
+                            </button>
+                        ) : null}
+                    </div>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+function CertificationFileUploader({
+    index,
+    entry,
+}: {
+    index: number;
+    entry: CertificationEntry;
+}) {
+    const { t } = useLocale();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+
+    const onChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+
+        if (!file) {
+            return;
+        }
+
+        const data = new FormData();
+        data.append('index', String(index));
+        data.append('name', entry.name);
+        data.append('issuer', entry.issuer);
+        data.append('date', entry.date);
+        data.append('document', file);
+        setUploading(true);
+        router.post(uploadCertificationDocument.url(), data, {
+            forceFormData: true,
+            preserveScroll: true,
+            onFinish: () => setUploading(false),
+        });
+    };
+
+    return (
+        <div className="rounded-xl border border-dashed border-[#e8d5e8] bg-[#f8faff] p-3">
+            <p className="text-xs font-semibold text-[#4a5565]">
+                {t('job_seeker.profile.certificate_file')}
+            </p>
+            <p className="mt-1 text-xs text-[#64748b]">
+                {entry.file_name || t('job_seeker.profile.no_certificate_file')}
+            </p>
+            <p className="mt-1 text-[11px] text-[#94a3b8]">
+                {t('job_seeker.profile.certificate_hint')}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={onChange}
+                />
+                <button
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
+                >
+                    <FileUp className="size-3.5" />
+                    {uploading
+                        ? t('job_seeker.profile.uploading')
+                        : entry.file_name
+                            ? t('job_seeker.profile.replace')
+                            : t('job_seeker.profile.upload_certificate')}
+                </button>
+                {entry.file_url ? (
+                    <a
+                        href={entry.file_url}
+                        className="inline-flex items-center gap-1 rounded-lg border border-[#e8d5e8] px-3 py-1.5 text-xs font-semibold text-[#374151]"
+                    >
+                        <Download className="size-3.5" />
+                        {t('job_seeker.profile.download')}
+                    </a>
+                ) : null}
+                {entry.file_name ? (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.delete(
+                                destroyCertificationDocument.url(index),
+                                { preserveScroll: true },
+                            )
+                        }
+                        className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-[#b91c1c]"
+                    >
+                        {t('job_seeker.profile.remove')}
+                    </button>
+                ) : null}
+            </div>
+        </div>
     );
 }
 
@@ -1593,9 +1923,9 @@ function ResumeUploader({
                                     t,
                                     `job_seeker.profile.resume_status.${(resumeStatus ?? 'uploaded').toLowerCase()}`,
                                     resumeStatus ||
-                                        t(
-                                            'job_seeker.profile.resume_status.uploaded',
-                                        ),
+                                    t(
+                                        'job_seeker.profile.resume_status.uploaded',
+                                    ),
                                 )}
                             </p>
                         </div>

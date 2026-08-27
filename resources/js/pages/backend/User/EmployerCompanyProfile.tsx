@@ -1,6 +1,6 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { CheckCircle2, Pencil, TriangleAlert } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 
 import { getInitials } from '@/components/employer/demo-data';
 import EmployerLayout from '@/layouts/employer-layout';
@@ -26,6 +26,10 @@ type Profile = {
     verified_on: string | null;
     package: string | null;
     initials: string;
+    logo_url: string | null;
+    cover_url: string | null;
+    verification_document_name: string | null;
+    verification_document_url: string | null;
 };
 
 type Completion = {
@@ -47,6 +51,10 @@ export default function EmployerCompanyProfile({
 }) {
     const { flash } = usePage<SharedData>().props;
     const [editing, setEditing] = useState<string | null>(null);
+    const [uploading, setUploading] = useState<string | null>(null);
+    const logoInputRef = useRef<HTMLInputElement>(null);
+    const coverInputRef = useRef<HTMLInputElement>(null);
+    const documentInputRef = useRef<HTMLInputElement>(null);
     const form = useForm({
         company_name: profile.company_name ?? '',
         contact_name: profile.contact_name ?? '',
@@ -67,6 +75,59 @@ export default function EmployerCompanyProfile({
         form.put('/employer/profile', {
             onSuccess: () => setEditing(null),
         });
+    };
+
+    const uploadFile = (
+        key: string,
+        url: string,
+        field: string,
+        file: File | undefined,
+    ): void => {
+        if (!file) {
+            return;
+        }
+
+        const data = new FormData();
+        data.append(field, file);
+        setUploading(key);
+        router.post(url, data, {
+            forceFormData: true,
+            preserveScroll: true,
+            onFinish: () => {
+                setUploading(null);
+                setEditing(null);
+            },
+        });
+    };
+
+    const onLogoChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        uploadFile(
+            'logo',
+            '/employer/profile/logo',
+            'logo',
+            event.target.files?.[0],
+        );
+        event.target.value = '';
+    };
+
+    const onCoverChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        uploadFile(
+            'cover',
+            '/employer/profile/cover',
+            'cover',
+            event.target.files?.[0],
+        );
+        event.target.value = '';
+    };
+
+    const onDocumentChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        uploadFile(
+            'document',
+            '/employer/profile/verification-document',
+            'document',
+            event.target.files?.[0],
+        );
+        event.target.value = '';
     };
 
     const missing = Object.entries(completion.sections)
@@ -239,16 +300,66 @@ export default function EmployerCompanyProfile({
                 <Section
                     title="Company Logo"
                     complete={completion.sections.logo}
-                    onEdit={() => setEditing('logo')}
+                    onEdit={() => logoInputRef.current?.click()}
                 >
-                    <div className="flex items-center gap-3">
-                        <div className="flex size-14 items-center justify-center rounded-full bg-[#0057c8] text-lg font-bold text-white">
-                            {profile.initials ||
-                                getInitials(profile.company_name || 'C')}
+                    <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={onLogoChange}
+                    />
+                    <div className="flex flex-wrap items-center gap-4">
+                        {profile.logo_url ? (
+                            <img
+                                src={profile.logo_url}
+                                alt={`${profile.company_name || 'Company'} logo`}
+                                className="size-14 rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="flex size-14 items-center justify-center rounded-full bg-[#0057c8] text-lg font-bold text-white">
+                                {profile.initials ||
+                                    getInitials(profile.company_name || 'C')}
+                            </div>
+                        )}
+                        <div className="min-w-0">
+                            <p className="font-semibold text-[#050315]">
+                                {profile.company_name}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {profile.logo_url
+                                    ? 'Logo uploaded'
+                                    : 'Upload a square logo (JPG, PNG, WEBP).'}
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    disabled={uploading === 'logo'}
+                                    onClick={() => logoInputRef.current?.click()}
+                                    className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
+                                >
+                                    {uploading === 'logo'
+                                        ? 'Uploading…'
+                                        : profile.logo_url
+                                          ? 'Replace'
+                                          : 'Upload'}
+                                </button>
+                                {profile.logo_url && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            router.delete(
+                                                '/employer/profile/logo',
+                                                { preserveScroll: true },
+                                            )
+                                        }
+                                        className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-[#b91c1c]"
+                                    >
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                        <p className="font-semibold text-[#050315]">
-                            {profile.company_name}
-                        </p>
                     </div>
                 </Section>
 
@@ -392,21 +503,128 @@ export default function EmployerCompanyProfile({
                     )}
                 </Section>
 
-                <Section title="Verification Documents" complete={completion.sections.verification}>
-                    <p className="text-sm text-[#364153]">
-                        {completion.sections.verification
-                            ? 'CR document uploaded and verified.'
-                            : 'Verification is pending admin review.'}
-                    </p>
+                <Section
+                    title="Verification Documents"
+                    complete={completion.sections.verification}
+                    onEdit={() => documentInputRef.current?.click()}
+                >
+                    <input
+                        ref={documentInputRef}
+                        type="file"
+                        accept=".pdf,.doc,.docx,application/pdf"
+                        className="hidden"
+                        onChange={onDocumentChange}
+                    />
+                    <div className="space-y-3">
+                        <p className="text-sm text-[#364153]">
+                            {profile.verification_document_name
+                                ? `Uploaded: ${profile.verification_document_name}`
+                                : 'Upload your CR / trade license for admin review.'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                disabled={uploading === 'document'}
+                                onClick={() =>
+                                    documentInputRef.current?.click()
+                                }
+                                className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
+                            >
+                                {uploading === 'document'
+                                    ? 'Uploading…'
+                                    : profile.verification_document_name
+                                      ? 'Replace Document'
+                                      : 'Upload Document'}
+                            </button>
+                            {profile.verification_document_url && (
+                                <a
+                                    href={profile.verification_document_url}
+                                    className="rounded-lg border border-[#e8d5e8] px-3 py-1.5 text-xs font-semibold text-[#374151]"
+                                >
+                                    Download
+                                </a>
+                            )}
+                            {profile.verification_document_name && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.delete(
+                                            '/employer/profile/verification-document',
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-[#b91c1c]"
+                                >
+                                    Remove
+                                </button>
+                            )}
+                        </div>
+                    </div>
                 </Section>
 
                 <Section
                     title="Cover Banner"
                     complete={completion.sections.cover}
+                    onEdit={() => coverInputRef.current?.click()}
                 >
-                    <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-[#e2e8f0] bg-[#f8faff] text-sm text-[#99a1af]">
-                        No cover banner uploaded.
-                    </div>
+                    <input
+                        ref={coverInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={onCoverChange}
+                    />
+                    {profile.cover_url ? (
+                        <div className="space-y-3">
+                            <img
+                                src={profile.cover_url}
+                                alt="Company cover banner"
+                                className="h-28 w-full rounded-xl object-cover"
+                            />
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    disabled={uploading === 'cover'}
+                                    onClick={() =>
+                                        coverInputRef.current?.click()
+                                    }
+                                    className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
+                                >
+                                    {uploading === 'cover'
+                                        ? 'Uploading…'
+                                        : 'Replace'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.delete(
+                                            '/employer/profile/cover',
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-[#b91c1c]"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-[#e2e8f0] bg-[#f8faff] text-sm text-[#99a1af]">
+                                No cover banner uploaded.
+                            </div>
+                            <button
+                                type="button"
+                                disabled={uploading === 'cover'}
+                                onClick={() => coverInputRef.current?.click()}
+                                className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
+                            >
+                                {uploading === 'cover'
+                                    ? 'Uploading…'
+                                    : 'Upload Cover'}
+                            </button>
+                        </div>
+                    )}
                 </Section>
             </div>
         </EmployerLayout>

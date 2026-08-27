@@ -82,6 +82,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/payments/{payment}/retry', [PaymentManagementController::class, 'retry'])->name('payments.retry');
 
         Route::get('/verifications', [VerificationCenterController::class, 'index'])->name('verifications.index');
+        Route::get('/verifications/{user}/document', [VerificationCenterController::class, 'downloadDocument'])->name('verifications.document');
 
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');

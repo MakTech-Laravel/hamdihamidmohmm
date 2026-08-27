@@ -23,15 +23,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', JobSeekerDashboardController::class)->name('dashboard');
         Route::get('/profile', [JobSeekerProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [JobSeekerProfileController::class, 'update'])->name('profile.update');
+        Route::post('/profile/photo', [JobSeekerProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
+        Route::delete('/profile/photo', [JobSeekerProfileController::class, 'destroyPhoto'])->name('profile.photo.destroy');
         Route::post('/profile/resume', [JobSeekerProfileController::class, 'uploadResume'])->name('profile.resume.upload');
         Route::get('/profile/resume', [JobSeekerProfileController::class, 'downloadResume'])->name('profile.resume.download');
         Route::delete('/profile/resume', [JobSeekerProfileController::class, 'destroyResume'])->name('profile.resume.destroy');
+        Route::post('/profile/certifications/file', [JobSeekerProfileController::class, 'uploadCertificationDocument'])->name('profile.certifications.upload');
+        Route::get('/profile/certifications/{index}/file', [JobSeekerProfileController::class, 'downloadCertificationDocument'])->name('profile.certifications.download');
+        Route::delete('/profile/certifications/{index}/file', [JobSeekerProfileController::class, 'destroyCertificationDocument'])->name('profile.certifications.destroy');
         Route::get('/applications', [JobSeekerApplicationsController::class, 'index'])->name('applications');
         Route::post('/applications/{application}/withdraw', [JobSeekerApplicationsController::class, 'withdraw'])->name('applications.withdraw');
         Route::get('/notifications', [JobSeekerNotificationsController::class, 'index'])->name('notifications');
         Route::post('/notifications/read-all', [JobSeekerNotificationsController::class, 'markAllRead'])->name('notifications.read-all');
         Route::post('/notifications/{notification}/read', [JobSeekerNotificationsController::class, 'markRead'])->name('notifications.read');
-        Route::get('/settings', JobSeekerSettingsController::class)->name('settings');
+        Route::get('/settings', [JobSeekerSettingsController::class, 'index'])->name('settings');
+        Route::put('/settings', [JobSeekerSettingsController::class, 'updatePersonal'])->name('settings.update');
+        Route::put('/settings/email-preferences', [JobSeekerSettingsController::class, 'updateEmailPreferences'])->name('settings.email-preferences');
+        Route::delete('/settings/sessions', [JobSeekerSettingsController::class, 'destroyOtherSessions'])->name('settings.sessions.destroy');
     });
 
     Route::middleware('role:'.RoleName::JobSeeker->value)->post('/jobs/{jobPost}/apply', [JobSeekerApplicationsController::class, 'store'])->name('jobs.apply');
@@ -40,6 +48,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', EmployerDashboardController::class)->name('dashboard');
         Route::get('/profile', [EmployerProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [EmployerProfileController::class, 'update'])->name('profile.update');
+        Route::post('/profile/logo', [EmployerProfileController::class, 'uploadLogo'])->name('profile.logo.upload');
+        Route::delete('/profile/logo', [EmployerProfileController::class, 'destroyLogo'])->name('profile.logo.destroy');
+        Route::post('/profile/cover', [EmployerProfileController::class, 'uploadCover'])->name('profile.cover.upload');
+        Route::delete('/profile/cover', [EmployerProfileController::class, 'destroyCover'])->name('profile.cover.destroy');
+        Route::post('/profile/verification-document', [EmployerProfileController::class, 'uploadVerificationDocument'])->name('profile.verification-document.upload');
+        Route::get('/profile/verification-document', [EmployerProfileController::class, 'downloadVerificationDocument'])->name('profile.verification-document.download');
+        Route::delete('/profile/verification-document', [EmployerProfileController::class, 'destroyVerificationDocument'])->name('profile.verification-document.destroy');
         Route::get('/packages', [EmployerPackageController::class, 'index'])->name('packages');
         Route::post('/packages/{package}/select', [EmployerPackageController::class, 'select'])->name('packages.select');
         Route::get('/packages/checkout/success', [EmployerPackageController::class, 'checkoutSuccess'])->name('packages.checkout.success');
@@ -62,6 +77,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/notifications/{notification}', [EmployerPortalPageController::class, 'destroyNotification'])->name('notifications.destroy');
         Route::get('/settings', [EmployerPortalPageController::class, 'settings'])->name('settings');
         Route::put('/settings', [EmployerPortalPageController::class, 'updateSettings'])->name('settings.update');
+        Route::put('/settings/notifications', [EmployerPortalPageController::class, 'updateNotificationPreferences'])->name('settings.notifications');
+        Route::put('/settings/privacy', [EmployerPortalPageController::class, 'updatePrivacyPreferences'])->name('settings.privacy');
+        Route::post('/settings/deactivate', [EmployerPortalPageController::class, 'deactivate'])->name('settings.deactivate');
+        Route::delete('/settings', [EmployerPortalPageController::class, 'destroy'])->name('settings.destroy');
     });
 
     Route::get('/profile', [UserProfileController::class, 'edit'])->name('user-profile.edit');
