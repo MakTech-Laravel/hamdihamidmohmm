@@ -341,8 +341,8 @@ export default function EmployerCompanyProfile({
                                     {uploading === 'logo'
                                         ? 'Uploading…'
                                         : profile.logo_url
-                                          ? 'Replace'
-                                          : 'Upload'}
+                                            ? 'Replace'
+                                            : 'Upload'}
                                 </button>
                                 {profile.logo_url && (
                                     <button
@@ -533,8 +533,8 @@ export default function EmployerCompanyProfile({
                                 {uploading === 'document'
                                     ? 'Uploading…'
                                     : profile.verification_document_name
-                                      ? 'Replace Document'
-                                      : 'Upload Document'}
+                                        ? 'Replace Document'
+                                        : 'Upload Document'}
                             </button>
                             {profile.verification_document_url && (
                                 <a
