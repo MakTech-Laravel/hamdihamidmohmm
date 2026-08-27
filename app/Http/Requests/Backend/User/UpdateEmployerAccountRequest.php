@@ -18,7 +18,7 @@ class UpdateEmployerAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'contact_name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->user()?->id)],
             'phone' => ['nullable', 'string', 'max:30'],
         ];
@@ -30,7 +30,7 @@ class UpdateEmployerAccountRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'contact_name.required' => 'Please enter a contact name.',
+            'name.required' => 'Please enter your full name.',
             'email.required' => 'Please enter an email address.',
             'email.email' => 'Please enter a valid email address.',
             'email.unique' => 'That email address is already in use.',
