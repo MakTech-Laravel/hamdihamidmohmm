@@ -23,7 +23,7 @@ class EmployerPortalPageController extends Controller
         $user = $request->user();
 
         return Inertia::render('backend/User/EmployerNotifications', [
-            'notifications' => $user?->notifications()->latest()->get()->map(fn ($notification) => [
+            'notifications' => $user?->notifications()->latest()->get()->map(fn($notification) => [
                 'id' => $notification->id,
                 'title' => $notification->data['title'] ?? 'Notification',
                 'message' => $notification->data['message'] ?? '',
@@ -64,10 +64,17 @@ class EmployerPortalPageController extends Controller
 
         return Inertia::render('backend/User/EmployerSettings', [
             'profile' => [
+                'name' => $user?->name,
                 'contact_name' => $user?->contact_name ?: $user?->name,
                 'email' => $user?->email,
                 'phone' => $user?->phone,
                 'company_name' => $user?->company_name,
+                'photo_url' => filled($user?->avatar_url) ? $user->avatar_url : null,
+                'personal_initials' => collect(explode(' ', (string) ($user?->name ?? '')))
+                    ->filter()
+                    ->take(2)
+                    ->map(fn(string $part): string => strtoupper(substr($part, 0, 1)))
+                    ->implode(''),
             ],
             'preferences' => [
                 'notifications' => $preferences['notifications'],
@@ -78,7 +85,12 @@ class EmployerPortalPageController extends Controller
 
     public function updateSettings(UpdateEmployerAccountRequest $request): RedirectResponse
     {
-        $request->user()?->forceFill($request->validated())->save();
+        $validated = $request->validated();
+
+        $request->user()?->forceFill([
+            ...$validated,
+            'contact_name' => $validated['name'],
+        ])->save();
 
         return back()->with('success', 'Account settings saved.');
     }
