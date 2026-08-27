@@ -1,6 +1,7 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
+import { getInitials } from '@/components/employer/demo-data';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,16 @@ type Preferences = {
         show_salary: boolean;
         show_contact_email: boolean;
     };
+};
+
+type Profile = {
+    name: string | null;
+    contact_name: string | null;
+    email: string | null;
+    phone: string | null;
+    company_name: string | null;
+    photo_url: string | null;
+    personal_initials: string;
 };
 
 const TABS: { id: SettingsTab; label: string; danger?: boolean }[] = [
@@ -93,20 +104,16 @@ export default function EmployerSettings({
     profile,
     preferences,
 }: {
-    profile: {
-        contact_name: string | null;
-        email: string | null;
-        phone: string | null;
-        company_name: string | null;
-    };
+    profile: Profile;
     preferences: Preferences;
 }) {
     const { auth, flash } = usePage<SharedData>().props;
     const { locale, setLocale } = useLocale();
     const [activeTab, setActiveTab] = useState<SettingsTab>('account');
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const photoInputRef = useRef<HTMLInputElement>(null);
     const accountForm = useForm({
-        contact_name:
-            profile?.contact_name || auth.user.contact_name || auth.user.name,
+        name: profile?.name || auth.user.name || '',
         email: profile?.email || auth.user.email,
         phone: profile?.phone || auth.user.phone || '',
     });
@@ -134,6 +141,26 @@ export default function EmployerSettings({
         () => passwordStrength(passwordForm.data.password),
         [passwordForm.data.password],
     );
+
+    const onPhotoChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        const file = event.target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        const data = new FormData();
+        data.append('photo', file);
+        setUploadingPhoto(true);
+        router.post('/employer/profile/photo', data, {
+            forceFormData: true,
+            preserveScroll: true,
+            onFinish: () => {
+                setUploadingPhoto(false);
+                event.target.value = '';
+            },
+        });
+    };
 
     const saveAccount = (event: FormEvent): void => {
         event.preventDefault();
@@ -199,8 +226,8 @@ export default function EmployerSettings({
                                             ? 'bg-[#fef2f2] text-[#ef4444]'
                                             : 'bg-[#0057c8]/10 text-[#0057c8]'
                                         : tab.danger
-                                          ? 'text-[#ef4444]'
-                                          : 'text-[#374151]',
+                                            ? 'text-[#ef4444]'
+                                            : 'text-[#374151]',
                                 )}
                             >
                                 {tab.label}
@@ -222,28 +249,112 @@ export default function EmployerSettings({
                                 <h2 className="text-[17.6px] leading-[26.4px] font-extrabold text-[#050315]">
                                     Account Information
                                 </h2>
-                                <label className="mt-5 block max-w-[550px]">
-                                    <span className="text-[12.8px] font-semibold text-[#374151]">
-                                        Contact Name
-                                    </span>
+
+                                <div className="mt-5 rounded-xl border border-[#e8d5e8] bg-[#f8faff] p-4">
+                                    <p className="text-[14.4px] font-bold text-[#050315]">
+                                        Personal Information
+                                    </p>
+                                    <p className="mt-1 text-xs text-[#6b7280]">
+                                        Update your name and profile photo used
+                                        across the employer portal.
+                                    </p>
+
                                     <input
-                                        type="text"
-                                        value={accountForm.data.contact_name}
-                                        onChange={(event) =>
-                                            accountForm.setData(
-                                                'contact_name',
-                                                event.target.value,
-                                            )
-                                        }
-                                        className={cn(fieldClass, 'mt-1.5')}
+                                        ref={photoInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="hidden"
+                                        onChange={onPhotoChange}
                                     />
-                                    {accountForm.errors.contact_name && (
-                                        <p className="mt-1 text-xs text-[#dc2626]">
-                                            {accountForm.errors.contact_name}
-                                        </p>
-                                    )}
-                                </label>
-                                <label className="mt-4 block max-w-[550px]">
+
+                                    <div className="mt-4 flex flex-wrap items-center gap-4">
+                                        {profile.photo_url ? (
+                                            <img
+                                                src={profile.photo_url}
+                                                alt={
+                                                    profile.name ||
+                                                    'Profile photo'
+                                                }
+                                                className="size-16 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex size-16 items-center justify-center rounded-full bg-[#0057c8] text-lg font-bold text-white">
+                                                {profile.personal_initials ||
+                                                    getInitials(
+                                                        profile.name ||
+                                                        accountForm.data
+                                                            .name ||
+                                                        'E',
+                                                    )}
+                                            </div>
+                                        )}
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-[#050315]">
+                                                Profile photo
+                                            </p>
+                                            <p className="text-xs text-[#6b7280]">
+                                                JPG, PNG, or WEBP · max 5MB
+                                            </p>
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                <button
+                                                    type="button"
+                                                    disabled={uploadingPhoto}
+                                                    onClick={() =>
+                                                        photoInputRef.current?.click()
+                                                    }
+                                                    className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
+                                                >
+                                                    {uploadingPhoto
+                                                        ? 'Uploading…'
+                                                        : profile.photo_url
+                                                            ? 'Replace photo'
+                                                            : 'Upload photo'}
+                                                </button>
+                                                {profile.photo_url && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            router.delete(
+                                                                '/employer/profile/photo',
+                                                                {
+                                                                    preserveScroll: true,
+                                                                },
+                                                            )
+                                                        }
+                                                        className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-[#b91c1c]"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <label className="mt-4 block max-w-[550px]">
+                                        <span className="text-[12.8px] font-semibold text-[#374151]">
+                                            Full Name
+                                        </span>
+                                        <input
+                                            type="text"
+                                            value={accountForm.data.name}
+                                            onChange={(event) =>
+                                                accountForm.setData(
+                                                    'name',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className={cn(fieldClass, 'mt-1.5')}
+                                            placeholder="Your full name"
+                                        />
+                                        {accountForm.errors.name && (
+                                            <p className="mt-1 text-xs text-[#dc2626]">
+                                                {accountForm.errors.name}
+                                            </p>
+                                        )}
+                                    </label>
+                                </div>
+
+                                <label className="mt-5 block max-w-[550px]">
                                     <span className="text-[12.8px] font-semibold text-[#374151]">
                                         Email Address
                                     </span>
@@ -653,14 +764,14 @@ export default function EmployerSettings({
                                                 />
                                                 {deactivateForm.errors
                                                     .password && (
-                                                    <p className="mt-1 text-xs text-[#dc2626]">
-                                                        {
-                                                            deactivateForm
-                                                                .errors
-                                                                .password
-                                                        }
-                                                    </p>
-                                                )}
+                                                        <p className="mt-1 text-xs text-[#dc2626]">
+                                                            {
+                                                                deactivateForm
+                                                                    .errors
+                                                                    .password
+                                                            }
+                                                        </p>
+                                                    )}
                                             </label>
                                             <button
                                                 type="submit"

@@ -62,6 +62,7 @@ test('employers can mark all notifications as read', function () {
 
 test('employer settings receive contact details', function () {
     $employer = User::factory()->employer()->create([
+        'name' => 'Fatima Al-Zahrani',
         'contact_name' => 'Fatima Al-Zahrani',
         'email' => 'hr@techcorp.com',
         'phone' => '+966 11 234 5678',
@@ -72,26 +73,30 @@ test('employer settings receive contact details', function () {
         ->assertOk()
         ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerSettings')
+            ->where('profile.name', 'Fatima Al-Zahrani')
             ->where('profile.contact_name', 'Fatima Al-Zahrani')
             ->where('profile.email', 'hr@techcorp.com')
-            ->where('profile.phone', '+966 11 234 5678'));
+            ->where('profile.phone', '+966 11 234 5678')
+            ->where('profile.photo_url', null));
 });
 
 test('employers can update account settings from the settings page', function () {
     $employer = User::factory()->employer()->create([
+        'name' => 'Fatima Al-Zahrani',
         'contact_name' => 'Fatima Al-Zahrani',
         'phone' => '+966 11 234 5678',
     ]);
 
     $this->actingAs($employer)
         ->put(route('employer.settings.update'), [
-            'contact_name' => 'Sara Mansour',
+            'name' => 'Sara Mansour',
             'email' => $employer->email,
             'phone' => '+971 50 123 4567',
         ])
         ->assertRedirect();
 
     expect($employer->fresh())
+        ->name->toBe('Sara Mansour')
         ->contact_name->toBe('Sara Mansour')
         ->phone->toBe('+971 50 123 4567');
 });
