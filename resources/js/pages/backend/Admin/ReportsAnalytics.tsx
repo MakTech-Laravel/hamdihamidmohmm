@@ -8,6 +8,7 @@ import {
     AdminTableShell,
 } from '@/components/admin-portal/ui';
 import { NativeSelect } from '@/components/ui/native-select';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
@@ -27,29 +28,30 @@ type Props = {
 
 export default function ReportsAnalytics({ reports, modules }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const form = useForm({ module: modules[0] ?? 'users' });
 
     return (
         <AdminPortalLayout>
-            <Head title="Reports & Analytics" />
+            <Head title={t('admin.reports.title')} />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title="Reports & Analytics"
-                    subtitle="Generate CSV exports from live platform data."
+                    title={t('admin.reports.title')}
+                    subtitle={t('admin.reports.subtitle')}
                 />
 
                 {flash.success && (
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <AdminPanel className="flex flex-col gap-3 sm:flex-row sm:items-end">
                     <label className="flex-1 text-sm font-semibold text-[#3977a6]">
-                        Module
+                        {t('admin.reports.module')}
                         <NativeSelect
                             className="mt-1 w-full rounded-xl border border-[#e2e8f0] bg-[#f8faff] px-3 py-2.5 text-sm text-[#050315]"
                             value={form.data.module}
@@ -68,19 +70,19 @@ export default function ReportsAnalytics({ reports, modules }: Props) {
                         onClick={() => form.post('/admin/reports')}
                     >
                         <FileSpreadsheet className="size-4" />
-                        Build report
+                        {t('admin.reports.build')}
                     </AdminPrimaryButton>
                 </AdminPanel>
 
                 <AdminPanel>
                     <AdminTableShell
                         headers={[
-                            'Name',
-                            'Module',
-                            'Format',
-                            'Generated',
-                            'By',
-                            'Actions',
+                            t('admin.reports.cols.name'),
+                            t('admin.reports.cols.module'),
+                            t('admin.reports.cols.format'),
+                            t('admin.reports.cols.generated'),
+                            t('admin.reports.cols.by'),
+                            t('admin.reports.cols.actions'),
                         ]}
                     >
                         {reports.map((report) => (
@@ -129,7 +131,7 @@ export default function ReportsAnalytics({ reports, modules }: Props) {
                     </AdminTableShell>
                     {reports.length === 0 && (
                         <p className="mt-6 text-center text-sm text-[#99a1af]">
-                            No reports generated yet.
+                            {t('admin.reports.empty')}
                         </p>
                     )}
                 </AdminPanel>

@@ -9,6 +9,7 @@ use App\Models\JobApplication;
 use App\Models\User;
 use App\Support\ApplicantProfilePreview;
 use App\Support\JobSeekerResume;
+use App\Support\PortalNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -70,9 +71,21 @@ class EmployerApplicationController extends Controller
 
     public function update(UpdateEmployerApplicationRequest $request, JobApplication $application): RedirectResponse
     {
+        $status = JobApplicationStatus::from($request->validated('status'));
+
         $application->forceFill([
-            'status' => JobApplicationStatus::from($request->validated('status')),
+            'status' => $status,
         ])->save();
+
+        $application->loadMissing(['jobSeeker', 'jobPost']);
+
+        if ($application->jobSeeker instanceof User) {
+            PortalNotifier::applicationStatusChanged(
+                $application->jobSeeker,
+                (string) ($application->jobPost?->title ?? 'your application'),
+                $status,
+            );
+        }
 
         return back()->with('success', 'Application updated.');
     }

@@ -1,6 +1,7 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 
 import { AdminIcon } from '@/components/admin-icon';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -45,20 +46,20 @@ export default function RolePermissions({
     canManageAdmins,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
 
     return (
         <AdminPortalLayout>
-            <Head title="Roles & Permissions" />
+            <Head title={t('admin.roles.title')} />
 
             <div className="space-y-6 p-6">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <h1 className="text-[28px] font-extrabold tracking-tight text-[#050315]">
-                            Roles & Permissions
+                            {t('admin.roles.title')}
                         </h1>
                         <p className="mt-1 text-sm text-[#3977a6]">
-                            Create roles, edit access, and set which modules
-                            each role can use.
+                            {t('admin.roles.subtitle')}
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -66,14 +67,14 @@ export default function RolePermissions({
                             href="/admin/users"
                             className="inline-flex items-center justify-center rounded-xl border border-[#e2e8f0] bg-white px-4 py-2.5 text-sm font-semibold text-[#0057c8] hover:bg-[#f8fafc]"
                         >
-                            All Users
+                            {t('admin.users.all')}
                         </Link>
                         {canManageAdmins && (
                             <Link
                                 href="/admin/roles-permissions/create"
                                 className="inline-flex items-center justify-center rounded-xl bg-[#0057c8] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0046a3]"
                             >
-                                + Create Role
+                                {t('admin.roles.create')}
                             </Link>
                         )}
                     </div>
@@ -83,7 +84,7 @@ export default function RolePermissions({
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
@@ -97,11 +98,10 @@ export default function RolePermissions({
                         />
                         <div>
                             <h2 className="text-base font-bold text-[#101828]">
-                                Roles
+                                {t('admin.roles.list_title')}
                             </h2>
                             <p className="text-xs text-[#99a1af]">
-                                System roles stay in place. Custom roles can be
-                                created, edited, or removed.
+                                {t('admin.roles.list_help')}
                             </p>
                         </div>
                     </div>
@@ -111,19 +111,19 @@ export default function RolePermissions({
                             <thead className="border-b border-[#e2e8f0] text-[#64748b]">
                                 <tr>
                                     <th className="px-3 py-2 font-semibold">
-                                        Role
+                                        {t('admin.roles.cols.name')}
                                     </th>
                                     <th className="px-3 py-2 font-semibold">
-                                        Type
+                                        {t('admin.roles.cols.key')}
                                     </th>
                                     <th className="px-3 py-2 font-semibold">
-                                        Users
+                                        {t('admin.roles.cols.users')}
                                     </th>
                                     <th className="px-3 py-2 font-semibold">
-                                        Permissions
+                                        {t('admin.roles.cols.permissions')}
                                     </th>
                                     <th className="px-3 py-2 font-semibold">
-                                        Actions
+                                        {t('common.actions')}
                                     </th>
                                 </tr>
                             </thead>
@@ -154,16 +154,17 @@ export default function RolePermissions({
                                         </td>
                                         <td className="px-3 py-3 text-xs font-medium text-[#64748b]">
                                             {role.locked
-                                                ? 'Locked'
+                                                ? t('status.locked')
                                                 : role.is_system
-                                                  ? 'System'
-                                                  : 'Custom'}
+                                                  ? t('status.system')
+                                                  : t('status.custom')}
                                         </td>
                                         <td className="px-3 py-3 font-semibold text-[#101828]">
                                             {role.users_count}
                                         </td>
                                         <td className="px-3 py-3 text-[#64748b]">
-                                            {role.permissions_count} assigned
+                                            {role.permissions_count}{' '}
+                                            {t('admin.roles.cols.permissions')}
                                         </td>
                                         <td className="px-3 py-3">
                                             <div className="flex flex-wrap gap-2">
@@ -171,7 +172,7 @@ export default function RolePermissions({
                                                     href={`/admin/roles-permissions/${role.id}`}
                                                     className="inline-flex h-9 items-center rounded-lg border border-[#e2e8f0] bg-white px-3 text-xs font-semibold text-[#0057c8] hover:bg-[#f8faff]"
                                                 >
-                                                    View
+                                                    {t('common.view')}
                                                 </Link>
                                                 {canManageAdmins &&
                                                     role.editable && (
@@ -179,7 +180,7 @@ export default function RolePermissions({
                                                             href={`/admin/roles-permissions/${role.id}/edit`}
                                                             className="inline-flex h-9 items-center rounded-lg border border-[#e2e8f0] bg-white px-3 text-xs font-semibold text-[#101828] hover:bg-[#f8faff]"
                                                         >
-                                                            Edit
+                                                            {t('common.edit')}
                                                         </Link>
                                                     )}
                                                 {canManageAdmins &&
@@ -198,7 +199,9 @@ export default function RolePermissions({
                                                                     }
                                                                     className="inline-flex h-9 items-center rounded-lg border border-[#fecaca] bg-white px-3 text-xs font-semibold text-[#b91c1c] hover:bg-[#fef2f2]"
                                                                 >
-                                                                    Delete
+                                                                    {t(
+                                                                        'common.delete',
+                                                                    )}
                                                                 </button>
                                                             )}
                                                         </Form>
@@ -222,10 +225,10 @@ export default function RolePermissions({
                         />
                         <div>
                             <h2 className="text-base font-bold text-[#101828]">
-                                Access comparison
+                                {t('admin.roles.comparison_title')}
                             </h2>
                             <p className="text-xs text-[#99a1af]">
-                                Module access for every role
+                                {t('admin.roles.comparison_help')}
                             </p>
                         </div>
                     </div>
@@ -234,7 +237,7 @@ export default function RolePermissions({
                             <thead className="border-b border-[#e2e8f0] text-[#64748b]">
                                 <tr>
                                     <th className="px-3 py-2 font-semibold">
-                                        Module
+                                        {t('admin.roles.module')}
                                     </th>
                                     {roles.map((role) => (
                                         <th

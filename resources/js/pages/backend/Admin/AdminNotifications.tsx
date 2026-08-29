@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -35,6 +36,7 @@ export default function AdminNotifications({
     tab,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const form = useForm({
         audience: 'all',
         category: 'System',
@@ -44,12 +46,12 @@ export default function AdminNotifications({
 
     return (
         <AdminPortalLayout>
-            <Head title="Notifications" />
+            <Head title={t('admin.notifications.title')} />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title="Notifications"
-                    subtitle="Compose platform notices and review your own inbox."
+                    title={t('admin.notifications.title')}
+                    subtitle={t('admin.notifications.subtitle')}
                     actions={
                         unread > 0 ? (
                             <AdminPrimaryButton
@@ -57,7 +59,7 @@ export default function AdminNotifications({
                                     router.post('/admin/notifications/read-all')
                                 }
                             >
-                                Mark all read
+                                {t('admin.notifications.mark_all_read')}
                             </AdminPrimaryButton>
                         ) : null
                     }
@@ -67,13 +69,15 @@ export default function AdminNotifications({
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
                     <AdminPanel>
-                        <h2 className="mb-4 text-base font-bold">Compose</h2>
+                        <h2 className="mb-4 text-base font-bold">
+                            {t('admin.notifications.compose')}
+                        </h2>
                         <form
                             className="space-y-3"
                             onSubmit={(event) => {
@@ -84,7 +88,7 @@ export default function AdminNotifications({
                             }}
                         >
                             <div>
-                                <Label>Audience</Label>
+                                <Label>{t('admin.notifications.audience')}</Label>
                                 <NativeSelect
                                     className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
                                     value={form.data.audience}
@@ -95,15 +99,15 @@ export default function AdminNotifications({
                                         )
                                     }
                                 >
-                                    <option value="all">All users</option>
-                                    <option value="employers">Employers</option>
+                                    <option value="all">{t('admin.notifications.all_users')}</option>
+                                    <option value="employers">{t('admin.notifications.employers')}</option>
                                     <option value="job_seekers">
-                                        Job seekers
+                                        {t('admin.notifications.job_seekers')}
                                     </option>
                                 </NativeSelect>
                             </div>
                             <div>
-                                <Label>Category</Label>
+                                <Label>{t('admin.notifications.category')}</Label>
                                 <Input
                                     value={form.data.category}
                                     onChange={(event) =>
@@ -115,7 +119,9 @@ export default function AdminNotifications({
                                 />
                             </div>
                             <div>
-                                <Label>Title</Label>
+                                <Label>
+                                    {t('admin.notifications.notification_title')}
+                                </Label>
                                 <Input
                                     value={form.data.title}
                                     onChange={(event) =>
@@ -124,7 +130,7 @@ export default function AdminNotifications({
                                 />
                             </div>
                             <div>
-                                <Label>Message</Label>
+                                <Label>{t('admin.notifications.message')}</Label>
                                 <Textarea
                                     value={form.data.message}
                                     onChange={(event) =>
@@ -136,7 +142,7 @@ export default function AdminNotifications({
                                 />
                             </div>
                             <AdminPrimaryButton type="submit">
-                                Send
+                                {t('common.send')}
                             </AdminPrimaryButton>
                         </form>
                     </AdminPanel>
@@ -144,14 +150,16 @@ export default function AdminNotifications({
                     <AdminPanel>
                         <div className="mb-4 flex gap-2">
                             <AdminFilterChip
-                                label="All"
+                                label={t('common.all')}
                                 active={tab !== 'unread'}
                                 onClick={() =>
                                     router.get('/admin/notifications')
                                 }
                             />
                             <AdminFilterChip
-                                label={`Unread (${unread})`}
+                                label={t('admin.notifications.unread', {
+                                    count: unread,
+                                })}
                                 active={tab === 'unread'}
                                 onClick={() =>
                                     router.get('/admin/notifications', {
@@ -192,7 +200,7 @@ export default function AdminNotifications({
                             ))}
                             {notifications.length === 0 && (
                                 <p className="text-center text-sm text-[#99a1af]">
-                                    No notifications yet.
+                                    {t('admin.notifications.empty')}
                                 </p>
                             )}
                         </div>

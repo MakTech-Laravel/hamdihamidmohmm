@@ -2,80 +2,82 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 import { getInitials } from '@/components/employer/demo-data';
+import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
-
-const navItems = [
-    {
-        title: 'Dashboard',
-        href: '/employer/dashboard',
-        icon: '📊',
-        match: '/employer/dashboard',
-    },
-    {
-        title: 'Company Profile',
-        href: '/employer/profile',
-        icon: '🏢',
-        match: '/employer/profile',
-    },
-    {
-        title: 'Packages & Billing',
-        href: '/employer/packages',
-        icon: '💳',
-        match: '/employer/packages',
-    },
-    {
-        title: 'My Jobs',
-        href: '/employer/jobs',
-        icon: '💼',
-        match: '/employer/jobs',
-    },
-    {
-        title: 'Applications',
-        href: '/employer/applications',
-        icon: '👥',
-        match: '/employer/applications',
-    },
-    {
-        title: 'Notifications',
-        href: '/employer/notifications',
-        icon: '🔔',
-        match: '/employer/notifications',
-    },
-    {
-        title: 'Settings',
-        href: '/employer/settings',
-        icon: '⚙️',
-        match: '/employer/settings',
-    },
-] as const;
 
 export function EmployerSidebar() {
     const page = usePage<SharedData>();
     const { auth } = page.props;
+    const { t } = useLocale();
     const currentUrl = page.url;
     const user = auth.user;
-    const personName = user.name || user.contact_name || 'Employer';
+    const personName = user.name || user.contact_name || t('employer.portal');
     const initials = getInitials(personName);
     const [avatarFailed, setAvatarFailed] = useState(false);
     const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
+
+    const navItems = [
+        {
+            title: t('employer.nav.dashboard'),
+            href: '/employer/dashboard',
+            icon: '📊',
+            match: '/employer/dashboard',
+        },
+        {
+            title: t('employer.nav.company_profile'),
+            href: '/employer/profile',
+            icon: '🏢',
+            match: '/employer/profile',
+        },
+        {
+            title: t('employer.nav.packages'),
+            href: '/employer/packages',
+            icon: '💳',
+            match: '/employer/packages',
+        },
+        {
+            title: t('employer.nav.jobs'),
+            href: '/employer/jobs',
+            icon: '💼',
+            match: '/employer/jobs',
+        },
+        {
+            title: t('employer.nav.applications'),
+            href: '/employer/applications',
+            icon: '👥',
+            match: '/employer/applications',
+        },
+        {
+            title: t('employer.nav.notifications'),
+            href: '/employer/notifications',
+            icon: '🔔',
+            match: '/employer/notifications',
+        },
+        {
+            title: t('employer.nav.settings'),
+            href: '/employer/settings',
+            icon: '⚙️',
+            match: '/employer/settings',
+        },
+    ];
 
     return (
         <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-white">
             <div className="flex h-[60px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
                 <img
                     src="/images/admin/logo.png"
-                    alt="RR Job Portal"
+                    alt={t('app.name')}
                     className="h-[51px] w-[76px] object-contain"
                     width={76}
                     height={51}
                 />
                 <div className="min-w-0">
                     <p className="truncate text-sm leading-5 font-bold text-[#050315]">
-                        RR Job Portal
+                        {t('app.name')}
                     </p>
                     <p className="truncate text-xs leading-4 text-[#0057c8]">
-                        Employer Portal
+                        {t('employer.portal')}
                     </p>
                 </div>
             </div>
@@ -143,7 +145,7 @@ export function EmployerSidebar() {
                         height={20}
                         className="size-5 shrink-0 object-contain"
                     />
-                    <span>Logout</span>
+                    <span>{t('common.logout')}</span>
                 </button>
             </div>
         </aside>

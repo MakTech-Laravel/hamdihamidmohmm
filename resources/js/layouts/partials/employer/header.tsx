@@ -21,14 +21,17 @@ export function EmployerHeader({
     unreadCount?: number;
 }) {
     const { auth } = usePage<SharedData>().props;
-    const { locale, setLocale } = useLocale();
+    const { locale, setLocale, t } = useLocale();
     const user = auth.user;
     const personName = user.name || user.contact_name || 'Employer';
     const initials = getInitials(personName);
     const shortName = firstName(personName);
     const companyName = user.company_name || 'Company';
     const switchLocale = locale === 'ar' ? 'en' : 'ar';
-    const localeLabel = locale === 'ar' ? 'English' : 'العربية';
+    const localeLabel =
+        switchLocale === 'ar'
+            ? t('lang.switch_to_arabic')
+            : t('lang.switch_to_english');
     const [avatarFailed, setAvatarFailed] = useState(false);
     const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
 
@@ -55,7 +58,7 @@ export function EmployerHeader({
                         height={14}
                         className="size-3.5 shrink-0 object-contain"
                     />
-                    Public Website
+                    {t('common.public_website')}
                 </Link>
 
                 <button
@@ -76,7 +79,7 @@ export function EmployerHeader({
                 <Link
                     href="/employer/notifications"
                     className="relative flex size-9 items-center justify-center rounded-lg p-2 text-[#64748b] transition-colors hover:bg-[#d1f6ff]"
-                    aria-label="Notifications"
+                    aria-label={t('common.notifications')}
                 >
                     <img
                         src="/images/employer/bell.svg"
@@ -97,7 +100,7 @@ export function EmployerHeader({
                         <button
                             type="button"
                             className="flex cursor-pointer items-center gap-2 rounded-xl p-1 transition-colors hover:bg-[#d1f6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0057c8]/30"
-                            aria-label="User menu"
+                            aria-label={t('employer.header.user_menu')}
                         >
                             {showAvatar ? (
                                 <img
@@ -139,7 +142,7 @@ export function EmployerHeader({
                                 className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm text-[#364153]"
                             >
                                 <UserRound className="size-4 text-[#0057c8]" />
-                                Profile
+                                {t('common.profile')}
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-[#e2e8f0]" />
@@ -148,7 +151,7 @@ export function EmployerHeader({
                             onSelect={() => router.post('/logout')}
                         >
                             <LogOut className="size-4" />
-                            Log out
+                            {t('common.log_out')}
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

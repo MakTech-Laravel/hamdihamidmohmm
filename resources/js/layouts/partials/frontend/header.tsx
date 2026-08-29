@@ -42,7 +42,7 @@ export function FrontendHeader() {
                     <Link href={home()} className="shrink-0">
                         <img
                             src="/images/home/logo.png"
-                            alt="Rena Reiam For Job"
+                            alt={t('app.name')}
                             className="h-[65px] w-[98px] object-contain"
                             width={98}
                             height={65}

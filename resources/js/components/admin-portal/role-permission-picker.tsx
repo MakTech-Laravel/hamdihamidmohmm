@@ -1,3 +1,4 @@
+import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
 
 export type PermissionOption = {
@@ -31,6 +32,7 @@ export function RolePermissionPicker({
     onToggle,
     onGroupToggle,
 }: Props) {
+    const { t } = useLocale();
     const query = search.trim().toLowerCase();
     const filteredGroups = groups
         .map((group) => ({
@@ -59,8 +61,10 @@ export function RolePermissionPicker({
                                     {group.name}
                                 </h3>
                                 <p className="text-[11px] text-[#99a1af]">
-                                    {enabledCount}/{group.permissions.length}{' '}
-                                    enabled
+                                    {t('admin.roles.enabled', {
+                                        count: enabledCount,
+                                        total: group.permissions.length,
+                                    })}
                                 </p>
                             </div>
                             {!disabled && onGroupToggle && (
@@ -72,7 +76,7 @@ export function RolePermissionPicker({
                                             onGroupToggle(group, true)
                                         }
                                     >
-                                        All
+                                        {t('common.all')}
                                     </button>
                                     <button
                                         type="button"
@@ -81,7 +85,7 @@ export function RolePermissionPicker({
                                             onGroupToggle(group, false)
                                         }
                                     >
-                                        None
+                                        {t('common.none')}
                                     </button>
                                 </div>
                             )}
@@ -122,7 +126,7 @@ export function RolePermissionPicker({
                                             {lockRequired &&
                                                 permission.required_for_admin && (
                                                     <span className="mt-1 block text-[11px] font-medium text-[#0057c8]">
-                                                        Required
+                                                        {t('admin.roles.required')}
                                                     </span>
                                                 )}
                                         </span>

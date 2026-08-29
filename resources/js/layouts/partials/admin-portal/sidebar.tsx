@@ -1,11 +1,12 @@
 import { Link, router, usePage } from '@inertiajs/react';
 
 import { AdminIcon } from '@/components/admin-icon';
+import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
 type NavItem = {
-    title: string;
+    titleKey: string;
     href: string | null;
     icon: string;
     match?: string;
@@ -14,91 +15,91 @@ type NavItem = {
 
 const navItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        titleKey: 'admin.nav.dashboard',
         href: '/admin/dashboard',
         icon: '/images/admin/nav-dashboard.svg',
         match: '/admin/dashboard',
     },
     {
-        title: 'All Users',
+        titleKey: 'admin.nav.users',
         href: '/admin/users',
         icon: '/images/admin/nav-job-seekers.svg',
         match: '/admin/users',
     },
     {
-        title: 'Roles & Permissions',
+        titleKey: 'admin.nav.roles',
         href: '/admin/roles-permissions',
         icon: '/images/admin/nav-verification.svg',
         match: '/admin/roles-permissions',
     },
     {
-        title: 'Employer Management',
+        titleKey: 'admin.nav.employers',
         href: '/admin/employers',
         icon: '/images/admin/nav-employers.svg',
         match: '/admin/employers',
     },
     {
-        title: 'Job Seeker Management',
+        titleKey: 'admin.nav.job_seekers',
         href: '/admin/job-seekers',
         icon: '/images/admin/nav-job-seekers.svg',
         match: '/admin/job-seekers',
     },
     {
-        title: 'Job Management',
+        titleKey: 'admin.nav.jobs',
         href: '/admin/jobs',
         icon: '/images/admin/nav-jobs.svg',
         match: '/admin/jobs',
     },
     {
-        title: 'Applications',
+        titleKey: 'admin.nav.applications',
         href: '/admin/applications',
         icon: '/images/admin/nav-applications.svg',
         match: '/admin/applications',
     },
     {
-        title: 'Packages & Pricing',
+        titleKey: 'admin.nav.packages',
         href: '/admin/packages',
         icon: '/images/admin/nav-packages.svg',
         match: '/admin/packages',
     },
     {
-        title: 'Payments & Revenue',
+        titleKey: 'admin.nav.payments',
         href: '/admin/payments',
         icon: '/images/admin/nav-payments.svg',
         match: '/admin/payments',
     },
     {
-        title: 'Verification Center',
+        titleKey: 'admin.nav.verifications',
         href: '/admin/verifications',
         icon: '/images/admin/nav-verification.svg',
         match: '/admin/verifications',
     },
     {
-        title: 'Reports & Analytics',
+        titleKey: 'admin.nav.reports',
         href: '/admin/reports',
         icon: '/images/admin/nav-reports.svg',
         match: '/admin/reports',
     },
     {
-        title: 'Content Management',
+        titleKey: 'admin.nav.content',
         href: '/admin/content',
         icon: '/images/admin/nav-content.svg',
         match: '/admin/content',
     },
     {
-        title: 'Notifications',
+        titleKey: 'admin.nav.notifications',
         href: '/admin/notifications',
         icon: '/images/admin/nav-notifications.svg',
         match: '/admin/notifications',
     },
     {
-        title: 'Platform Settings',
+        titleKey: 'admin.nav.settings',
         href: '/admin/settings',
         icon: '/images/admin/nav-settings.svg',
         match: '/admin/settings',
     },
     {
-        title: 'Admin Management',
+        titleKey: 'admin.nav.admins',
         href: '/admin/admins',
         icon: '/images/admin/nav-admins.svg',
         match: '/admin/admins',
@@ -110,6 +111,7 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const currentUrl = page.url;
+    const { t } = useLocale();
 
     return (
         <aside
@@ -121,17 +123,17 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
             <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
                 <img
                     src="/images/admin/logo.png"
-                    alt="RR Job Portal"
+                    alt={t('admin.brand')}
                     className="h-[51px] w-[76px] object-contain"
                     width={76}
                     height={51}
                 />
                 <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-[#050315]">
-                        RR Job Portal
+                        {t('admin.brand')}
                     </p>
                     <p className="truncate text-xs font-normal text-[#3977a6]">
-                        Admin Portal
+                        {t('admin.portal')}
                     </p>
                 </div>
             </div>
@@ -152,10 +154,11 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
                                 ? 'bg-[rgba(0,87,200,0.1)] text-[#0057c8]'
                                 : 'text-[#3977a6] hover:bg-[rgba(0,87,200,0.06)]',
                         );
+                        const title = t(item.titleKey);
 
                         return (
                             <Link
-                                key={item.title}
+                                key={item.titleKey}
                                 href={item.href!}
                                 className={className}
                             >
@@ -165,7 +168,7 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
                                     tint
                                     className={cn(!active && 'opacity-60')}
                                 />
-                                <span className="truncate">{item.title}</span>
+                                <span className="truncate">{title}</span>
                             </Link>
                         );
                     })}
@@ -182,7 +185,7 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
                         size={16}
                         tint
                     />
-                    Logout
+                    {t('admin.nav.logout')}
                 </button>
             </div>
         </aside>

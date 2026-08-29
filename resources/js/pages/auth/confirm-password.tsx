@@ -6,16 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useLocale } from '@/hooks/use-locale';
 import AuthLayout from '@/layouts/auth-layout';
 import { store } from '@/routes/password/confirm';
 
 export default function ConfirmPassword() {
+    const { t } = useLocale();
+
     return (
         <AuthLayout
-            title="Confirm your password"
-            description="This is a secure area. Please confirm your password before continuing."
+            title={t('auth.confirm_password_title')}
+            description={t('auth.confirm_password_description')}
         >
-            <Head title="Confirm password" />
+            <Head title={t('auth.confirm_password')} />
 
             <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/50 bg-card/50 p-8 shadow-xl backdrop-blur-sm">
                 <div className="mb-6 flex justify-center">
@@ -28,7 +31,7 @@ export default function ConfirmPassword() {
                     {({ processing, errors }) => (
                         <div className="space-y-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password">{t('auth.password')}</Label>
                                 <Input
                                     id="password"
                                     type="password"
@@ -47,7 +50,7 @@ export default function ConfirmPassword() {
                                 data-test="confirm-password-button"
                             >
                                 {processing && <Spinner className="mr-2 h-4 w-4" />}
-                                Confirm password
+                                {t('auth.confirm_password_button')}
                             </Button>
                         </div>
                     )}

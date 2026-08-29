@@ -81,7 +81,7 @@ export default function About() {
 
     return (
         <FrontendLayout>
-            <Head title={`${t('about.title')} - RR Job Portal`} />
+            <Head title={`${t('about.title')} - ${t('app.name')}`} />
 
             <section className="bg-[#d1f6ff] px-4 py-12 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px]">

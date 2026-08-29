@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 
 import { AdminIcon } from '@/components/admin-icon';
 import { Input } from '@/components/ui/input';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -51,6 +52,7 @@ export default function UserManagement({
     canManageAdmins,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [search, setSearch] = useState('');
 
     const filteredUsers = useMemo(() => {
@@ -70,16 +72,16 @@ export default function UserManagement({
 
     return (
         <AdminPortalLayout>
-            <Head title="All Users" />
+            <Head title={t('admin.users.title')} />
 
             <div className="space-y-6 p-6">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <h1 className="text-[28px] font-extrabold tracking-tight text-[#050315]">
-                            All Users
+                            {t('admin.users.title')}
                         </h1>
                         <p className="mt-1 text-sm text-[#3977a6]">
-                            View every account, update details, and track activity.
+                            {t('admin.users.subtitle')}
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -87,14 +89,14 @@ export default function UserManagement({
                             href="/admin/roles-permissions"
                             className="inline-flex items-center justify-center rounded-xl border border-[#e2e8f0] bg-white px-4 py-2.5 text-sm font-semibold text-[#0057c8] hover:bg-[#f8fafc]"
                         >
-                            Roles & Permissions
+                            {t('admin.roles.title')}
                         </Link>
                         {canManageAdmins && (
                             <Link
                                 href="/admin/admins"
                                 className="inline-flex items-center justify-center rounded-xl bg-[#0057c8] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0046a3]"
                             >
-                                + Create Admin
+                                {t('admin.admins.create')}
                             </Link>
                         )}
                     </div>
@@ -104,25 +106,25 @@ export default function UserManagement({
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                     {[
-                        ['all', 'All Users', roleCounts.all ?? 0],
+                        ['all', t('admin.users.filters.all'), roleCounts.all ?? 0],
                         [
                             'super-admin',
-                            'Super Admin',
+                            t('admin.users.filters.super_admin'),
                             roleCounts['super-admin'] ?? 0,
                         ],
-                        ['admin', 'Admins', roleCounts.admin ?? 0],
+                        ['admin', t('admin.users.filters.admins'), roleCounts.admin ?? 0],
                         [
                             'job-seeker',
-                            'Job Seekers',
+                            t('admin.users.filters.job_seekers'),
                             roleCounts['job-seeker'] ?? 0,
                         ],
-                        ['employer', 'Employers', roleCounts.employer ?? 0],
+                        ['employer', t('admin.users.filters.employers'), roleCounts.employer ?? 0],
                     ].map(([key, label, count]) => (
                         <button
                             key={key}
@@ -161,13 +163,13 @@ export default function UserManagement({
                                 className="text-[#0057c8]"
                             />
                             <h2 className="text-base font-bold text-[#101828]">
-                                Users Directory
+                                {t('admin.users.directory')}
                             </h2>
                         </div>
                         <Input
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Search by name, email, or role…"
+                            placeholder={t('admin.users.search_placeholder')}
                             className="max-w-sm rounded-xl"
                         />
                     </div>
@@ -177,22 +179,22 @@ export default function UserManagement({
                             <thead className="border-b border-[#e2e8f0] text-[#64748b]">
                                 <tr>
                                     <th className="px-3 py-2 font-semibold">
-                                        User
+                                        {t('admin.users.cols.name')}
                                     </th>
                                     <th className="px-3 py-2 font-semibold">
-                                        Email
+                                        {t('admin.users.cols.email')}
                                     </th>
                                     <th className="px-3 py-2 font-semibold">
-                                        Role
+                                        {t('admin.users.cols.role')}
                                     </th>
                                     <th className="px-3 py-2 font-semibold">
-                                        Permissions
+                                        {t('admin.users.cols.permissions')}
                                     </th>
                                     <th className="px-3 py-2 font-semibold">
-                                        Created
+                                        {t('common.created')}
                                     </th>
                                     <th className="px-3 py-2 font-semibold">
-                                        Actions
+                                        {t('common.actions')}
                                     </th>
                                 </tr>
                             </thead>
@@ -237,8 +239,15 @@ export default function UserManagement({
                                         </td>
                                         <td className="px-3 py-3 text-xs text-[#64748b]">
                                             {user.permissions.length > 0
-                                                ? `${user.permissions.length} assigned`
-                                                : 'Role defaults'}
+                                                ? t(
+                                                      'admin.users.permissions_assigned',
+                                                      {
+                                                          count: user
+                                                              .permissions
+                                                              .length,
+                                                      },
+                                                  )
+                                                : t('admin.users.role_defaults')}
                                         </td>
                                         <td className="px-3 py-3 text-[#99a1af]">
                                             {user.created_at ?? '—'}
@@ -249,7 +258,7 @@ export default function UserManagement({
                                                     href={`/admin/users/${user.id}`}
                                                     className="inline-flex h-9 items-center rounded-lg border border-[#e2e8f0] bg-white px-3 text-xs font-semibold text-[#0057c8] hover:bg-[#f8faff]"
                                                 >
-                                                    View
+                                                    {t('common.view')}
                                                 </Link>
                                                 {(canManageAdmins ||
                                                     user.role_name !==
@@ -258,7 +267,7 @@ export default function UserManagement({
                                                             href={`/admin/users/${user.id}/edit`}
                                                             className="inline-flex h-9 items-center rounded-lg border border-[#e2e8f0] bg-white px-3 text-xs font-semibold text-[#101828] hover:bg-[#f8faff]"
                                                         >
-                                                            Edit
+                                                            {t('common.edit')}
                                                         </Link>
                                                     )}
                                             </div>

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\Package;
+use App\Models\User;
+use App\Support\PortalPreferences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -19,7 +21,7 @@ class FrontendController extends Controller
             'packages' => Package::publicCards(),
             'recommendedJobs' => JobPost::query()
                 ->active()
-                ->with('employer:id,name,company_name')
+                ->with('employer:id,name,company_name,portal_preferences')
                 ->latest()
                 ->limit(6)
                 ->get()
@@ -34,7 +36,7 @@ class FrontendController extends Controller
 
         $jobs = JobPost::query()
             ->active()
-            ->with('employer:id,name,company_name')
+            ->with('employer:id,name,company_name,portal_preferences')
             ->withCount('applications')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($builder) use ($search): void {
@@ -55,7 +57,7 @@ class FrontendController extends Controller
                 'location' => $job->location,
                 'type' => $job->employment_type,
                 'category' => $job->category,
-                'salary' => $job->salary_range,
+                'salary' => $this->publicSalary($job->employer, $job->salary_range),
             ]);
 
         return Inertia::render('frontend/jobs', [
@@ -69,7 +71,7 @@ class FrontendController extends Controller
         abort_unless($jobPost->effectiveStatus()->value === 'active', 404);
 
         $jobPost->incrementViews();
-        $jobPost->load('employer:id,name,company_name,about,industry,website');
+        $jobPost->load('employer:id,name,company_name,about,industry,website,portal_preferences');
 
         $applied = $request->user()?->isJobSeeker()
             ? JobApplication::query()
@@ -88,7 +90,7 @@ class FrontendController extends Controller
                 'location' => $jobPost->location,
                 'type' => $jobPost->employment_type,
                 'category' => $jobPost->category,
-                'salary' => $jobPost->salary_range,
+                'salary' => $this->publicSalary($jobPost->employer, $jobPost->salary_range),
                 'description' => $jobPost->description,
                 'overview' => $jobPost->description,
                 'about' => $jobPost->employer?->about,
@@ -99,7 +101,7 @@ class FrontendController extends Controller
                 'similar' => JobPost::query()
                     ->active()
                     ->where('id', '!=', $jobPost->id)
-                    ->with('employer:id,name,company_name')
+                    ->with('employer:id,name,company_name,portal_preferences')
                     ->latest()
                     ->limit(3)
                     ->get()
@@ -132,6 +134,9 @@ class FrontendController extends Controller
         return Inertia::render('frontend/contact');
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function homeJobCard(JobPost $job): array
     {
         $company = $job->employer?->company_name ?: $job->employer?->name;
@@ -145,8 +150,19 @@ class FrontendController extends Controller
             'location' => $job->location ?: '—',
             'experience' => $job->experience_level ?: '—',
             'posted' => $job->created_at?->diffForHumans() ?: '—',
-            'salary' => $job->salary_range ?: '—',
+            'salary' => $this->publicSalary($job->employer, $job->salary_range) ?: '—',
         ];
+    }
+
+    private function publicSalary(?User $employer, ?string $salary): ?string
+    {
+        if ($employer === null || ! filled($salary)) {
+            return $salary;
+        }
+
+        $prefs = PortalPreferences::for($employer);
+
+        return $prefs['privacy']['show_salary'] ? $salary : null;
     }
 
     private function initials(?string $name): string

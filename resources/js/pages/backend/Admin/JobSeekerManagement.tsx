@@ -20,6 +20,7 @@ import {
     AdminTableShell,
 } from '@/components/admin-portal/ui';
 import { NativeSelect } from '@/components/ui/native-select';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -94,6 +95,7 @@ export default function JobSeekerManagement({
     options,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [search, setSearch] = useState(filters.search ?? '');
 
     const query = useMemo(() => {
@@ -138,24 +140,24 @@ export default function JobSeekerManagement({
 
     return (
         <AdminPortalLayout>
-            <Head title="Job Seeker Management" />
+            <Head title={t('admin.job_seekers.title')} />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title="Job Seeker Management"
-                    subtitle="Monitor and manage candidate accounts."
+                    title={t('admin.job_seekers.title')}
+                    subtitle={t('admin.job_seekers.subtitle')}
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <a href={`/admin/job-seekers/export${query}`}>
                                 <AdminSecondaryButton>
                                     <Download className="size-4" />
-                                    Export
+                                    {t('common.export')}
                                 </AdminSecondaryButton>
                             </a>
                             <Link href="/admin/job-seekers/create">
                                 <AdminPrimaryButton>
                                     <Plus className="size-4" />
-                                    Add Job Seeker
+                                    {t('admin.job_seekers.add')}
                                 </AdminPrimaryButton>
                             </Link>
                         </div>
@@ -166,34 +168,34 @@ export default function JobSeekerManagement({
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {[
-                        ['Total Job Seekers', stats.total, 'text-[#0057c8]'],
+                        [t('admin.job_seekers.stats.total'), stats.total, 'text-[#0057c8]'],
                         [
-                            'Active Job Seekers',
+                            t('admin.job_seekers.stats.active'),
                             stats.active,
                             'text-[#10b981]',
                         ],
                         [
-                            'Suspended Job Seekers',
+                            t('admin.job_seekers.stats.suspended'),
                             stats.suspended,
                             'text-[#ef4444]',
                         ],
                         [
-                            'Inactive Job Seekers',
+                            t('admin.legacy_nav.inactive'),
                             stats.inactive,
                             'text-[#64748b]',
                         ],
                     ].map(([label, value, tone]) => (
                         <AdminStatCard
-                            key={label}
-                            label={label}
+                            key={String(label)}
+                            label={String(label)}
                             value={Number(value).toLocaleString()}
-                            valueClassName={tone}
+                            valueClassName={String(tone)}
                             icon={UserRound}
                         />
                     ))}
@@ -211,7 +213,7 @@ export default function JobSeekerManagement({
                             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#94a3b8]" />
                             <input
                                 type="search"
-                                placeholder="Search job seekers..."
+                                placeholder={t('admin.job_seekers.search_placeholder')}
                                 value={search}
                                 onChange={(event) =>
                                     setSearch(event.target.value)
@@ -227,7 +229,7 @@ export default function JobSeekerManagement({
                                 }
                                 className="rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm font-semibold text-[#64748b] outline-none focus:border-[#0057c8]"
                             >
-                                <option value="all">All Status</option>
+                                <option value="all">{t('admin.job_seekers.all_status')}</option>
                                 {options.statuses.map((status) => (
                                     <option
                                         key={status.value}
@@ -247,8 +249,10 @@ export default function JobSeekerManagement({
                                 }
                                 className="rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm font-semibold text-[#64748b] outline-none focus:border-[#0057c8]"
                             >
-                                <option value="all">All Countries</option>
-                                <option value="UAE">UAE</option>
+                                <option value="all">{t('admin.job_seekers.all_countries')}</option>
+                                <option value="UAE">
+                                    {t('admin.job_seekers.countries.uae')}
+                                </option>
                                 {options.locations.map((location) => (
                                     <option key={location} value={location}>
                                         {location}
@@ -260,15 +264,15 @@ export default function JobSeekerManagement({
 
                     <AdminTableShell
                         headers={[
-                            'Name',
-                            'Email',
-                            'Phone',
-                            'Location',
-                            'Applications',
-                            'Resume',
-                            'Reg. Date',
-                            'Status',
-                            'Actions',
+                            t('admin.job_seekers.cols.name'),
+                            t('admin.job_seekers.cols.email'),
+                            t('admin.job_seekers.fields.phone'),
+                            t('admin.job_seekers.cols.location'),
+                            t('admin.job_seekers.cols.applications'),
+                            t('admin.job_seekers.fields.resume'),
+                            t('admin.job_seekers.cols.registered'),
+                            t('common.status'),
+                            t('common.actions'),
                         ]}
                     >
                         {jobSeekers.data.map((row) => (
@@ -311,14 +315,14 @@ export default function JobSeekerManagement({
                                         <Link
                                             href={`/admin/job-seekers/${row.id}`}
                                             className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8faff]"
-                                            aria-label="View job seeker"
+                                            aria-label={t('admin.job_seekers.view')}
                                         >
                                             <Eye className="size-4" />
                                         </Link>
                                         <Link
                                             href={`/admin/job-seekers/${row.id}/edit`}
                                             className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8faff]"
-                                            aria-label="Edit job seeker"
+                                            aria-label={t('admin.job_seekers.edit')}
                                         >
                                             <Pencil className="size-4" />
                                         </Link>
@@ -335,7 +339,7 @@ export default function JobSeekerManagement({
                                                     )
                                                 }
                                             >
-                                                Reactivate
+                                                {t('common.reactivate')}
                                             </button>
                                         ) : (
                                             <button
@@ -350,7 +354,7 @@ export default function JobSeekerManagement({
                                                     )
                                                 }
                                             >
-                                                Suspend
+                                                {t('common.suspend')}
                                             </button>
                                         )}
                                     </div>
@@ -361,12 +365,16 @@ export default function JobSeekerManagement({
 
                     {jobSeekers.data.length === 0 && (
                         <p className="mt-6 text-center text-sm text-[#99a1af]">
-                            No job seekers match these filters.
+                            {t('admin.job_seekers.empty')}
                         </p>
                     )}
 
                     <AdminPagination
-                        showingLabel={`Showing ${jobSeekers.from ?? 0}-${jobSeekers.to ?? 0} of ${jobSeekers.total}`}
+                        showingLabel={t('common.showing_range', {
+                            from: jobSeekers.from ?? 0,
+                            to: jobSeekers.to ?? 0,
+                            total: jobSeekers.total,
+                        })}
                         links={jobSeekers.links}
                     />
                 </AdminPanel>

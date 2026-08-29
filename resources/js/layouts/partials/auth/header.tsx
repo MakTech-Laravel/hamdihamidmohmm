@@ -10,19 +10,20 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTrigger } from '@/components/ui/sheet';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
+import { useLocale } from '@/hooks/use-locale';
 import { login, register } from '@/routes';
 import { type SharedData } from '@/types';
 
-
 export function AuthHeader() {
     const { auth } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const getInitials = useInitials();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const navLinks = [
-        { name: 'Features', href: '#' },
-        { name: 'Pricing', href: '#' },
-        { name: 'About', href: '#' },
+        { name: t('common.features'), href: '#' },
+        { name: t('nav.pricing'), href: '#' },
+        { name: t('common.about'), href: '#' },
     ];
 
     return (
@@ -49,14 +50,20 @@ export function AuthHeader() {
                 <div className="flex items-center gap-3">
                     <AppearanceToggleDropdown />
 
-                    <div className="hidden h-6 w-[1px] bg-border md:block" /> {/* Divider */}
+                    <div className="hidden h-6 w-[1px] bg-border md:block" />
 
                     {auth.user ? (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-offset-background transition-all hover:ring-2 hover:ring-ring">
+                                <Button
+                                    variant="ghost"
+                                    className="relative h-9 w-9 rounded-full ring-offset-background transition-all hover:ring-2 hover:ring-ring"
+                                >
                                     <Avatar className="h-9 w-9">
-                                        <AvatarImage src={auth.user.avatar_url || auth.user.avatar} alt={auth.user.name} />
+                                        <AvatarImage
+                                            src={auth.user.avatar_url || auth.user.avatar}
+                                            alt={auth.user.name}
+                                        />
                                         <AvatarFallback className="bg-violet-600 text-white text-xs">
                                             {getInitials(auth.user.name)}
                                         </AvatarFallback>
@@ -70,17 +77,21 @@ export function AuthHeader() {
                     ) : (
                         <div className="hidden items-center gap-2 md:flex">
                             <Link href={login()}>
-                                <Button variant="ghost" size="sm" className="text-sm font-medium">Log in</Button>
+                                <Button variant="ghost" size="sm" className="text-sm font-medium">
+                                    {t('auth.log_in')}
+                                </Button>
                             </Link>
                             <Link href={register()}>
-                                <Button size="sm" className="bg-violet-600 text-white shadow-sm hover:bg-violet-700">
-                                    Get Started
+                                <Button
+                                    size="sm"
+                                    className="bg-violet-600 text-white shadow-sm hover:bg-violet-700"
+                                >
+                                    {t('auth.get_started')}
                                 </Button>
                             </Link>
                         </div>
                     )}
 
-                    {/* Mobile Menu Trigger */}
                     <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon" className="md:hidden">
@@ -114,16 +125,34 @@ export function AuthHeader() {
                                 <div className="space-y-3">
                                     {!auth.user ? (
                                         <>
-                                            <Link href={login()} className="block w-full" onClick={() => setIsMobileMenuOpen(false)}>
-                                                <Button variant="outline" className="w-full py-6">Log in</Button>
+                                            <Link
+                                                href={login()}
+                                                className="block w-full"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                            >
+                                                <Button variant="outline" className="w-full py-6">
+                                                    {t('auth.log_in')}
+                                                </Button>
                                             </Link>
-                                            <Link href={register()} className="block w-full" onClick={() => setIsMobileMenuOpen(false)}>
-                                                <Button className="w-full bg-violet-600 py-6 hover:bg-violet-700">Get Started</Button>
+                                            <Link
+                                                href={register()}
+                                                className="block w-full"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                            >
+                                                <Button className="w-full bg-violet-600 py-6 hover:bg-violet-700">
+                                                    {t('auth.get_started')}
+                                                </Button>
                                             </Link>
                                         </>
                                     ) : (
-                                        <Link href={route('dashboard')} className="block w-full" onClick={() => setIsMobileMenuOpen(false)}>
-                                            <Button className="w-full bg-violet-600 py-6">Dashboard</Button>
+                                        <Link
+                                            href={route('dashboard')}
+                                            className="block w-full"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                        >
+                                            <Button className="w-full bg-violet-600 py-6">
+                                                {t('common.dashboard')}
+                                            </Button>
                                         </Link>
                                     )}
                                 </div>

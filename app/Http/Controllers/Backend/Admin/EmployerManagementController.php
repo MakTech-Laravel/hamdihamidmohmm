@@ -14,6 +14,7 @@ use App\Http\Requests\Backend\Admin\StoreEmployerRequest;
 use App\Http\Requests\Backend\Admin\UpdateEmployerRequest;
 use App\Models\User;
 use App\Support\ActivityLogger;
+use App\Support\PortalNotifier;
 use App\Support\RoleAssigner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -53,7 +54,7 @@ class EmployerManagementController extends Controller
         $employers = $employersQuery
             ->paginate(12)
             ->withQueryString()
-            ->through(fn(User $employer) => $this->employerRow($employer));
+            ->through(fn (User $employer) => $this->employerRow($employer));
 
         return Inertia::render('backend/Admin/EmployerManagement', [
             'employers' => $employers,
@@ -118,7 +119,7 @@ class EmployerManagementController extends Controller
             'employer' => $this->employerDetails($user),
             'activities' => $user->activityLogs
                 ->take(50)
-                ->map(fn($log) => [
+                ->map(fn ($log) => [
                     'id' => $log->id,
                     'action_label' => $log->action->label(),
                     'description' => $log->description,
@@ -181,7 +182,7 @@ class EmployerManagementController extends Controller
 
     public function approve(Request $request, User $user): RedirectResponse
     {
-        $this->authorizeAccess($request);
+        $this->authorizeVerificationAccess($request);
         $this->ensureEmployer($user);
         abort_unless($user->canApproveEmployer(), 403, 'Only pending employers can be approved.');
 
@@ -199,6 +200,8 @@ class EmployerManagementController extends Controller
             $request->user(),
         );
 
+        PortalNotifier::verificationApproved($user);
+
         return back()->with('success', 'Employer approved successfully.');
     }
 
@@ -206,10 +209,12 @@ class EmployerManagementController extends Controller
     {
         $this->ensureEmployer($user);
 
+        $reason = $request->string('rejection_reason')->toString();
+
         $user->forceFill([
             'verification_status' => EmployerVerificationStatus::Rejected,
             'account_status' => EmployerAccountStatus::Rejected,
-            'rejection_reason' => $request->string('rejection_reason')->toString(),
+            'rejection_reason' => $reason,
         ])->save();
 
         ActivityLogger::log(
@@ -219,6 +224,8 @@ class EmployerManagementController extends Controller
             $request->user(),
             ['reason' => $user->rejection_reason],
         );
+
+        PortalNotifier::verificationRejected($user, $reason);
 
         return back()->with('success', 'Employer rejected successfully.');
     }
@@ -250,7 +257,7 @@ class EmployerManagementController extends Controller
             });
         }
 
-        $filename = 'employers-' . now()->format('Y-m-d-His') . '.csv';
+        $filename = 'employers-'.now()->format('Y-m-d-His').'.csv';
 
         return response()->streamDownload(function () use ($employersQuery): void {
             $handle = fopen('php://output', 'w');
@@ -292,6 +299,16 @@ class EmployerManagementController extends Controller
     private function authorizeAccess(Request $request): void
     {
         abort_unless($request->user()?->canManageEmployers(), 403);
+    }
+
+    private function authorizeVerificationAccess(Request $request): void
+    {
+        $actor = $request->user();
+
+        abort_unless(
+            $actor?->canManageEmployers() === true || $actor?->canManageVerification() === true,
+            403,
+        );
     }
 
     private function ensureEmployer(User $user): void
@@ -371,11 +388,11 @@ class EmployerManagementController extends Controller
                 'Education',
                 'Other',
             ],
-            'packages' => collect(EmployerPackage::cases())->map(fn(EmployerPackage $package) => [
+            'packages' => collect(EmployerPackage::cases())->map(fn (EmployerPackage $package) => [
                 'value' => $package->value,
                 'label' => $package->label(),
             ])->values()->all(),
-            'statuses' => collect(EmployerAccountStatus::cases())->map(fn(EmployerAccountStatus $status) => [
+            'statuses' => collect(EmployerAccountStatus::cases())->map(fn (EmployerAccountStatus $status) => [
                 'value' => $status->value,
                 'label' => $status->label(),
             ])->values()->all(),

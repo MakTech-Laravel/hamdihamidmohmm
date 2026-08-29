@@ -8,16 +8,10 @@ import {
     AdminPrimaryButton,
     AdminSecondaryButton,
 } from '@/components/admin-portal/ui';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
-
-const settingsTabs = [
-    { id: 'general', label: 'General', icon: Settings },
-    { id: 'email', label: 'Email', icon: Mail },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'language', label: 'Language', icon: Globe },
-] as const;
 
 type SettingsMap = Record<string, Record<string, string | number | boolean>>;
 
@@ -27,6 +21,29 @@ export default function PlatformSettings({
     settings: SettingsMap;
 }) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
+    const settingsTabs = [
+        {
+            id: 'general' as const,
+            label: t('admin.settings.tabs.general'),
+            icon: Settings,
+        },
+        {
+            id: 'email' as const,
+            label: t('admin.settings.tabs.email'),
+            icon: Mail,
+        },
+        {
+            id: 'security' as const,
+            label: t('admin.settings.tabs.security'),
+            icon: Shield,
+        },
+        {
+            id: 'language' as const,
+            label: t('admin.settings.tabs.language'),
+            icon: Globe,
+        },
+    ];
     const [activeTab, setActiveTab] =
         useState<(typeof settingsTabs)[number]['id']>('general');
     const form = useForm({
@@ -53,16 +70,16 @@ export default function PlatformSettings({
 
     return (
         <AdminPortalLayout>
-            <Head title="Platform Settings" />
+            <Head title={t('admin.settings.title')} />
 
             <div className="space-y-6 p-6">
-                <AdminPageHeader title="Platform Settings" />
+                <AdminPageHeader title={t('admin.settings.title')} />
 
                 {flash.success && (
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
@@ -141,7 +158,7 @@ export default function PlatformSettings({
                             <div className="flex gap-2">
                                 <AdminPrimaryButton type="submit">
                                     <Save className="size-4" />
-                                    Save
+                                    {t('common.save')}
                                 </AdminPrimaryButton>
                                 <AdminSecondaryButton
                                     onClick={() =>
@@ -149,7 +166,7 @@ export default function PlatformSettings({
                                     }
                                 >
                                     <RotateCcw className="size-4" />
-                                    Reset
+                                    {t('common.reset')}
                                 </AdminSecondaryButton>
                             </div>
                         </form>

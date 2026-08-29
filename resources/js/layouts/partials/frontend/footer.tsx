@@ -34,7 +34,7 @@ export function FrontendFooter() {
                         <Link href={home()}>
                             <img
                                 src="/images/home/logo.png"
-                                alt="Rena Reiam For Job"
+                                alt={t('app.name')}
                                 className="h-[57px] w-[86px] object-contain"
                                 width={86}
                                 height={57}

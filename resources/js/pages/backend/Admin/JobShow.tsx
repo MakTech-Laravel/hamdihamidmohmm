@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
@@ -43,6 +44,7 @@ type Job = {
 
 export default function JobShow({ job }: { job: Job }) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [rejectOpen, setRejectOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
 
@@ -57,7 +59,9 @@ export default function JobShow({ job }: { job: Job }) {
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Link href="/admin/jobs">
-                                <AdminSecondaryButton>Back</AdminSecondaryButton>
+                                <AdminSecondaryButton>
+                                    {t('common.back')}
+                                </AdminSecondaryButton>
                             </Link>
                             {job.can_review && (
                                 <>
@@ -68,14 +72,14 @@ export default function JobShow({ job }: { job: Job }) {
                                             )
                                         }
                                     >
-                                        Approve
+                                        {t('common.approve')}
                                     </AdminPrimaryButton>
                                     <Button
                                         type="button"
                                         className="bg-[#b91c1c] text-white hover:bg-[#991b1b]"
                                         onClick={() => setRejectOpen(true)}
                                     >
-                                        Reject
+                                        {t('common.reject')}
                                     </Button>
                                 </>
                             )}
@@ -87,48 +91,54 @@ export default function JobShow({ job }: { job: Job }) {
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <div className="grid gap-4 lg:grid-cols-3">
                     <AdminPanel className="lg:col-span-2">
                         <h2 className="text-base font-bold text-[#050315]">
-                            Description
+                            {t('common.description')}
                         </h2>
                         <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#475569]">
-                            {job.description || 'No description provided.'}
+                            {job.description || t('admin.jobs.no_description')}
                         </p>
                     </AdminPanel>
                     <AdminPanel className="space-y-3">
                         <AdminStatusBadge label={job.status} tone="info" />
                         <p className="text-sm text-[#64748b]">
-                            Employer: {job.employer}
+                            {t('admin.jobs.fields.employer')}: {job.employer}
                         </p>
                         <p className="text-sm text-[#64748b]">
-                            Email: {job.employer_email || '—'}
+                            {t('admin.jobs.fields.email')}:{' '}
+                            {job.employer_email || '—'}
                         </p>
                         <p className="text-sm text-[#64748b]">
-                            Category: {job.category}
+                            {t('admin.jobs.fields.category')}: {job.category}
                         </p>
                         <p className="text-sm text-[#64748b]">
-                            Type: {job.employment_type || '—'}
+                            {t('admin.jobs.fields.type')}:{' '}
+                            {job.employment_type || '—'}
                         </p>
                         <p className="text-sm text-[#64748b]">
-                            Salary: {job.salary_range || '—'}
+                            {t('admin.jobs.fields.salary')}:{' '}
+                            {job.salary_range || '—'}
                         </p>
                         <p className="text-sm text-[#64748b]">
-                            Applications: {job.applications}
+                            {t('admin.jobs.fields.applications')}:{' '}
+                            {job.applications}
                         </p>
                         <p className="text-sm text-[#64748b]">
-                            Views: {job.views}
+                            {t('admin.jobs.fields.views')}: {job.views}
                         </p>
                         <p className="text-sm text-[#64748b]">
-                            Expires: {job.expires_at || '—'}
+                            {t('admin.jobs.fields.expires')}:{' '}
+                            {job.expires_at || '—'}
                         </p>
                         {job.rejection_reason && (
                             <p className="text-sm text-[#b91c1c]">
-                                Rejection: {job.rejection_reason}
+                                {t('admin.jobs.fields.rejection')}:{' '}
+                                {job.rejection_reason}
                             </p>
                         )}
                     </AdminPanel>
@@ -138,12 +148,12 @@ export default function JobShow({ job }: { job: Job }) {
             <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Reject job</DialogTitle>
+                        <DialogTitle>{t('admin.jobs.reject_title')}</DialogTitle>
                         <DialogDescription>
-                            Provide a reason the employer can act on.
+                            {t('admin.jobs.reject_prompt')}
                         </DialogDescription>
                     </DialogHeader>
-                    <Label htmlFor="job_reject_reason">Reason</Label>
+                    <Label htmlFor="job_reject_reason">{t('common.reason')}</Label>
                     <Textarea
                         id="job_reject_reason"
                         value={rejectionReason}
@@ -157,7 +167,7 @@ export default function JobShow({ job }: { job: Job }) {
                             variant="outline"
                             onClick={() => setRejectOpen(false)}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button
                             type="button"
@@ -174,7 +184,7 @@ export default function JobShow({ job }: { job: Job }) {
                                 )
                             }
                         >
-                            Reject
+                            {t('common.reject')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

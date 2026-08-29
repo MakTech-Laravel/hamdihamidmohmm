@@ -1,11 +1,11 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { Menu } from 'lucide-react';
 
-import AppLogo from '@/components/app-logo';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
+import { useLocale } from '@/hooks/use-locale';
 import { type SharedData } from '@/types';
 
 interface UserHeaderProps {
@@ -14,6 +14,7 @@ interface UserHeaderProps {
 
 export function UserHeader({ showProfileMenu = true }: UserHeaderProps) {
     const { auth } = usePage<SharedData>().props;
+    const { t } = useLocale();
 
     const handleLogout = (): void => {
         router.post(route('logout'));
@@ -28,8 +29,8 @@ export function UserHeader({ showProfileMenu = true }: UserHeaderProps) {
                         <path d="M15 40 Q50 20, 85 40" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
                     </svg>
                     <div>
-                        <div className="font-sans text-xl font-bold tracking-wider">HORIZON WILLS</div>
-                        <div className="text-xs text-primary-300 tracking-[0.3em]">PROTECTING YOUR ASSETS</div>
+                        <div className="font-sans text-xl font-bold tracking-wider">{t('brand.title')}</div>
+                        <div className="text-xs text-primary-300 tracking-[0.3em]">{t('brand.tagline')}</div>
                     </div>
                 </Link>
 
@@ -62,7 +63,7 @@ export function UserHeader({ showProfileMenu = true }: UserHeaderProps) {
                     </>
                 ) : (
                     <Button variant="ghost" className="text-primary-500 hover:text-primary-600" onClick={handleLogout}>
-                        Log out
+                        {t('common.log_out')}
                     </Button>
                 )}
             </div>

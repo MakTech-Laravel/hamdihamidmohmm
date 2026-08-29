@@ -76,7 +76,7 @@ export default function Pricing({ packages = [] }: Props) {
 
     return (
         <FrontendLayout>
-            <Head title={`${t('pricing.title')} - RR Job Portal`} />
+            <Head title={`${t('pricing.title')} - ${t('app.name')}`} />
 
             <section className="bg-[#d1f6ff] px-4 py-10 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px] text-center">
@@ -111,95 +111,94 @@ export default function Pricing({ packages = [] }: Props) {
                     <PricingPackageCards packages={packages} />
 
                     {comparisonRows.length > 0 && comparisonPackages.length === 2 && (
-                    <div className="mt-16">
-                        <h2 className="text-center text-3xl font-bold tracking-[-0.2px] text-[#050315]">
-                            {t('pricing.comparison_title')}
-                        </h2>
+                        <div className="mt-16">
+                            <h2 className="text-center text-3xl font-bold tracking-[-0.2px] text-[#050315]">
+                                {t('pricing.comparison_title')}
+                            </h2>
 
-                        <div className="mt-8 overflow-x-auto rounded-2xl border border-[#d1f6ff] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.06)]">
-                            <table className="w-full min-w-[720px] border-collapse text-sm">
-                                <thead>
-                                    <tr className="border-b border-[#f1f5f9]">
-                                        <th className="p-4 text-start font-semibold text-[#6a7282]">
-                                            {t('pricing.features')}
-                                        </th>
-                                        <th className="p-4 text-center font-semibold text-[#0057c8]">
-                                            {translatePricingValue(
-                                                t,
-                                                comparisonPackages[0].name,
-                                                `pricing.packages.${comparisonPackages[0].slug}.name`,
-                                            )}
-                                        </th>
-                                        <th className="bg-[#fff7ed] p-4 text-center font-semibold text-[#e57124]">
-                                            {translatePricingValue(
-                                                t,
-                                                comparisonPackages[1].name,
-                                                `pricing.packages.${comparisonPackages[1].slug}.name`,
-                                            )}
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {comparisonRows.map((row) => (
-                                        <tr
-                                            key={row.feature}
-                                            className="border-b border-[#f8faff] last:border-b-0"
-                                        >
-                                            <td className="p-4 text-start text-[#4a5565]">
-                                                {row.feature}
-                                            </td>
-                                            {[row.left, row.right].map(
-                                                (included, columnIndex) => (
-                                                    <td
-                                                        key={`${row.feature}-${columnIndex}`}
-                                                        className={
-                                                            columnIndex === 1
-                                                                ? 'bg-[#fffbf7] p-4'
-                                                                : 'p-4'
-                                                        }
-                                                    >
-                                                        <div className="flex justify-center">
-                                                            <span
-                                                                className={`inline-flex size-6 items-center justify-center rounded-full ${
-                                                                    included
-                                                                        ? 'bg-[#dcfce7]'
-                                                                        : 'bg-[#f1f5f9]'
-                                                                }`}
-                                                            >
-                                                                <img
-                                                                    src={
-                                                                        included
-                                                                            ? '/images/pricing/check-table.svg'
-                                                                            : '/images/pricing/x-table.svg'
-                                                                    }
-                                                                    alt=""
-                                                                    className={
-                                                                        included
-                                                                            ? 'size-3.5'
-                                                                            : 'size-3'
-                                                                    }
-                                                                    width={
-                                                                        included
-                                                                            ? 14
-                                                                            : 12
-                                                                    }
-                                                                    height={
-                                                                        included
-                                                                            ? 14
-                                                                            : 12
-                                                                    }
-                                                                />
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                ),
-                                            )}
+                            <div className="mt-8 overflow-x-auto rounded-2xl border border-[#d1f6ff] bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.06)]">
+                                <table className="w-full min-w-[720px] border-collapse text-sm">
+                                    <thead>
+                                        <tr className="border-b border-[#f1f5f9]">
+                                            <th className="p-4 text-start font-semibold text-[#6a7282]">
+                                                {t('pricing.features')}
+                                            </th>
+                                            <th className="p-4 text-center font-semibold text-[#0057c8]">
+                                                {translatePricingValue(
+                                                    t,
+                                                    comparisonPackages[0].name,
+                                                    `pricing.packages.${comparisonPackages[0].slug}.name`,
+                                                )}
+                                            </th>
+                                            <th className="bg-[#fff7ed] p-4 text-center font-semibold text-[#e57124]">
+                                                {translatePricingValue(
+                                                    t,
+                                                    comparisonPackages[1].name,
+                                                    `pricing.packages.${comparisonPackages[1].slug}.name`,
+                                                )}
+                                            </th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {comparisonRows.map((row) => (
+                                            <tr
+                                                key={row.feature}
+                                                className="border-b border-[#f8faff] last:border-b-0"
+                                            >
+                                                <td className="p-4 text-start text-[#4a5565]">
+                                                    {row.feature}
+                                                </td>
+                                                {[row.left, row.right].map(
+                                                    (included, columnIndex) => (
+                                                        <td
+                                                            key={`${row.feature}-${columnIndex}`}
+                                                            className={
+                                                                columnIndex === 1
+                                                                    ? 'bg-[#fffbf7] p-4'
+                                                                    : 'p-4'
+                                                            }
+                                                        >
+                                                            <div className="flex justify-center">
+                                                                <span
+                                                                    className={`inline-flex size-6 items-center justify-center rounded-full ${included
+                                                                            ? 'bg-[#dcfce7]'
+                                                                            : 'bg-[#f1f5f9]'
+                                                                        }`}
+                                                                >
+                                                                    <img
+                                                                        src={
+                                                                            included
+                                                                                ? '/images/pricing/check-table.svg'
+                                                                                : '/images/pricing/x-table.svg'
+                                                                        }
+                                                                        alt=""
+                                                                        className={
+                                                                            included
+                                                                                ? 'size-3.5'
+                                                                                : 'size-3'
+                                                                        }
+                                                                        width={
+                                                                            included
+                                                                                ? 14
+                                                                                : 12
+                                                                        }
+                                                                        height={
+                                                                            included
+                                                                                ? 14
+                                                                                : 12
+                                                                        }
+                                                                    />
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                    ),
+                                                )}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
                     )}
 
                     <div id="faq" className="mt-16 scroll-mt-28">

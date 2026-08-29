@@ -8,6 +8,7 @@ import {
     DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
+import { useLocale } from '@/hooks/use-locale';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { logout } from '@/routes';
 import { type User } from '@/types';
@@ -18,6 +19,7 @@ interface UserMenuContentProps {
 
 export function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
+    const { t } = useLocale();
 
     const handleLogout = () => {
         cleanup();
@@ -40,7 +42,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                         onClick={cleanup}
                     >
                         <UserIcon className="mr-2 h-4 w-4" />
-                        Profile
+                        {t('common.profile')}
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuGroup>
@@ -54,7 +56,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                     data-test="logout-button"
                 >
                     <LogOut className="mr-2 h-4 w-4" />
-                    Log out
+                    {t('common.log_out')}
                 </Link>
             </DropdownMenuItem>
         </>

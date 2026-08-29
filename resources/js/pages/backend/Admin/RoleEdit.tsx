@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 
 type ManagedRole = {
@@ -29,6 +30,7 @@ type Props = {
 };
 
 export default function RoleEdit({ managedRole, permissionGroups }: Props) {
+    const { t } = useLocale();
     const lockRequired = managedRole.kind !== 'portal';
     const allPermissionNames = useMemo(
         () =>
@@ -71,7 +73,11 @@ export default function RoleEdit({ managedRole, permissionGroups }: Props) {
 
     return (
         <AdminPortalLayout>
-            <Head title={`Edit ${managedRole.label}`} />
+            <Head
+                title={t('admin.roles.edit_title', {
+                    name: managedRole.label,
+                })}
+            />
 
             <div className="space-y-6 p-6">
                 <div>
@@ -79,14 +85,15 @@ export default function RoleEdit({ managedRole, permissionGroups }: Props) {
                         href={`/admin/roles-permissions/${managedRole.id}`}
                         className="text-xs font-semibold text-[#0057c8]"
                     >
-                        ← Role details
+                        {t('admin.roles.back_to_details')}
                     </Link>
                     <h1 className="mt-2 text-[28px] font-extrabold tracking-tight text-[#050315]">
-                        Edit {managedRole.label}
+                        {t('admin.roles.edit_title', {
+                            name: managedRole.label,
+                        })}
                     </h1>
                     <p className="mt-1 text-sm text-[#3977a6]">
-                        Update the role name and choose which modules it can
-                        access.
+                        {t('admin.roles.edit_subtitle')}
                     </p>
                 </div>
 
@@ -108,11 +115,13 @@ export default function RoleEdit({ managedRole, permissionGroups }: Props) {
 
                             <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                                 <h2 className="mb-4 text-base font-bold text-[#101828]">
-                                    Role details
+                                    {t('admin.roles.show_subtitle')}
                                 </h2>
                                 <div className="space-y-4">
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="label">Role name</Label>
+                                        <Label htmlFor="label">
+                                            {t('admin.roles.fields.name')}
+                                        </Label>
                                         <Input
                                             id="label"
                                             name="label"
@@ -123,7 +132,7 @@ export default function RoleEdit({ managedRole, permissionGroups }: Props) {
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="description">
-                                            Description
+                                            {t('admin.roles.fields.description')}
                                         </Label>
                                         <Textarea
                                             id="description"
@@ -151,12 +160,16 @@ export default function RoleEdit({ managedRole, permissionGroups }: Props) {
                                         />
                                         <div>
                                             <h2 className="text-base font-bold text-[#101828]">
-                                                Permissions
+                                                {t('admin.roles.permissions')}
                                             </h2>
                                             <p className="text-xs text-[#99a1af]">
                                                 {lockRequired
-                                                    ? 'Access Admin Panel stays required for this role.'
-                                                    : 'Turn modules on only if this portal role should use them.'}
+                                                    ? t(
+                                                          'admin.roles.required_panel',
+                                                      )
+                                                    : t(
+                                                          'admin.roles.comparison_help',
+                                                      )}
                                             </p>
                                         </div>
                                     </div>
@@ -166,7 +179,9 @@ export default function RoleEdit({ managedRole, permissionGroups }: Props) {
                                             onChange={(event) =>
                                                 setSearch(event.target.value)
                                             }
-                                            placeholder="Search permissions…"
+                                            placeholder={t(
+                                                'admin.roles.search_permissions',
+                                            )}
                                             className="w-full rounded-xl sm:w-56"
                                         />
                                         <Button
@@ -177,7 +192,7 @@ export default function RoleEdit({ managedRole, permissionGroups }: Props) {
                                                 setSelected(allPermissionNames)
                                             }
                                         >
-                                            Enable all
+                                            {t('admin.roles.enable_all')}
                                         </Button>
                                     </div>
                                 </div>
@@ -196,7 +211,9 @@ export default function RoleEdit({ managedRole, permissionGroups }: Props) {
                                 disabled={processing}
                                 className="rounded-xl bg-[#0057c8] text-white hover:bg-[#0046a3]"
                             >
-                                {processing ? 'Saving…' : 'Save role'}
+                                {processing
+                                    ? t('common.saving')
+                                    : t('admin.roles.save')}
                             </Button>
                         </>
                     )}
