@@ -9,8 +9,11 @@ use App\Http\Requests\Backend\User\UploadJobSeekerCertificationRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerPhotoRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerResumeRequest;
 use App\Models\JobSeekerProfile;
+use App\Models\User;
+use App\Support\JobSeekerCvExtractor;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -34,18 +37,16 @@ class JobSeekerProfileController extends Controller
             ->values()
             ->map(function (mixed $item, int $index) use ($user) {
                 $record = is_array($item) ? $item : ['name' => (string) $item];
-                $hasFile = filled($record['file_path'] ?? null)
-                    && Storage::disk('local')->exists((string) $record['file_path']);
+                $attachments = $this->certificationAttachmentsForDisplay($record, $index, $user?->id);
 
                 return [
                     'name' => $record['name'] ?? $record['title'] ?? '',
                     'issuer' => $record['issuer'] ?? $record['org'] ?? '',
                     'date' => $record['date'] ?? $record['year'] ?? '',
-                    'file_path' => $hasFile ? (string) $record['file_path'] : null,
-                    'file_name' => $hasFile ? ($record['file_name'] ?? basename((string) $record['file_path'])) : null,
-                    'file_url' => $hasFile && $user !== null
-                        ? route('job-seeker.profile.certifications.download', ['index' => $index])
-                        : null,
+                    'attachments' => $attachments,
+                    'file_path' => $attachments[0]['file_path'] ?? null,
+                    'file_name' => $attachments[0]['file_name'] ?? null,
+                    'file_url' => $attachments[0]['file_url'] ?? null,
                 ];
             })
             ->all();
@@ -194,23 +195,29 @@ class JobSeekerProfileController extends Controller
                 'name' => '',
                 'issuer' => '',
                 'date' => '',
+                'attachments' => [],
             ];
         }
 
         $entry = is_array($certifications[$index]) ? $certifications[$index] : ['name' => (string) $certifications[$index]];
+        $attachments = $this->normalizeAttachmentList($entry);
 
-        if (filled($entry['file_path'] ?? null)) {
-            Storage::disk('local')->delete((string) $entry['file_path']);
+        if (count($attachments) >= 5) {
+            return back()->withErrors(['document' => __('job_seeker.profile.certification_attachments_max')]);
         }
 
         $path = $document->store('certifications/'.$user->id, 'local');
+
+        $attachments[] = [
+            'file_path' => $path,
+            'file_name' => $document->getClientOriginalName(),
+        ];
 
         $certifications[$index] = [
             'name' => trim((string) ($request->input('name') ?: ($entry['name'] ?? $entry['title'] ?? ''))),
             'issuer' => trim((string) ($request->input('issuer') ?: ($entry['issuer'] ?? $entry['org'] ?? ''))),
             'date' => trim((string) ($request->input('date') ?: ($entry['date'] ?? $entry['year'] ?? ''))),
-            'file_path' => $path,
-            'file_name' => $document->getClientOriginalName(),
+            'attachments' => $attachments,
         ];
 
         $profile->forceFill([
@@ -220,7 +227,7 @@ class JobSeekerProfileController extends Controller
         return back()->with('success', __('job_seeker.profile.certification_uploaded'));
     }
 
-    public function downloadCertificationDocument(Request $request, int $index): StreamedResponse
+    public function downloadCertificationDocument(Request $request, int $index, ?int $attachment = null): StreamedResponse
     {
         $user = $request->user();
         abort_unless($user?->isJobSeeker() === true, 403);
@@ -230,15 +237,21 @@ class JobSeekerProfileController extends Controller
         $entry = $certifications[$index] ?? null;
 
         abort_unless(is_array($entry), 404);
+
+        $attachments = $this->normalizeAttachmentList($entry);
+        $attachmentIndex = $attachment ?? (int) $request->integer('attachment', 0);
+        $file = $attachments[$attachmentIndex] ?? null;
+
         abort_unless(
-            filled($entry['file_path'] ?? null)
-                && Storage::disk('local')->exists((string) $entry['file_path']),
+            is_array($file)
+                && filled($file['file_path'] ?? null)
+                && Storage::disk('local')->exists((string) $file['file_path']),
             404,
         );
 
-        $downloadName = $entry['file_name'] ?? basename((string) $entry['file_path']);
+        $downloadName = $file['file_name'] ?? basename((string) $file['file_path']);
 
-        return Storage::disk('local')->download((string) $entry['file_path'], $downloadName);
+        return Storage::disk('local')->download((string) $file['file_path'], $downloadName);
     }
 
     public function destroyCertificationDocument(Request $request, int $index): RedirectResponse
@@ -253,11 +266,25 @@ class JobSeekerProfileController extends Controller
         $entry = $certifications[$index] ?? null;
         abort_unless(is_array($entry), 404);
 
-        if (filled($entry['file_path'] ?? null)) {
-            Storage::disk('local')->delete((string) $entry['file_path']);
+        $attachments = $this->normalizeAttachmentList($entry);
+        $attachmentIndex = (int) $request->integer('attachment', 0);
+
+        if (! array_key_exists($attachmentIndex, $attachments)) {
+            abort(404);
         }
 
+        $file = $attachments[$attachmentIndex];
+
+        if (filled($file['file_path'] ?? null)) {
+            Storage::disk('local')->delete((string) $file['file_path']);
+        }
+
+        unset($attachments[$attachmentIndex]);
+        $attachments = array_values($attachments);
+
+        $entry['attachments'] = $attachments;
         unset($entry['file_path'], $entry['file_name']);
+
         $certifications[$index] = $entry;
 
         $profile->forceFill([
@@ -288,7 +315,18 @@ class JobSeekerProfileController extends Controller
             'resume_status' => JobSeekerResumeStatus::Active,
         ])->save();
 
-        return back()->with('success', __('job_seeker.profile.resume_uploaded'));
+        $extracted = false;
+
+        if ($request->boolean('extract_profile', true)) {
+            $extracted = $this->applyExtractedCvData($user->id, $resume);
+        }
+
+        return back()->with(
+            'success',
+            $extracted
+                ? __('job_seeker.profile.resume_imported')
+                : __('job_seeker.profile.resume_uploaded'),
+        );
     }
 
     public function downloadResume(Request $request): StreamedResponse
@@ -329,7 +367,7 @@ class JobSeekerProfileController extends Controller
     /**
      * @param  array<int, mixed>  $incoming
      * @param  array<int, mixed>  $previous
-     * @return list<array{name: string, issuer: string, date: string, file_path?: string, file_name?: string}>
+     * @return list<array{name: string, issuer: string, date: string, attachments?: list<array{file_path: string, file_name: string}>}>
      */
     private function normalizeCertificationsForStorage(array $incoming, array $previous): array
     {
@@ -346,14 +384,20 @@ class JobSeekerProfileController extends Controller
                     'date' => trim((string) ($record['date'] ?? $record['year'] ?? '')),
                 ];
 
-                $filePath = $record['file_path'] ?? null;
-                $fileName = $record['file_name'] ?? null;
+                $attachments = collect($this->normalizeAttachmentList($record))
+                    ->filter(fn (array $file): bool => filled($file['file_path'] ?? null)
+                        && Storage::disk('local')->exists((string) $file['file_path']))
+                    ->map(fn (array $file): array => [
+                        'file_path' => (string) $file['file_path'],
+                        'file_name' => filled($file['file_name'] ?? null)
+                            ? (string) $file['file_name']
+                            : basename((string) $file['file_path']),
+                    ])
+                    ->values()
+                    ->all();
 
-                if (filled($filePath) && Storage::disk('local')->exists((string) $filePath)) {
-                    $normalized['file_path'] = (string) $filePath;
-                    $normalized['file_name'] = filled($fileName)
-                        ? (string) $fileName
-                        : basename((string) $filePath);
+                if ($attachments !== []) {
+                    $normalized['attachments'] = $attachments;
                 }
 
                 return $normalized;
@@ -361,7 +405,7 @@ class JobSeekerProfileController extends Controller
             ->filter(fn (array $entry): bool => $entry['name'] !== ''
                 || $entry['issuer'] !== ''
                 || $entry['date'] !== ''
-                || isset($entry['file_path']))
+                || isset($entry['attachments']))
             ->values()
             ->all();
     }
@@ -373,19 +417,172 @@ class JobSeekerProfileController extends Controller
     private function deleteOrphanedCertificationFiles(array $previous, array $current): void
     {
         $keep = collect($current)
-            ->map(fn (mixed $item): ?string => is_array($item) ? ($item['file_path'] ?? null) : null)
+            ->flatMap(fn (mixed $item): array => is_array($item) ? $this->normalizeAttachmentList($item) : [])
+            ->map(fn (array $file): ?string => $file['file_path'] ?? null)
             ->filter()
             ->values()
             ->all();
 
         foreach ($previous as $item) {
-            if (! is_array($item) || ! filled($item['file_path'] ?? null)) {
+            if (! is_array($item)) {
                 continue;
             }
 
-            if (! in_array($item['file_path'], $keep, true)) {
-                Storage::disk('local')->delete((string) $item['file_path']);
+            foreach ($this->normalizeAttachmentList($item) as $file) {
+                if (! filled($file['file_path'] ?? null)) {
+                    continue;
+                }
+
+                if (! in_array($file['file_path'], $keep, true)) {
+                    Storage::disk('local')->delete((string) $file['file_path']);
+                }
             }
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $record
+     * @return list<array{file_path: string|null, file_name: string|null, file_url?: string|null}>
+     */
+    private function certificationAttachmentsForDisplay(array $record, int $certIndex, ?int $userId): array
+    {
+        return collect($this->normalizeAttachmentList($record))
+            ->values()
+            ->map(function (array $file, int $attachmentIndex) use ($certIndex, $userId) {
+                $hasFile = filled($file['file_path'] ?? null)
+                    && Storage::disk('local')->exists((string) $file['file_path']);
+
+                if (! $hasFile) {
+                    return null;
+                }
+
+                return [
+                    'file_path' => (string) $file['file_path'],
+                    'file_name' => $file['file_name'] ?? basename((string) $file['file_path']),
+                    'file_url' => $userId !== null
+                        ? route('job-seeker.profile.certifications.download', [
+                            'index' => $certIndex,
+                            'attachment' => $attachmentIndex,
+                        ])
+                        : null,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $entry
+     * @return list<array{file_path?: string, file_name?: string}>
+     */
+    private function normalizeAttachmentList(array $entry): array
+    {
+        $attachments = [];
+
+        if (isset($entry['attachments']) && is_array($entry['attachments'])) {
+            foreach ($entry['attachments'] as $attachment) {
+                if (! is_array($attachment) || ! filled($attachment['file_path'] ?? null)) {
+                    continue;
+                }
+
+                $attachments[] = [
+                    'file_path' => (string) $attachment['file_path'],
+                    'file_name' => filled($attachment['file_name'] ?? null)
+                        ? (string) $attachment['file_name']
+                        : basename((string) $attachment['file_path']),
+                ];
+            }
+        }
+
+        if ($attachments === [] && filled($entry['file_path'] ?? null)) {
+            $attachments[] = [
+                'file_path' => (string) $entry['file_path'],
+                'file_name' => filled($entry['file_name'] ?? null)
+                    ? (string) $entry['file_name']
+                    : basename((string) $entry['file_path']),
+            ];
+        }
+
+        return array_values($attachments);
+    }
+
+    private function applyExtractedCvData(int $userId, UploadedFile $resume): bool
+    {
+        $extracted = JobSeekerCvExtractor::extract($resume);
+
+        $hasContent = filled($extracted['name'])
+            || filled($extracted['phone'])
+            || filled($extracted['location'])
+            || filled($extracted['headline'])
+            || filled($extracted['bio'])
+            || filled($extracted['linkedin_url'])
+            || filled($extracted['github_url'])
+            || $extracted['skills'] !== []
+            || $extracted['education'] !== []
+            || $extracted['experience'] !== []
+            || $extracted['languages'] !== []
+            || $extracted['certifications'] !== [];
+
+        if (! $hasContent) {
+            return false;
+        }
+
+        $user = User::query()->find($userId);
+
+        if ($user === null) {
+            return false;
+        }
+
+        $userUpdates = [];
+
+        if (filled($extracted['name']) && (! filled($user->name) || $user->name === $user->email)) {
+            $userUpdates['name'] = $extracted['name'];
+        }
+
+        if (filled($extracted['phone']) && ! filled($user->phone)) {
+            $userUpdates['phone'] = $extracted['phone'];
+        }
+
+        if (filled($extracted['location']) && ! filled($user->location)) {
+            $userUpdates['location'] = $extracted['location'];
+        }
+
+        if ($userUpdates !== []) {
+            $user->forceFill($userUpdates)->save();
+        }
+
+        $profile = JobSeekerProfile::query()->firstOrCreate(
+            ['user_id' => $userId],
+            [],
+        );
+
+        $profileUpdates = [];
+
+        foreach (['headline', 'current_title', 'bio', 'linkedin_url', 'github_url'] as $field) {
+            if (filled($extracted[$field]) && ! filled($profile->{$field})) {
+                $profileUpdates[$field] = $extracted[$field];
+            }
+        }
+
+        foreach (['skills', 'education', 'experience', 'languages'] as $field) {
+            $existing = is_array($profile->{$field}) ? $profile->{$field} : [];
+
+            if ($extracted[$field] !== [] && $existing === []) {
+                $profileUpdates[$field] = $extracted[$field];
+            }
+        }
+
+        $existingCertifications = is_array($profile->certifications) ? $profile->certifications : [];
+
+        if ($extracted['certifications'] !== [] && $existingCertifications === []) {
+            $profileUpdates['certifications'] = $extracted['certifications'];
+        }
+
+        if ($profileUpdates !== []) {
+            $profile->forceFill($profileUpdates)->save();
+        }
+
+        return $userUpdates !== [] || $profileUpdates !== [];
     }
 }

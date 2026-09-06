@@ -124,6 +124,11 @@ class FrontendController extends Controller
         ]);
     }
 
+    public function training(): Response
+    {
+        return Inertia::render('frontend/training');
+    }
+
     public function about(): Response
     {
         return Inertia::render('frontend/about');

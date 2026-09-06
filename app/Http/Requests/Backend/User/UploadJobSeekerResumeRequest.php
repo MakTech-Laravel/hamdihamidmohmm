@@ -18,6 +18,7 @@ class UploadJobSeekerResumeRequest extends FormRequest
     {
         return [
             'resume' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+            'extract_profile' => ['sometimes', 'boolean'],
         ];
     }
 
