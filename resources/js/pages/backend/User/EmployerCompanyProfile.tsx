@@ -358,8 +358,13 @@ export default function EmployerCompanyProfile({
                                     {uploading === 'logo'
                                         ? t('common.uploading')
                                         : profile.logo_url
+<<<<<<< HEAD
                                             ? t('common.replace')
                                             : t('common.upload')}
+=======
+                                            ? 'Replace'
+                                            : 'Upload'}
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                 </button>
                                 {profile.logo_url && (
                                     <button
@@ -554,8 +559,13 @@ export default function EmployerCompanyProfile({
                                 {uploading === 'document'
                                     ? t('common.uploading')
                                     : profile.verification_document_name
+<<<<<<< HEAD
                                         ? t('common.replace')
                                         : t('common.upload')}
+=======
+                                        ? 'Replace Document'
+                                        : 'Upload Document'}
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                             </button>
                             {profile.verification_document_url && (
                                 <a

@@ -28,10 +28,14 @@ export function EmployerHeader({
     const shortName = firstName(personName);
     const companyName = user.company_name || 'Company';
     const switchLocale = locale === 'ar' ? 'en' : 'ar';
+<<<<<<< HEAD
     const localeLabel =
         switchLocale === 'ar'
             ? t('lang.switch_to_arabic')
             : t('lang.switch_to_english');
+=======
+    const localeLabel = locale === 'ar' ? 'English' : 'العربية';
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
     const [avatarFailed, setAvatarFailed] = useState(false);
     const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
 
@@ -100,7 +104,11 @@ export function EmployerHeader({
                         <button
                             type="button"
                             className="flex cursor-pointer items-center gap-2 rounded-xl p-1 transition-colors hover:bg-[#d1f6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0057c8]/30"
+<<<<<<< HEAD
                             aria-label={t('employer.header.user_menu')}
+=======
+                            aria-label="User menu"
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                         >
                             {showAvatar ? (
                                 <img
@@ -142,7 +150,11 @@ export function EmployerHeader({
                                 className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm text-[#364153]"
                             >
                                 <UserRound className="size-4 text-[#0057c8]" />
+<<<<<<< HEAD
                                 {t('common.profile')}
+=======
+                                Profile
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-[#e2e8f0]" />
@@ -151,7 +163,11 @@ export function EmployerHeader({
                             onSelect={() => router.post('/logout')}
                         >
                             <LogOut className="size-4" />
+<<<<<<< HEAD
                             {t('common.log_out')}
+=======
+                            Log out
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

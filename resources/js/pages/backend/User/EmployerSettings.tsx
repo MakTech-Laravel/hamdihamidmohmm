@@ -38,6 +38,17 @@ type Profile = {
     photo_url: string | null;
     personal_initials: string;
 };
+<<<<<<< HEAD
+=======
+
+const TABS: { id: SettingsTab; label: string; danger?: boolean }[] = [
+    { id: 'account', label: 'Account' },
+    { id: 'notifications', label: 'Notifications' },
+    { id: 'privacy', label: 'Privacy' },
+    { id: 'language', label: 'Language' },
+    { id: 'danger', label: 'Danger Zone', danger: true },
+];
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
 
 const fieldClass =
     'h-[42px] w-full max-w-[550px] rounded-lg border border-[#e8d5e8] bg-white px-3 text-sm text-[#050315] outline-none placeholder:text-[#050315]/50';
@@ -251,10 +262,18 @@ export default function EmployerSettings({
 
                                 <div className="mt-5 rounded-xl border border-[#e8d5e8] bg-[#f8faff] p-4">
                                     <p className="text-[14.4px] font-bold text-[#050315]">
+<<<<<<< HEAD
                                         {t('employer.settings.personal_information')}
                                     </p>
                                     <p className="mt-1 text-xs text-[#6b7280]">
                                         {t('employer.settings.personal_hint')}
+=======
+                                        Personal Information
+                                    </p>
+                                    <p className="mt-1 text-xs text-[#6b7280]">
+                                        Update your name and profile photo used
+                                        across the employer portal.
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                     </p>
 
                                     <input
@@ -271,7 +290,11 @@ export default function EmployerSettings({
                                                 src={profile.photo_url}
                                                 alt={
                                                     profile.name ||
+<<<<<<< HEAD
                                                     t('employer.settings.profile_photo')
+=======
+                                                    'Profile photo'
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                                 }
                                                 className="size-16 rounded-full object-cover"
                                             />
@@ -288,10 +311,17 @@ export default function EmployerSettings({
                                         )}
                                         <div className="min-w-0">
                                             <p className="text-sm font-semibold text-[#050315]">
+<<<<<<< HEAD
                                                 {t('employer.settings.profile_photo')}
                                             </p>
                                             <p className="text-xs text-[#6b7280]">
                                                 {t('employer.settings.photo_hint')}
+=======
+                                                Profile photo
+                                            </p>
+                                            <p className="text-xs text-[#6b7280]">
+                                                JPG, PNG, or WEBP · max 5MB
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                             </p>
                                             <div className="mt-2 flex flex-wrap gap-2">
                                                 <button
@@ -303,10 +333,17 @@ export default function EmployerSettings({
                                                     className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
                                                 >
                                                     {uploadingPhoto
+<<<<<<< HEAD
                                                         ? t('common.uploading')
                                                         : profile.photo_url
                                                             ? t('employer.settings.replace_photo')
                                                             : t('employer.settings.upload_photo')}
+=======
+                                                        ? 'Uploading…'
+                                                        : profile.photo_url
+                                                            ? 'Replace photo'
+                                                            : 'Upload photo'}
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                                 </button>
                                                 {profile.photo_url && (
                                                     <button
@@ -321,7 +358,11 @@ export default function EmployerSettings({
                                                         }
                                                         className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-[#b91c1c]"
                                                     >
+<<<<<<< HEAD
                                                         {t('common.remove')}
+=======
+                                                        Remove
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                                     </button>
                                                 )}
                                             </div>
@@ -330,7 +371,11 @@ export default function EmployerSettings({
 
                                     <label className="mt-4 block max-w-[550px]">
                                         <span className="text-[12.8px] font-semibold text-[#374151]">
+<<<<<<< HEAD
                                             {t('employer.settings.full_name')}
+=======
+                                            Full Name
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                         </span>
                                         <input
                                             type="text"
@@ -342,7 +387,11 @@ export default function EmployerSettings({
                                                 )
                                             }
                                             className={cn(fieldClass, 'mt-1.5')}
+<<<<<<< HEAD
                                             placeholder={t('employer.settings.full_name_placeholder')}
+=======
+                                            placeholder="Your full name"
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                         />
                                         {accountForm.errors.name && (
                                             <p className="mt-1 text-xs text-[#dc2626]">
@@ -354,7 +403,11 @@ export default function EmployerSettings({
 
                                 <label className="mt-5 block max-w-[550px]">
                                     <span className="text-[12.8px] font-semibold text-[#374151]">
+<<<<<<< HEAD
                                         {t('employer.settings.email')}
+=======
+                                        Email Address
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                     </span>
                                     <input
                                         type="email"
