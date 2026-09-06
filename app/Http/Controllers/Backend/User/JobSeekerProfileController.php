@@ -148,7 +148,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('public')->delete((string) $user->avatar);
         }
 
-        $path = $photo->store('avatars/'.$user->id, 'public');
+        $path = $photo->store('avatars/' . $user->id, 'public');
 
         $user->forceFill([
             'avatar' => $path,
@@ -206,7 +206,7 @@ class JobSeekerProfileController extends Controller
             return back()->withErrors(['document' => __('job_seeker.profile.certification_attachments_max')]);
         }
 
-        $path = $document->store('certifications/'.$user->id, 'local');
+        $path = $document->store('certifications/' . $user->id, 'local');
 
         $attachments[] = [
             'file_path' => $path,
@@ -307,7 +307,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('local')->delete($user->resume_path);
         }
 
-        $path = $resume->store('resumes/'.$user->id, 'local');
+        $path = $resume->store('resumes/' . $user->id, 'local');
 
         $user->forceFill([
             'resume_path' => $path,
@@ -385,9 +385,9 @@ class JobSeekerProfileController extends Controller
                 ];
 
                 $attachments = collect($this->normalizeAttachmentList($record))
-                    ->filter(fn (array $file): bool => filled($file['file_path'] ?? null)
+                    ->filter(fn(array $file): bool => filled($file['file_path'] ?? null)
                         && Storage::disk('local')->exists((string) $file['file_path']))
-                    ->map(fn (array $file): array => [
+                    ->map(fn(array $file): array => [
                         'file_path' => (string) $file['file_path'],
                         'file_name' => filled($file['file_name'] ?? null)
                             ? (string) $file['file_name']
@@ -402,7 +402,7 @@ class JobSeekerProfileController extends Controller
 
                 return $normalized;
             })
-            ->filter(fn (array $entry): bool => $entry['name'] !== ''
+            ->filter(fn(array $entry): bool => $entry['name'] !== ''
                 || $entry['issuer'] !== ''
                 || $entry['date'] !== ''
                 || isset($entry['attachments']))
@@ -417,8 +417,8 @@ class JobSeekerProfileController extends Controller
     private function deleteOrphanedCertificationFiles(array $previous, array $current): void
     {
         $keep = collect($current)
-            ->flatMap(fn (mixed $item): array => is_array($item) ? $this->normalizeAttachmentList($item) : [])
-            ->map(fn (array $file): ?string => $file['file_path'] ?? null)
+            ->flatMap(fn(mixed $item): array => is_array($item) ? $this->normalizeAttachmentList($item) : [])
+            ->map(fn(array $file): ?string => $file['file_path'] ?? null)
             ->filter()
             ->values()
             ->all();
@@ -509,80 +509,84 @@ class JobSeekerProfileController extends Controller
 
     private function applyExtractedCvData(int $userId, UploadedFile $resume): bool
     {
-        $extracted = JobSeekerCvExtractor::extract($resume);
+        try {
+            $extracted = JobSeekerCvExtractor::extract($resume);
 
-        $hasContent = filled($extracted['name'])
-            || filled($extracted['phone'])
-            || filled($extracted['location'])
-            || filled($extracted['headline'])
-            || filled($extracted['bio'])
-            || filled($extracted['linkedin_url'])
-            || filled($extracted['github_url'])
-            || $extracted['skills'] !== []
-            || $extracted['education'] !== []
-            || $extracted['experience'] !== []
-            || $extracted['languages'] !== []
-            || $extracted['certifications'] !== [];
+            $hasContent = filled($extracted['name'])
+                || filled($extracted['phone'])
+                || filled($extracted['location'])
+                || filled($extracted['headline'])
+                || filled($extracted['bio'])
+                || filled($extracted['linkedin_url'])
+                || filled($extracted['github_url'])
+                || $extracted['skills'] !== []
+                || $extracted['education'] !== []
+                || $extracted['experience'] !== []
+                || $extracted['languages'] !== []
+                || $extracted['certifications'] !== [];
 
-        if (! $hasContent) {
+            if (! $hasContent) {
+                return false;
+            }
+
+            $user = User::query()->find($userId);
+
+            if ($user === null) {
+                return false;
+            }
+
+            $userUpdates = [];
+
+            if (filled($extracted['name']) && (! filled($user->name) || $user->name === $user->email)) {
+                $userUpdates['name'] = $extracted['name'];
+            }
+
+            if (filled($extracted['phone']) && ! filled($user->phone)) {
+                $userUpdates['phone'] = $extracted['phone'];
+            }
+
+            if (filled($extracted['location']) && ! filled($user->location)) {
+                $userUpdates['location'] = $extracted['location'];
+            }
+
+            if ($userUpdates !== []) {
+                $user->forceFill($userUpdates)->save();
+            }
+
+            $profile = JobSeekerProfile::query()->firstOrCreate(
+                ['user_id' => $userId],
+                [],
+            );
+
+            $profileUpdates = [];
+
+            foreach (['headline', 'current_title', 'bio', 'linkedin_url', 'github_url'] as $field) {
+                if (filled($extracted[$field]) && ! filled($profile->{$field})) {
+                    $profileUpdates[$field] = $extracted[$field];
+                }
+            }
+
+            foreach (['skills', 'education', 'experience', 'languages'] as $field) {
+                $existing = is_array($profile->{$field}) ? $profile->{$field} : [];
+
+                if ($extracted[$field] !== [] && $existing === []) {
+                    $profileUpdates[$field] = $extracted[$field];
+                }
+            }
+
+            $existingCertifications = is_array($profile->certifications) ? $profile->certifications : [];
+
+            if ($extracted['certifications'] !== [] && $existingCertifications === []) {
+                $profileUpdates['certifications'] = $extracted['certifications'];
+            }
+
+            if ($profileUpdates !== []) {
+                $profile->forceFill($profileUpdates)->save();
+            }
+
+            return $userUpdates !== [] || $profileUpdates !== [];
+        } catch (\Throwable) {
             return false;
         }
-
-        $user = User::query()->find($userId);
-
-        if ($user === null) {
-            return false;
-        }
-
-        $userUpdates = [];
-
-        if (filled($extracted['name']) && (! filled($user->name) || $user->name === $user->email)) {
-            $userUpdates['name'] = $extracted['name'];
-        }
-
-        if (filled($extracted['phone']) && ! filled($user->phone)) {
-            $userUpdates['phone'] = $extracted['phone'];
-        }
-
-        if (filled($extracted['location']) && ! filled($user->location)) {
-            $userUpdates['location'] = $extracted['location'];
-        }
-
-        if ($userUpdates !== []) {
-            $user->forceFill($userUpdates)->save();
-        }
-
-        $profile = JobSeekerProfile::query()->firstOrCreate(
-            ['user_id' => $userId],
-            [],
-        );
-
-        $profileUpdates = [];
-
-        foreach (['headline', 'current_title', 'bio', 'linkedin_url', 'github_url'] as $field) {
-            if (filled($extracted[$field]) && ! filled($profile->{$field})) {
-                $profileUpdates[$field] = $extracted[$field];
-            }
-        }
-
-        foreach (['skills', 'education', 'experience', 'languages'] as $field) {
-            $existing = is_array($profile->{$field}) ? $profile->{$field} : [];
-
-            if ($extracted[$field] !== [] && $existing === []) {
-                $profileUpdates[$field] = $extracted[$field];
-            }
-        }
-
-        $existingCertifications = is_array($profile->certifications) ? $profile->certifications : [];
-
-        if ($extracted['certifications'] !== [] && $existingCertifications === []) {
-            $profileUpdates['certifications'] = $extracted['certifications'];
-        }
-
-        if ($profileUpdates !== []) {
-            $profile->forceFill($profileUpdates)->save();
-        }
-
-        return $userUpdates !== [] || $profileUpdates !== [];
     }
 }

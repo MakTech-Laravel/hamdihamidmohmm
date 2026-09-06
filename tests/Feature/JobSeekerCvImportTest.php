@@ -70,6 +70,24 @@ TXT;
     @unlink($path);
 });
 
+test('cv extractor rejects binary pdf garbage instead of filling profile fields', function () {
+    $binary = "%PDF-1.4\n1 0 obj<<>>endobj\nstream\n(\xD3L\xEE\x9AQ\xE3\x80\xFF\x00bad)\nendstream\n%%EOF";
+    $path = sys_get_temp_dir() . '/cv-binary-' . uniqid('', true) . '.pdf';
+    file_put_contents($path, $binary);
+
+    $file = new UploadedFile($path, 'binary.pdf', 'application/pdf', null, true);
+    $extracted = JobSeekerCvExtractor::extract($file);
+
+    expect($extracted['headline'])->toBeNull()
+        ->and($extracted['current_title'])->toBeNull()
+        ->and($extracted['name'])->toBeNull()
+        ->and($extracted['skills'])->toBe([])
+        ->and($extracted['education'])->toBe([])
+        ->and($extracted['experience'])->toBe([]);
+
+    @unlink($path);
+});
+
 test('uploading a cv with extract_profile fills empty job seeker profile fields', function () {
     Storage::fake('local');
 
