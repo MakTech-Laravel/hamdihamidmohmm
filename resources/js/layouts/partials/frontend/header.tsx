@@ -3,6 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { LanguageSwitcher } from '@/components/language-switcher';
+import BrandLogo from '@/components/brand-logo';
 import { useLocale } from '@/hooks/use-locale';
 import { about, contact, home, jobs, login, pricing, register, training } from '@/routes';
 import type { SharedData } from '@/types';
@@ -41,10 +42,8 @@ export function FrontendHeader() {
             <div className="border-b border-black/0 bg-white">
                 <div className="mx-auto flex h-[72px] max-w-[1344px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
                     <Link href={home()} className="shrink-0">
-                        <img
-                            src="/images/home/logo.png"
-                            alt={t('app.name')}
-                            className="h-[65px] w-[98px] object-contain"
+                        <BrandLogo
+                            className="h-[65px] w-[98px]"
                             width={98}
                             height={65}
                         />

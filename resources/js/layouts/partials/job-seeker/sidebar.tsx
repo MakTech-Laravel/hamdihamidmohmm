@@ -11,6 +11,7 @@ import {
 import { useState } from 'react';
 
 import { getInitials } from '@/components/job-seeker/demo-data';
+import BrandLogo from '@/components/brand-logo';
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -72,24 +73,15 @@ export function JobSeekerSidebar({
                 'hidden md:flex',
             )}
         >
-            <div className="flex h-[60px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
-                <img
-                    src="/images/admin/logo.png"
-                    alt={t('app.name')}
-                    className="h-[51px] w-[76px] object-contain"
-                    width={76}
-                    height={51}
+            <div className="flex h-[72px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
+                <BrandLogo
+                    className={cn(
+                        'object-contain',
+                        collapsed ? 'h-[48px] w-[72px]' : 'h-[65px] w-[98px]',
+                    )}
+                    width={collapsed ? 72 : 98}
+                    height={collapsed ? 48 : 65}
                 />
-                {!collapsed && (
-                    <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-[#050315]">
-                            {t('app.name')}
-                        </p>
-                        <p className="truncate text-xs text-[#3977a6]">
-                            {t('job_seeker.portal')}
-                        </p>
-                    </div>
-                )}
             </div>
 
             <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-4">

@@ -1,4 +1,4 @@
-import { useLocale } from '@/hooks/use-locale';
+import BrandLogo from '@/components/brand-logo';
 import { cn } from '@/lib/utils';
 
 interface AppLogoProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -6,13 +6,9 @@ interface AppLogoProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 }
 
 export default function AppLogo({ className, ...props }: AppLogoProps) {
-    const { t } = useLocale();
-
     return (
-        <img
-            src="/logo.png"
-            alt={t('app.logo_alt')}
-            className={cn('w-auto max-w-[420px] object-contain', className)}
+        <BrandLogo
+            className={cn('w-auto max-w-[420px]', className)}
             {...props}
         />
     );

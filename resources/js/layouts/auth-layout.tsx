@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
+import BrandLogo from '@/components/brand-logo';
 import { useLocale } from '@/hooks/use-locale';
 import { home } from '@/routes';
 
@@ -36,10 +37,8 @@ export default function AuthLayout({
                 <div className={`w-full ${maxWidthClassName} animate-fadeInUp`}>
                     <div className="mb-8 flex justify-center">
                         <Link href={home()} className="block w-[178px]">
-                            <img
-                                src="/images/branding/rr-logo.png"
-                                alt={t('app.logo_alt')}
-                                className="h-[118px] w-[178px] object-contain"
+                            <BrandLogo
+                                className="h-[118px] w-[178px]"
                                 width={178}
                                 height={118}
                             />

@@ -1865,6 +1865,7 @@ function ProfilePhotoUploader({
     const { t } = useLocale();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const displayName = name || t('job_seeker.profile.fallback_name');
 
     const onChange = (event: ChangeEvent<HTMLInputElement>): void => {
@@ -1875,12 +1876,27 @@ function ProfilePhotoUploader({
             return;
         }
 
+        if (file.size > 5 * 1024 * 1024) {
+            setError(t('job_seeker.profile.photo_max'));
+
+            return;
+        }
+
         const data = new FormData();
         data.append('photo', file);
+        setError(null);
         setUploading(true);
         router.post(uploadPhoto.url(), data, {
             forceFormData: true,
             preserveScroll: true,
+            onError: (errors) => {
+                setError(
+                    errors.photo ||
+                    Object.values(errors)[0] ||
+                    t('job_seeker.profile.photo_max'),
+                );
+            },
+            onSuccess: () => setError(null),
             onFinish: () => setUploading(false),
         });
     };
@@ -1936,6 +1952,9 @@ function ProfilePhotoUploader({
                         ) : null}
                     </div>
                 ) : null}
+                {error ? (
+                    <p className="mt-2 text-sm text-[#b91c1c]">{error}</p>
+                ) : null}
             </div>
         </div>
     );
@@ -1951,6 +1970,7 @@ function CertificationFileUploader({
     const { t } = useLocale();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const attachments = entry.attachments ?? [];
     const canAddMore = attachments.length < 5;
 
@@ -1962,16 +1982,32 @@ function CertificationFileUploader({
             return;
         }
 
+        if (file.size > 5 * 1024 * 1024) {
+            setError(t('job_seeker.profile.certification_file_max'));
+
+            return;
+        }
+
         const data = new FormData();
         data.append('index', String(index));
         data.append('name', entry.name);
         data.append('issuer', entry.issuer);
         data.append('date', entry.date);
         data.append('document', file);
+        setError(null);
         setUploading(true);
         router.post(uploadCertificationDocument.url(), data, {
             forceFormData: true,
             preserveScroll: true,
+            onError: (errors) => {
+                setError(
+                    errors.document ||
+                    errors.attachments ||
+                    Object.values(errors)[0] ||
+                    t('job_seeker.profile.certification_file_max'),
+                );
+            },
+            onSuccess: () => setError(null),
             onFinish: () => setUploading(false),
         });
     };
@@ -2051,6 +2087,9 @@ function CertificationFileUploader({
                             : t('job_seeker.profile.upload_certificate')}
                 </button>
             </div>
+            {error ? (
+                <p className="mt-2 text-sm text-[#b91c1c]">{error}</p>
+            ) : null}
         </div>
     );
 }
@@ -2081,10 +2120,6 @@ function ResumeUploader({
 
     return (
         <div className="space-y-3">
-            {resumeForm.errors.resume ? (
-                <p className="text-sm text-[#b91c1c]">{resumeForm.errors.resume}</p>
-            ) : null}
-
             <input
                 ref={fileInputRef}
                 type="file"
@@ -2097,6 +2132,17 @@ function ResumeUploader({
                         return;
                     }
 
+                    if (file.size > 5 * 1024 * 1024) {
+                        resumeForm.setError(
+                            'resume',
+                            t('job_seeker.profile.resume_max'),
+                        );
+                        event.target.value = '';
+
+                        return;
+                    }
+
+                    resumeForm.clearErrors('resume');
                     resumeForm.setData({
                         resume: file,
                         extract_profile: extractProfile,
@@ -2183,6 +2229,12 @@ function ResumeUploader({
                     {t('job_seeker.profile.resume_hint')}
                 </p>
             </button>
+
+            {resumeForm.errors.resume ? (
+                <p className="text-sm text-[#b91c1c]">
+                    {resumeForm.errors.resume}
+                </p>
+            ) : null}
         </div>
     );
 }

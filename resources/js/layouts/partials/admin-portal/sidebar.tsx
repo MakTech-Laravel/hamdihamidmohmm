@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 
 import { AdminIcon } from '@/components/admin-icon';
+import BrandLogo from '@/components/brand-logo';
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -120,22 +121,13 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
                 className,
             )}
         >
-            <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
-                <img
-                    src="/images/admin/logo.png"
+            <div className="flex h-[72px] shrink-0 items-center px-4 border-b border-[rgba(57,119,166,0.2)]">
+                <BrandLogo
+                    className="h-[65px] w-[98px]"
+                    width={98}
+                    height={65}
                     alt={t('admin.brand')}
-                    className="h-[51px] w-[76px] object-contain"
-                    width={76}
-                    height={51}
                 />
-                <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-[#050315]">
-                        {t('admin.brand')}
-                    </p>
-                    <p className="truncate text-xs font-normal text-[#3977a6]">
-                        {t('admin.portal')}
-                    </p>
-                </div>
             </div>
 
             <nav className="flex-1 space-y-0 overflow-y-auto px-2 py-3">
