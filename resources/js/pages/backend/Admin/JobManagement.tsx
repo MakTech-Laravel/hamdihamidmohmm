@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -66,12 +67,12 @@ type Props = {
     };
 };
 
-const filterChips = [
-    ['all', 'All'],
-    ['active', 'Active'],
-    ['pending', 'Pending'],
-    ['rejected', 'Rejected'],
-    ['expired', 'Expired'],
+const filterChipKeys = [
+    ['all', 'common.all'],
+    ['active', 'common.active'],
+    ['pending', 'common.pending'],
+    ['rejected', 'common.rejected'],
+    ['expired', 'common.expired'],
 ] as const;
 
 function jobStatusTone(
@@ -96,6 +97,7 @@ function jobReference(id: number): string {
 
 export default function JobManagement({ jobs, filters, stats }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [search, setSearch] = useState(filters.search ?? '');
     const [rejecting, setRejecting] = useState<JobRow | null>(null);
     const [previewing, setPreviewing] = useState<JobRow | null>(null);
@@ -134,16 +136,16 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
 
     return (
         <AdminPortalLayout>
-            <Head title="Job Management" />
+            <Head title={t('admin.jobs.title')} />
 
             <div className="space-y-6 p-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-[22px] leading-[33px] font-bold text-[#0f172a]">
-                            Job Management
+                            {t('admin.jobs.title')}
                         </h1>
                         <p className="pt-1 text-[13px] leading-[19.5px] text-[#94a3b8]">
-                            Review, approve, and moderate job listings.
+                            {t('admin.jobs.subtitle')}
                         </p>
                     </div>
                     <a
@@ -151,7 +153,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                         className="inline-flex h-[34px] items-center justify-center gap-1.5 rounded-[6px] border border-[#e2e8f0] bg-[#f1f5f9] px-[14px] py-[7px] text-[13px] font-semibold text-[#475569] hover:bg-white"
                     >
                         <Download className="size-3.5" strokeWidth={2} />
-                        Export
+                        {t('common.export')}
                     </a>
                 </div>
 
@@ -159,7 +161,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
@@ -167,27 +169,27 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                     {(
                         [
                             [
-                                'Total Jobs',
+                                t('admin.jobs.stats.total'),
                                 stats.total,
                                 'text-[#0057c8]',
                             ],
                             [
-                                'Active Jobs',
+                                t('admin.jobs.stats.active'),
                                 stats.active,
                                 'text-[#e57124]',
                             ],
                             [
-                                'Pending Jobs',
+                                t('admin.jobs.stats.pending'),
                                 stats.pending,
                                 'text-[#f59e0b]',
                             ],
                             [
-                                'Rejected Jobs',
+                                t('admin.jobs.stats.rejected'),
                                 stats.rejected,
                                 'text-[#ef4444]',
                             ],
                             [
-                                'Expired Jobs',
+                                t('admin.jobs.stats.expired'),
                                 stats.expired,
                                 'text-[#94a3b8]',
                             ],
@@ -224,7 +226,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                             <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#94a3b8]" />
                             <input
                                 type="search"
-                                placeholder="Search by title, employer…"
+                                placeholder={t('admin.jobs.search_placeholder')}
                                 value={search}
                                 onChange={(event) =>
                                     setSearch(event.target.value)
@@ -233,7 +235,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                             />
                         </form>
                         <div className="flex flex-wrap items-center gap-2.5">
-                            {filterChips.map(([key, label]) => {
+                            {filterChipKeys.map(([key, labelKey]) => {
                                 const active =
                                     (filters.status || 'all') === key;
 
@@ -249,7 +251,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                                 : 'border border-[#e2e8f0] bg-[#f1f5f9] text-[#475569]',
                                         )}
                                     >
-                                        {label}
+                                        {t(labelKey)}
                                     </button>
                                 );
                             })}
@@ -258,15 +260,15 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
 
                     <AdminTableShell
                         headers={[
-                            'Job Title',
-                            'Employer',
-                            'Category',
-                            'Location',
-                            'Applications',
-                            'Views',
-                            'Status',
-                            'Created',
-                            'Actions',
+                            t('admin.jobs.cols.title'),
+                            t('admin.jobs.cols.employer'),
+                            t('admin.jobs.fields.category'),
+                            t('common.location'),
+                            t('admin.jobs.cols.applications'),
+                            t('admin.jobs.fields.views'),
+                            t('common.status'),
+                            t('common.created'),
+                            t('common.actions'),
                         ]}
                     >
                         {jobs.data.map((row) => (
@@ -313,7 +315,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                         <button
                                             type="button"
                                             className="flex h-[23px] items-center rounded-[6px] px-2.5 py-[5px] text-[#64748b] hover:bg-[#f8fafc]"
-                                            aria-label="View applicant"
+                                            aria-label={t('admin.jobs.view_applicant')}
                                             onClick={() => setPreviewing(row)}
                                         >
                                             <Eye
@@ -326,7 +328,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                                 <button
                                                     type="button"
                                                     className="flex h-[23px] items-center rounded-[6px] bg-[#d1fae5] px-2.5 py-[5px] text-[#065f46] hover:bg-[#a7f3d0]"
-                                                    aria-label="Approve job"
+                                                    aria-label={t('admin.jobs.approve')}
                                                     onClick={() =>
                                                         router.post(
                                                             approve.url(row.id),
@@ -341,7 +343,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                                 <button
                                                     type="button"
                                                     className="flex h-[23px] items-center rounded-[6px] bg-[#fee2e2] px-2.5 py-[5px] text-[#991b1b] hover:bg-[#fecaca]"
-                                                    aria-label="Reject job"
+                                                    aria-label={t('admin.jobs.reject')}
                                                     onClick={() => {
                                                         setRejectionReason('');
                                                         setRejecting(row);
@@ -362,13 +364,17 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
 
                     {jobs.data.length === 0 && (
                         <p className="mt-6 text-center text-sm text-[#99a1af]">
-                            No jobs match these filters.
+                            {t('admin.jobs.empty')}
                         </p>
                     )}
 
                     <div className="px-4 pb-4">
                         <AdminPagination
-                            showingLabel={`Showing ${jobs.to ?? 0} of ${jobs.total}`}
+                            showingLabel={t('common.showing_range', {
+                            from: 1,
+                            to: jobs.to ?? 0,
+                            total: jobs.total,
+                        })}
                             links={jobs.links}
                         />
                     </div>
@@ -385,15 +391,15 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Reject job</DialogTitle>
+                        <DialogTitle>{t('admin.jobs.reject_title')}</DialogTitle>
                         <DialogDescription>
                             {rejecting
-                                ? `Tell the employer why “${rejecting.title}” is being rejected.`
-                                : 'Provide a rejection reason.'}
+                                ? t('admin.jobs.reject_prompt')
+                                : t('admin.jobs.reject_prompt')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-1.5">
-                        <Label htmlFor="rejection_reason">Reason</Label>
+                        <Label htmlFor="rejection_reason">{t('common.reason')}</Label>
                         <Textarea
                             id="rejection_reason"
                             value={rejectionReason}
@@ -409,7 +415,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                             variant="outline"
                             onClick={() => setRejecting(null)}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button
                             type="button"
@@ -432,7 +438,7 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                 );
                             }}
                         >
-                            Reject
+                            {t('common.reject')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

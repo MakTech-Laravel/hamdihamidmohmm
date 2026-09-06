@@ -13,10 +13,10 @@ import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
 const tabs = [
-    { id: 'personal', label: 'Personal', icon: UserRound },
-    { id: 'security', label: 'Security', icon: Lock },
-    { id: 'language', label: 'Language', icon: Globe },
-    { id: 'email', label: 'Email Preferences', icon: Mail },
+    { id: 'personal', labelKey: 'job_seeker.settings.tab.personal', icon: UserRound },
+    { id: 'security', labelKey: 'job_seeker.settings.tab.security', icon: Lock },
+    { id: 'language', labelKey: 'job_seeker.settings.tab.language', icon: Globe },
+    { id: 'email', labelKey: 'job_seeker.settings.tab.email', icon: Mail },
 ] as const;
 
 type TabId = (typeof tabs)[number]['id'];
@@ -58,7 +58,7 @@ export default function JobSeekerSettings({
     sessions,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
-    const { locale, setLocale } = useLocale();
+    const { locale, setLocale, t } = useLocale();
     const [tab, setTab] = useState<TabId>('personal');
     const [pendingLocale, setPendingLocale] = useState(locale);
     const profileForm = useForm({
@@ -80,6 +80,25 @@ export default function JobSeekerSettings({
             preferences.email_preferences.platform_announcements,
     });
 
+    const emailPreferenceItems = [
+        {
+            key: 'application_status' as const,
+            labelKey: 'job_seeker.settings.email.application_status',
+        },
+        {
+            key: 'interview_invitations' as const,
+            labelKey: 'job_seeker.settings.email.interview',
+        },
+        {
+            key: 'job_recommendations' as const,
+            labelKey: 'job_seeker.settings.email.recommendations',
+        },
+        {
+            key: 'platform_announcements' as const,
+            labelKey: 'job_seeker.settings.email.announcements',
+        },
+    ] as const;
+
     const savePersonal = (event: FormEvent): void => {
         event.preventDefault();
         profileForm.put('/job-seeker/settings', { preserveScroll: true });
@@ -93,16 +112,16 @@ export default function JobSeekerSettings({
     };
 
     return (
-        <JobSeekerLayout title="Account Settings">
-            <Head title="Account Settings" />
+        <JobSeekerLayout title={t('job_seeker.settings.title')}>
+            <Head title={t('job_seeker.settings.title')} />
 
             <div className="space-y-6 p-6">
                 <div>
                     <h1 className="text-2xl font-extrabold text-[#0057c8]">
-                        Account Settings
+                        {t('job_seeker.settings.title')}
                     </h1>
                     <p className="mt-1 text-sm text-[#6a7282]">
-                        Manage your preferences and security settings.
+                        {t('job_seeker.settings.subtitle')}
                     </p>
                 </div>
 
@@ -125,7 +144,7 @@ export default function JobSeekerSettings({
                                     )}
                                 >
                                     <Icon className="size-4" />
-                                    {item.label}
+                                    {t(item.labelKey)}
                                 </button>
                             );
                         })}
@@ -135,7 +154,7 @@ export default function JobSeekerSettings({
                         <div className="mb-4 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                             {typeof flash.success === 'string'
                                 ? flash.success
-                                : 'Saved successfully.'}
+                                : t('common.saved')}
                         </div>
                     )}
 
@@ -145,11 +164,11 @@ export default function JobSeekerSettings({
                             onSubmit={savePersonal}
                         >
                             <h2 className="text-base font-bold text-[#101828]">
-                                Personal Settings
+                                {t('job_seeker.settings.personal_title')}
                             </h2>
                             <div className="space-y-1.5">
                                 <Label className="text-xs text-[#99a1af]">
-                                    Display Name
+                                    {t('job_seeker.settings.display_name')}
                                 </Label>
                                 <Input
                                     value={profileForm.data.name}
@@ -169,7 +188,7 @@ export default function JobSeekerSettings({
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-xs text-[#99a1af]">
-                                    Short Bio
+                                    {t('job_seeker.settings.short_bio')}
                                 </Label>
                                 <Textarea
                                     value={profileForm.data.bio}
@@ -179,13 +198,15 @@ export default function JobSeekerSettings({
                                             event.target.value,
                                         )
                                     }
-                                    placeholder="A brief description about yourself..."
+                                    placeholder={t(
+                                        'job_seeker.settings.bio_placeholder',
+                                    )}
                                     className="min-h-24 rounded-xl border-[#e2e8f0]"
                                 />
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-xs text-[#99a1af]">
-                                    Timezone
+                                    {t('job_seeker.settings.timezone')}
                                 </Label>
                                 <NativeSelect
                                     value={profileForm.data.timezone}
@@ -197,12 +218,18 @@ export default function JobSeekerSettings({
                                     }
                                 >
                                     <option value="Asia/Riyadh">
-                                        Asia/Riyadh (GMT+3)
+                                        {t(
+                                            'job_seeker.settings.timezone_riyadh',
+                                        )}
                                     </option>
                                     <option value="Asia/Dubai">
-                                        Asia/Dubai (GMT+4)
+                                        {t(
+                                            'job_seeker.settings.timezone_dubai',
+                                        )}
                                     </option>
-                                    <option value="UTC">UTC</option>
+                                    <option value="UTC">
+                                        {t('job_seeker.settings.timezone_utc')}
+                                    </option>
                                 </NativeSelect>
                             </div>
                             <Button
@@ -210,7 +237,7 @@ export default function JobSeekerSettings({
                                 className="rounded-xl bg-[#0057c8] text-white hover:bg-[#0046a3]"
                                 disabled={profileForm.processing}
                             >
-                                Save Changes
+                                {t('common.save_changes')}
                             </Button>
                         </form>
                     )}
@@ -227,11 +254,13 @@ export default function JobSeekerSettings({
                                 }}
                             >
                                 <h2 className="text-base font-bold text-[#101828]">
-                                    Security Settings
+                                    {t('job_seeker.settings.security_title')}
                                 </h2>
                                 <div className="space-y-1.5">
                                     <Label className="text-xs text-[#99a1af]">
-                                        Current Password
+                                        {t(
+                                            'job_seeker.settings.current_password',
+                                        )}
                                     </Label>
                                     <Input
                                         type="password"
@@ -249,7 +278,7 @@ export default function JobSeekerSettings({
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-xs text-[#99a1af]">
-                                        New Password
+                                        {t('job_seeker.settings.new_password')}
                                     </Label>
                                     <Input
                                         type="password"
@@ -265,7 +294,9 @@ export default function JobSeekerSettings({
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-xs text-[#99a1af]">
-                                        Confirm New Password
+                                        {t(
+                                            'job_seeker.settings.confirm_password',
+                                        )}
                                     </Label>
                                     <Input
                                         type="password"
@@ -287,43 +318,49 @@ export default function JobSeekerSettings({
                                     className="rounded-xl bg-[#0057c8] text-white hover:bg-[#0046a3]"
                                     disabled={passwordForm.processing}
                                 >
-                                    Change Password
+                                    {t('job_seeker.settings.change_password')}
                                 </Button>
                             </form>
 
                             <div className="flex items-start justify-between gap-4 border-t border-[#f1f5f9] pt-6">
                                 <div>
                                     <h3 className="text-base font-bold text-[#101828]">
-                                        Two-Factor Authentication
+                                        {t('job_seeker.settings.two_factor')}
                                     </h3>
                                     <p className="mt-1 text-sm text-[#6a7282]">
                                         {two_factor_enabled
-                                            ? 'Two-factor authentication is enabled on your account.'
-                                            : 'Add an extra layer of security to your account.'}
+                                            ? t(
+                                                  'job_seeker.settings.two_factor_enabled',
+                                              )
+                                            : t(
+                                                  'job_seeker.settings.two_factor_disabled',
+                                              )}
                                     </p>
                                     <p className="mt-2 text-xs font-semibold text-[#0057c8]">
-                                        Status:{' '}
+                                        {t('job_seeker.settings.status')}:{' '}
                                         {two_factor_enabled
-                                            ? 'Enabled'
-                                            : 'Disabled'}
+                                            ? t('job_seeker.settings.enabled')
+                                            : t('job_seeker.settings.disabled')}
                                     </p>
                                 </div>
                                 <Link
                                     href="/settings/two-factor"
                                     className="rounded-xl bg-[#0057c8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0046a3]"
                                 >
-                                    Manage
+                                    {t('job_seeker.settings.manage')}
                                 </Link>
                             </div>
 
                             <div className="border-t border-[#f1f5f9] pt-6">
                                 <h3 className="text-base font-bold text-[#101828]">
-                                    Active Sessions
+                                    {t('job_seeker.settings.sessions')}
                                 </h3>
                                 <div className="mt-4 space-y-3">
                                     {sessions.length === 0 ? (
                                         <p className="text-sm text-[#99a1af]">
-                                            No active sessions found.
+                                            {t(
+                                                'job_seeker.settings.no_sessions',
+                                            )}
                                         </p>
                                     ) : (
                                         sessions.map((session) => (
@@ -334,7 +371,9 @@ export default function JobSeekerSettings({
                                                 <div>
                                                     <p className="text-sm font-semibold text-[#101828]">
                                                         {session.is_current
-                                                            ? 'This Device'
+                                                            ? t(
+                                                                  'job_seeker.settings.this_device',
+                                                              )
                                                             : session.device}
                                                     </p>
                                                     <p className="text-xs text-[#99a1af]">
@@ -349,7 +388,7 @@ export default function JobSeekerSettings({
                                                 </div>
                                                 {session.is_current && (
                                                     <span className="rounded-full bg-[#f0fdf4] px-2.5 py-0.5 text-xs font-semibold text-[#15803d]">
-                                                        Active
+                                                        {t('common.active')}
                                                     </span>
                                                 )}
                                             </div>
@@ -366,7 +405,7 @@ export default function JobSeekerSettings({
                                     }
                                     className="mt-3 text-sm font-semibold text-[#ef4444]"
                                 >
-                                    Revoke All Other Sessions
+                                    {t('job_seeker.settings.revoke_sessions')}
                                 </button>
                             </div>
                         </div>
@@ -375,11 +414,13 @@ export default function JobSeekerSettings({
                     {tab === 'language' && (
                         <div className="max-w-xl space-y-5">
                             <h2 className="text-base font-bold text-[#101828]">
-                                Language Settings
+                                {t('job_seeker.settings.tab.language')}
                             </h2>
                             <div className="space-y-1.5">
                                 <Label className="text-xs text-[#99a1af]">
-                                    Preferred Language
+                                    {t(
+                                        'job_seeker.settings.preferred_language',
+                                    )}
                                 </Label>
                                 <NativeSelect
                                     value={pendingLocale}
@@ -387,8 +428,12 @@ export default function JobSeekerSettings({
                                         setPendingLocale(event.target.value)
                                     }
                                 >
-                                    <option value="en">English</option>
-                                    <option value="ar">العربية</option>
+                                    <option value="en">
+                                        {t('lang.english')}
+                                    </option>
+                                    <option value="ar">
+                                        {t('lang.arabic')}
+                                    </option>
                                 </NativeSelect>
                             </div>
                             <Button
@@ -396,7 +441,7 @@ export default function JobSeekerSettings({
                                 onClick={() => setLocale(pendingLocale)}
                                 className="rounded-xl bg-[#0057c8] text-white hover:bg-[#0046a3]"
                             >
-                                Save Changes
+                                {t('common.save_changes')}
                             </Button>
                         </div>
                     )}
@@ -407,34 +452,15 @@ export default function JobSeekerSettings({
                             onSubmit={saveEmail}
                         >
                             <h2 className="text-base font-bold text-[#101828]">
-                                Email Preferences
+                                {t('job_seeker.settings.email_title')}
                             </h2>
-                            {(
-                                [
-                                    {
-                                        key: 'application_status' as const,
-                                        label: 'Application status updates',
-                                    },
-                                    {
-                                        key: 'interview_invitations' as const,
-                                        label: 'Interview invitations',
-                                    },
-                                    {
-                                        key: 'job_recommendations' as const,
-                                        label: 'Job recommendations',
-                                    },
-                                    {
-                                        key: 'platform_announcements' as const,
-                                        label: 'Platform announcements',
-                                    },
-                                ] as const
-                            ).map((item) => (
+                            {emailPreferenceItems.map((item) => (
                                 <label
                                     key={item.key}
                                     className="flex items-center justify-between gap-4 rounded-xl border border-[#e2e8f0] p-4"
                                 >
                                     <span className="text-sm font-medium text-[#101828]">
-                                        {item.label}
+                                        {t(item.labelKey)}
                                     </span>
                                     <input
                                         type="checkbox"
@@ -454,7 +480,7 @@ export default function JobSeekerSettings({
                                 disabled={emailForm.processing}
                                 className="rounded-xl bg-[#0057c8] text-white hover:bg-[#0046a3]"
                             >
-                                Save Preferences
+                                {t('job_seeker.settings.save_preferences')}
                             </Button>
                         </form>
                     )}

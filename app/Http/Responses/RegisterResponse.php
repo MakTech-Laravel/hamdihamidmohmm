@@ -11,7 +11,10 @@ class RegisterResponse implements RegisterResponseContract
     public function toResponse($request): Response
     {
         $user = $request->user();
-        $redirect = route($user?->dashboardRoute() ?? 'job-seeker.dashboard');
+
+        $redirect = $user?->isJobSeeker() === true
+            ? route('job-seeker.profile')
+            : route($user?->dashboardRoute() ?? 'job-seeker.dashboard');
 
         return $request->wantsJson()
             ? new JsonResponse('', 201)

@@ -16,11 +16,11 @@ export function AdminPortalHeader({
     unreadCount?: number;
 }) {
     const { auth, unread_notifications } = usePage<SharedData>().props;
-    const { locale, setLocale } = useLocale();
+    const { locale, setLocale, t } = useLocale();
     const user = auth.user;
     const initials = getInitials(user.name);
     const badgeCount = unreadCount ?? Number(unread_notifications ?? 0);
-    const now = new Intl.DateTimeFormat('en-US', {
+    const now = new Intl.DateTimeFormat(locale === 'ar' ? 'ar' : 'en-US', {
         hour: 'numeric',
         minute: '2-digit',
         weekday: 'short',
@@ -41,7 +41,7 @@ export function AdminPortalHeader({
                     type="button"
                     onClick={onToggleSidebar}
                     className="rounded-lg p-1.5 text-[#3977a6] hover:bg-[#f8faff] md:hidden"
-                    aria-label="Toggle sidebar"
+                    aria-label={t('common.toggle_sidebar')}
                 >
                     <AdminIcon src="/images/admin/header-menu.svg" size={18} />
                 </button>
@@ -53,7 +53,7 @@ export function AdminPortalHeader({
                     />
                     <input
                         type="search"
-                        placeholder="Search employers, jobs, payments…"
+                        placeholder={t('admin.search_placeholder')}
                         className="h-[34px] w-full rounded-lg border border-[#e2e8f0] bg-[#f8faff] pr-3 pl-8 text-xs text-[#050315] outline-none focus:border-[#0057c8]"
                     />
                 </div>
@@ -69,14 +69,14 @@ export function AdminPortalHeader({
                     </div>
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d1fae5] px-2.5 py-1 text-[10px] font-semibold text-[#065f46]">
                         <span className="size-1.5 rounded-full bg-[#10b981]" />
-                        Operational
+                        {t('admin.header.operational')}
                     </span>
                 </div>
 
                 <Link
                     href="/admin/notifications"
                     className="relative rounded-lg p-1.5 text-[#3977a6] hover:bg-[#f8faff]"
-                    aria-label="Notifications"
+                    aria-label={t('common.notifications')}
                 >
                     <AdminIcon src="/images/admin/header-bell.svg" size={18} />
                     {badgeCount > 0 && (
@@ -90,7 +90,7 @@ export function AdminPortalHeader({
                     type="button"
                     onClick={() => setLocale(switchLocale)}
                     className="rounded-lg p-1.5 text-[#3977a6] hover:bg-[#f8faff]"
-                    aria-label="Switch language"
+                    aria-label={t('common.switch_language')}
                 >
                     <AdminIcon src="/images/admin/header-globe.svg" size={18} />
                 </button>

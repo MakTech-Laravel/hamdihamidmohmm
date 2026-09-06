@@ -16,6 +16,7 @@ import {
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
@@ -45,14 +46,14 @@ type Props = {
     trend: Array<{ label: string; count: number }>;
 };
 
-const filterChips = [
-    ['all', 'All'],
-    ['applied', 'Applied'],
-    ['under_review', 'Under Review'],
-    ['shortlisted', 'Shortlisted'],
-    ['interview', 'Interview'],
-    ['hired', 'Hired'],
-    ['rejected', 'Rejected'],
+const filterChipKeys = [
+    ['all', 'common.all'],
+    ['applied', 'status.applied'],
+    ['under_review', 'status.under_review'],
+    ['shortlisted', 'status.shortlisted'],
+    ['interview', 'status.interview'],
+    ['hired', 'status.hired'],
+    ['rejected', 'common.rejected'],
 ] as const;
 
 function statusTone(
@@ -81,22 +82,23 @@ export default function ApplicationsMonitoring({
     trend,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const maxTrend = Math.max(...trend.map((item) => item.count), 1);
     const [viewing, setViewing] = useState<ApplicationRow | null>(null);
 
     return (
         <AdminPortalLayout>
-            <Head title="Applications Monitoring" />
+            <Head title={t('admin.applications.title')} />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title="Applications Monitoring"
-                    subtitle="Track every application across the platform."
+                    title={t('admin.applications.title')}
+                    subtitle={t('admin.applications.subtitle')}
                     actions={
                         <a href="/admin/applications/export">
                             <AdminSecondaryButton>
                                 <Download className="size-4" />
-                                Export
+                                {t('common.export')}
                             </AdminSecondaryButton>
                         </a>
                     }
@@ -106,31 +108,31 @@ export default function ApplicationsMonitoring({
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <AdminStatCard
-                        label="Total Applications"
+                        label={t('admin.applications.stats.total')}
                         value={stats.total.toLocaleString()}
                         valueClassName="text-[#0057c8]"
                         icon={FileText}
                     />
                     <AdminStatCard
-                        label="Today"
+                        label={t('admin.applications.this_week')}
                         value={stats.today.toLocaleString()}
                         valueClassName="text-[#e57124]"
                         icon={FileText}
                     />
                     <AdminStatCard
-                        label="Interviews"
+                        label={t('admin.applications.stats.interview')}
                         value={stats.interviews.toLocaleString()}
                         valueClassName="text-[#3977a6]"
                         icon={FileText}
                     />
                     <AdminStatCard
-                        label="Hired"
+                        label={t('admin.applications.stats.hired')}
                         value={stats.hired.toLocaleString()}
                         valueClassName="text-[#10b981]"
                         icon={FileText}
@@ -139,7 +141,7 @@ export default function ApplicationsMonitoring({
 
                 <AdminPanel>
                     <h2 className="mb-4 text-sm font-bold text-[#050315]">
-                        Applications this week
+                        {t('admin.applications.this_week')}
                     </h2>
                     <div className="flex h-32 items-end gap-3">
                         {trend.map((item) => (
@@ -163,10 +165,10 @@ export default function ApplicationsMonitoring({
 
                 <AdminPanel>
                     <div className="mb-4 flex flex-wrap gap-2">
-                        {filterChips.map(([key, label]) => (
+                        {filterChipKeys.map(([key, labelKey]) => (
                             <AdminFilterChip
                                 key={key}
-                                label={label}
+                                label={t(labelKey)}
                                 active={(filters.status || 'all') === key}
                                 onClick={() =>
                                     router.get(
@@ -181,13 +183,13 @@ export default function ApplicationsMonitoring({
 
                     <AdminTableShell
                         headers={[
-                            'Candidate',
-                            'Email',
-                            'Job',
-                            'Employer',
-                            'Status',
-                            'Date',
-                            'Actions',
+                            t('admin.applications.cols.candidate'),
+                            t('admin.applications.cols.email'),
+                            t('admin.applications.cols.job'),
+                            t('admin.applications.cols.employer'),
+                            t('admin.applications.cols.status'),
+                            t('admin.applications.cols.date'),
+                            t('common.actions'),
                         ]}
                     >
                         {applications.data.map((row) => (
@@ -223,7 +225,7 @@ export default function ApplicationsMonitoring({
                                         onClick={() => setViewing(row)}
                                     >
                                         <Eye className="size-3.5" />
-                                        Details
+                                        {t('common.details')}
                                     </button>
                                 </td>
                             </tr>
@@ -232,12 +234,16 @@ export default function ApplicationsMonitoring({
 
                     {applications.data.length === 0 && (
                         <p className="mt-6 text-center text-sm text-[#99a1af]">
-                            No applications yet.
+                            {t('admin.applications.empty')}
                         </p>
                     )}
 
                     <AdminPagination
-                        showingLabel={`Showing ${applications.from ?? 0}-${applications.to ?? 0} of ${applications.total}`}
+                        showingLabel={t('common.showing_range', {
+                            from: applications.from ?? 0,
+                            to: applications.to ?? 0,
+                            total: applications.total,
+                        })}
                         links={applications.links}
                     />
                 </AdminPanel>

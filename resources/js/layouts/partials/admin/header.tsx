@@ -13,10 +13,12 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useInitials } from '@/hooks/use-initials';
+import { useLocale } from '@/hooks/use-locale';
 import { type SharedData } from '@/types';
 
 export function AdminHeader() {
     const { auth } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const user = auth.user;
     const getInitials = useInitials();
 
@@ -56,7 +58,7 @@ export function AdminHeader() {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
-                Log out
+                {t('common.log_out')}
             </DropdownMenuItem>
         </>
     );
@@ -76,7 +78,7 @@ export function AdminHeader() {
                             href={route('admin.admins.index')}
                             className="text-sm font-semibold text-primary-600 hover:underline"
                         >
-                            Admin Management
+                            {t('admin.nav.admins')}
                         </Link>
                     )}
                     <DropdownMenu>
@@ -116,7 +118,7 @@ export function AdminHeader() {
                                 <>
                                     <DropdownMenuItem asChild>
                                         <Link href={route('admin.admins.index')}>
-                                            Admin Management
+                                            {t('admin.nav.admins')}
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />

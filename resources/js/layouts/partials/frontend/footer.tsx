@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { useLocale } from '@/hooks/use-locale';
-import { about, contact, home, jobs, pricing } from '@/routes';
+import { about, contact, home, jobs, pricing, training } from '@/routes';
 
 const socialLinks = [
     { label: 'LinkedIn', src: '/images/home/linkedin.svg', href: '#' },
@@ -17,6 +17,7 @@ export function FrontendFooter() {
         { label: t('nav.home'), href: '/' },
         { label: t('footer.browse_jobs'), href: jobs.url() },
         { label: t('nav.pricing'), href: pricing.url() },
+        { label: t('nav.training'), href: training.url() },
         { label: t('nav.about'), href: about.url() },
         { label: t('nav.contact'), href: contact.url() },
     ];
@@ -34,7 +35,7 @@ export function FrontendFooter() {
                         <Link href={home()}>
                             <img
                                 src="/images/home/logo.png"
-                                alt="Rena Reiam For Job"
+                                alt={t('app.name')}
                                 className="h-[57px] w-[86px] object-contain"
                                 width={86}
                                 height={57}

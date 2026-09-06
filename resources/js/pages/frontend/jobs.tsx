@@ -108,7 +108,7 @@ export default function Jobs({ jobs, filters }: Props) {
 
     return (
         <FrontendLayout>
-            <Head title={`${t('jobs_page.title')} - RR Job Portal`} />
+            <Head title={`${t('jobs_page.title')} - ${t('app.name')}`} />
 
             <section className="bg-[#d1f6ff] px-4 py-10 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px]">
@@ -168,12 +168,12 @@ export default function Jobs({ jobs, filters }: Props) {
                                 aria-label={t('jobs_page.all_locations')}
                             >
                                 <option value="all">{t('jobs_page.all_locations')}</option>
-                                <option value="riyadh">Riyadh</option>
-                                <option value="jeddah">Jeddah</option>
-                                <option value="dammam">Dammam</option>
-                                <option value="dubai">Dubai</option>
-                                <option value="doha">Doha</option>
-                                <option value="remote">Remote</option>
+                                <option value="riyadh">{t('location.riyadh')}</option>
+                                <option value="jeddah">{t('location.jeddah')}</option>
+                                <option value="dammam">{t('location.dammam')}</option>
+                                <option value="dubai">{t('location.dubai')}</option>
+                                <option value="doha">{t('location.doha')}</option>
+                                <option value="remote">{t('location.remote')}</option>
                             </NativeSelect>
                         </div>
 
@@ -217,12 +217,12 @@ export default function Jobs({ jobs, filters }: Props) {
                                     aria-label={t('jobs_page.location')}
                                 >
                                     <option value="all">{t('jobs_page.all_locations')}</option>
-                                    <option value="riyadh">Riyadh</option>
-                                    <option value="jeddah">Jeddah</option>
-                                    <option value="dammam">Dammam</option>
-                                    <option value="dubai">Dubai</option>
-                                    <option value="doha">Doha</option>
-                                    <option value="remote">Remote</option>
+                                    <option value="riyadh">{t('location.riyadh')}</option>
+                                    <option value="jeddah">{t('location.jeddah')}</option>
+                                    <option value="dammam">{t('location.dammam')}</option>
+                                    <option value="dubai">{t('location.dubai')}</option>
+                                    <option value="doha">{t('location.doha')}</option>
+                                    <option value="remote">{t('location.remote')}</option>
                                 </NativeSelect>
                             </div>
 
@@ -237,12 +237,12 @@ export default function Jobs({ jobs, filters }: Props) {
                                     aria-label={t('jobs_page.category')}
                                 >
                                     <option value="all">{t('jobs_page.all_categories')}</option>
-                                    <option value="engineering">Engineering</option>
-                                    <option value="marketing">Marketing</option>
-                                    <option value="finance">Finance</option>
-                                    <option value="design">Design</option>
-                                    <option value="hr">HR</option>
-                                    <option value="sales">Sales</option>
+                                    <option value="engineering">{t('category.engineering')}</option>
+                                    <option value="marketing">{t('category.marketing')}</option>
+                                    <option value="finance">{t('category.finance')}</option>
+                                    <option value="design">{t('category.design')}</option>
+                                    <option value="hr">{t('category.hr')}</option>
+                                    <option value="sales">{t('category.sales')}</option>
                                 </NativeSelect>
                             </div>
 
@@ -379,8 +379,8 @@ export default function Jobs({ jobs, filters }: Props) {
                                         key={link.label}
                                         href={link.url ?? ''}
                                         className={`inline-flex min-w-9 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold ${link.active
-                                                ? 'bg-[#0057c8] text-white'
-                                                : 'bg-white text-[#364153] hover:bg-[#f1f5f9]'
+                                            ? 'bg-[#0057c8] text-white'
+                                            : 'bg-white text-[#364153] hover:bg-[#f1f5f9]'
                                             } ${link.url ? '' : 'pointer-events-none opacity-40'}`}
                                         dangerouslySetInnerHTML={{
                                             __html: link.label,

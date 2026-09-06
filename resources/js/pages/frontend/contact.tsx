@@ -23,7 +23,7 @@ export default function Contact() {
 
     return (
         <FrontendLayout>
-            <Head title={`${t('contact.title')} - RR Job Portal`} />
+            <Head title={`${t('contact.title')} - ${t('app.name')}`} />
 
             <section className="bg-[#d1f6ff] px-8 py-16">
                 <div className="mx-auto flex max-w-[1280px] flex-col items-center text-center">

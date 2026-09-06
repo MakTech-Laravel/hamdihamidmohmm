@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
@@ -46,18 +47,19 @@ const emptyForm = {
 
 export default function ContentManagement({ pages }: { pages: PageRow[] }) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [editing, setEditing] = useState<PageRow | null>(null);
     const [creating, setCreating] = useState(false);
     const form = useForm(emptyForm);
 
     return (
         <AdminPortalLayout>
-            <Head title="Content Management" />
+            <Head title={t('admin.content.title')} />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title="Content Management"
-                    subtitle="Create and publish pages and announcements."
+                    title={t('admin.content.title')}
+                    subtitle={t('admin.content.subtitle')}
                     actions={
                         <AdminPrimaryButton
                             onClick={() => {
@@ -66,7 +68,7 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                             }}
                         >
                             <Plus className="size-4" />
-                            New content
+                            {t('admin.content.new')}
                         </AdminPrimaryButton>
                     }
                 />
@@ -75,18 +77,18 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <AdminPanel>
                     <AdminTableShell
                         headers={[
-                            'Title',
-                            'Type',
-                            'Status',
-                            'Updated',
-                            'Actions',
+                            t('admin.content.cols.title'),
+                            t('admin.content.cols.type'),
+                            t('admin.content.cols.status'),
+                            t('admin.content.cols.updated'),
+                            t('common.actions'),
                         ]}
                     >
                         {pages.map((page) => (
@@ -141,8 +143,8 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                                             }
                                         >
                                             {page.status_value === 'published'
-                                                ? 'Unpublish'
-                                                : 'Publish'}
+                                                ? t('common.unpublish')
+                                                : t('common.publish')}
                                         </button>
                                         <button
                                             type="button"
@@ -162,7 +164,7 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                     </AdminTableShell>
                     {pages.length === 0 && (
                         <p className="mt-6 text-center text-sm text-[#99a1af]">
-                            No content pages yet.
+                            {t('admin.content.empty')}
                         </p>
                     )}
                 </AdminPanel>
@@ -180,7 +182,9 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
-                            {editing ? 'Edit content' : 'Create content'}
+                            {editing
+                                ? t('admin.content.edit_title')
+                                : t('admin.content.create_title')}
                         </DialogTitle>
                     </DialogHeader>
                     <form
@@ -202,7 +206,7 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                         }}
                     >
                         <div>
-                            <Label>Title</Label>
+                            <Label>{t('admin.content.form.title')}</Label>
                             <Input
                                 value={form.data.title}
                                 onChange={(event) =>
@@ -211,7 +215,7 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                             />
                         </div>
                         <div>
-                            <Label>Type</Label>
+                            <Label>{t('admin.content.form.type')}</Label>
                             <NativeSelect
                                 className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
                                 value={form.data.type}
@@ -219,14 +223,14 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                                     form.setData('type', event.target.value)
                                 }
                             >
-                                <option value="page">Page</option>
+                                <option value="page">{t('admin.content.form.type_page')}</option>
                                 <option value="announcement">
-                                    Announcement
+                                    {t('admin.content.form.type_announcement')}
                                 </option>
                             </NativeSelect>
                         </div>
                         <div>
-                            <Label>Status</Label>
+                            <Label>{t('admin.content.form.status')}</Label>
                             <NativeSelect
                                 className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
                                 value={form.data.status}
@@ -234,12 +238,12 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                                     form.setData('status', event.target.value)
                                 }
                             >
-                                <option value="draft">Draft</option>
-                                <option value="published">Published</option>
+                                <option value="draft">{t('common.draft')}</option>
+                                <option value="published">{t('common.published')}</option>
                             </NativeSelect>
                         </div>
                         <div>
-                            <Label>Body</Label>
+                            <Label>{t('admin.content.form.body')}</Label>
                             <Textarea
                                 value={form.data.body}
                                 onChange={(event) =>
@@ -249,7 +253,7 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                         </div>
                         <DialogFooter>
                             <Button type="submit" disabled={form.processing}>
-                                Save
+                                {t('common.save')}
                             </Button>
                         </DialogFooter>
                     </form>

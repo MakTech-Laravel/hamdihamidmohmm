@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
@@ -68,7 +69,11 @@ function tone(
     if (value === 'Professional' || value === 'Single Posting') {
         return 'info';
     }
-    if (value === 'Enterprise' || value === 'Premium' || value === 'Business Package') {
+    if (
+        value === 'Enterprise' ||
+        value === 'Premium' ||
+        value === 'Business Package'
+    ) {
         return 'purple';
     }
     if (value === 'Starter') {
@@ -79,38 +84,45 @@ function tone(
 
 export default function EmployerShow({ employer, activities }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [rejectOpen, setRejectOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
 
     const facts = [
-        ['Company', employer.company_name],
-        ['Contact', employer.contact_name],
-        ['Email', employer.email],
-        ['Industry', employer.industry],
-        ['Package', employer.package],
-        ['Active jobs', String(employer.jobs)],
-        ['Registered', employer.created_at ?? '—'],
-        ['Last updated', employer.updated_at ?? '—'],
-        ['Verified', employer.verified_at ?? 'Never'],
+        [t('common.company'), employer.company_name],
+        [t('admin.employers.cols.contact'), employer.contact_name],
+        [t('common.email'), employer.email],
+        [t('admin.employers.fields.industry'), employer.industry],
+        [t('admin.employers.cols.package'), employer.package],
+        [t('admin.dashboard.active_jobs'), String(employer.jobs)],
+        [t('admin.employers.cols.registered'), employer.created_at ?? '—'],
+        [t('admin.users.meta.last_updated'), employer.updated_at ?? '—'],
+        [t('common.verified'), employer.verified_at ?? t('common.never')],
     ];
 
     return (
         <AdminPortalLayout>
-            <Head title={`${employer.company_name} · Employer`} />
+            <Head
+                title={t('admin.employers.show_subtitle', {
+                    name: employer.company_name,
+                })}
+            />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
                     title={employer.company_name}
-                    subtitle="View employer details and verification history."
+                    subtitle={t('admin.employers.show_desc')}
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Link href="/admin/employers">
                                 <AdminSecondaryButton>
-                                    ← All Employers
+                                    {t('admin.employers.back_to_list')}
                                 </AdminSecondaryButton>
                             </Link>
                             <Link href={`/admin/employers/${employer.id}/edit`}>
-                                <AdminPrimaryButton>Edit</AdminPrimaryButton>
+                                <AdminPrimaryButton>
+                                    {t('common.edit')}
+                                </AdminPrimaryButton>
                             </Link>
                         </div>
                     }
@@ -120,7 +132,7 @@ export default function EmployerShow({ employer, activities }: Props) {
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
@@ -150,21 +162,21 @@ export default function EmployerShow({ employer, activities }: Props) {
                                 )
                             }
                         >
-                            Approve
+                            {t('common.approve')}
                         </Button>
                         <Button
                             type="button"
                             className="rounded-xl bg-[#b91c1c] text-white hover:bg-[#991b1b]"
                             onClick={() => setRejectOpen(true)}
                         >
-                            Reject
+                            {t('common.reject')}
                         </Button>
                     </div>
                 )}
 
                 {employer.rejection_reason && (
                     <div className="rounded-xl border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm text-[#991b1b]">
-                        Rejection reason: {employer.rejection_reason}
+                        {t('common.reason')}: {employer.rejection_reason}
                     </div>
                 )}
 
@@ -186,11 +198,11 @@ export default function EmployerShow({ employer, activities }: Props) {
 
                 <AdminPanel>
                     <h2 className="mb-4 text-base font-bold text-[#101828]">
-                        Activity
+                        {t('common.activity')}
                     </h2>
                     {activities.length === 0 ? (
                         <p className="text-sm text-[#99a1af]">
-                            No tracked activity yet.
+                            {t('admin.activity.empty')}
                         </p>
                     ) : (
                         <ol className="space-y-4">
@@ -206,8 +218,8 @@ export default function EmployerShow({ employer, activities }: Props) {
                                         {item.description}
                                     </p>
                                     <p className="mt-1 text-[11px] text-[#99a1af]">
-                                        {item.actor_name ?? 'System'} ·{' '}
-                                        {item.created_at}
+                                        {item.actor_name ?? t('common.system')}{' '}
+                                        · {item.created_at}
                                     </p>
                                 </li>
                             ))}
@@ -219,13 +231,17 @@ export default function EmployerShow({ employer, activities }: Props) {
             <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Reject employer</DialogTitle>
+                        <DialogTitle>
+                            {t('admin.employers.reject_title')}
+                        </DialogTitle>
                         <DialogDescription>
-                            Provide a reason for rejecting this employer.
+                            {t('admin.employers.reject_prompt')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-1.5">
-                        <Label htmlFor="rejection_reason">Reason</Label>
+                        <Label htmlFor="rejection_reason">
+                            {t('common.reason')}
+                        </Label>
                         <Textarea
                             id="rejection_reason"
                             value={rejectionReason}
@@ -241,7 +257,7 @@ export default function EmployerShow({ employer, activities }: Props) {
                             variant="outline"
                             onClick={() => setRejectOpen(false)}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button
                             type="button"
@@ -260,7 +276,7 @@ export default function EmployerShow({ employer, activities }: Props) {
                                 )
                             }
                         >
-                            Reject
+                            {t('common.reject')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -5,6 +5,7 @@ import { ApplicationDetailDrawer } from '@/components/job-seeker/application-det
 import { getInitials } from '@/components/job-seeker/demo-data';
 import { StatusBadge } from '@/components/job-seeker/status-badge';
 import type { ApplicationStatus } from '@/components/job-seeker/demo-data';
+import { useLocale } from '@/hooks/use-locale';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +42,7 @@ export default function JobSeekerApplications({
     stats,
     filters,
 }: Props) {
+    const { t } = useLocale();
     const [statusFilter, setStatusFilter] = useState('all');
     const [viewing, setViewing] = useState<ApplicationRow | null>(null);
 
@@ -55,31 +57,47 @@ export default function JobSeekerApplications({
     }, [applications, statusFilter]);
 
     const filterChips = [
-        { value: 'all', label: 'All', count: stats.total },
+        { value: 'all', label: t('common.all'), count: stats.total },
         ...filters,
     ];
 
     return (
-        <JobSeekerLayout title="My Applications">
-            <Head title="My Applications" />
+        <JobSeekerLayout title={t('job_seeker.applications.title')}>
+            <Head title={t('job_seeker.applications.title')} />
 
             <div className="space-y-5 p-6">
                 <div>
                     <h1 className="text-2xl font-extrabold text-[#050315]">
-                        My Applications
+                        {t('job_seeker.applications.title')}
                     </h1>
                     <p className="pt-1 text-sm text-[#6a7282]">
-                        Track the status of all your job applications
+                        {t('job_seeker.applications.subtitle')}
                     </p>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {(
                         [
-                            ['Total Applications', stats.total, 'text-[#0057c8]'],
-                            ['Active', stats.active, 'text-[#e57124]'],
-                            ['Interviews', stats.interviews, 'text-[#15803d]'],
-                            ['Offers', stats.offers, 'text-[#7e22ce]'],
+                            [
+                                t('job_seeker.applications.total'),
+                                stats.total,
+                                'text-[#0057c8]',
+                            ],
+                            [
+                                t('job_seeker.applications.active'),
+                                stats.active,
+                                'text-[#e57124]',
+                            ],
+                            [
+                                t('job_seeker.applications.interviews'),
+                                stats.interviews,
+                                'text-[#15803d]',
+                            ],
+                            [
+                                t('job_seeker.applications.offers'),
+                                stats.offers,
+                                'text-[#7e22ce]',
+                            ],
                         ] as const
                     ).map(([label, value, tone]) => (
                         <div
@@ -142,7 +160,8 @@ export default function JobSeekerApplications({
                                                 : ''}
                                         </p>
                                         <p className="pt-1 text-xs text-[#99a1af]">
-                                            Applied: {application.applied_at}
+                                            {t('job_seeker.applications.applied')}
+                                            : {application.applied_at}
                                             {application.salary
                                                 ? ` · ${application.salary}`
                                                 : ''}
@@ -177,7 +196,7 @@ export default function JobSeekerApplications({
                                     className="inline-flex h-[34px] cursor-pointer items-center rounded-lg bg-[#0057c8] px-3.5 text-sm font-semibold text-white hover:bg-[#0046a3]"
                                     onClick={() => setViewing(application)}
                                 >
-                                    View Details
+                                    {t('job_seeker.applications.view_details')}
                                 </button>
                                 {application.can_withdraw && (
                                     <button
@@ -189,7 +208,7 @@ export default function JobSeekerApplications({
                                             )
                                         }
                                     >
-                                        Withdraw
+                                        {t('job_seeker.applications.withdraw')}
                                     </button>
                                 )}
                             </div>
@@ -197,7 +216,7 @@ export default function JobSeekerApplications({
                     ))}
                     {filtered.length === 0 && (
                         <p className="rounded-2xl border border-[#e2e8f0] bg-white py-10 text-center text-sm text-[#99a1af]">
-                            No applications match this filter.
+                            {t('job_seeker.applications.empty')}
                         </p>
                     )}
                 </div>

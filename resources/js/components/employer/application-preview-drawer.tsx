@@ -19,6 +19,7 @@ import {
     SheetDescription,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
 
 export type ApplicationPreviewTimelineStep = {
@@ -84,6 +85,8 @@ export function ApplicationPreviewDrawer({
     statuses: StatusOption[];
     onUpdateStatus: (applicationId: number, status: string) => void;
 }) {
+    const { t } = useLocale();
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
@@ -100,7 +103,7 @@ export function ApplicationPreviewDrawer({
                     />
                 ) : (
                     <div className="p-5 text-sm text-[#3977a6]">
-                        No preview available.
+                        {t('employer.drawer.no_preview')}
                     </div>
                 )}
             </SheetContent>
@@ -117,6 +120,7 @@ function DrawerBody({
     statuses: StatusOption[];
     onUpdateStatus: (applicationId: number, status: string) => void;
 }) {
+    const { t } = useLocale();
     const [selectedStatus, setSelectedStatus] = useState(preview.status_value);
     const resumeEnabled = preview.resume_url !== null;
     const mailto = preview.email !== '—' ? `mailto:${preview.email}` : null;
@@ -145,7 +149,7 @@ function DrawerBody({
                 <SheetClose asChild>
                     <button
                         type="button"
-                        aria-label="Close"
+                        aria-label={t('common.close')}
                         className="flex size-8 shrink-0 items-center justify-center text-[20px] text-[#3977a6] hover:text-[#050315]"
                     >
                         <X className="size-5" strokeWidth={1.75} />
@@ -154,7 +158,7 @@ function DrawerBody({
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5">
-                <Section title="Contact">
+                <Section title={t('employer.drawer.contact')}>
                     <div className="flex flex-col gap-[4.8px]">
                         <ContactRow icon={Mail} value={preview.email} />
                         <ContactRow icon={Phone} value={preview.phone} />
@@ -162,13 +166,22 @@ function DrawerBody({
                     </div>
                 </Section>
 
-                <Section title="Professional">
+                <Section title={t('employer.drawer.professional')}>
                     <DetailGrid
                         items={[
-                            ['Current title', preview.current_title],
-                            ['Experience', preview.experience_years],
-                            ['Industry', preview.industry],
-                            ['Expected salary', preview.expected_salary],
+                            [
+                                t('employer.drawer.current_title'),
+                                preview.current_title,
+                            ],
+                            [
+                                t('employer.drawer.experience'),
+                                preview.experience_years,
+                            ],
+                            [t('employer.drawer.industry'), preview.industry],
+                            [
+                                t('employer.drawer.expected_salary'),
+                                preview.expected_salary,
+                            ],
                         ]}
                     />
                     {(preview.availability ?? []).length > 0 ? (
@@ -186,7 +199,7 @@ function DrawerBody({
                 </Section>
 
                 {preview.bio ? (
-                    <Section title="About">
+                    <Section title={t('employer.drawer.about')}>
                         <p className="text-[13.6px] leading-5 text-[#050315]">
                             {preview.bio}
                         </p>
@@ -194,22 +207,30 @@ function DrawerBody({
                 ) : null}
 
                 {(preview.linkedin_url || preview.github_url) && (
-                    <Section title="Links">
+                    <Section title={t('employer.drawer.links')}>
                         <div className="flex flex-col gap-1.5">
                             {preview.linkedin_url ? (
-                                <LinkRow href={preview.linkedin_url} label="LinkedIn" />
+                                <LinkRow
+                                    href={preview.linkedin_url}
+                                    label={t('employer.drawer.linkedin')}
+                                />
                             ) : null}
                             {preview.github_url ? (
-                                <LinkRow href={preview.github_url} label="GitHub" />
+                                <LinkRow
+                                    href={preview.github_url}
+                                    label={t('employer.drawer.github')}
+                                />
                             ) : null}
                         </div>
                     </Section>
                 )}
 
-                <Section title="Skills">
+                <Section title={t('employer.drawer.skills')}>
                     <div className="flex flex-wrap gap-[6.4px]">
                         {preview.skills.length === 0 ? (
-                            <EmptyText>No skills listed.</EmptyText>
+                            <EmptyText>
+                                {t('employer.drawer.no_skills')}
+                            </EmptyText>
                         ) : (
                             preview.skills.map((skill) => (
                                 <span
@@ -223,12 +244,20 @@ function DrawerBody({
                     </div>
                 </Section>
 
-                <EntriesSection title="Experience" entries={preview.experience} />
-                <EntriesSection title="Education" entries={preview.education} />
+                <EntriesSection
+                    title={t('employer.drawer.experience')}
+                    entries={preview.experience}
+                />
+                <EntriesSection
+                    title={t('employer.drawer.education')}
+                    entries={preview.education}
+                />
 
-                <Section title="Languages">
+                <Section title={t('employer.drawer.languages')}>
                     {preview.languages.length === 0 ? (
-                        <EmptyText>No languages listed.</EmptyText>
+                        <EmptyText>
+                            {t('employer.drawer.no_languages')}
+                        </EmptyText>
                     ) : (
                         <div className="space-y-2">
                             {preview.languages.map((language) => (
@@ -250,9 +279,11 @@ function DrawerBody({
                     )}
                 </Section>
 
-                <Section title="Certifications">
+                <Section title={t('employer.drawer.certifications')}>
                     {preview.certifications.length === 0 ? (
-                        <EmptyText>No certifications listed.</EmptyText>
+                        <EmptyText>
+                            {t('employer.drawer.no_certifications')}
+                        </EmptyText>
                     ) : (
                         <div className="space-y-2">
                             {preview.certifications.map((item) => (
@@ -272,14 +303,14 @@ function DrawerBody({
                 </Section>
 
                 {preview.cover_letter ? (
-                    <Section title="Cover Letter">
+                    <Section title={t('employer.drawer.cover_letter')}>
                         <p className="whitespace-pre-wrap text-[13.6px] leading-5 text-[#050315]">
                             {preview.cover_letter}
                         </p>
                     </Section>
                 ) : null}
 
-                <Section title="Resume">
+                <Section title={t('employer.drawer.resume')}>
                     {preview.resume_name ? (
                         <p className="pb-2 text-[12.8px] text-[#3977a6]">
                             {preview.resume_name}
@@ -292,7 +323,7 @@ function DrawerBody({
                             className="inline-flex h-[38px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3.5 text-[13.6px] font-semibold text-white hover:bg-[#0046a3]"
                         >
                             <Download className="size-3.5" strokeWidth={2} />
-                            Download Resume
+                            {t('employer.drawer.download_resume')}
                         </a>
                     ) : (
                         <button
@@ -301,12 +332,12 @@ function DrawerBody({
                             className="inline-flex h-[38px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3.5 text-[13.6px] font-semibold text-white opacity-50"
                         >
                             <Download className="size-3.5" strokeWidth={2} />
-                            Download Resume
+                            {t('employer.drawer.download_resume')}
                         </button>
                     )}
                 </Section>
 
-                <Section title="Status Timeline">
+                <Section title={t('employer.drawer.status_timeline')}>
                     <ol className="flex flex-col">
                         {preview.timeline.map((step, index) => (
                             <TimelineStep
@@ -318,7 +349,7 @@ function DrawerBody({
                     </ol>
                 </Section>
 
-                <Section title="Change Status">
+                <Section title={t('employer.drawer.change_status')}>
                     <div className="flex items-center gap-2">
                         <NativeSelect
                             variant="filter"
@@ -327,7 +358,7 @@ function DrawerBody({
                             onChange={(event) =>
                                 setSelectedStatus(event.target.value)
                             }
-                            aria-label="Change application status"
+                            aria-label={t('employer.drawer.change_status_aria')}
                         >
                             {statuses.map((status) => (
                                 <option key={status.value} value={status.value}>
@@ -343,7 +374,7 @@ function DrawerBody({
                             }
                         >
                             <Send className="size-3.5" strokeWidth={2} />
-                            Update
+                            {t('common.update')}
                         </button>
                     </div>
                 </Section>
@@ -352,11 +383,11 @@ function DrawerBody({
             <div className="flex shrink-0 gap-2 border-t border-[#e2e8f0] p-4">
                 {mailto ? (
                     <a
-                        href={`${mailto}?subject=${encodeURIComponent('Interview invitation')}`}
+                        href={`${mailto}?subject=${encodeURIComponent(t('employer.drawer.interview_subject'))}`}
                         className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] text-[13.6px] font-semibold text-[#0057c8]"
                     >
                         <CalendarDays className="size-3.5" />
-                        Schedule Interview
+                        {t('employer.drawer.schedule_interview')}
                     </a>
                 ) : (
                     <button
@@ -365,7 +396,7 @@ function DrawerBody({
                         className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] text-[13.6px] font-semibold text-[#0057c8] opacity-50"
                     >
                         <CalendarDays className="size-3.5" />
-                        Schedule Interview
+                        {t('employer.drawer.schedule_interview')}
                     </button>
                 )}
                 {mailto ? (
@@ -374,7 +405,7 @@ function DrawerBody({
                         className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#0057c8] text-[13.6px] font-semibold text-white"
                     >
                         <Mail className="size-3.5" />
-                        Send Message
+                        {t('employer.drawer.send_message')}
                     </a>
                 ) : (
                     <button
@@ -383,7 +414,7 @@ function DrawerBody({
                         className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#0057c8] text-[13.6px] font-semibold text-white opacity-50"
                     >
                         <Mail className="size-3.5" />
-                        Send Message
+                        {t('employer.drawer.send_message')}
                     </button>
                 )}
             </div>
@@ -417,10 +448,11 @@ function DetailGrid({
 }: {
     items: Array<[string, string | null | undefined]>;
 }) {
+    const { t } = useLocale();
     const visible = items.filter(([, value]) => value && value !== '—');
 
     if (visible.length === 0) {
-        return <EmptyText>No professional details yet.</EmptyText>;
+        return <EmptyText>{t('employer.drawer.no_professional')}</EmptyText>;
     }
 
     return (
@@ -446,10 +478,14 @@ function EntriesSection({
     title: string;
     entries: ProfileEntry[];
 }) {
+    const { t } = useLocale();
+
     return (
         <Section title={title}>
             {entries.length === 0 ? (
-                <EmptyText>No {title.toLowerCase()} listed.</EmptyText>
+                <EmptyText>
+                    {t('employer.drawer.no_entries', { section: title })}
+                </EmptyText>
             ) : (
                 <ol className="space-y-3">
                     {entries.map((entry, index) => (

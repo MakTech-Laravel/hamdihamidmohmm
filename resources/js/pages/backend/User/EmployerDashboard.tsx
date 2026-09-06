@@ -5,6 +5,7 @@ import {
     firstName,
     getInitials,
 } from '@/components/employer/demo-data';
+import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -112,6 +113,13 @@ const avatarTones = [
     'bg-[#7e22ce] text-white',
 ];
 
+const quickActionKeys: Record<string, string> = {
+    'Post Job': 'employer.dashboard.post_job',
+    'Review Applications': 'employer.dashboard.review_applications',
+    'Company Profile': 'employer.dashboard.company_profile',
+    'Manage Billing': 'employer.dashboard.manage_billing',
+};
+
 const notificationIcon = (category: string): string => {
     const key = category.toLowerCase();
 
@@ -145,11 +153,13 @@ export default function EmployerDashboard({
     first_name,
 }: Props) {
     const { auth } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const name =
         first_name ||
         firstName(auth.user.contact_name || auth.user.name) ||
-        'there';
-    const companyName = auth.user.company_name || 'Your Company';
+        t('employer.dashboard.welcome_fallback');
+    const companyName =
+        auth.user.company_name || t('employer.dashboard.your_company');
     const usagePercent =
         plan.job_credits > 0
             ? Math.min(100, (plan.jobs_posted / plan.job_credits) * 100)
@@ -158,33 +168,33 @@ export default function EmployerDashboard({
     const statCards = [
         {
             value: stats.total_jobs,
-            label: 'Total Jobs Posted',
+            label: t('employer.dashboard.total_jobs'),
             icon: '💼',
             iconWrap: 'bg-[#fff7ed]',
         },
         {
             value: stats.active_jobs,
-            label: 'Active Jobs',
+            label: t('employer.dashboard.active_jobs'),
             icon: '✅',
             iconWrap: 'bg-[#f0fdf4]',
         },
         {
             value: stats.total_applications,
-            label: 'Total Applications',
+            label: t('employer.dashboard.total_applications'),
             icon: '👥',
             iconWrap: 'bg-[#e6f0fb]',
         },
         {
             value: stats.new_this_week,
-            label: 'New This Week',
+            label: t('employer.dashboard.new_this_week'),
             icon: '🆕',
             iconWrap: 'bg-[#d1f6ff]',
         },
     ];
 
     return (
-        <EmployerLayout title="Dashboard">
-            <Head title="Employer Dashboard" />
+        <EmployerLayout title={t('employer.dashboard.title')}>
+            <Head title={t('employer.dashboard.title')} />
 
             <div className="flex flex-col gap-6 px-4 py-6 sm:px-6">
                 <div
@@ -195,7 +205,7 @@ export default function EmployerDashboard({
                     }}
                 >
                     <h1 className="text-2xl leading-9 font-bold">
-                        Welcome back, {name}! 👋
+                        {t('employer.dashboard.welcome', { name })}
                     </h1>
                     <div className="mt-1 flex flex-wrap items-center gap-2 opacity-90">
                         <p className="text-base leading-6 font-semibold">
@@ -206,27 +216,33 @@ export default function EmployerDashboard({
                                 <span className="flex size-4 items-center justify-center rounded-full bg-[#0057c8] text-[10px] leading-none text-white">
                                     ✓
                                 </span>
-                                Verified
+                                {t('common.verified')}
                             </span>
                         )}
                     </div>
                     <p className="mt-3 text-[13.6px] leading-[20.4px] text-white/80">
-                        {plan.credits_remaining} job credits remaining ·{' '}
-                        {plan.label || 'No package assigned'}
-                        {plan.expires_on ? ` · Expires ${plan.expires_on}` : ''}
+                        {t('employer.dashboard.credits_line', {
+                            count: plan.credits_remaining,
+                            plan:
+                                plan.label ||
+                                t('employer.dashboard.no_package'),
+                        })}
+                        {plan.expires_on
+                            ? ` · ${t('employer.dashboard.expires', { date: plan.expires_on })}`
+                            : ''}
                     </p>
                     <div className="mt-5 flex flex-wrap gap-3">
                         <Link
                             href="/employer/jobs/create"
                             className="inline-flex h-[42px] cursor-pointer items-center justify-center rounded-[9.6px] bg-[#e57124] px-5 text-base font-medium tracking-[-0.18px] text-white transition-opacity hover:opacity-90"
                         >
-                            + Post a New Job
+                            + {t('employer.jobs.create')}
                         </Link>
                         <Link
                             href="/employer/applications"
                             className="inline-flex h-[42px] cursor-pointer items-center justify-center rounded-[9.6px] border border-white/70 px-5 text-base font-medium tracking-[-0.18px] text-white transition-colors hover:bg-white/10"
                         >
-                            View Applications
+                            {t('employer.dashboard.review_applications')}
                         </Link>
                     </div>
                 </div>
@@ -254,7 +270,7 @@ export default function EmployerDashboard({
 
                 <div>
                     <h2 className="text-base font-bold text-[#050315]">
-                        Quick Actions
+                        {t('employer.dashboard.quick_actions')}
                     </h2>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         {EMPLOYER_QUICK_ACTIONS.map((action) => (
@@ -274,7 +290,10 @@ export default function EmployerDashboard({
                                     {action.icon}
                                 </span>
                                 <span className="text-[13.6px] leading-[20.4px] font-semibold text-[#050315]">
-                                    {action.label}
+                                    {t(
+                                        quickActionKeys[action.label] ??
+                                            action.label,
+                                    )}
                                 </span>
                             </Link>
                         ))}
@@ -285,25 +304,29 @@ export default function EmployerDashboard({
                     <div className="flex items-start justify-between gap-4">
                         <div>
                             <h2 className="text-base font-bold text-[#050315]">
-                                {plan.label || 'Current Package'}
+                                {plan.label || t('employer.dashboard.your_plan')}
                             </h2>
                             <p className="mt-0.5 text-[12.8px] leading-[19.2px] text-[#6b7280]">
-                                {plan.jobs_posted} used / {plan.job_credits}{' '}
-                                total
+                                {t('employer.dashboard.used_total', {
+                                    used: plan.jobs_posted,
+                                    total: plan.job_credits,
+                                })}
                             </p>
                         </div>
                         <div className="flex flex-col items-end gap-1">
                             <span className="rounded-full bg-[#fff7ed] px-3 py-[2.4px] text-[12.8px] leading-[19.2px] font-bold text-[#e57124]">
                                 ⏳{' '}
                                 {plan.days_remaining !== null
-                                    ? `${plan.days_remaining} days remaining`
-                                    : 'No renewal date'}
+                                    ? t('employer.dashboard.days_remaining', {
+                                          count: plan.days_remaining,
+                                      })
+                                    : t('employer.dashboard.no_renewal')}
                             </span>
                             <Link
                                 href="/employer/packages"
                                 className="text-[12.8px] leading-[19.2px] font-semibold text-[#0057c8] underline"
                             >
-                                Upgrade Plan
+                                {t('employer.dashboard.upgrade_plan')}
                             </Link>
                         </div>
                     </div>
@@ -322,13 +345,13 @@ export default function EmployerDashboard({
                 <section className={cn(cardClass, 'p-6')}>
                     <div className="flex items-center justify-between">
                         <h2 className="text-base font-bold text-[#050315]">
-                            Active Jobs
+                            {t('employer.dashboard.active_jobs')}
                         </h2>
                         <Link
                             href="/employer/jobs"
                             className="text-[13.6px] leading-[20.4px] font-semibold text-[#0057c8]"
                         >
-                            View All →
+                            {t('employer.dashboard.view_all')} →
                         </Link>
                     </div>
                     <div className="mt-4 flex flex-col gap-3">
@@ -345,12 +368,23 @@ export default function EmployerDashboard({
                                         <span>📍 {job.location || '—'}</span>
                                         <span>🕐 {formatJobType(job.type)}</span>
                                         <span>
-                                            👥 {job.applications} applications
+                                            👥{' '}
+                                            {t(
+                                                'employer.dashboard.applications_count',
+                                                {
+                                                    count: job.applications,
+                                                },
+                                            )}
                                         </span>
                                         <span>
                                             ⏳{' '}
                                             {job.days_left !== null
-                                                ? `${job.days_left} days left`
+                                                ? t(
+                                                      'employer.dashboard.days_left',
+                                                      {
+                                                          count: job.days_left,
+                                                      },
+                                                  )
                                                 : job.expires_at || '—'}
                                         </span>
                                     </div>
@@ -360,13 +394,13 @@ export default function EmployerDashboard({
                                         href="/employer/applications"
                                         className="inline-flex cursor-pointer items-center rounded-lg bg-[#0057c8] px-[13.6px] py-[6.4px] text-[12.48px] leading-[18.72px] font-semibold text-white"
                                     >
-                                        Applications
+                                        {t('employer.applications.title')}
                                     </Link>
                                     <Link
                                         href={`/employer/jobs/${job.id}/edit`}
                                         className="inline-flex cursor-pointer items-center rounded-lg border border-[#0057c8] px-[13.6px] py-[6.4px] text-[12.48px] leading-[18.72px] font-semibold text-[#0057c8]"
                                     >
-                                        Edit
+                                        {t('common.edit')}
                                     </Link>
                                 </div>
                             </div>
@@ -374,13 +408,13 @@ export default function EmployerDashboard({
                         {active_jobs.length === 0 && (
                             <div className="rounded-xl border border-dashed border-[#f0e8f0] bg-[#fafafa] px-4 py-6 text-center">
                                 <p className="text-sm text-[#99a1af]">
-                                    You have not posted any jobs yet.
+                                    {t('employer.dashboard.no_jobs')}
                                 </p>
                                 <Link
                                     href="/employer/jobs/create"
                                     className="mt-2 inline-flex text-sm font-semibold text-[#0057c8]"
                                 >
-                                    + Post a New Job
+                                    + {t('employer.jobs.create')}
                                 </Link>
                             </div>
                         )}
@@ -390,20 +424,20 @@ export default function EmployerDashboard({
                 <section className={cn(cardClass, 'p-6')}>
                     <div className="flex items-center justify-between">
                         <h2 className="text-base font-bold text-[#050315]">
-                            Recent Applications
+                            {t('employer.dashboard.recent_applications')}
                         </h2>
                         <Link
                             href="/employer/applications"
                             className="text-[13.6px] leading-[20.4px] font-semibold text-[#0057c8]"
                         >
-                            View All →
+                            {t('employer.dashboard.view_all')} →
                         </Link>
                     </div>
                     <div className="mt-4 flex flex-col gap-3">
                         {recent_applications.map((application, index) => {
                             const tone =
                                 applicationTone[
-                                application.status_value ?? ''
+                                    application.status_value ?? ''
                                 ] ?? applicationTone.applied;
 
                             return (
@@ -415,7 +449,7 @@ export default function EmployerDashboard({
                                         className={cn(
                                             'flex size-10 shrink-0 items-center justify-center rounded-full text-[12.8px] font-bold',
                                             avatarTones[
-                                            index % avatarTones.length
+                                                index % avatarTones.length
                                             ],
                                         )}
                                     >
@@ -453,7 +487,7 @@ export default function EmployerDashboard({
                         {recent_applications.length === 0 && (
                             <div className="rounded-xl border border-dashed border-[#f0e8f0] bg-[#fafafa] px-4 py-6 text-center">
                                 <p className="text-sm text-[#99a1af]">
-                                    No applications yet.
+                                    {t('employer.dashboard.no_applications')}
                                 </p>
                             </div>
                         )}
@@ -463,13 +497,13 @@ export default function EmployerDashboard({
                 <section className={cn(cardClass, 'p-6')}>
                     <div className="flex items-center justify-between">
                         <h2 className="text-base font-bold text-[#050315]">
-                            Recent Notifications
+                            {t('employer.dashboard.notifications')}
                         </h2>
                         <Link
                             href="/employer/notifications"
                             className="text-[13.6px] leading-[20.4px] font-semibold text-[#0057c8]"
                         >
-                            View All →
+                            {t('employer.dashboard.view_all')} →
                         </Link>
                     </div>
                     <div className="mt-4 flex flex-col gap-3">
@@ -497,7 +531,7 @@ export default function EmployerDashboard({
                         {notifications.length === 0 && (
                             <div className="rounded-xl border border-dashed border-[#fde8cc] bg-[#fff7ed] px-4 py-6 text-center">
                                 <p className="text-sm text-[#99a1af]">
-                                    No notifications yet.
+                                    {t('employer.dashboard.no_notifications')}
                                 </p>
                             </div>
                         )}

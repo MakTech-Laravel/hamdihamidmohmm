@@ -3,6 +3,7 @@ import { CheckCircle2, Pencil, TriangleAlert } from 'lucide-react';
 import { useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 
 import { getInitials } from '@/components/employer/demo-data';
+import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -50,6 +51,7 @@ export default function EmployerCompanyProfile({
     completion: Completion;
 }) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [editing, setEditing] = useState<string | null>(null);
     const [uploading, setUploading] = useState<string | null>(null);
     const logoInputRef = useRef<HTMLInputElement>(null);
@@ -130,24 +132,34 @@ export default function EmployerCompanyProfile({
         event.target.value = '';
     };
 
+    const sectionTitleKey: Record<string, string> = {
+        company: 'employer.profile.company_information',
+        logo: 'employer.profile.company_logo',
+        about: 'employer.profile.about_company',
+        contact: 'employer.profile.contact_information',
+        social: 'employer.profile.social_links',
+        verification: 'employer.profile.verification_documents',
+        cover: 'employer.profile.cover_banner',
+    };
+
     const missing = Object.entries(completion.sections)
         .filter(([, done]) => !done)
-        .map(([key]) => sectionTitle(key));
+        .map(([key]) => t(sectionTitleKey[key] ?? key));
 
     return (
-        <EmployerLayout title="Company Profile">
-            <Head title="Company Profile" />
+        <EmployerLayout title={t('employer.profile.title')}>
+            <Head title={t('employer.profile.title')} />
 
             <div className="space-y-6 px-4 py-6 sm:px-6">
                 <h1 className="text-2xl leading-9 font-extrabold text-[#050315]">
-                    Company Profile
+                    {t('employer.profile.title')}
                 </h1>
 
                 {flash.success && (
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
@@ -155,16 +167,18 @@ export default function EmployerCompanyProfile({
                     <CompletionRing percent={completion.percent} />
                     <div className="min-w-0">
                         <p className="text-[17.6px] leading-[26.4px] font-bold text-[#050315]">
-                            Profile Completion
+                            {t('employer.profile.completion')}
                         </p>
                         <p className="mt-1 text-[14.4px] leading-[21.6px] text-[#6b7280]">
-                            {completion.completed} of {completion.total}{' '}
-                            sections complete
+                            {t('employer.profile.sections_complete', {
+                                completed: completion.completed,
+                                total: completion.total,
+                            })}
                         </p>
                         {missing.length > 0 && (
                             <div className="mt-3">
                                 <p className="text-[12.8px] leading-[19.2px] text-[#6b7280]">
-                                    Incomplete sections:
+                                    {t('employer.profile.incomplete')}
                                 </p>
                                 <ul className="mt-1.5 flex flex-col gap-1">
                                     {missing.map((section) => (
@@ -185,13 +199,16 @@ export default function EmployerCompanyProfile({
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
                     <div>
                         <p className="text-base leading-6 font-bold text-[#050315]">
-                            Verification Status
+                            {t('employer.profile.verification_status')}
                         </p>
                         <p className="mt-1 text-[13.6px] leading-[20.4px] text-[#6b7280]">
                             {profile.verification_value === 'approved' &&
                                 profile.verified_on
-                                ? `Verified on ${profile.verified_on}`
-                                : profile.verification || 'Not verified'}
+                                ? t('employer.profile.verified_on', {
+                                      date: profile.verified_on,
+                                  })
+                                : profile.verification ||
+                                  t('employer.profile.not_verified')}
                         </p>
                     </div>
                     <span
@@ -216,13 +233,13 @@ export default function EmployerCompanyProfile({
                             <TriangleAlert className="size-3.5" />
                         )}
                         {profile.verification_value === 'approved'
-                            ? 'Verified'
-                            : profile.verification || 'Pending'}
+                            ? t('common.verified')
+                            : profile.verification || t('common.pending')}
                     </span>
                 </div>
 
                 <Section
-                    title="Company Information"
+                    title={t('employer.profile.company_information')}
                     complete={completion.sections.company}
                     onEdit={() => setEditing('company')}
                 >
@@ -237,7 +254,7 @@ export default function EmployerCompanyProfile({
                                         event.target.value,
                                     )
                                 }
-                                placeholder="Company name"
+                                placeholder={t('employer.profile.company_name')}
                             />
                             <input
                                 className={inputClass}
@@ -245,7 +262,7 @@ export default function EmployerCompanyProfile({
                                 onChange={(event) =>
                                     form.setData('industry', event.target.value)
                                 }
-                                placeholder="Industry"
+                                placeholder={t('employer.profile.industry')}
                             />
                             <input
                                 className={inputClass}
@@ -256,7 +273,7 @@ export default function EmployerCompanyProfile({
                                         event.target.value,
                                     )
                                 }
-                                placeholder="Company size"
+                                placeholder={t('employer.profile.company_size')}
                             />
                             <input
                                 className={inputClass}
@@ -267,7 +284,7 @@ export default function EmployerCompanyProfile({
                                         event.target.value,
                                     )
                                 }
-                                placeholder="Founded year"
+                                placeholder={t('employer.profile.founded')}
                             />
                             <input
                                 className={cn(inputClass, 'sm:col-span-2')}
@@ -275,7 +292,7 @@ export default function EmployerCompanyProfile({
                                 onChange={(event) =>
                                     form.setData('website', event.target.value)
                                 }
-                                placeholder="Website"
+                                placeholder={t('employer.profile.website')}
                             />
                             <SaveRow
                                 processing={form.processing}
@@ -285,20 +302,20 @@ export default function EmployerCompanyProfile({
                         </div>
                     ) : (
                         <dl className="grid gap-3 sm:grid-cols-2">
-                            <Info label="Company Name" value={profile.company_name} />
-                            <Info label="Industry" value={profile.industry} />
-                            <Info label="Company Size" value={profile.company_size} />
+                            <Info label={t('employer.profile.company_name')} value={profile.company_name} />
+                            <Info label={t('employer.profile.industry')} value={profile.industry} />
+                            <Info label={t('employer.profile.company_size')} value={profile.company_size} />
                             <Info
-                                label="Founded"
+                                label={t('employer.profile.founded')}
                                 value={profile.founded_year?.toString() ?? null}
                             />
-                            <Info label="Website" value={profile.website} />
+                            <Info label={t('employer.profile.website')} value={profile.website} />
                         </dl>
                     )}
                 </Section>
 
                 <Section
-                    title="Company Logo"
+                    title={t('employer.profile.company_logo')}
                     complete={completion.sections.logo}
                     onEdit={() => logoInputRef.current?.click()}
                 >
@@ -313,7 +330,7 @@ export default function EmployerCompanyProfile({
                         {profile.logo_url ? (
                             <img
                                 src={profile.logo_url}
-                                alt={`${profile.company_name || 'Company'} logo`}
+                                alt={`${profile.company_name || t('employer.profile.company_fallback')} logo`}
                                 className="size-14 rounded-full object-cover"
                             />
                         ) : (
@@ -328,8 +345,8 @@ export default function EmployerCompanyProfile({
                             </p>
                             <p className="text-sm text-[#64748b]">
                                 {profile.logo_url
-                                    ? 'Logo uploaded'
-                                    : 'Upload a square logo (JPG, PNG, WEBP).'}
+                                    ? t('employer.profile.logo_uploaded')
+                                    : t('employer.profile.logo_hint')}
                             </p>
                             <div className="mt-2 flex flex-wrap gap-2">
                                 <button
@@ -339,10 +356,15 @@ export default function EmployerCompanyProfile({
                                     className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
                                 >
                                     {uploading === 'logo'
-                                        ? 'Uploading…'
+                                        ? t('common.uploading')
                                         : profile.logo_url
+<<<<<<< HEAD
+                                            ? t('common.replace')
+                                            : t('common.upload')}
+=======
                                             ? 'Replace'
                                             : 'Upload'}
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                 </button>
                                 {profile.logo_url && (
                                     <button
@@ -355,7 +377,7 @@ export default function EmployerCompanyProfile({
                                         }
                                         className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-[#b91c1c]"
                                     >
-                                        Remove
+                                        {t('common.remove')}
                                     </button>
                                 )}
                             </div>
@@ -364,7 +386,7 @@ export default function EmployerCompanyProfile({
                 </Section>
 
                 <Section
-                    title="About Company"
+                    title={t('employer.profile.about_company')}
                     complete={completion.sections.about}
                     onEdit={() => setEditing('about')}
                 >
@@ -386,13 +408,13 @@ export default function EmployerCompanyProfile({
                         </div>
                     ) : (
                         <p className="text-sm whitespace-pre-wrap text-[#364153]">
-                            {profile.about || 'Add a company overview.'}
+                            {profile.about || t('employer.profile.add_overview')}
                         </p>
                     )}
                 </Section>
 
                 <Section
-                    title="Contact Information"
+                    title={t('employer.profile.contact_information')}
                     complete={completion.sections.contact}
                     onEdit={() => setEditing('contact')}
                 >
@@ -407,7 +429,7 @@ export default function EmployerCompanyProfile({
                                         event.target.value,
                                     )
                                 }
-                                placeholder="Contact name"
+                                placeholder={t('employer.profile.contact_name')}
                             />
                             <input
                                 className={inputClass}
@@ -415,7 +437,7 @@ export default function EmployerCompanyProfile({
                                 onChange={(event) =>
                                     form.setData('email', event.target.value)
                                 }
-                                placeholder="Email"
+                                placeholder={t('employer.profile.email')}
                             />
                             <input
                                 className={inputClass}
@@ -423,7 +445,7 @@ export default function EmployerCompanyProfile({
                                 onChange={(event) =>
                                     form.setData('phone', event.target.value)
                                 }
-                                placeholder="Phone"
+                                placeholder={t('employer.profile.phone')}
                             />
                             <input
                                 className={inputClass}
@@ -431,7 +453,7 @@ export default function EmployerCompanyProfile({
                                 onChange={(event) =>
                                     form.setData('address', event.target.value)
                                 }
-                                placeholder="Address"
+                                placeholder={t('employer.profile.address')}
                             />
                             <SaveRow
                                 processing={form.processing}
@@ -441,16 +463,16 @@ export default function EmployerCompanyProfile({
                         </div>
                     ) : (
                         <dl className="grid gap-3 sm:grid-cols-2">
-                            <Info label="Contact Name" value={profile.contact_name} />
-                            <Info label="Email" value={profile.email} />
-                            <Info label="Phone" value={profile.phone} />
-                            <Info label="Address" value={profile.address} />
+                            <Info label={t('employer.profile.contact_name')} value={profile.contact_name} />
+                            <Info label={t('employer.profile.email')} value={profile.email} />
+                            <Info label={t('employer.profile.phone')} value={profile.phone} />
+                            <Info label={t('employer.profile.address')} value={profile.address} />
                         </dl>
                     )}
                 </Section>
 
                 <Section
-                    title="Social Links"
+                    title={t('employer.profile.social_links')}
                     complete={completion.sections.social}
                     onEdit={() => setEditing('social')}
                 >
@@ -465,7 +487,7 @@ export default function EmployerCompanyProfile({
                                         event.target.value,
                                     )
                                 }
-                                placeholder="LinkedIn URL"
+                                placeholder={t('employer.profile.linkedin_url')}
                             />
                             <input
                                 className={inputClass}
@@ -473,7 +495,7 @@ export default function EmployerCompanyProfile({
                                 onChange={(event) =>
                                     form.setData('x_url', event.target.value)
                                 }
-                                placeholder="X URL"
+                                placeholder={t('employer.profile.x_url')}
                             />
                             <input
                                 className={inputClass}
@@ -484,7 +506,9 @@ export default function EmployerCompanyProfile({
                                         event.target.value,
                                     )
                                 }
-                                placeholder="Instagram URL"
+                                placeholder={t(
+                                    'employer.profile.instagram_url',
+                                )}
                             />
                             <SaveRow
                                 processing={form.processing}
@@ -498,13 +522,13 @@ export default function EmployerCompanyProfile({
                                 ? [profile.linkedin_url, profile.x_url, profile.instagram_url]
                                     .filter(Boolean)
                                     .join(' · ')
-                                : 'No social links added yet.'}
+                                : t('employer.profile.no_social')}
                         </p>
                     )}
                 </Section>
 
                 <Section
-                    title="Verification Documents"
+                    title={t('employer.profile.verification_documents')}
                     complete={completion.sections.verification}
                     onEdit={() => documentInputRef.current?.click()}
                 >
@@ -518,8 +542,10 @@ export default function EmployerCompanyProfile({
                     <div className="space-y-3">
                         <p className="text-sm text-[#364153]">
                             {profile.verification_document_name
-                                ? `Uploaded: ${profile.verification_document_name}`
-                                : 'Upload your CR / trade license for admin review.'}
+                                ? t('employer.profile.uploaded_document', {
+                                      name: profile.verification_document_name,
+                                  })
+                                : t('employer.profile.verification_hint')}
                         </p>
                         <div className="flex flex-wrap gap-2">
                             <button
@@ -531,17 +557,22 @@ export default function EmployerCompanyProfile({
                                 className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
                             >
                                 {uploading === 'document'
-                                    ? 'Uploading…'
+                                    ? t('common.uploading')
                                     : profile.verification_document_name
+<<<<<<< HEAD
+                                        ? t('common.replace')
+                                        : t('common.upload')}
+=======
                                         ? 'Replace Document'
                                         : 'Upload Document'}
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                             </button>
                             {profile.verification_document_url && (
                                 <a
                                     href={profile.verification_document_url}
                                     className="rounded-lg border border-[#e8d5e8] px-3 py-1.5 text-xs font-semibold text-[#374151]"
                                 >
-                                    Download
+                                    {t('common.download')}
                                 </a>
                             )}
                             {profile.verification_document_name && (
@@ -555,7 +586,7 @@ export default function EmployerCompanyProfile({
                                     }
                                     className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-[#b91c1c]"
                                 >
-                                    Remove
+                                    {t('common.remove')}
                                 </button>
                             )}
                         </div>
@@ -563,7 +594,7 @@ export default function EmployerCompanyProfile({
                 </Section>
 
                 <Section
-                    title="Cover Banner"
+                    title={t('employer.profile.cover_banner')}
                     complete={completion.sections.cover}
                     onEdit={() => coverInputRef.current?.click()}
                 >
@@ -578,7 +609,7 @@ export default function EmployerCompanyProfile({
                         <div className="space-y-3">
                             <img
                                 src={profile.cover_url}
-                                alt="Company cover banner"
+                                alt={t('employer.profile.cover_alt')}
                                 className="h-28 w-full rounded-xl object-cover"
                             />
                             <div className="flex flex-wrap gap-2">
@@ -591,8 +622,8 @@ export default function EmployerCompanyProfile({
                                     className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
                                 >
                                     {uploading === 'cover'
-                                        ? 'Uploading…'
-                                        : 'Replace'}
+                                        ? t('common.uploading')
+                                        : t('common.replace')}
                                 </button>
                                 <button
                                     type="button"
@@ -604,14 +635,14 @@ export default function EmployerCompanyProfile({
                                     }
                                     className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-[#b91c1c]"
                                 >
-                                    Remove
+                                    {t('common.remove')}
                                 </button>
                             </div>
                         </div>
                     ) : (
                         <div className="space-y-3">
                             <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-[#e2e8f0] bg-[#f8faff] text-sm text-[#99a1af]">
-                                No cover banner uploaded.
+                                {t('employer.profile.no_cover')}
                             </div>
                             <button
                                 type="button"
@@ -620,8 +651,8 @@ export default function EmployerCompanyProfile({
                                 className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
                             >
                                 {uploading === 'cover'
-                                    ? 'Uploading…'
-                                    : 'Upload Cover'}
+                                    ? t('common.uploading')
+                                    : t('common.upload')}
                             </button>
                         </div>
                     )}
@@ -671,20 +702,6 @@ function CompletionRing({ percent }: { percent: number }) {
     );
 }
 
-function sectionTitle(key: string): string {
-    return (
-        {
-            company: 'Company Information',
-            logo: 'Company Logo',
-            about: 'About Company',
-            contact: 'Contact Information',
-            social: 'Social Links',
-            verification: 'Verification Documents',
-            cover: 'Cover Banner',
-        }[key] ?? key
-    );
-}
-
 function Section({
     title,
     complete,
@@ -696,6 +713,8 @@ function Section({
     onEdit?: () => void;
     children: ReactNode;
 }) {
+    const { t } = useLocale();
+
     return (
         <section className="rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
             <div className="mb-4 flex items-center justify-between gap-3">
@@ -716,7 +735,7 @@ function Section({
                         className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[#0057c8] px-[13.6px] py-[5.6px] text-[13.6px] font-semibold text-[#0057c8]"
                     >
                         <Pencil className="size-3.5" />
-                        Edit
+                        {t('common.edit')}
                     </button>
                 )}
             </div>
@@ -745,6 +764,8 @@ function SaveRow({
     onSave: () => void;
     onCancel: () => void;
 }) {
+    const { t } = useLocale();
+
     return (
         <div className="flex gap-2 sm:col-span-2">
             <button
@@ -753,14 +774,14 @@ function SaveRow({
                 onClick={onSave}
                 className="cursor-pointer rounded-xl bg-[#0057c8] px-4 py-2 text-sm font-semibold text-white"
             >
-                Save
+                {t('common.save')}
             </button>
             <button
                 type="button"
                 onClick={onCancel}
                 className="cursor-pointer rounded-xl px-4 py-2 text-sm font-semibold text-[#64748b]"
             >
-                Cancel
+                {t('common.cancel')}
             </button>
         </div>
     );

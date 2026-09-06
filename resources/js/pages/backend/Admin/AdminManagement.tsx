@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
@@ -25,21 +26,22 @@ export default function AdminManagement({
     canCreateAdmins: boolean;
 }) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
 
     return (
         <AdminPortalLayout>
-            <Head title="Admin Management" />
+            <Head title={t('admin.admins.title')} />
 
             <div className="space-y-6 p-6">
                 <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#3977a6]">
-                        Super Admin
+                        {t('admin.admins.super_admin_badge')}
                     </p>
                     <h1 className="mt-2 text-[28px] font-extrabold tracking-tight text-[#050315]">
-                        Admin Management
+                        {t('admin.admins.title')}
                     </h1>
                     <p className="mt-2 max-w-2xl text-sm text-[#3977a6]">
-                        Manage administrator accounts, roles, and permissions.
+                        {t('admin.admins.subtitle')}
                     </p>
                 </div>
 
@@ -47,7 +49,7 @@ export default function AdminManagement({
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Admin account created successfully.'}
+                            : t('admin.admins.created')}
                     </div>
                 )}
 
@@ -61,7 +63,7 @@ export default function AdminManagement({
                                 className="text-[#0057c8]"
                             />
                             <h2 className="text-lg font-bold text-[#101828]">
-                                Create Admin
+                                {t('admin.admins.create')}
                             </h2>
                         </div>
 
@@ -74,33 +76,39 @@ export default function AdminManagement({
                             {({ processing, errors }) => (
                                 <>
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="name">Full name</Label>
+                                        <Label htmlFor="name">
+                                            {t('admin.admins.fields.full_name')}
+                                        </Label>
                                         <Input
                                             id="name"
                                             name="name"
                                             required
                                             className="rounded-xl"
-                                            placeholder="Admin name"
+                                            placeholder={t(
+                                                'admin.admins.fields.name_placeholder',
+                                            )}
                                         />
                                         <InputError message={errors.name} />
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="email">Email</Label>
+                                        <Label htmlFor="email">
+                                            {t('admin.admins.fields.email')}
+                                        </Label>
                                         <Input
                                             id="email"
                                             type="email"
                                             name="email"
                                             required
                                             className="rounded-xl"
-                                            placeholder="admin@example.com"
+                                            placeholder={t('admin.admins.fields.email_placeholder')}
                                         />
                                         <InputError message={errors.email} />
                                     </div>
 
                                     <div className="space-y-1.5">
                                         <Label htmlFor="password">
-                                            Password
+                                            {t('admin.admins.fields.password')}
                                         </Label>
                                         <PasswordInput
                                             id="password"
@@ -113,7 +121,9 @@ export default function AdminManagement({
 
                                     <div className="space-y-1.5">
                                         <Label htmlFor="password_confirmation">
-                                            Confirm password
+                                            {t(
+                                                'admin.admins.fields.confirm_password',
+                                            )}
                                         </Label>
                                         <PasswordInput
                                             id="password_confirmation"
@@ -129,8 +139,8 @@ export default function AdminManagement({
                                         className="w-full rounded-xl bg-[#0057c8] text-white hover:bg-[#0046a3]"
                                     >
                                         {processing
-                                            ? 'Creating...'
-                                            : 'Create Admin'}
+                                            ? t('common.creating')
+                                            : t('admin.admins.create')}
                                     </Button>
                                 </>
                             )}
@@ -146,7 +156,7 @@ export default function AdminManagement({
                                 className="text-[#0057c8]"
                             />
                             <h2 className="text-lg font-bold text-[#101828]">
-                                Panel Admins
+                                {t('admin.admins.list_title')}
                             </h2>
                         </div>
 
@@ -155,16 +165,16 @@ export default function AdminManagement({
                                 <thead className="border-b border-[#e2e8f0] text-[#64748b]">
                                     <tr>
                                         <th className="px-3 py-2 font-semibold">
-                                            Name
+                                            {t('common.name')}
                                         </th>
                                         <th className="px-3 py-2 font-semibold">
-                                            Email
+                                            {t('admin.admins.fields.email')}
                                         </th>
                                         <th className="px-3 py-2 font-semibold">
-                                            Role
+                                            {t('admin.admins.fields.role')}
                                         </th>
                                         <th className="px-3 py-2 font-semibold">
-                                            Created
+                                            {t('common.created')}
                                         </th>
                                     </tr>
                                 </thead>

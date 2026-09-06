@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
@@ -46,48 +47,49 @@ type Props = {
 
 export default function VerificationCenter({ pending, stats }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [rejecting, setRejecting] = useState<PendingEmployer | null>(null);
     const [reason, setReason] = useState('');
 
     return (
         <AdminPortalLayout>
-            <Head title="Verification Center" />
+            <Head title={t('admin.verifications.title')} />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title="Verification Center"
-                    subtitle="Review pending employer accounts and download uploaded verification documents."
+                    title={t('admin.verifications.title')}
+                    subtitle={t('admin.verifications.subtitle')}
                 />
 
                 {flash.success && (
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <AdminStatCard
-                        label="Pending Review"
+                        label={t('admin.verifications.stats.pending')}
                         value={String(stats.pending)}
                         valueClassName="text-[#f59e0b]"
                         icon={ShieldCheck}
                     />
                     <AdminStatCard
-                        label="Approved"
+                        label={t('admin.verifications.stats.approved')}
                         value={String(stats.approved)}
                         valueClassName="text-[#10b981]"
                         icon={Building2}
                     />
                     <AdminStatCard
-                        label="Rejected"
+                        label={t('admin.verifications.stats.rejected')}
                         value={String(stats.rejected)}
                         valueClassName="text-[#ef4444]"
                         icon={Building2}
                     />
                     <AdminStatCard
-                        label="Total Employers"
+                        label={t('admin.verifications.stats.total')}
                         value={String(stats.total)}
                         valueClassName="text-[#0057c8]"
                         icon={Building2}
@@ -116,11 +118,13 @@ export default function VerificationCenter({ pending, stats }: Props) {
                                             href={item.document_url}
                                             className="inline-flex items-center rounded-full bg-[#e6f0fb] px-2.5 py-1 text-xs font-semibold text-[#0057c8]"
                                         >
-                                            Document: {item.document_name || 'Download'}
+                                            {t('admin.verifications.document')}:{' '}
+                                            {item.document_name ||
+                                                t('common.download')}
                                         </a>
                                     ) : (
                                         <span className="inline-flex items-center rounded-full bg-[#f1f5f9] px-2.5 py-1 text-xs font-semibold text-[#64748b]">
-                                            No document uploaded
+                                            {t('admin.verifications.no_document')}
                                         </span>
                                     )}
                                 </div>
@@ -137,7 +141,7 @@ export default function VerificationCenter({ pending, stats }: Props) {
                                         }
                                     >
                                         <Check className="size-4" />
-                                        Approve
+                                        {t('common.approve')}
                                     </button>
                                     <button
                                         type="button"
@@ -148,7 +152,7 @@ export default function VerificationCenter({ pending, stats }: Props) {
                                         }}
                                     >
                                         <X className="size-4" />
-                                        Reject
+                                        {t('common.reject')}
                                     </button>
                                 </div>
                             )}
@@ -156,7 +160,7 @@ export default function VerificationCenter({ pending, stats }: Props) {
                     ))}
                     {pending.length === 0 && (
                         <p className="text-center text-sm text-[#99a1af]">
-                            No pending employer verifications.
+                            {t('admin.verifications.empty')}
                         </p>
                     )}
                 </div>
@@ -172,12 +176,12 @@ export default function VerificationCenter({ pending, stats }: Props) {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Reject employer</DialogTitle>
+                        <DialogTitle>{t('admin.verifications.reject_title')}</DialogTitle>
                         <DialogDescription>
-                            Provide a reason for {rejecting?.company_name}.
+                            {t('admin.verifications.reject_prompt')}
                         </DialogDescription>
                     </DialogHeader>
-                    <Label htmlFor="verify_reject">Reason</Label>
+                    <Label htmlFor="verify_reject">{t('common.reason')}</Label>
                     <Textarea
                         id="verify_reject"
                         value={reason}
@@ -189,7 +193,7 @@ export default function VerificationCenter({ pending, stats }: Props) {
                             variant="outline"
                             onClick={() => setRejecting(null)}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button
                             type="button"
@@ -207,7 +211,7 @@ export default function VerificationCenter({ pending, stats }: Props) {
                                 );
                             }}
                         >
-                            Reject
+                            {t('common.reject')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

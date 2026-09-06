@@ -5,6 +5,7 @@ import {
     RolePermissionPicker,
     type PermissionGroup,
 } from '@/components/admin-portal/role-permission-picker';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -43,10 +44,11 @@ export default function RoleShow({
     canManageAdmins,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
 
     return (
         <AdminPortalLayout>
-            <Head title={`${managedRole.label} · Role`} />
+            <Head title={`${managedRole.label} · ${t('common.role')}`} />
 
             <div className="space-y-6 p-6">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -55,14 +57,14 @@ export default function RoleShow({
                             href="/admin/roles-permissions"
                             className="text-xs font-semibold text-[#0057c8]"
                         >
-                            ← Roles & Permissions
+                            {t('admin.roles.back_to_list')}
                         </Link>
                         <h1 className="mt-2 text-[28px] font-extrabold tracking-tight text-[#050315]">
                             {managedRole.label}
                         </h1>
                         <p className="mt-1 text-sm text-[#3977a6]">
                             {managedRole.description ||
-                                'Review the modules assigned to this role.'}
+                                t('admin.roles.show_fallback_desc')}
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -74,17 +76,17 @@ export default function RoleShow({
                             )}
                         >
                             {managedRole.locked
-                                ? 'Locked'
+                                ? t('status.locked')
                                 : managedRole.is_system
-                                  ? 'System'
-                                  : 'Custom'}
+                                  ? t('status.system')
+                                  : t('status.custom')}
                         </span>
                         {canManageAdmins && managedRole.editable && (
                             <Link
                                 href={`/admin/roles-permissions/${managedRole.id}/edit`}
                                 className="inline-flex h-9 items-center rounded-xl bg-[#0057c8] px-4 text-sm font-semibold text-white hover:bg-[#0046a3]"
                             >
-                                Edit
+                                {t('common.edit')}
                             </Link>
                         )}
                     </div>
@@ -94,18 +96,21 @@ export default function RoleShow({
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-3">
                     {[
-                        ['Users', String(managedRole.users_count)],
                         [
-                            'Permissions',
+                            t('admin.roles.cols.users'),
+                            String(managedRole.users_count),
+                        ],
+                        [
+                            t('admin.roles.cols.permissions'),
                             String(managedRole.permissions_count),
                         ],
-                        ['Key', managedRole.value],
+                        [t('admin.roles.cols.key'), managedRole.value],
                     ].map(([label, value]) => (
                         <div
                             key={label}
@@ -130,7 +135,7 @@ export default function RoleShow({
                             className="text-[#0057c8]"
                         />
                         <h2 className="text-base font-bold text-[#101828]">
-                            Assigned permissions
+                            {t('admin.roles.assigned_permissions')}
                         </h2>
                     </div>
                     <RolePermissionPicker

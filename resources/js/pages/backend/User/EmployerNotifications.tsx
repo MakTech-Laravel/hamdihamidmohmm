@@ -1,6 +1,7 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
+import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -65,6 +66,7 @@ export default function EmployerNotifications({
     unread: number;
 }) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [filter, setFilter] = useState<FilterId>('all');
 
     const counts = useMemo(
@@ -101,31 +103,58 @@ export default function EmployerNotifications({
     }, [notifications, filter]);
 
     const filters: { id: FilterId; label: string; count: number }[] = [
-        { id: 'all', label: 'All', count: counts.all },
-        { id: 'unread', label: 'Unread', count: counts.unread },
+        {
+            id: 'all',
+            label: t('employer.notifications.filter.all'),
+            count: counts.all,
+        },
+        {
+            id: 'unread',
+            label: t('employer.notifications.filter.unread'),
+            count: counts.unread,
+        },
         {
             id: 'applications',
-            label: 'Applications',
+            label: t('employer.notifications.filter.applications'),
             count: counts.applications,
         },
-        { id: 'jobs', label: 'Jobs', count: counts.jobs },
-        { id: 'billing', label: 'Billing', count: counts.billing },
-        { id: 'system', label: 'System', count: counts.system },
+        {
+            id: 'jobs',
+            label: t('employer.notifications.filter.jobs'),
+            count: counts.jobs,
+        },
+        {
+            id: 'billing',
+            label: t('employer.notifications.filter.billing'),
+            count: counts.billing,
+        },
+        {
+            id: 'system',
+            label: t('employer.notifications.filter.system'),
+            count: counts.system,
+        },
     ];
 
+    const unreadLabel =
+        unread === 1
+            ? t('employer.notifications.notification')
+            : t('employer.notifications.notifications');
+
     return (
-        <EmployerLayout title="Notifications" unreadCount={unread}>
-            <Head title="Notifications" />
+        <EmployerLayout
+            title={t('employer.notifications.title')}
+            unreadCount={unread}
+        >
+            <Head title={t('employer.notifications.title')} />
 
             <div className="flex flex-col px-6 py-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h1 className="text-2xl leading-9 font-extrabold text-[#050315]">
-                            Notifications
+                            {t('employer.notifications.title')}
                         </h1>
                         <p className="pt-1 text-sm leading-[21px] text-[#6b7280]">
-                            Stay updated with applications, jobs, and account
-                            activity.
+                            {t('employer.notifications.subtitle')}
                         </p>
                     </div>
                     <button
@@ -136,7 +165,7 @@ export default function EmployerNotifications({
                         }
                         disabled={unread === 0}
                     >
-                        Mark All as Read
+                        {t('employer.notifications.mark_all')}
                     </button>
                 </div>
 
@@ -144,7 +173,7 @@ export default function EmployerNotifications({
                     <div className="mt-5 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
@@ -152,8 +181,10 @@ export default function EmployerNotifications({
                     <div className="mt-5 flex h-[43px] items-center gap-2 rounded-xl border border-[#fed7aa] bg-[#fff7ed] px-4">
                         <span className="size-2 rounded bg-[#e57124]" />
                         <p className="text-sm font-semibold text-[#e57124]">
-                            {unread} unread{' '}
-                            {unread === 1 ? 'notification' : 'notifications'}
+                            {t('employer.notifications.unread', {
+                                count: unread,
+                                label: unreadLabel,
+                            })}
                         </p>
                     </div>
                 )}
@@ -256,7 +287,7 @@ export default function EmployerNotifications({
                                                 )
                                             }
                                         >
-                                            Mark as Read
+                                            {t('common.mark_as_read')}
                                         </button>
                                     )}
                                     <button
@@ -271,7 +302,7 @@ export default function EmployerNotifications({
                                             )
                                         }
                                     >
-                                        Delete
+                                        {t('common.delete')}
                                     </button>
                                 </div>
                             </div>
@@ -279,7 +310,7 @@ export default function EmployerNotifications({
                     })}
                     {filtered.length === 0 && (
                         <p className="rounded-2xl border border-dashed p-10 text-center text-sm text-[#99a1af]">
-                            No notifications yet.
+                            {t('employer.notifications.empty')}
                         </p>
                     )}
                 </div>

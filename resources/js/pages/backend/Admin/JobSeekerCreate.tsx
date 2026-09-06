@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { PasswordInput } from '@/components/ui/password-input';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 
 type Option = { value: string; label: string };
@@ -24,18 +25,20 @@ type Props = {
 };
 
 export default function JobSeekerCreate({ options }: Props) {
+    const { t } = useLocale();
+
     return (
         <AdminPortalLayout>
-            <Head title="Add Job Seeker" />
+            <Head title={t('admin.job_seekers.add')} />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title="Add Job Seeker"
-                    subtitle="Create a candidate account and set their status."
+                    title={t('admin.job_seekers.add')}
+                    subtitle={t('admin.job_seekers.create_subtitle')}
                     actions={
                         <Link href="/admin/job-seekers">
                             <AdminSecondaryButton>
-                                ← All Job Seekers
+                                {t('admin.job_seekers.back_to_list')}
                             </AdminSecondaryButton>
                         </Link>
                     }
@@ -50,7 +53,9 @@ export default function JobSeekerCreate({ options }: Props) {
                         {({ processing, errors }) => (
                             <>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="name">Name</Label>
+                                    <Label htmlFor="name">
+                                        {t('admin.job_seekers.fields.name')}
+                                    </Label>
                                     <Input
                                         id="name"
                                         name="name"
@@ -59,7 +64,9 @@ export default function JobSeekerCreate({ options }: Props) {
                                     <InputError message={errors.name} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="email">
+                                        {t('admin.job_seekers.fields.email')}
+                                    </Label>
                                     <Input
                                         id="email"
                                         name="email"
@@ -69,7 +76,9 @@ export default function JobSeekerCreate({ options }: Props) {
                                     <InputError message={errors.email} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="phone">Phone</Label>
+                                    <Label htmlFor="phone">
+                                        {t('admin.job_seekers.fields.phone')}
+                                    </Label>
                                     <Input
                                         id="phone"
                                         name="phone"
@@ -78,7 +87,9 @@ export default function JobSeekerCreate({ options }: Props) {
                                     <InputError message={errors.phone} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="location">Location</Label>
+                                    <Label htmlFor="location">
+                                        {t('admin.job_seekers.fields.location')}
+                                    </Label>
                                     <NativeSelect
                                         id="location"
                                         name="location"
@@ -86,7 +97,9 @@ export default function JobSeekerCreate({ options }: Props) {
                                         defaultValue=""
                                     >
                                         <option value="">
-                                            Select location
+                                            {t(
+                                                'admin.job_seekers.fields.select_location',
+                                            )}
                                         </option>
                                         {options.locations.map((location) => (
                                             <option
@@ -101,7 +114,7 @@ export default function JobSeekerCreate({ options }: Props) {
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="resume_status">
-                                            Resume
+                                            {t('admin.job_seekers.fields.resume')}
                                         </Label>
                                         <NativeSelect
                                             id="resume_status"
@@ -126,7 +139,7 @@ export default function JobSeekerCreate({ options }: Props) {
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="account_status">
-                                            Status
+                                            {t('admin.job_seekers.fields.status')}
                                         </Label>
                                         <NativeSelect
                                             id="account_status"
@@ -151,7 +164,9 @@ export default function JobSeekerCreate({ options }: Props) {
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="password">
-                                            Password
+                                            {t(
+                                                'admin.job_seekers.fields.password',
+                                            )}
                                         </Label>
                                         <PasswordInput
                                             id="password"
@@ -163,7 +178,9 @@ export default function JobSeekerCreate({ options }: Props) {
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="password_confirmation">
-                                            Confirm password
+                                            {t(
+                                                'admin.job_seekers.fields.confirm_password',
+                                            )}
                                         </Label>
                                         <PasswordInput
                                             id="password_confirmation"
@@ -182,8 +199,8 @@ export default function JobSeekerCreate({ options }: Props) {
                                     }
                                 >
                                     {processing
-                                        ? 'Creating…'
-                                        : 'Create job seeker'}
+                                        ? t('common.creating')
+                                        : t('admin.job_seekers.create')}
                                 </AdminPrimaryButton>
                             </>
                         )}

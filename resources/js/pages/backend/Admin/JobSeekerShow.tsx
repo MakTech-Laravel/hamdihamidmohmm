@@ -8,6 +8,7 @@ import {
     AdminStatusBadge,
 } from '@/components/admin-portal/ui';
 import { Button } from '@/components/ui/button';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
@@ -56,37 +57,47 @@ function tone(
 
 export default function JobSeekerShow({ jobSeeker, activities }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
 
     const facts = [
-        ['Name', jobSeeker.name],
-        ['Email', jobSeeker.email],
-        ['Phone', jobSeeker.phone],
-        ['Location', jobSeeker.location],
-        ['Applications', String(jobSeeker.applications)],
-        ['Resume', jobSeeker.resume],
-        ['Registered', jobSeeker.created_at ?? '—'],
-        ['Last updated', jobSeeker.updated_at ?? '—'],
+        [t('admin.job_seekers.fields.name'), jobSeeker.name],
+        [t('admin.job_seekers.fields.email'), jobSeeker.email],
+        [t('admin.job_seekers.fields.phone'), jobSeeker.phone],
+        [t('admin.job_seekers.fields.location'), jobSeeker.location],
+        [
+            t('admin.job_seekers.cols.applications'),
+            String(jobSeeker.applications),
+        ],
+        [t('admin.job_seekers.fields.resume'), jobSeeker.resume],
+        [t('admin.job_seekers.cols.registered'), jobSeeker.created_at ?? '—'],
+        [t('admin.users.meta.last_updated'), jobSeeker.updated_at ?? '—'],
     ];
 
     return (
         <AdminPortalLayout>
-            <Head title={`${jobSeeker.name} · Job Seeker`} />
+            <Head
+                title={t('admin.job_seekers.show_subtitle', {
+                    name: jobSeeker.name,
+                })}
+            />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
                     title={jobSeeker.name}
-                    subtitle="View job seeker details and account activity."
+                    subtitle={t('admin.job_seekers.show_desc')}
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Link href="/admin/job-seekers">
                                 <AdminSecondaryButton>
-                                    ← All Job Seekers
+                                    {t('admin.job_seekers.back_to_list')}
                                 </AdminSecondaryButton>
                             </Link>
                             <Link
                                 href={`/admin/job-seekers/${jobSeeker.id}/edit`}
                             >
-                                <AdminPrimaryButton>Edit</AdminPrimaryButton>
+                                <AdminPrimaryButton>
+                                    {t('common.edit')}
+                                </AdminPrimaryButton>
                             </Link>
                         </div>
                     }
@@ -96,7 +107,7 @@ export default function JobSeekerShow({ jobSeeker, activities }: Props) {
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
@@ -106,7 +117,7 @@ export default function JobSeekerShow({ jobSeeker, activities }: Props) {
                         tone={tone(jobSeeker.status)}
                     />
                     <AdminStatusBadge
-                        label={`Resume: ${jobSeeker.resume}`}
+                        label={`${t('admin.job_seekers.fields.resume')}: ${jobSeeker.resume}`}
                         tone={tone(jobSeeker.resume)}
                     />
                 </div>
@@ -122,7 +133,7 @@ export default function JobSeekerShow({ jobSeeker, activities }: Props) {
                                 )
                             }
                         >
-                            Reactivate
+                            {t('common.reactivate')}
                         </Button>
                     ) : (
                         <Button
@@ -134,7 +145,7 @@ export default function JobSeekerShow({ jobSeeker, activities }: Props) {
                                 )
                             }
                         >
-                            Suspend
+                            {t('common.suspend')}
                         </Button>
                     )}
                 </div>
@@ -157,11 +168,11 @@ export default function JobSeekerShow({ jobSeeker, activities }: Props) {
 
                 <AdminPanel>
                     <h2 className="mb-4 text-base font-bold text-[#101828]">
-                        Activity
+                        {t('common.activity')}
                     </h2>
                     {activities.length === 0 ? (
                         <p className="text-sm text-[#99a1af]">
-                            No tracked activity yet.
+                            {t('admin.activity.empty')}
                         </p>
                     ) : (
                         <ol className="space-y-4">
@@ -177,8 +188,8 @@ export default function JobSeekerShow({ jobSeeker, activities }: Props) {
                                         {item.description}
                                     </p>
                                     <p className="mt-1 text-[11px] text-[#99a1af]">
-                                        {item.actor_name ?? 'System'} ·{' '}
-                                        {item.created_at}
+                                        {item.actor_name ?? t('common.system')}{' '}
+                                        · {item.created_at}
                                     </p>
                                 </li>
                             ))}

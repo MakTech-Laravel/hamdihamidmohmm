@@ -11,36 +11,37 @@ import {
 import { useState } from 'react';
 
 import { getInitials } from '@/components/job-seeker/demo-data';
+import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
 const navItems = [
     {
-        title: 'Dashboard',
+        titleKey: 'job_seeker.nav.dashboard',
         href: '/job-seeker/dashboard',
         icon: LayoutDashboard,
         match: '/job-seeker/dashboard',
     },
     {
-        title: 'My Profile',
+        titleKey: 'job_seeker.nav.profile',
         href: '/job-seeker/profile',
         icon: UserRound,
         match: '/job-seeker/profile',
     },
     {
-        title: 'My Applications',
+        titleKey: 'job_seeker.nav.applications',
         href: '/job-seeker/applications',
         icon: Briefcase,
         match: '/job-seeker/applications',
     },
     {
-        title: 'Notifications',
+        titleKey: 'job_seeker.nav.notifications',
         href: '/job-seeker/notifications',
         icon: Bell,
         match: '/job-seeker/notifications',
     },
     {
-        title: 'Account Settings',
+        titleKey: 'job_seeker.nav.settings',
         href: '/job-seeker/settings',
         icon: Settings,
         match: '/job-seeker/settings',
@@ -55,6 +56,7 @@ export function JobSeekerSidebar({
     onToggle: () => void;
 }) {
     const page = usePage<SharedData>();
+    const { t } = useLocale();
     const { auth } = page.props;
     const currentUrl = page.url;
     const user = auth.user;
@@ -73,7 +75,7 @@ export function JobSeekerSidebar({
             <div className="flex h-[60px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
                 <img
                     src="/images/admin/logo.png"
-                    alt="RR Job Portal"
+                    alt={t('app.name')}
                     className="h-[51px] w-[76px] object-contain"
                     width={76}
                     height={51}
@@ -81,10 +83,10 @@ export function JobSeekerSidebar({
                 {!collapsed && (
                     <div className="min-w-0">
                         <p className="truncate text-sm font-bold text-[#050315]">
-                            RR Job Portal
+                            {t('app.name')}
                         </p>
                         <p className="truncate text-xs text-[#3977a6]">
-                            Job Seeker Portal
+                            {t('job_seeker.portal')}
                         </p>
                     </div>
                 )}
@@ -111,7 +113,7 @@ export function JobSeekerSidebar({
                                 <span className="absolute top-1/2 left-0 h-6 w-0.5 -translate-y-1/2 rounded-full bg-[#0057c8]" />
                             )}
                             <Icon className="size-5 shrink-0" strokeWidth={1.75} />
-                            {!collapsed && <span>{item.title}</span>}
+                            {!collapsed && <span>{t(item.titleKey)}</span>}
                         </Link>
                     );
                 })}
@@ -137,7 +139,8 @@ export function JobSeekerSidebar({
                                 {user.name}
                             </p>
                             <p className="truncate text-xs text-[#3977a6]">
-                                {user.headline || 'Job Seeker'}
+                                {user.headline ||
+                                    t('job_seeker.profile.fallback_name')}
                             </p>
                         </div>
                     </div>
@@ -151,7 +154,7 @@ export function JobSeekerSidebar({
                     )}
                 >
                     <LogOut className="size-5 shrink-0" strokeWidth={1.75} />
-                    {!collapsed && <span>Logout</span>}
+                    {!collapsed && <span>{t('common.logout')}</span>}
                 </button>
             </div>
 
@@ -159,7 +162,11 @@ export function JobSeekerSidebar({
                 type="button"
                 onClick={onToggle}
                 className="absolute top-20 -right-3 z-10 flex size-6 items-center justify-center rounded-full border border-[#3977a6] bg-[#0057c8] text-white shadow-sm"
-                aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                aria-label={
+                    collapsed
+                        ? t('common.expand_sidebar')
+                        : t('common.collapse_sidebar')
+                }
             >
                 <ChevronLeft
                     className={cn(

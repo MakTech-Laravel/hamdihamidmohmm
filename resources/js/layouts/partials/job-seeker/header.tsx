@@ -28,12 +28,13 @@ export function JobSeekerHeader({
     unreadCount?: number;
 }) {
     const { auth } = usePage<SharedData>().props;
-    const { locale, setLocale } = useLocale();
+    const { locale, setLocale, t } = useLocale();
     const user = auth.user;
     const initials = getInitials(user.name);
     const shortName = firstName(user.name);
     const switchLocale = locale === 'ar' ? 'en' : 'ar';
-    const localeLabel = locale === 'ar' ? 'English' : 'العربية';
+    const localeLabel =
+        locale === 'ar' ? t('lang.switch_to_english') : t('lang.switch_to_arabic');
     const [avatarFailed, setAvatarFailed] = useState(false);
     const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
 
@@ -42,7 +43,7 @@ export function JobSeekerHeader({
             <div>
                 <p className="text-sm font-bold text-[#101828]">{title}</p>
                 <p className="text-xs text-[#99a1af]">
-                    RR Job Portal · {user.name}
+                    {t('app.name')} · {user.name}
                 </p>
             </div>
 
@@ -52,7 +53,7 @@ export function JobSeekerHeader({
                     className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#f8faff] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white"
                 >
                     <ExternalLink className="size-3.5" />
-                    Public Website
+                    {t('common.public_website')}
                 </Link>
 
                 <button
@@ -67,7 +68,7 @@ export function JobSeekerHeader({
                 <Link
                     href="/job-seeker/notifications"
                     className="relative rounded-lg p-2 text-[#64748b] transition-colors hover:bg-white"
-                    aria-label="Notifications"
+                    aria-label={t('common.notifications')}
                 >
                     <Bell className="size-5" />
                     {unreadCount > 0 && (
@@ -82,7 +83,7 @@ export function JobSeekerHeader({
                         <button
                             type="button"
                             className="flex items-center gap-2 rounded-xl p-1 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0057c8]/30"
-                            aria-label="User menu"
+                            aria-label={t('job_seeker.header.user_menu')}
                         >
                             {showAvatar ? (
                                 <img
@@ -113,7 +114,7 @@ export function JobSeekerHeader({
                                 className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm text-[#364153]"
                             >
                                 <UserRound className="size-4 text-[#0057c8]" />
-                                Profile
+                                {t('common.profile')}
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-[#e2e8f0]" />
@@ -122,7 +123,7 @@ export function JobSeekerHeader({
                             onSelect={() => router.post('/logout')}
                         >
                             <LogOut className="size-4" />
-                            Log out
+                            {t('common.log_out')}
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

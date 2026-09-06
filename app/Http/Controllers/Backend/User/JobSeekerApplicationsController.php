@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\StoreJobApplicationRequest;
 use App\Models\JobApplication;
 use App\Models\JobPost;
+use App\Support\PortalNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +24,7 @@ class JobSeekerApplicationsController extends Controller
             ->with(['jobPost:id,title,location,employment_type,salary_range,slug,employer_id', 'jobPost.employer:id,name,company_name'])
             ->latest()
             ->get()
-            ->map(fn(JobApplication $application) => $this->row($application));
+            ->map(fn (JobApplication $application) => $this->row($application));
 
         return Inertia::render('backend/User/JobSeekerApplications', [
             'applications' => $applications,
@@ -42,8 +43,11 @@ class JobSeekerApplicationsController extends Controller
                 JobApplicationStatus::UnderReview,
                 JobApplicationStatus::Shortlisted,
                 JobApplicationStatus::Interview,
+                JobApplicationStatus::Offer,
+                JobApplicationStatus::Hired,
                 JobApplicationStatus::Rejected,
-            ])->map(fn(JobApplicationStatus $status) => [
+                JobApplicationStatus::Withdrawn,
+            ])->map(fn (JobApplicationStatus $status) => [
                 'value' => $status->value,
                 'label' => $status->label(),
                 'count' => $applications->where('status_value', $status->value)->count(),
@@ -63,7 +67,7 @@ class JobSeekerApplicationsController extends Controller
         if ($request->hasFile('resume')) {
             $resume = $request->file('resume');
             $userId = $request->user()?->id ?? 0;
-            $payload['resume_path'] = $resume->store('resumes/' . $userId, 'local');
+            $payload['resume_path'] = $resume->store('resumes/'.$userId, 'local');
             $payload['resume_original_name'] = $resume->getClientOriginalName();
         } elseif (
             filled($request->user()?->resume_path)
@@ -72,7 +76,7 @@ class JobSeekerApplicationsController extends Controller
             $user = $request->user();
             $source = (string) $user->resume_path;
             $extension = pathinfo($source, PATHINFO_EXTENSION) ?: 'pdf';
-            $copyPath = 'resumes/' . $user->id . '/application-' . uniqid('', true) . '.' . $extension;
+            $copyPath = 'resumes/'.$user->id.'/application-'.uniqid('', true).'.'.$extension;
 
             Storage::disk('local')->copy($source, $copyPath);
 
@@ -80,13 +84,27 @@ class JobSeekerApplicationsController extends Controller
             $payload['resume_original_name'] = $user->resume_original_name ?: basename($source);
         }
 
-        JobApplication::query()->firstOrCreate(
+        $application = JobApplication::query()->firstOrCreate(
             [
                 'job_post_id' => $jobPost->id,
                 'job_seeker_id' => $request->user()?->id,
             ],
             $payload,
         );
+
+        if ($application->wasRecentlyCreated) {
+            $jobPost->loadMissing('employer');
+            $employer = $jobPost->employer;
+            $seeker = $request->user();
+
+            if ($employer !== null && $seeker !== null) {
+                PortalNotifier::newApplication(
+                    $employer,
+                    $seeker->name,
+                    (string) $jobPost->title,
+                );
+            }
+        }
 
         return back()->with('success', 'Application submitted.');
     }

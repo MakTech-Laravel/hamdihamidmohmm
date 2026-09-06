@@ -22,6 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -148,6 +149,7 @@ function VisibilityToggle({
 
 export default function PackagesPricing({ packages, stats }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [editing, setEditing] = useState<PackageRow | null>(null);
     const [creating, setCreating] = useState(false);
     const [deleting, setDeleting] = useState<PackageRow | null>(null);
@@ -202,16 +204,16 @@ export default function PackagesPricing({ packages, stats }: Props) {
 
     return (
         <AdminPortalLayout>
-            <Head title="Packages & Pricing" />
+            <Head title={t('admin.packages.title')} />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title="Packages & Pricing"
-                    subtitle="Manage employer subscription packages."
+                    title={t('admin.packages.title')}
+                    subtitle={t('admin.packages.subtitle')}
                     actions={
                         <AdminPrimaryButton onClick={openCreate}>
                             <Plus className="size-4" />
-                            Add Package
+                            {t('admin.packages.add')}
                         </AdminPrimaryButton>
                     }
                 />
@@ -220,31 +222,31 @@ export default function PackagesPricing({ packages, stats }: Props) {
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <AdminStatCard
-                        label="Total Packages"
+                        label={t('admin.packages.stats.total')}
                         value={String(stats.total)}
                         valueClassName="text-[#0057c8]"
                         icon={Package}
                     />
                     <AdminStatCard
-                        label="Active Subscribers"
+                        label={t('admin.packages.stats.subscribers')}
                         value={stats.subscribers.toLocaleString()}
                         valueClassName="text-[#e57124]"
                         icon={CreditCard}
                     />
                     <AdminStatCard
-                        label="Completed Sales"
+                        label={t('admin.packages.stats.sales')}
                         value={`${packages[0]?.currency ?? 'SDG'} ${stats.monthly_sales.toLocaleString()}`}
                         valueClassName="text-[#0057c8]"
                         icon={CreditCard}
                     />
                     <AdminStatCard
-                        label="Most Popular"
+                        label={t('admin.packages.most_popular')}
                         value={stats.most_popular}
                         valueClassName="text-[#3977a6]"
                         icon={Package}
@@ -261,7 +263,7 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                     </h2>
                                     {item.is_featured && (
                                         <p className="mt-1 text-xs font-semibold text-[#e57124]">
-                                            Most Popular
+                                            {t('admin.packages.most_popular')}
                                         </p>
                                     )}
                                     <p className="text-sm text-[#64748b]">
@@ -270,13 +272,13 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                     </p>
                                 </div>
                                 <AdminStatusBadge
-                                    label={item.is_active ? 'Active' : 'Archived'}
+                                    label={item.is_active ? t('common.active') : t('status.archived')}
                                     tone={item.is_active ? 'success' : 'neutral'}
                                 />
                             </div>
                             <p className="text-sm text-[#475569]">
-                                {item.job_credits} job credits ·{' '}
-                                {item.featured_credits} featured
+                                {item.job_credits} {t('admin.packages.job_credits_unit')} ·{' '}
+                                {item.featured_credits} {t('admin.packages.featured_unit')}
                             </p>
                             {item.description && (
                                 <p className="line-clamp-2 text-sm text-[#64748b]">
@@ -284,14 +286,14 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                 </p>
                             )}
                             <p className="text-sm font-semibold text-[#050315]">
-                                {item.subscribers} subscribers · {item.currency}{' '}
+                                {item.subscribers} {t('admin.packages.subscribers_unit')} · {item.currency}{' '}
                                 {item.revenue.toLocaleString()}
                             </p>
                             <div className="flex gap-2">
                                 <button
                                     type="button"
                                     className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b]"
-                                    title="Edit"
+                                    title={t('common.edit')}
                                     onClick={() => openEdit(item)}
                                 >
                                     <Pencil className="size-4" />
@@ -300,7 +302,7 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                     <button
                                         type="button"
                                         className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b]"
-                                        title="Archive"
+                                        title={t('common.archive')}
                                         onClick={() => archivePackage(item)}
                                     >
                                         <Archive className="size-4" />
@@ -309,7 +311,7 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                 <button
                                     type="button"
                                     className="flex size-8 items-center justify-center rounded-lg border border-[#fee2e2] text-[#991b1b]"
-                                    title="Permanently delete"
+                                    title={t('admin.packages.delete')}
                                     onClick={() => setDeleting(item)}
                                 >
                                     <Trash2 className="size-4" />
@@ -319,7 +321,7 @@ export default function PackagesPricing({ packages, stats }: Props) {
                     ))}
                     {packages.length === 0 && (
                         <p className="text-sm text-[#99a1af]">
-                            No packages yet.
+                            {t('admin.packages.empty')}
                         </p>
                     )}
                 </div>
@@ -337,12 +339,12 @@ export default function PackagesPricing({ packages, stats }: Props) {
                     <div className="border-b border-[#dbeafe] bg-linear-to-r from-[#eff6ff] to-white px-6 py-5">
                         <DialogHeader className="gap-1 text-start">
                             <DialogTitle className="text-xl font-extrabold tracking-tight text-[#050315]">
-                                {editing ? 'Edit package' : 'Add package'}
+                                {editing ? t('admin.packages.edit_title') : t('admin.packages.add_title')}
                             </DialogTitle>
                             <DialogDescription className="text-sm text-[#3977a6]">
                                 {editing
-                                    ? 'Update pricing, credits, and whether this plan appears on the public home page.'
-                                    : 'Create an employer plan. Only active public packages show on the home page.'}
+                                    ? t('admin.packages.edit_desc')
+                                    : t('admin.packages.add_desc')}
                             </DialogDescription>
                         </DialogHeader>
                     </div>
@@ -369,22 +371,21 @@ export default function PackagesPricing({ packages, stats }: Props) {
                         <div className="space-y-6 overflow-y-auto px-6 py-5">
                             {form.hasErrors && (
                                 <div className="rounded-xl border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm text-[#991b1b]">
-                                    Please fix the highlighted fields before
-                                    saving.
+                                    {t('common.fix_errors')}
                                 </div>
                             )}
                             <section className="space-y-3">
                                 <p className="text-xs font-bold tracking-wide text-[#3977a6] uppercase">
-                                    Basics
+                                    {t('admin.packages.section.basics')}
                                 </p>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <PackageField
-                                        label="Name"
+                                        label={t('common.name')}
                                         error={form.errors.name}
                                     >
                                         <Input
                                             value={form.data.name}
-                                            placeholder="Business Package"
+                                            placeholder={t('admin.packages.placeholders.name')}
                                             onChange={(event) => {
                                                 const name = event.target.value;
                                                 const nextSlug = packageSlug(name);
@@ -411,13 +412,13 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                         />
                                     </PackageField>
                                     <PackageField
-                                        label="Slug"
-                                        hint="Used internally and in URLs."
+                                        label={t('admin.packages.slug')}
+                                        hint={t('admin.packages.slug_hint')}
                                         error={form.errors.slug}
                                     >
                                         <Input
                                             value={form.data.slug}
-                                            placeholder="premium"
+                                            placeholder={t('admin.packages.placeholders.slug')}
                                             onChange={(event) =>
                                                 form.setData(
                                                     'slug',
@@ -428,14 +429,14 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                     </PackageField>
                                 </div>
                                 <PackageField
-                                    label="Description"
-                                    hint="Shown on the public home and pricing pages."
+                                    label={t('common.description')}
+                                    hint={t('admin.packages.description_hint')}
                                     error={form.errors.description}
                                 >
                                     <Textarea
                                         rows={3}
                                         value={form.data.description}
-                                        placeholder="Ideal for growing companies with regular recruitment."
+                                        placeholder={t('admin.packages.placeholders.description')}
                                         onChange={(event) =>
                                             form.setData(
                                                 'description',
@@ -448,11 +449,11 @@ export default function PackagesPricing({ packages, stats }: Props) {
 
                             <section className="space-y-3">
                                 <p className="text-xs font-bold tracking-wide text-[#3977a6] uppercase">
-                                    Pricing & credits
+                                    {t('admin.packages.section.pricing')}
                                 </p>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <PackageField
-                                        label="Price"
+                                        label={t('admin.packages.price')}
                                         error={form.errors.price}
                                     >
                                         <Input
@@ -468,7 +469,7 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                         />
                                     </PackageField>
                                     <PackageField
-                                        label="Currency"
+                                        label={t('admin.packages.currency')}
                                         error={form.errors.currency}
                                     >
                                         <Input
@@ -483,12 +484,12 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                         />
                                     </PackageField>
                                     <PackageField
-                                        label="Billing period"
+                                        label={t('admin.packages.billing_period')}
                                         error={form.errors.billing_period}
                                     >
                                         <Input
                                             value={form.data.billing_period}
-                                            placeholder="month"
+                                            placeholder={t('admin.packages.placeholders.billing_period')}
                                             onChange={(event) =>
                                                 form.setData(
                                                     'billing_period',
@@ -498,8 +499,8 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                         />
                                     </PackageField>
                                     <PackageField
-                                        label="Sort order"
-                                        hint="Lower numbers appear first."
+                                        label={t('admin.packages.sort_order')}
+                                        hint={t('admin.packages.sort_order_hint')}
                                         error={form.errors.sort_order}
                                     >
                                         <Input
@@ -515,7 +516,7 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                         />
                                     </PackageField>
                                     <PackageField
-                                        label="Job credits"
+                                        label={t('admin.packages.job_credits')}
                                         error={form.errors.job_credits}
                                     >
                                         <Input
@@ -531,7 +532,7 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                         />
                                     </PackageField>
                                     <PackageField
-                                        label="Featured credits"
+                                        label={t('admin.packages.featured_credits')}
                                         error={form.errors.featured_credits}
                                     >
                                         <Input
@@ -551,18 +552,18 @@ export default function PackagesPricing({ packages, stats }: Props) {
 
                             <section className="space-y-3">
                                 <p className="text-xs font-bold tracking-wide text-[#3977a6] uppercase">
-                                    Features
+                                    {t('common.features')}
                                 </p>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <PackageField
-                                        label="Included"
-                                        hint="One feature per line."
+                                        label={t('admin.packages.included')}
+                                        hint={t('admin.packages.included_hint')}
                                         error={form.errors.features}
                                     >
                                         <Textarea
                                             rows={6}
                                             value={form.data.features}
-                                            placeholder="One Job Posting"
+                                            placeholder={t('admin.packages.placeholders.included')}
                                             onChange={(event) =>
                                                 form.setData(
                                                     'features',
@@ -572,14 +573,14 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                         />
                                     </PackageField>
                                     <PackageField
-                                        label="Not included"
-                                        hint="Shown as unavailable on the card."
+                                        label={t('admin.packages.excluded')}
+                                        hint={t('admin.packages.excluded_hint')}
                                         error={form.errors.excluded_features}
                                     >
                                         <Textarea
                                             rows={6}
                                             value={form.data.excluded_features}
-                                            placeholder="Multiple Job Postings"
+                                            placeholder={t('admin.packages.placeholders.excluded')}
                                             onChange={(event) =>
                                                 form.setData(
                                                     'excluded_features',
@@ -593,28 +594,28 @@ export default function PackagesPricing({ packages, stats }: Props) {
 
                             <section className="space-y-3">
                                 <p className="text-xs font-bold tracking-wide text-[#3977a6] uppercase">
-                                    Visibility
+                                    {t('admin.packages.section.visibility')}
                                 </p>
                                 <div className="grid gap-3 sm:grid-cols-3">
                                     <VisibilityToggle
-                                        label="Active"
-                                        hint="Archived plans stay hidden."
+                                        label={t('common.active')}
+                                        hint={t('admin.packages.active_hint')}
                                         checked={form.data.is_active}
                                         onChange={(value) =>
                                             form.setData('is_active', value)
                                         }
                                     />
                                     <VisibilityToggle
-                                        label="Most popular"
-                                        hint="Highlights the featured card."
+                                        label={t('admin.packages.most_popular')}
+                                        hint={t('admin.packages.featured_hint')}
                                         checked={form.data.is_featured}
                                         onChange={(value) =>
                                             form.setData('is_featured', value)
                                         }
                                     />
                                     <VisibilityToggle
-                                        label="Show publicly"
-                                        hint="Home and pricing pages."
+                                        label={t('admin.packages.show_publicly')}
+                                        hint={t('admin.packages.public_hint')}
                                         checked={form.data.is_public}
                                         onChange={(value) =>
                                             form.setData('is_public', value)
@@ -629,7 +630,7 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                 type="button"
                                 onClick={closeDialog}
                             >
-                                Cancel
+                                {t('common.cancel')}
                             </AdminSecondaryButton>
                             <AdminPrimaryButton
                                 type="submit"
@@ -640,10 +641,10 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                 }
                             >
                                 {form.processing
-                                    ? 'Saving...'
+                                    ? t('common.saving')
                                     : editing
-                                        ? 'Save changes'
-                                        : 'Create package'}
+                                        ? t('common.save_changes')
+                                        : t('admin.packages.create')}
                             </AdminPrimaryButton>
                         </DialogFooter>
                     </form>
@@ -662,20 +663,18 @@ export default function PackagesPricing({ packages, stats }: Props) {
                     <div className="border-b border-[#fee2e2] bg-[#fef2f2] px-6 py-5">
                         <DialogHeader className="gap-1 text-start">
                             <DialogTitle className="text-xl font-extrabold tracking-tight text-[#991b1b]">
-                                Permanently delete package?
+                                {t('admin.packages.delete_confirm_title')}
                             </DialogTitle>
                             <DialogDescription className="text-sm text-[#7f1d1d]">
                                 {deleting
-                                    ? `${deleting.name} will be removed from Packages & Pricing. This cannot be undone.`
-                                    : 'This package will be removed permanently.'}
+                                    ? t('admin.packages.delete_confirm', { name: deleting.name })
+                                    : t('admin.packages.delete_confirm_generic')}
                             </DialogDescription>
                         </DialogHeader>
                     </div>
                     <div className="space-y-3 px-6 py-5 text-sm text-[#475569]">
                         <p>
-                            Public pages will stop showing this plan immediately.
-                            Existing employer accounts keep their current package
-                            assignment.
+                            {t('admin.packages.delete_warning')}
                         </p>
                     </div>
                     <DialogFooter className="border-t border-[#e2e8f0] bg-[#f8fafc] px-6 py-4 sm:justify-between">
@@ -683,7 +682,7 @@ export default function PackagesPricing({ packages, stats }: Props) {
                             type="button"
                             onClick={() => setDeleting(null)}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </AdminSecondaryButton>
                         <button
                             type="button"
@@ -695,7 +694,7 @@ export default function PackagesPricing({ packages, stats }: Props) {
                             }}
                         >
                             <Trash2 className="size-4" />
-                            Permanently delete
+                            {t('admin.packages.delete')}
                         </button>
                     </DialogFooter>
                 </DialogContent>
