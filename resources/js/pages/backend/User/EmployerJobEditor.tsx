@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 import { NativeSelect } from '@/components/ui/native-select';
+import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 
@@ -37,14 +38,8 @@ type Props = {
     };
 };
 
-const steps = [
-    { id: 1, label: 'Job Basics' },
-    { id: 2, label: 'Job Details' },
-    { id: 3, label: 'Requirements & Skills' },
-    { id: 4, label: 'Preview & Publish' },
-];
-
 export default function EmployerJobEditor({ job, plan, options }: Props) {
+    const { t } = useLocale();
     const isEdit = job !== null;
     const [step, setStep] = useState(1);
     const form = useForm({
@@ -61,6 +56,17 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
         publish: true,
     });
 
+    const steps = [
+        { id: 1, label: t('employer.job_editor.step.basics') },
+        { id: 2, label: t('employer.job_editor.step.details') },
+        { id: 3, label: t('employer.job_editor.step.requirements') },
+        { id: 4, label: t('employer.job_editor.step.preview') },
+    ];
+
+    const pageTitle = isEdit
+        ? t('employer.job_editor.title_edit')
+        : t('employer.job_editor.title_create');
+
     const submit = (publish: boolean) => {
         form.transform((data) => ({ ...data, publish }));
 
@@ -72,16 +78,16 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
     };
 
     return (
-        <EmployerLayout title="My Jobs">
-            <Head title={isEdit ? 'Edit Job' : 'Post a New Job'} />
+        <EmployerLayout title={t('employer.jobs.title')}>
+            <Head title={pageTitle} />
 
             <div className="space-y-6 px-4 py-6 sm:px-6">
                 <div>
                     <h1 className="text-[28px] font-extrabold tracking-tight text-[#050315]">
-                        {isEdit ? 'Edit Job' : 'Post a New Job'}
+                        {pageTitle}
                     </h1>
                     <p className="mt-1 text-sm text-[#64748b]">
-                        Fill in the details to attract the right candidates
+                        {t('employer.job_editor.subtitle')}
                     </p>
                 </div>
 
@@ -99,8 +105,8 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                         step === item.id
                                             ? 'bg-[#e57124] text-white'
                                             : step > item.id
-                                                ? 'bg-[#0057c8] text-white'
-                                                : 'bg-[#eef2ff] text-[#64748b]',
+                                              ? 'bg-[#0057c8] text-white'
+                                              : 'bg-[#eef2ff] text-[#64748b]',
                                     )}
                                 >
                                     {item.id}
@@ -131,9 +137,11 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
 
                 {plan && !plan.can_post_job && !isEdit && (
                     <p className="rounded-xl border border-[#fed7aa] bg-[#fff7ed] px-4 py-3 text-sm text-[#c2410c]">
-                        {plan.label || 'Your plan'} has no remaining job
-                        credits. You can still save a draft, or upgrade to
-                        publish.
+                        {t('employer.job_editor.credits_warning', {
+                            plan:
+                                plan.label ||
+                                t('employer.job_editor.your_plan'),
+                        })}
                     </p>
                 )}
 
@@ -151,20 +159,29 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                     {step === 1 && (
                         <div className="space-y-4">
                             <h2 className="text-lg font-bold text-[#050315]">
-                                Job Basics
+                                {t('employer.job_editor.step.basics')}
                             </h2>
-                            <Field label="Job Title *" error={form.errors.title}>
+                            <Field
+                                label={t('employer.job_editor.field.title')}
+                                error={form.errors.title}
+                            >
                                 <input
                                     value={form.data.title}
                                     onChange={(event) =>
                                         form.setData('title', event.target.value)
                                     }
-                                    placeholder="e.g. Senior Frontend Developer"
+                                    placeholder={t(
+                                        'employer.job_editor.field.title_placeholder',
+                                    )}
                                     className={inputClass}
                                 />
                             </Field>
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <Field label="Category *">
+                                <Field
+                                    label={t(
+                                        'employer.job_editor.field.category',
+                                    )}
+                                >
                                     <NativeSelect
                                         value={form.data.category}
                                         onChange={(event) =>
@@ -175,7 +192,11 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                         }
                                         className={selectClass}
                                     >
-                                        <option value="">Select category</option>
+                                        <option value="">
+                                            {t(
+                                                'employer.job_editor.field.select_category',
+                                            )}
+                                        </option>
                                         {options.categories.map((item) => (
                                             <option key={item} value={item}>
                                                 {item}
@@ -183,7 +204,11 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                         ))}
                                     </NativeSelect>
                                 </Field>
-                                <Field label="Job Type *">
+                                <Field
+                                    label={t(
+                                        'employer.job_editor.field.job_type',
+                                    )}
+                                >
                                     <NativeSelect
                                         value={form.data.employment_type}
                                         onChange={(event) =>
@@ -201,7 +226,11 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                         ))}
                                     </NativeSelect>
                                 </Field>
-                                <Field label="Location *">
+                                <Field
+                                    label={t(
+                                        'employer.job_editor.field.location',
+                                    )}
+                                >
                                     <input
                                         value={form.data.location}
                                         onChange={(event) =>
@@ -210,11 +239,17 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                                 event.target.value,
                                             )
                                         }
-                                        placeholder="e.g. Riyadh, Saudi Arabia"
+                                        placeholder={t(
+                                            'employer.job_editor.field.location_placeholder',
+                                        )}
                                         className={inputClass}
                                     />
                                 </Field>
-                                <Field label="Experience Level *">
+                                <Field
+                                    label={t(
+                                        'employer.job_editor.field.experience',
+                                    )}
+                                >
                                     <NativeSelect
                                         value={form.data.experience_level}
                                         onChange={(event) =>
@@ -225,12 +260,18 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                         }
                                         className={selectClass}
                                     >
-                                        <option value="">Select level</option>
-                                        {options.experience_levels.map((item) => (
-                                            <option key={item} value={item}>
-                                                {item}
-                                            </option>
-                                        ))}
+                                        <option value="">
+                                            {t(
+                                                'employer.job_editor.field.select_level',
+                                            )}
+                                        </option>
+                                        {options.experience_levels.map(
+                                            (item) => (
+                                                <option key={item} value={item}>
+                                                    {item}
+                                                </option>
+                                            ),
+                                        )}
                                     </NativeSelect>
                                 </Field>
                             </div>
@@ -240,9 +281,11 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                     {step === 2 && (
                         <div className="space-y-4">
                             <h2 className="text-lg font-bold text-[#050315]">
-                                Job Details
+                                {t('employer.job_editor.step.details')}
                             </h2>
-                            <Field label="Salary range">
+                            <Field
+                                label={t('employer.job_editor.field.salary')}
+                            >
                                 <input
                                     value={form.data.salary_range}
                                     onChange={(event) =>
@@ -251,11 +294,17 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                             event.target.value,
                                         )
                                     }
-                                    placeholder="e.g. SAR 15,000–20,000"
+                                    placeholder={t(
+                                        'employer.job_editor.field.salary_placeholder',
+                                    )}
                                     className={inputClass}
                                 />
                             </Field>
-                            <Field label="Description">
+                            <Field
+                                label={t(
+                                    'employer.job_editor.field.description',
+                                )}
+                            >
                                 <textarea
                                     rows={6}
                                     value={form.data.description}
@@ -265,11 +314,15 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                             event.target.value,
                                         )
                                     }
-                                    placeholder="Describe the role, team, and impact."
+                                    placeholder={t(
+                                        'employer.job_editor.field.description_placeholder',
+                                    )}
                                     className={inputClass}
                                 />
                             </Field>
-                            <Field label="Expires on">
+                            <Field
+                                label={t('employer.job_editor.field.expires')}
+                            >
                                 <input
                                     type="date"
                                     value={form.data.expires_at}
@@ -288,9 +341,13 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                     {step === 3 && (
                         <div className="space-y-4">
                             <h2 className="text-lg font-bold text-[#050315]">
-                                Requirements & Skills
+                                {t('employer.job_editor.step.requirements')}
                             </h2>
-                            <Field label="Requirements">
+                            <Field
+                                label={t(
+                                    'employer.job_editor.field.requirements',
+                                )}
+                            >
                                 <textarea
                                     rows={6}
                                     value={form.data.requirements}
@@ -300,21 +357,32 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                             event.target.value,
                                         )
                                     }
-                                    placeholder="List must-have qualifications and responsibilities."
+                                    placeholder={t(
+                                        'employer.job_editor.field.requirements_placeholder',
+                                    )}
                                     className={inputClass}
                                 />
                             </Field>
-                            <Field label="Skills">
+                            <Field
+                                label={t('employer.job_editor.field.skills')}
+                            >
                                 <input
                                     value={form.data.skills}
                                     onChange={(event) =>
-                                        form.setData('skills', event.target.value)
+                                        form.setData(
+                                            'skills',
+                                            event.target.value,
+                                        )
                                     }
-                                    placeholder="React, TypeScript, Laravel"
+                                    placeholder={t(
+                                        'employer.job_editor.field.skills_placeholder',
+                                    )}
                                     className={inputClass}
                                 />
                                 <p className="mt-1 text-xs text-[#94a3b8]">
-                                    Separate skills with commas.
+                                    {t(
+                                        'employer.job_editor.field.skills_hint',
+                                    )}
                                 </p>
                             </Field>
                         </div>
@@ -323,20 +391,49 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                     {step === 4 && (
                         <div className="space-y-4">
                             <h2 className="text-lg font-bold text-[#050315]">
-                                Preview & Publish
+                                {t('employer.job_editor.step.preview')}
                             </h2>
                             <dl className="grid gap-3 text-sm sm:grid-cols-2">
                                 {[
-                                    ['Title', form.data.title || '—'],
-                                    ['Category', form.data.category || '—'],
-                                    ['Type', form.data.employment_type || '—'],
-                                    ['Location', form.data.location || '—'],
                                     [
-                                        'Experience',
+                                        t('employer.job_editor.preview.title'),
+                                        form.data.title || '—',
+                                    ],
+                                    [
+                                        t(
+                                            'employer.job_editor.preview.category',
+                                        ),
+                                        form.data.category || '—',
+                                    ],
+                                    [
+                                        t('employer.job_editor.preview.type'),
+                                        form.data.employment_type || '—',
+                                    ],
+                                    [
+                                        t(
+                                            'employer.job_editor.preview.location',
+                                        ),
+                                        form.data.location || '—',
+                                    ],
+                                    [
+                                        t(
+                                            'employer.job_editor.preview.experience',
+                                        ),
                                         form.data.experience_level || '—',
                                     ],
-                                    ['Salary', form.data.salary_range || '—'],
-                                    ['Expires', form.data.expires_at || '30 days'],
+                                    [
+                                        t('employer.job_editor.preview.salary'),
+                                        form.data.salary_range || '—',
+                                    ],
+                                    [
+                                        t(
+                                            'employer.job_editor.preview.expires',
+                                        ),
+                                        form.data.expires_at ||
+                                            t(
+                                                'employer.job_editor.preview.default_expires',
+                                            ),
+                                    ],
                                 ].map(([label, value]) => (
                                     <div key={label}>
                                         <dt className="text-xs text-[#94a3b8]">
@@ -364,14 +461,14 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                             className="inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#64748b] disabled:opacity-40"
                         >
                             <ArrowLeft className="size-4" />
-                            Previous Step
+                            {t('employer.job_editor.previous_step')}
                         </button>
                         <div className="flex flex-wrap gap-2">
                             <Link
                                 href="/employer/jobs"
                                 className="rounded-xl px-4 py-2.5 text-sm font-semibold text-[#64748b]"
                             >
-                                Cancel
+                                {t('common.cancel')}
                             </Link>
                             {step === 4 ? (
                                 <>
@@ -381,7 +478,7 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                         onClick={() => submit(false)}
                                         className="cursor-pointer rounded-xl border border-[#e2e8f0] px-4 py-2.5 text-sm font-semibold text-[#364153]"
                                     >
-                                        Save as Draft
+                                        {t('employer.job_editor.save_draft')}
                                     </button>
                                     <button
                                         type="submit"
@@ -389,8 +486,12 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                         className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#0057c8] px-5 py-2.5 text-sm font-semibold text-white"
                                     >
                                         {isEdit
-                                            ? 'Save & Submit'
-                                            : 'Submit for review'}
+                                            ? t(
+                                                  'employer.job_editor.save_submit',
+                                              )
+                                            : t(
+                                                  'employer.job_editor.submit_review',
+                                              )}
                                     </button>
                                 </>
                             ) : (
@@ -398,7 +499,7 @@ export default function EmployerJobEditor({ job, plan, options }: Props) {
                                     type="submit"
                                     className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#0057c8] px-5 py-2.5 text-sm font-semibold text-white"
                                 >
-                                    Next Step
+                                    {t('employer.job_editor.next_step')}
                                     <ArrowRight className="size-4" />
                                 </button>
                             )}

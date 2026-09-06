@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { useLocale } from '@/hooks/use-locale';
-import { about, contact, home, jobs, login, pricing, register } from '@/routes';
+import { about, contact, home, jobs, login, pricing, register, training } from '@/routes';
 import type { SharedData } from '@/types';
 
 export function FrontendHeader() {
@@ -19,6 +19,7 @@ export function FrontendHeader() {
         { label: t('nav.home'), href: home.url(), match: '/' },
         { label: t('nav.jobs'), href: jobs.url(), match: '/jobs' },
         { label: t('nav.pricing'), href: pricing.url(), match: '/pricing' },
+        { label: t('nav.training'), href: training.url(), match: '/training' },
         { label: t('nav.about'), href: about.url(), match: '/about' },
         { label: t('nav.contact'), href: contact.url(), match: '/contact' },
     ];
@@ -42,7 +43,7 @@ export function FrontendHeader() {
                     <Link href={home()} className="shrink-0">
                         <img
                             src="/images/home/logo.png"
-                            alt="Rena Reiam For Job"
+                            alt={t('app.name')}
                             className="h-[65px] w-[98px] object-contain"
                             width={98}
                             height={65}

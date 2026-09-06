@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 
 type Props = {
@@ -23,6 +24,7 @@ export default function RoleCreate({
     permissionGroups,
     defaultPermissions,
 }: Props) {
+    const { t } = useLocale();
     const allPermissionNames = useMemo(
         () =>
             permissionGroups.flatMap((group) =>
@@ -62,7 +64,7 @@ export default function RoleCreate({
 
     return (
         <AdminPortalLayout>
-            <Head title="Create Role" />
+            <Head title={t('admin.roles.create_title')} />
 
             <div className="space-y-6 p-6">
                 <div>
@@ -70,13 +72,13 @@ export default function RoleCreate({
                         href="/admin/roles-permissions"
                         className="text-xs font-semibold text-[#0057c8]"
                     >
-                        ← Roles & Permissions
+                        {t('admin.roles.back_to_list')}
                     </Link>
                     <h1 className="mt-2 text-[28px] font-extrabold tracking-tight text-[#050315]">
-                        Create role
+                        {t('admin.roles.create_button')}
                     </h1>
                     <p className="mt-1 text-sm text-[#3977a6]">
-                        Name the role and choose which modules it can access.
+                        {t('admin.roles.create_subtitle')}
                     </p>
                 </div>
 
@@ -98,27 +100,33 @@ export default function RoleCreate({
 
                             <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                                 <h2 className="mb-4 text-base font-bold text-[#101828]">
-                                    Role details
+                                    {t('admin.roles.show_subtitle')}
                                 </h2>
                                 <div className="space-y-4">
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="label">Role name</Label>
+                                        <Label htmlFor="label">
+                                            {t('admin.roles.fields.name')}
+                                        </Label>
                                         <Input
                                             id="label"
                                             name="label"
-                                            placeholder="Moderator"
+                                            placeholder={t(
+                                                'admin.roles.fields.name_placeholder',
+                                            )}
                                             className="rounded-xl"
                                         />
                                         <InputError message={errors.label} />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="description">
-                                            Description
+                                            {t('admin.roles.fields.description')}
                                         </Label>
                                         <Textarea
                                             id="description"
                                             name="description"
-                                            placeholder="What this role is allowed to do"
+                                            placeholder={t(
+                                                'admin.roles.fields.description',
+                                            )}
                                             className="min-h-24 rounded-xl"
                                         />
                                         <InputError
@@ -139,11 +147,10 @@ export default function RoleCreate({
                                         />
                                         <div>
                                             <h2 className="text-base font-bold text-[#101828]">
-                                                Permissions
+                                                {t('admin.roles.permissions')}
                                             </h2>
                                             <p className="text-xs text-[#99a1af]">
-                                                Access Admin Panel stays
-                                                required for staff roles.
+                                                {t('admin.roles.required_panel')}
                                             </p>
                                         </div>
                                     </div>
@@ -153,7 +160,9 @@ export default function RoleCreate({
                                             onChange={(event) =>
                                                 setSearch(event.target.value)
                                             }
-                                            placeholder="Search permissions…"
+                                            placeholder={t(
+                                                'admin.roles.search_permissions',
+                                            )}
                                             className="w-full rounded-xl sm:w-56"
                                         />
                                         <Button
@@ -164,7 +173,7 @@ export default function RoleCreate({
                                                 setSelected(allPermissionNames)
                                             }
                                         >
-                                            Enable all
+                                            {t('admin.roles.enable_all')}
                                         </Button>
                                     </div>
                                 </div>
@@ -183,7 +192,9 @@ export default function RoleCreate({
                                 disabled={processing}
                                 className="rounded-xl bg-[#0057c8] text-white hover:bg-[#0046a3]"
                             >
-                                {processing ? 'Creating…' : 'Create role'}
+                                {processing
+                                    ? t('common.creating')
+                                    : t('admin.roles.create_button')}
                             </Button>
                         </>
                     )}

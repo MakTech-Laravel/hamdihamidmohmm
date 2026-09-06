@@ -1,6 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 
 import { AdminIcon } from '@/components/admin-icon';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -72,11 +73,11 @@ const toneStyles: Record<string, string> = {
     info: 'border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]',
 };
 
-const rangeOptions = [
-    ['7d', '7D'],
-    ['30d', '30D'],
-    ['90d', '90D'],
-    ['12m', '12M'],
+const rangeOptionKeys = [
+    ['7d', 'admin.dashboard.range.7d'],
+    ['30d', 'admin.dashboard.range.30d'],
+    ['90d', 'admin.dashboard.range.90d'],
+    ['12m', 'admin.dashboard.range.12m'],
 ] as const;
 
 function toPoints(values: number[], width = 640, height = 200, pad = 20): string {
@@ -122,6 +123,7 @@ export default function AdminDashboard({
     firstName,
 }: DashboardProps) {
     const { auth } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const chartHasData =
         chart.employers.some((value) => value > 0) ||
         chart.job_seekers.some((value) => value > 0);
@@ -130,7 +132,7 @@ export default function AdminDashboard({
     const metricCards = [
         {
             key: 'total_employers',
-            label: 'Total Employers',
+            label: t('admin.dashboard.total_employers'),
             value: stats.total_employers.toLocaleString(),
             href: '/admin/employers',
             icon: '/images/admin/stat-employers.svg',
@@ -138,7 +140,7 @@ export default function AdminDashboard({
         },
         {
             key: 'total_job_seekers',
-            label: 'Total Job Seekers',
+            label: t('admin.dashboard.total_seekers'),
             value: stats.total_job_seekers.toLocaleString(),
             href: '/admin/job-seekers',
             icon: '/images/admin/stat-job-seekers.svg',
@@ -146,7 +148,7 @@ export default function AdminDashboard({
         },
         {
             key: 'active_jobs',
-            label: 'Active Jobs',
+            label: t('admin.dashboard.active_jobs'),
             value: stats.active_jobs.toLocaleString(),
             href: '/admin/jobs?status=active',
             icon: '/images/admin/stat-active-jobs.svg',
@@ -154,7 +156,7 @@ export default function AdminDashboard({
         },
         {
             key: 'pending_jobs',
-            label: 'Pending Jobs',
+            label: t('admin.dashboard.pending_jobs'),
             value: stats.pending_jobs.toLocaleString(),
             href: '/admin/jobs?status=pending',
             icon: '/images/admin/stat-pending-jobs.svg',
@@ -162,7 +164,7 @@ export default function AdminDashboard({
         },
         {
             key: 'applications_today',
-            label: 'Applications Today',
+            label: t('admin.dashboard.applications_today'),
             value: stats.applications_today.toLocaleString(),
             href: '/admin/applications',
             icon: '/images/admin/stat-applications.svg',
@@ -170,7 +172,7 @@ export default function AdminDashboard({
         },
         {
             key: 'monthly_revenue',
-            label: 'Monthly Revenue',
+            label: t('admin.dashboard.monthly_revenue'),
             value: `${stats.currency} ${stats.monthly_revenue.toLocaleString()}`,
             href: '/admin/payments',
             icon: '/images/admin/stat-monthly-revenue.svg',
@@ -178,7 +180,7 @@ export default function AdminDashboard({
         },
         {
             key: 'pending_verifications',
-            label: 'Pending Verifications',
+            label: t('admin.dashboard.pending_verifications'),
             value: stats.pending_verifications.toLocaleString(),
             href: '/admin/verifications',
             icon: '/images/admin/stat-verifications.svg',
@@ -186,7 +188,7 @@ export default function AdminDashboard({
         },
         {
             key: 'total_users',
-            label: 'Total Users',
+            label: t('admin.dashboard.total_users'),
             value: stats.total_users.toLocaleString(),
             href: '/admin/users' as string | null,
             icon: '/images/admin/stat-job-seekers.svg',
@@ -196,7 +198,7 @@ export default function AdminDashboard({
 
     return (
         <AdminPortalLayout>
-            <Head title="Admin Dashboard" />
+            <Head title={t('admin.dashboard.title')} />
 
             <div className="space-y-6 p-6">
                 <div
@@ -208,25 +210,24 @@ export default function AdminDashboard({
                 >
                     <div>
                         <h1 className="text-3xl font-extrabold text-white">
-                            Welcome back, {firstName}
+                            {t('admin.dashboard.welcome', { name: firstName })}
                         </h1>
                         <p className="mt-2 max-w-xl text-sm text-[#d1f6ff]">
-                            Manage the entire RR Job Portal ecosystem from one
-                            centralized workspace.
+                            {t('admin.dashboard.subtitle')}
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-3">
                         {[
                             {
-                                label: 'Active Sessions',
+                                label: t('admin.dashboard.active_sessions'),
                                 value: quickStats.active_sessions,
                             },
                             {
-                                label: 'Unread Alerts',
+                                label: t('admin.dashboard.unread_alerts'),
                                 value: quickStats.unread_alerts,
                             },
                             {
-                                label: 'Tasks Today',
+                                label: t('admin.dashboard.tasks_today'),
                                 value: quickStats.tasks_today,
                             },
                         ].map((item) => (
@@ -314,14 +315,14 @@ export default function AdminDashboard({
                         <div className="mb-4 flex items-center justify-between gap-3">
                             <div>
                                 <h2 className="text-base font-bold text-[#101828]">
-                                    Registration Analytics
+                                    {t('admin.dashboard.registration_analytics')}
                                 </h2>
                                 <p className="text-xs text-[#99a1af]">
-                                    Employer vs job seeker signups
+                                    {t('admin.dashboard.registration_subtitle')}
                                 </p>
                             </div>
                             <div className="flex gap-1">
-                                {rangeOptions.map(([value, label]) => (
+                                {rangeOptionKeys.map(([value, labelKey]) => (
                                     <button
                                         key={value}
                                         type="button"
@@ -342,7 +343,7 @@ export default function AdminDashboard({
                                             )
                                         }
                                     >
-                                        {label}
+                                        {t(labelKey)}
                                     </button>
                                 ))}
                             </div>
@@ -370,32 +371,32 @@ export default function AdminDashboard({
                                 </svg>
                             ) : (
                                 <div className="flex h-full items-center justify-center text-sm text-[#99a1af]">
-                                    No registrations in this range.
+                                    {t('admin.dashboard.no_registrations')}
                                 </div>
                             )}
                         </div>
                         <div className="mt-3 flex gap-4 text-xs text-[#64748b]">
                             <span className="inline-flex items-center gap-1.5">
                                 <span className="size-2 rounded-full bg-[#0057c8]" />
-                                Employers
+                                {t('admin.dashboard.legend.employers')}
                             </span>
                             <span className="inline-flex items-center gap-1.5">
                                 <span className="size-2 rounded-full bg-[#e57124]" />
-                                Job seekers
+                                {t('admin.dashboard.legend.job_seekers')}
                             </span>
                         </div>
                     </div>
 
                     <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                         <h2 className="text-base font-bold text-[#101828]">
-                            Package Distribution
+                            {t('admin.dashboard.package_distribution')}
                         </h2>
                         <p className="text-xs text-[#99a1af]">
-                            Employer accounts by plan
+                            {t('admin.dashboard.package_subtitle')}
                         </p>
                         {packageTotal === 0 ? (
                             <p className="mt-8 text-sm text-[#99a1af]">
-                                No employer packages yet.
+                                {t('admin.dashboard.no_packages')}
                             </p>
                         ) : (
                             <div className="mt-5 flex items-center gap-5">
@@ -435,31 +436,31 @@ export default function AdminDashboard({
                     <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-base font-bold text-[#101828]">
-                                Quick Actions
+                                {t('admin.dashboard.quick_actions')}
                             </h2>
                         </div>
                         <div className="space-y-2">
                             {[
                                 {
-                                    label: 'Manage Employers',
+                                    label: t('admin.dashboard.manage_employers'),
                                     href: '/admin/employers',
                                 },
                                 {
-                                    label: 'Manage Job Seekers',
+                                    label: t('admin.dashboard.manage_job_seekers'),
                                     href: '/admin/job-seekers',
                                 },
                                 {
-                                    label: 'Manage Users',
+                                    label: t('admin.dashboard.manage_users'),
                                     href: '/admin/users',
                                 },
                                 {
-                                    label: 'Create Admin',
+                                    label: t('admin.dashboard.create_admin'),
                                     href: canCreateAdmins
                                         ? '/admin/admins'
                                         : null,
                                 },
                                 {
-                                    label: 'Review Roles & Permissions',
+                                    label: t('admin.dashboard.review_roles'),
                                     href: '/admin/roles-permissions',
                                 },
                             ].map((action) =>
@@ -480,7 +481,7 @@ export default function AdminDashboard({
                                         className="flex items-center justify-between rounded-xl border border-[#e2e8f0] px-4 py-3 text-sm font-medium text-[#99a1af]"
                                     >
                                         {action.label}
-                                        <span>Locked</span>
+                                        <span>{t('status.locked')}</span>
                                     </div>
                                 ),
                             )}
@@ -490,7 +491,7 @@ export default function AdminDashboard({
                     <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-base font-bold text-[#101828]">
-                                Platform Alerts
+                                {t('admin.dashboard.platform_alerts')}
                             </h2>
                             <span
                                 className={cn(
@@ -501,14 +502,14 @@ export default function AdminDashboard({
                                 )}
                             >
                                 {alerts.length > 0
-                                    ? `${alerts.length} Active`
-                                    : 'All clear'}
+                                    ? t('admin.dashboard.alerts_active', { count: alerts.length })
+                                    : t('admin.dashboard.all_clear')}
                             </span>
                         </div>
                         <div className="space-y-3">
                             {alerts.length === 0 && (
                                 <p className="text-sm text-[#99a1af]">
-                                    No pending employer or account issues.
+                                    {t('admin.dashboard.no_alerts')}
                                 </p>
                             )}
                             {alerts.map((alert) => (
@@ -535,13 +536,13 @@ export default function AdminDashboard({
                     <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-base font-bold text-[#101828]">
-                                Activity Feed
+                                {t('admin.dashboard.activity_feed')}
                             </h2>
                             <Link
                                 href="/admin/users"
                                 className="text-xs font-bold text-[#0057c8]"
                             >
-                                View All
+                                {t('common.view_all')}
                             </Link>
                         </div>
                         <div className="space-y-3">
@@ -566,7 +567,7 @@ export default function AdminDashboard({
                                                 : ''}
                                         </p>
                                         <p className="text-[11px] text-[#99a1af]">
-                                            {item.actor_name ?? 'System'} ·{' '}
+                                            {item.actor_name ?? t('common.system')} ·{' '}
                                             {item.created_at}
                                         </p>
                                     </div>
@@ -574,12 +575,12 @@ export default function AdminDashboard({
                             ))}
                             {activities.length === 0 && (
                                 <p className="text-sm text-[#99a1af]">
-                                    No recent activity yet.
+                                    {t('admin.dashboard.no_activity')}
                                 </p>
                             )}
                         </div>
                         <p className="mt-4 text-xs text-[#99a1af]">
-                            Signed in as {auth.user.role_label}
+                            {t('admin.dashboard.signed_in_as', { role: auth.user.role_label ?? '' })}
                         </p>
                     </div>
                 </div>

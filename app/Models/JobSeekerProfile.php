@@ -85,7 +85,7 @@ class JobSeekerProfile extends Model
             if (ctype_digit($value)) {
                 $years = (int) $value;
 
-                return $years === 1 ? '1 year' : $years.' years';
+                return $years === 1 ? '1 year' : $years . ' years';
             }
 
             return $value;
@@ -97,7 +97,7 @@ class JobSeekerProfile extends Model
             return '—';
         }
 
-        return $years === 1 ? '1 year' : $years.' years';
+        return $years === 1 ? '1 year' : $years . ' years';
     }
 
     public function completionPercent(): int
@@ -133,6 +133,11 @@ class JobSeekerProfile extends Model
 
         return [
             [
+                'id' => 'resume',
+                'label' => 'Resume',
+                'complete' => filled($user?->resume_path),
+            ],
+            [
                 'id' => 'personal',
                 'label' => 'Personal Info',
                 'complete' => filled($user?->name) && filled($user?->email) && filled($user?->phone) && filled($user?->location),
@@ -166,11 +171,6 @@ class JobSeekerProfile extends Model
                 'id' => 'certifications',
                 'label' => 'Certifications',
                 'complete' => is_array($this->certifications) && $this->certifications !== [],
-            ],
-            [
-                'id' => 'resume',
-                'label' => 'Resume',
-                'complete' => filled($user?->resume_path),
             ],
         ];
     }

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { PasswordInput } from '@/components/ui/password-input';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -46,6 +47,7 @@ export default function UserEdit({
     canManageAdmins,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
 
     const assignableRoles = roles.filter((role) => {
         if (role.value === 'super-admin') {
@@ -57,7 +59,9 @@ export default function UserEdit({
 
     return (
         <AdminPortalLayout>
-            <Head title={`Edit ${managedUser.name}`} />
+            <Head
+                title={t('admin.users.edit_title', { name: managedUser.name })}
+            />
 
             <div className="space-y-6 p-6">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -66,20 +70,22 @@ export default function UserEdit({
                             href={`/admin/users/${managedUser.id}`}
                             className="text-xs font-semibold text-[#0057c8]"
                         >
-                            ← User details
+                            {t('admin.users.back_to_details')}
                         </Link>
                         <h1 className="mt-2 text-[28px] font-extrabold tracking-tight text-[#050315]">
-                            Edit {managedUser.name}
+                            {t('admin.users.edit_title', {
+                                name: managedUser.name,
+                            })}
                         </h1>
                         <p className="mt-1 text-sm text-[#3977a6]">
-                            Update account information and assign a role.
+                            {t('admin.users.edit_subtitle')}
                         </p>
                     </div>
                     <span
                         className={cn(
                             'inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold',
                             roleBadgeStyles[managedUser.role_name ?? ''] ??
-                            'bg-[#f1f5f9] text-[#64748b]',
+                                'bg-[#f1f5f9] text-[#64748b]',
                         )}
                     >
                         {managedUser.role_label}
@@ -90,7 +96,7 @@ export default function UserEdit({
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
@@ -103,7 +109,7 @@ export default function UserEdit({
                             className="text-[#0057c8]"
                         />
                         <h2 className="text-base font-bold text-[#101828]">
-                            Update information
+                            {t('admin.users.update_information')}
                         </h2>
                     </div>
 
@@ -115,7 +121,9 @@ export default function UserEdit({
                         {({ processing, errors }) => (
                             <>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="name">Full name</Label>
+                                    <Label htmlFor="name">
+                                        {t('admin.users.fields.full_name')}
+                                    </Label>
                                     <Input
                                         id="name"
                                         name="name"
@@ -125,7 +133,9 @@ export default function UserEdit({
                                     <InputError message={errors.name} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="email">
+                                        {t('admin.users.fields.email')}
+                                    </Label>
                                     <Input
                                         id="email"
                                         name="email"
@@ -137,7 +147,7 @@ export default function UserEdit({
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="company_name">
-                                        Company name
+                                        {t('admin.users.fields.company_name')}
                                     </Label>
                                     <Input
                                         id="company_name"
@@ -152,7 +162,9 @@ export default function UserEdit({
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="role">Assign role</Label>
+                                    <Label htmlFor="role">
+                                        {t('admin.users.fields.role')}
+                                    </Label>
                                     {managedUser.is_self ? (
                                         <>
                                             <input
@@ -193,7 +205,7 @@ export default function UserEdit({
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="password">
-                                            New password
+                                            {t('admin.users.fields.new_password')}
                                         </Label>
                                         <PasswordInput
                                             id="password"
@@ -207,7 +219,9 @@ export default function UserEdit({
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="password_confirmation">
-                                            Confirm password
+                                            {t(
+                                                'admin.users.fields.confirm_password',
+                                            )}
                                         </Label>
                                         <PasswordInput
                                             id="password_confirmation"
@@ -223,8 +237,8 @@ export default function UserEdit({
                                     className="rounded-xl bg-[#0057c8] text-white hover:bg-[#0046a3]"
                                 >
                                     {processing
-                                        ? 'Saving...'
-                                        : 'Save changes'}
+                                        ? t('common.saving')
+                                        : t('common.save_changes')}
                                 </Button>
                             </>
                         )}

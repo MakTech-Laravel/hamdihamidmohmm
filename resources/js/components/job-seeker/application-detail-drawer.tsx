@@ -11,6 +11,7 @@ import {
     SheetDescription,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
 
 export type ApplicationDetail = {
@@ -35,6 +36,8 @@ export function ApplicationDetailDrawer({
     onOpenChange: (open: boolean) => void;
     application: ApplicationDetail | null;
 }) {
+    const { t } = useLocale();
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
@@ -47,7 +50,7 @@ export function ApplicationDetailDrawer({
                     <DrawerBody application={application} />
                 ) : (
                     <div className="p-5 text-sm text-[#3977a6]">
-                        No application selected.
+                        {t('job_seeker.applications.no_selected')}
                     </div>
                 )}
             </SheetContent>
@@ -56,6 +59,8 @@ export function ApplicationDetailDrawer({
 }
 
 function DrawerBody({ application }: { application: ApplicationDetail }) {
+    const { t } = useLocale();
+
     return (
         <div className="flex h-full flex-col bg-white">
             <div className="flex shrink-0 items-center gap-4 border-b border-[#d1f6ff] bg-[#d1f6ff] p-5">
@@ -64,7 +69,8 @@ function DrawerBody({ application }: { application: ApplicationDetail }) {
                 </div>
                 <div className="min-w-0 flex-1">
                     <SheetTitle className="text-base font-extrabold text-[#050315]">
-                        {application.title || 'Application'}
+                        {application.title ||
+                            t('job_seeker.applications.fallback_title')}
                     </SheetTitle>
                     <SheetDescription className="pt-0.5 text-[12.8px] leading-[19.2px] text-[#3977a6]">
                         {application.company || '—'}
@@ -85,7 +91,7 @@ function DrawerBody({ application }: { application: ApplicationDetail }) {
                 <SheetClose asChild>
                     <button
                         type="button"
-                        aria-label="Close"
+                        aria-label={t('common.close')}
                         className="flex size-8 shrink-0 items-center justify-center text-[20px] text-[#3977a6] hover:text-[#050315]"
                     >
                         <X className="size-5" strokeWidth={1.75} />
@@ -97,19 +103,19 @@ function DrawerBody({ application }: { application: ApplicationDetail }) {
                 <section className="space-y-2 text-sm text-[#374151]">
                     <p>
                         <span className="font-semibold text-[#050315]">
-                            Applied:{' '}
+                            {t('job_seeker.applications.applied')}:{' '}
                         </span>
                         {application.applied_at || '—'}
                     </p>
                     <p>
                         <span className="font-semibold text-[#050315]">
-                            Salary:{' '}
+                            {t('job_seeker.applications.salary')}:{' '}
                         </span>
                         {application.salary || '—'}
                     </p>
                     <p>
                         <span className="font-semibold text-[#050315]">
-                            Type:{' '}
+                            {t('job_seeker.applications.type')}:{' '}
                         </span>
                         {application.type || '—'}
                     </p>
@@ -117,7 +123,7 @@ function DrawerBody({ application }: { application: ApplicationDetail }) {
 
                 <section>
                     <h3 className="text-[12.8px] font-bold tracking-[0.512px] text-[#3977a6] uppercase">
-                        Status Timeline
+                        {t('job_seeker.applications.status_timeline')}
                     </h3>
                     <ol className="flex flex-col pt-3">
                         {application.timeline.map((step, index) => {
@@ -190,7 +196,7 @@ function DrawerBody({ application }: { application: ApplicationDetail }) {
                         href={application.job_url}
                         className="inline-flex h-10 w-full items-center justify-center rounded-[8px] bg-[#0057c8] text-sm font-semibold text-white hover:bg-[#0046a3]"
                     >
-                        View Job Posting
+                        {t('job_seeker.applications.view_job')}
                     </Link>
                 </div>
             ) : null}

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { PasswordInput } from '@/components/ui/password-input';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
@@ -37,19 +38,26 @@ type Props = {
 
 export default function JobSeekerEdit({ jobSeeker, options }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
 
     return (
         <AdminPortalLayout>
-            <Head title={`Edit ${jobSeeker.name}`} />
+            <Head
+                title={t('admin.job_seekers.edit_title', {
+                    name: jobSeeker.name,
+                })}
+            />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title={`Edit ${jobSeeker.name}`}
-                    subtitle="Update job seeker information and account status."
+                    title={t('admin.job_seekers.edit_title', {
+                        name: jobSeeker.name,
+                    })}
+                    subtitle={t('admin.job_seekers.edit_subtitle')}
                     actions={
                         <Link href={`/admin/job-seekers/${jobSeeker.id}`}>
                             <AdminSecondaryButton>
-                                ← Job seeker details
+                                {t('admin.job_seekers.back_to_details')}
                             </AdminSecondaryButton>
                         </Link>
                     }
@@ -59,7 +67,7 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
@@ -72,7 +80,9 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                         {({ processing, errors }) => (
                             <>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="name">Name</Label>
+                                    <Label htmlFor="name">
+                                        {t('admin.job_seekers.fields.name')}
+                                    </Label>
                                     <Input
                                         id="name"
                                         name="name"
@@ -82,7 +92,9 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                     <InputError message={errors.name} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="email">
+                                        {t('admin.job_seekers.fields.email')}
+                                    </Label>
                                     <Input
                                         id="email"
                                         name="email"
@@ -93,7 +105,9 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                     <InputError message={errors.email} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="phone">Phone</Label>
+                                    <Label htmlFor="phone">
+                                        {t('admin.job_seekers.fields.phone')}
+                                    </Label>
                                     <Input
                                         id="phone"
                                         name="phone"
@@ -107,7 +121,9 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                     <InputError message={errors.phone} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="location">Location</Label>
+                                    <Label htmlFor="location">
+                                        {t('admin.job_seekers.fields.location')}
+                                    </Label>
                                     <NativeSelect
                                         id="location"
                                         name="location"
@@ -119,7 +135,9 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                         className="h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm"
                                     >
                                         <option value="">
-                                            Select location
+                                            {t(
+                                                'admin.job_seekers.fields.select_location',
+                                            )}
                                         </option>
                                         {options.locations.map((location) => (
                                             <option
@@ -135,7 +153,7 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="resume_status">
-                                            Resume
+                                            {t('admin.job_seekers.fields.resume')}
                                         </Label>
                                         <NativeSelect
                                             id="resume_status"
@@ -160,7 +178,7 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="account_status">
-                                            Status
+                                            {t('admin.job_seekers.fields.status')}
                                         </Label>
                                         <NativeSelect
                                             id="account_status"
@@ -188,7 +206,9 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="password">
-                                            New password
+                                            {t(
+                                                'admin.job_seekers.fields.new_password',
+                                            )}
                                         </Label>
                                         <PasswordInput
                                             id="password"
@@ -200,7 +220,9 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="password_confirmation">
-                                            Confirm password
+                                            {t(
+                                                'admin.job_seekers.fields.confirm_password',
+                                            )}
                                         </Label>
                                         <PasswordInput
                                             id="password_confirmation"
@@ -219,8 +241,8 @@ export default function JobSeekerEdit({ jobSeeker, options }: Props) {
                                     }
                                 >
                                     {processing
-                                        ? 'Saving…'
-                                        : 'Save changes'}
+                                        ? t('common.saving')
+                                        : t('common.save_changes')}
                                 </AdminPrimaryButton>
                             </>
                         )}

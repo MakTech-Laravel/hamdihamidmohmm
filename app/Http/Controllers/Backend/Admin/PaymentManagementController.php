@@ -9,6 +9,7 @@ use App\Http\Requests\Backend\Admin\StorePaymentRequest;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\User;
+use App\Support\PortalNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -68,6 +69,11 @@ class PaymentManagementController extends Controller
 
             if ($package && $employer) {
                 $employer->forceFill(['package' => $package->slug])->save();
+                PortalNotifier::billingAlert(
+                    $employer,
+                    'Payment recorded',
+                    "Your {$package->name} package payment was recorded successfully.",
+                );
             }
         }
 
@@ -87,6 +93,11 @@ class PaymentManagementController extends Controller
 
         if ($payment->package && $payment->employer) {
             $payment->employer->forceFill(['package' => $payment->package->slug])->save();
+            PortalNotifier::billingAlert(
+                $payment->employer,
+                'Payment approved',
+                "Your {$payment->package->name} package payment was approved.",
+            );
         }
 
         return back()->with('success', 'Payment approved.');
@@ -97,6 +108,16 @@ class PaymentManagementController extends Controller
         abort_unless($request->user()?->canManagePayments(), 403);
 
         $payment->forceFill(['status' => PaymentStatus::Refunded])->save();
+        $payment->loadMissing(['package', 'employer']);
+
+        if ($payment->employer instanceof User) {
+            $packageName = $payment->package?->name ?? 'package';
+            PortalNotifier::billingAlert(
+                $payment->employer,
+                'Payment refunded',
+                "Your {$packageName} payment was refunded.",
+            );
+        }
 
         return back()->with('success', 'Payment refunded.');
     }

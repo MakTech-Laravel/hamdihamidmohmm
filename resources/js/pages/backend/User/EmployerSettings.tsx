@@ -38,6 +38,8 @@ type Profile = {
     photo_url: string | null;
     personal_initials: string;
 };
+<<<<<<< HEAD
+=======
 
 const TABS: { id: SettingsTab; label: string; danger?: boolean }[] = [
     { id: 'account', label: 'Account' },
@@ -46,6 +48,7 @@ const TABS: { id: SettingsTab; label: string; danger?: boolean }[] = [
     { id: 'language', label: 'Language' },
     { id: 'danger', label: 'Danger Zone', danger: true },
 ];
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
 
 const fieldClass =
     'h-[42px] w-full max-w-[550px] rounded-lg border border-[#e8d5e8] bg-white px-3 text-sm text-[#050315] outline-none placeholder:text-[#050315]/50';
@@ -108,7 +111,14 @@ export default function EmployerSettings({
     preferences: Preferences;
 }) {
     const { auth, flash } = usePage<SharedData>().props;
-    const { locale, setLocale } = useLocale();
+    const { locale, setLocale, t } = useLocale();
+    const tabs: { id: SettingsTab; label: string; danger?: boolean }[] = [
+        { id: 'account', label: t('employer.settings.tab.account') },
+        { id: 'notifications', label: t('employer.settings.tab.notifications') },
+        { id: 'privacy', label: t('employer.settings.tab.privacy') },
+        { id: 'language', label: t('employer.settings.tab.language') },
+        { id: 'danger', label: t('employer.settings.tab.danger'), danger: true },
+    ];
     const [activeTab, setActiveTab] = useState<SettingsTab>('account');
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const photoInputRef = useRef<HTMLInputElement>(null);
@@ -199,22 +209,22 @@ export default function EmployerSettings({
     };
 
     return (
-        <EmployerLayout title="Settings">
-            <Head title="Settings" />
+        <EmployerLayout title={t('employer.settings.title')}>
+            <Head title={t('employer.settings.title')} />
 
             <div className="flex flex-col px-6 py-6">
                 <div>
                     <h1 className="text-2xl leading-9 font-extrabold text-[#050315]">
-                        Settings
+                        {t('employer.settings.title')}
                     </h1>
                     <p className="pt-1 text-sm leading-[21px] text-[#6b7280]">
-                        Manage your account preferences and configurations
+                        {t('employer.settings.subtitle')}
                     </p>
                 </div>
 
                 <div className="flex flex-col items-start gap-6 pt-6 lg:flex-row">
                     <nav className="flex w-full shrink-0 flex-row gap-1 overflow-x-auto rounded-2xl border border-[#e8d5e8] bg-white p-2 shadow-[0px_2px_4px_rgba(5,3,21,0.06)] lg:w-[180px] lg:flex-col">
-                        {TABS.map((tab) => (
+                        {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 type="button"
@@ -240,23 +250,30 @@ export default function EmployerSettings({
                             <div className="mb-5 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                                 {typeof flash.success === 'string'
                                     ? flash.success
-                                    : 'Saved successfully.'}
+                                    : t('common.saved')}
                             </div>
                         )}
 
                         {activeTab === 'account' && (
                             <form className="space-y-0" onSubmit={saveAccount}>
                                 <h2 className="text-[17.6px] leading-[26.4px] font-extrabold text-[#050315]">
-                                    Account Information
+                                    {t('employer.settings.account_information')}
                                 </h2>
 
                                 <div className="mt-5 rounded-xl border border-[#e8d5e8] bg-[#f8faff] p-4">
                                     <p className="text-[14.4px] font-bold text-[#050315]">
+<<<<<<< HEAD
+                                        {t('employer.settings.personal_information')}
+                                    </p>
+                                    <p className="mt-1 text-xs text-[#6b7280]">
+                                        {t('employer.settings.personal_hint')}
+=======
                                         Personal Information
                                     </p>
                                     <p className="mt-1 text-xs text-[#6b7280]">
                                         Update your name and profile photo used
                                         across the employer portal.
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                     </p>
 
                                     <input
@@ -273,7 +290,11 @@ export default function EmployerSettings({
                                                 src={profile.photo_url}
                                                 alt={
                                                     profile.name ||
+<<<<<<< HEAD
+                                                    t('employer.settings.profile_photo')
+=======
                                                     'Profile photo'
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                                 }
                                                 className="size-16 rounded-full object-cover"
                                             />
@@ -290,10 +311,17 @@ export default function EmployerSettings({
                                         )}
                                         <div className="min-w-0">
                                             <p className="text-sm font-semibold text-[#050315]">
+<<<<<<< HEAD
+                                                {t('employer.settings.profile_photo')}
+                                            </p>
+                                            <p className="text-xs text-[#6b7280]">
+                                                {t('employer.settings.photo_hint')}
+=======
                                                 Profile photo
                                             </p>
                                             <p className="text-xs text-[#6b7280]">
                                                 JPG, PNG, or WEBP · max 5MB
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                             </p>
                                             <div className="mt-2 flex flex-wrap gap-2">
                                                 <button
@@ -305,10 +333,17 @@ export default function EmployerSettings({
                                                     className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
                                                 >
                                                     {uploadingPhoto
+<<<<<<< HEAD
+                                                        ? t('common.uploading')
+                                                        : profile.photo_url
+                                                            ? t('employer.settings.replace_photo')
+                                                            : t('employer.settings.upload_photo')}
+=======
                                                         ? 'Uploading…'
                                                         : profile.photo_url
                                                             ? 'Replace photo'
                                                             : 'Upload photo'}
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                                 </button>
                                                 {profile.photo_url && (
                                                     <button
@@ -323,7 +358,11 @@ export default function EmployerSettings({
                                                         }
                                                         className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-[#b91c1c]"
                                                     >
+<<<<<<< HEAD
+                                                        {t('common.remove')}
+=======
                                                         Remove
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                                     </button>
                                                 )}
                                             </div>
@@ -332,7 +371,11 @@ export default function EmployerSettings({
 
                                     <label className="mt-4 block max-w-[550px]">
                                         <span className="text-[12.8px] font-semibold text-[#374151]">
+<<<<<<< HEAD
+                                            {t('employer.settings.full_name')}
+=======
                                             Full Name
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                         </span>
                                         <input
                                             type="text"
@@ -344,7 +387,11 @@ export default function EmployerSettings({
                                                 )
                                             }
                                             className={cn(fieldClass, 'mt-1.5')}
+<<<<<<< HEAD
+                                            placeholder={t('employer.settings.full_name_placeholder')}
+=======
                                             placeholder="Your full name"
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                         />
                                         {accountForm.errors.name && (
                                             <p className="mt-1 text-xs text-[#dc2626]">
@@ -356,7 +403,11 @@ export default function EmployerSettings({
 
                                 <label className="mt-5 block max-w-[550px]">
                                     <span className="text-[12.8px] font-semibold text-[#374151]">
+<<<<<<< HEAD
+                                        {t('employer.settings.email')}
+=======
                                         Email Address
+>>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                     </span>
                                     <input
                                         type="email"
@@ -377,7 +428,7 @@ export default function EmployerSettings({
                                 </label>
                                 <label className="mt-4 block max-w-[550px]">
                                     <span className="text-[12.8px] font-semibold text-[#374151]">
-                                        Phone Number
+                                        {t('employer.settings.phone')}
                                     </span>
                                     <input
                                         type="text"
@@ -394,11 +445,11 @@ export default function EmployerSettings({
 
                                 <div className="mt-5 border-t border-[#e8d5e8] pt-5">
                                     <h3 className="text-[15.2px] leading-[22.8px] font-bold text-[#050315]">
-                                        Change Password
+                                        {t('employer.settings.change_password')}
                                     </h3>
                                     <label className="mt-4 block max-w-[550px]">
                                         <span className="text-[12.8px] font-semibold text-[#374151]">
-                                            Current Password
+                                            {t('employer.settings.current_password')}
                                         </span>
                                         <input
                                             type="password"
@@ -417,7 +468,7 @@ export default function EmployerSettings({
                                     </label>
                                     <label className="mt-4 block max-w-[550px]">
                                         <span className="text-[12.8px] font-semibold text-[#374151]">
-                                            New Password
+                                            {t('employer.settings.new_password')}
                                         </span>
                                         <input
                                             type="password"
@@ -446,7 +497,7 @@ export default function EmployerSettings({
                                     </label>
                                     <label className="mt-4 block max-w-[550px]">
                                         <span className="text-[12.8px] font-semibold text-[#374151]">
-                                            Confirm New Password
+                                            {t('employer.settings.confirm_password')}
                                         </span>
                                         <input
                                             type="password"
@@ -478,7 +529,7 @@ export default function EmployerSettings({
                                         passwordForm.processing
                                     }
                                 >
-                                    Save Changes
+                                    {t('common.save_changes')}
                                 </button>
                             </form>
                         )}
@@ -486,39 +537,44 @@ export default function EmployerSettings({
                         {activeTab === 'notifications' && (
                             <form onSubmit={saveNotifications}>
                                 <h2 className="text-[17.6px] leading-[26.4px] font-extrabold text-[#050315]">
-                                    Notification Preferences
+                                    {t('employer.settings.notification_preferences')}
                                 </h2>
                                 {(
                                     [
                                         {
                                             key: 'new_applications' as const,
-                                            label: 'New Applications',
-                                            description:
-                                                'Get notified when candidates apply to your jobs',
+                                            label: t('employer.settings.notif.new_applications'),
+                                            description: t(
+                                                'employer.settings.notif.new_applications_desc',
+                                            ),
                                         },
                                         {
                                             key: 'job_expiry' as const,
-                                            label: 'Job Expiry Reminders',
-                                            description:
-                                                'Remind me 7 days before a job listing expires',
+                                            label: t('employer.settings.notif.job_expiry'),
+                                            description: t(
+                                                'employer.settings.notif.job_expiry_desc',
+                                            ),
                                         },
                                         {
                                             key: 'billing_alerts' as const,
-                                            label: 'Billing Alerts',
-                                            description:
-                                                'Receive payment and subscription notifications',
+                                            label: t('employer.settings.notif.billing'),
+                                            description: t(
+                                                'employer.settings.notif.billing_desc',
+                                            ),
                                         },
                                         {
                                             key: 'system_updates' as const,
-                                            label: 'System Updates',
-                                            description:
-                                                'Platform updates, maintenance, and announcements',
+                                            label: t('employer.settings.notif.system'),
+                                            description: t(
+                                                'employer.settings.notif.system_desc',
+                                            ),
                                         },
                                         {
                                             key: 'weekly_report' as const,
-                                            label: 'Weekly Report',
-                                            description:
-                                                'Summary of applications and job performance',
+                                            label: t('employer.settings.notif.weekly'),
+                                            description: t(
+                                                'employer.settings.notif.weekly_desc',
+                                            ),
                                         },
                                     ] as const
                                 ).map((item) => (
@@ -552,7 +608,7 @@ export default function EmployerSettings({
                                     disabled={notificationForm.processing}
                                     className="mt-6 inline-flex h-[42px] cursor-pointer items-center rounded-lg bg-[#0057c8] px-7 text-[14.4px] font-bold text-white"
                                 >
-                                    Save Preferences
+                                    {t('employer.settings.save_preferences')}
                                 </button>
                             </form>
                         )}
@@ -560,10 +616,10 @@ export default function EmployerSettings({
                         {activeTab === 'privacy' && (
                             <form onSubmit={savePrivacy}>
                                 <h2 className="text-[17.6px] leading-[26.4px] font-extrabold text-[#050315]">
-                                    Privacy Settings
+                                    {t('employer.settings.privacy_title')}
                                 </h2>
                                 <p className="mt-6 font-semibold text-[#050315]">
-                                    Company Profile Visibility
+                                    {t('employer.settings.profile_visibility')}
                                 </p>
                                 <label className="mt-3 flex cursor-pointer items-center gap-3">
                                     <input
@@ -582,7 +638,7 @@ export default function EmployerSettings({
                                         className="size-3.5 accent-[#0057c8]"
                                     />
                                     <span className="text-sm text-[#050315]">
-                                        Public — Visible to all job seekers
+                                        {t('employer.settings.visibility_public')}
                                     </span>
                                 </label>
                                 <label className="mt-3 flex cursor-pointer items-center gap-3">
@@ -603,17 +659,13 @@ export default function EmployerSettings({
                                         className="size-3.5 accent-[#0057c8]"
                                     />
                                     <span className="text-sm text-[#050315]">
-                                        Private — Only invited candidates can
-                                        see your profile
+                                        {t('employer.settings.visibility_private')}
                                     </span>
                                 </label>
                                 <div className="mt-6 flex items-center justify-between gap-4 border-t border-[#e8d5e8] pt-6">
                                     <div>
                                         <p className="font-semibold text-[#050315]">
-                                            Show Salary Range
-                                        </p>
-                                        <p className="text-sm text-[#6b7280]">
-                                            Display salary in job listings
+                                            {t('employer.settings.show_salary')}
                                         </p>
                                     </div>
                                     <Toggle
@@ -629,11 +681,7 @@ export default function EmployerSettings({
                                 <div className="mt-2 flex items-center justify-between gap-4 py-4">
                                     <div>
                                         <p className="font-semibold text-[#050315]">
-                                            Show Contact Email
-                                        </p>
-                                        <p className="text-sm text-[#6b7280]">
-                                            Allow candidates to see your HR
-                                            email
+                                            {t('employer.settings.show_contact_email')}
                                         </p>
                                     </div>
                                     <Toggle
@@ -653,7 +701,7 @@ export default function EmployerSettings({
                                     disabled={privacyForm.processing}
                                     className="mt-4 inline-flex h-[42px] cursor-pointer items-center rounded-lg bg-[#0057c8] px-7 text-[14.4px] font-bold text-white"
                                 >
-                                    Save Privacy Settings
+                                    {t('employer.settings.save_privacy')}
                                 </button>
                             </form>
                         )}
@@ -661,10 +709,10 @@ export default function EmployerSettings({
                         {activeTab === 'language' && (
                             <div>
                                 <h2 className="text-[17.6px] leading-[26.4px] font-extrabold text-[#050315]">
-                                    Language
+                                    {t('employer.settings.language_title')}
                                 </h2>
                                 <p className="mt-2 text-sm text-[#6b7280]">
-                                    Choose your preferred interface language
+                                    {t('employer.settings.language_hint')}
                                 </p>
                                 <div className="mt-6 grid gap-4 md:grid-cols-2">
                                     <button
@@ -679,11 +727,11 @@ export default function EmployerSettings({
                                     >
                                         <span className="text-3xl">🇺🇸</span>
                                         <p className="mt-2 text-base font-bold text-[#050315]">
-                                            English
+                                            {t('lang.english')}
                                         </p>
                                         {locale === 'en' && (
                                             <p className="text-xs font-semibold text-[#0057c8]">
-                                                Active
+                                                {t('employer.settings.language_active')}
                                             </p>
                                         )}
                                     </button>
@@ -699,11 +747,11 @@ export default function EmployerSettings({
                                     >
                                         <span className="text-3xl">🇸🇦</span>
                                         <p className="mt-2 text-base font-bold text-[#050315]">
-                                            العربية
+                                            {t('lang.arabic')}
                                         </p>
                                         {locale === 'ar' && (
                                             <p className="text-xs font-semibold text-[#0057c8]">
-                                                Active
+                                                {t('employer.settings.language_active')}
                                             </p>
                                         )}
                                     </button>
@@ -714,21 +762,20 @@ export default function EmployerSettings({
                         {activeTab === 'danger' && (
                             <div>
                                 <h2 className="text-[17.6px] leading-[26.4px] font-extrabold text-[#050315]">
-                                    Danger Zone
+                                    {t('employer.settings.danger_title')}
                                 </h2>
                                 <p className="mt-2 text-sm text-[#6b7280]">
-                                    Irreversible actions — proceed with caution.
+                                    {t('employer.settings.danger_hint')}
                                 </p>
                                 <div className="mt-6 space-y-4">
                                     <div className="rounded-2xl border border-[#e8d5e8] p-4">
                                         <div className="flex flex-wrap items-center justify-between gap-4">
                                             <div>
                                                 <p className="font-semibold text-[#050315]">
-                                                    Deactivate Account
+                                                    {t('employer.settings.deactivate')}
                                                 </p>
                                                 <p className="text-sm text-[#6b7280]">
-                                                    Temporarily disable your
-                                                    employer account
+                                                    {t('employer.settings.deactivate_desc')}
                                                 </p>
                                             </div>
                                         </div>
@@ -743,7 +790,7 @@ export default function EmployerSettings({
                                         >
                                             <label className="block min-w-[220px] flex-1">
                                                 <span className="text-xs font-semibold text-[#374151]">
-                                                    Confirm with password
+                                                    {t('employer.settings.confirm_password_label')}
                                                 </span>
                                                 <input
                                                     type="password"
@@ -780,18 +827,17 @@ export default function EmployerSettings({
                                                 }
                                                 className="cursor-pointer rounded-lg border border-[#e8d5e8] px-4 py-2 text-sm font-semibold text-[#374151]"
                                             >
-                                                Deactivate Account
+                                                {t('employer.settings.deactivate')}
                                             </button>
                                         </form>
                                     </div>
                                     <div className="rounded-2xl border border-[#fecaca] bg-[#fef2f2] p-4">
                                         <div>
                                             <p className="font-semibold text-[#050315]">
-                                                Delete All Data
+                                                {t('employer.settings.delete')}
                                             </p>
                                             <p className="text-sm text-[#6b7280]">
-                                                Permanently erase all company
-                                                data. This cannot be undone.
+                                                {t('employer.settings.delete_desc')}
                                             </p>
                                         </div>
                                         <form
@@ -805,7 +851,7 @@ export default function EmployerSettings({
                                         >
                                             <label className="block min-w-[220px] flex-1">
                                                 <span className="text-xs font-semibold text-[#374151]">
-                                                    Confirm with password
+                                                    {t('employer.settings.confirm_password_label')}
                                                 </span>
                                                 <input
                                                     type="password"
@@ -837,7 +883,7 @@ export default function EmployerSettings({
                                                 disabled={deleteForm.processing}
                                                 className="cursor-pointer rounded-lg bg-[#dc2626] px-4 py-2 text-sm font-semibold text-white"
                                             >
-                                                Delete All Data
+                                                {t('employer.settings.delete')}
                                             </button>
                                         </form>
                                     </div>

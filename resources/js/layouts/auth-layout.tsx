@@ -1,20 +1,25 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
+import { useLocale } from '@/hooks/use-locale';
 import { home } from '@/routes';
 
 interface AuthLayoutProps {
     children: ReactNode;
     title?: string;
     description?: string;
+    context?: string;
     maxWidthClassName?: string;
 }
 
 export default function AuthLayout({
     children,
-    title = 'RR Job Portal',
+    title,
     maxWidthClassName = 'max-w-[420px]',
 }: AuthLayoutProps) {
+    const { t } = useLocale();
+    const pageTitle = title ?? t('app.name');
+
     return (
         <div className="relative min-h-svh overflow-hidden bg-[#f8faff] font-['Plus_Jakarta_Sans','Noto_Sans_Arabic',sans-serif] text-[#050315]">
             <div
@@ -25,7 +30,7 @@ export default function AuthLayout({
                 }}
             />
 
-            <Head title={title} />
+            <Head title={pageTitle} />
 
             <div className="relative z-10 flex min-h-svh items-center justify-center px-4 py-12">
                 <div className={`w-full ${maxWidthClassName} animate-fadeInUp`}>
@@ -33,7 +38,7 @@ export default function AuthLayout({
                         <Link href={home()} className="block w-[178px]">
                             <img
                                 src="/images/branding/rr-logo.png"
-                                alt="Rena Reiam For Job"
+                                alt={t('app.logo_alt')}
                                 className="h-[118px] w-[178px] object-contain"
                                 width={178}
                                 height={118}

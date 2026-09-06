@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 import { type ReactNode, useState } from 'react';
 
 import { Toaster } from '@/components/ui/sonner';
+import { useLocale } from '@/hooks/use-locale';
 import { AdminPortalHeader } from '@/layouts/partials/admin-portal/header';
 import { AdminPortalSidebar } from '@/layouts/partials/admin-portal/sidebar';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ export default function AdminPortalLayout({
     children: ReactNode;
 }) {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const { t } = useLocale();
     const unreadCount = Number(
         usePage<SharedData>().props.unread_notifications ?? 0,
     );
@@ -36,7 +38,7 @@ export default function AdminPortalLayout({
                 <button
                     type="button"
                     className="fixed inset-0 z-40 bg-slate-900/40 md:hidden"
-                    aria-label="Close sidebar"
+                    aria-label={t('common.close_sidebar')}
                     onClick={() => setMobileOpen(false)}
                 />
             )}

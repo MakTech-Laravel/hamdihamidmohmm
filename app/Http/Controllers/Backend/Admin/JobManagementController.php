@@ -11,6 +11,7 @@ use App\Models\JobPost;
 use App\Models\User;
 use App\Support\ApplicantProfilePreview;
 use App\Support\JobSeekerResume;
+use App\Support\PortalNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -102,16 +103,29 @@ class JobManagementController extends Controller
         abort_unless($request->user()?->canManageJobs(), 403);
 
         $jobPost->activateFromReview();
+        $jobPost->loadMissing('employer');
+
+        if ($jobPost->employer instanceof User) {
+            PortalNotifier::jobApproved($jobPost->employer, (string) $jobPost->title);
+        }
 
         return back()->with('success', 'Job approved.');
     }
 
     public function reject(RejectJobPostRequest $request, JobPost $jobPost): RedirectResponse
     {
+        $reason = $request->string('rejection_reason')->toString();
+
         $jobPost->forceFill([
             'status' => JobPostStatus::Rejected,
-            'rejection_reason' => $request->string('rejection_reason')->toString(),
+            'rejection_reason' => $reason,
         ])->save();
+
+        $jobPost->loadMissing('employer');
+
+        if ($jobPost->employer instanceof User) {
+            PortalNotifier::jobRejected($jobPost->employer, (string) $jobPost->title, $reason);
+        }
 
         return back()->with('success', 'Job rejected.');
     }

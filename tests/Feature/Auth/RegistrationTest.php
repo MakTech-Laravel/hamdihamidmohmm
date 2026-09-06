@@ -19,5 +19,5 @@ test('new users can register', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('job-seeker.dashboard', absolute: false));
+    $response->assertRedirect(route('job-seeker.profile', absolute: false));
 });

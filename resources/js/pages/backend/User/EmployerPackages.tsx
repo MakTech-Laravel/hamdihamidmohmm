@@ -3,6 +3,7 @@ import { Check, Download } from 'lucide-react';
 import { useState } from 'react';
 
 import EmployerLayout from '@/layouts/employer-layout';
+import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
@@ -61,36 +62,42 @@ type Props = {
     };
 };
 
-function planButtonLabel(item: PackageRow, isSelecting: boolean): string {
+function planButtonLabel(
+    item: PackageRow,
+    isSelecting: boolean,
+    t: (key: string, replacements?: Record<string, string | number>) => string,
+): string {
     if (item.current) {
-        return 'Current Plan';
+        return t('employer.packages.btn.current');
     }
 
     if (item.scheduled) {
-        return isSelecting ? 'Scheduling…' : 'Scheduled';
+        return isSelecting
+            ? t('employer.packages.btn.scheduling')
+            : t('employer.packages.btn.scheduled');
     }
 
     if (isSelecting) {
         if (item.action === 'upgrade') {
-            return 'Upgrading…';
+            return t('employer.packages.btn.upgrading');
         }
 
         if (item.action === 'downgrade') {
-            return 'Scheduling…';
+            return t('employer.packages.btn.scheduling');
         }
 
-        return 'Redirecting…';
+        return t('employer.packages.btn.redirecting');
     }
 
     if (item.action === 'upgrade') {
-        return 'Upgrade Plan';
+        return t('employer.packages.btn.upgrade');
     }
 
     if (item.action === 'downgrade') {
-        return 'Downgrade Plan';
+        return t('employer.packages.btn.downgrade');
     }
 
-    return 'Select Plan';
+    return t('employer.packages.btn.select');
 }
 
 export default function EmployerPackages({
@@ -99,6 +106,7 @@ export default function EmployerPackages({
     invoices,
     billing,
 }: Props) {
+    const { t } = useLocale();
     const { flash } = usePage<SharedData>().props;
     const [selectingPackageId, setSelectingPackageId] = useState<number | null>(
         null,
@@ -121,19 +129,19 @@ export default function EmployerPackages({
             : 0;
 
     return (
-        <EmployerLayout title="Packages & Billing">
-            <Head title="Packages & Billing" />
+        <EmployerLayout title={t('employer.packages.title')}>
+            <Head title={t('employer.packages.title')} />
 
             <div className="space-y-6 px-4 py-6 sm:px-6">
                 <h1 className="text-[28px] font-extrabold tracking-tight text-[#050315]">
-                    Billing & Packages
+                    {t('employer.packages.title')}
                 </h1>
 
                 {flash.success && (
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
@@ -141,17 +149,21 @@ export default function EmployerPackages({
                     <div className="rounded-xl border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c]">
                         {typeof flash.error === 'string'
                             ? flash.error
-                            : 'Something went wrong.'}
+                            : t('common.error')}
                     </div>
                 )}
 
                 {plan.pending_change && (
                     <div className="rounded-xl border border-[#ffedd5] bg-[#fff7ed] px-4 py-3 text-sm text-[#c2410c]">
-                        Your plan will switch to {plan.pending_change.label}
-                        {plan.pending_change.at
-                            ? ` on ${plan.pending_change.at}`
-                            : ' at the end of the current billing period'}
-                        . You keep {plan.label} until then.
+                        {t('employer.packages.pending_change', {
+                            label: plan.pending_change.label ?? '',
+                            when: plan.pending_change.at
+                                ? t('employer.packages.pending_change_at', {
+                                      date: plan.pending_change.at,
+                                  })
+                                : t('employer.packages.pending_change_end'),
+                            current: plan.label ?? '',
+                        })}
                     </div>
                 )}
 
@@ -160,28 +172,33 @@ export default function EmployerPackages({
                         <div>
                             <div className="flex flex-wrap items-center gap-2">
                                 <h2 className="text-xl font-bold text-[#050315]">
-                                    {plan.label || 'No package assigned'}
+                                    {plan.label ||
+                                        t('employer.packages.no_package')}
                                 </h2>
                                 {plan.slug && (
                                     <span className="rounded-full bg-[#dcfce7] px-2.5 py-0.5 text-xs font-semibold text-[#166534]">
                                         {plan.subscription_status === 'active'
-                                            ? 'Active'
+                                            ? t('common.active')
                                             : plan.subscription_status ===
                                                 'past_due'
-                                              ? 'Past due'
+                                              ? t('employer.packages.past_due')
                                               : plan.subscription_status ===
                                                   'canceled'
-                                                ? 'Canceled'
-                                                : 'Active'}
+                                                ? t(
+                                                      'employer.packages.canceled',
+                                                  )
+                                                : t('common.active')}
                                     </span>
                                 )}
                             </div>
                             <p className="mt-1 text-sm text-[#64748b]">
                                 {plan.expires_on
-                                    ? `Expires ${plan.expires_on}`
-                                    : 'No renewal date yet'}
+                                    ? t('employer.packages.expires', {
+                                          date: plan.expires_on,
+                                      })
+                                    : t('employer.packages.no_renewal')}
                                 {plan.days_remaining !== null
-                                    ? ` · ${plan.days_remaining} days remaining`
+                                    ? ` · ${t('employer.packages.days_remaining', { count: plan.days_remaining })}`
                                     : ''}
                             </p>
                         </div>
@@ -206,21 +223,25 @@ export default function EmployerPackages({
                                     className="inline-flex cursor-pointer items-center rounded-xl border border-[#0057c8] px-5 py-2.5 text-sm font-semibold text-[#0057c8] disabled:opacity-60"
                                 >
                                     {openingPortal
-                                        ? 'Opening…'
-                                        : 'Manage Billing'}
+                                        ? t('employer.packages.opening')
+                                        : t(
+                                              'employer.packages.manage_billing',
+                                          )}
                                 </button>
                             ) : null}
                             <Link
                                 href="#available-plans"
                                 className="inline-flex cursor-pointer items-center rounded-xl bg-[#0057c8] px-5 py-2.5 text-sm font-semibold text-white"
                             >
-                                Upgrade
+                                {t('common.upgrade')}
                             </Link>
                         </div>
                     </div>
                     <div className="mt-6">
                         <div className="mb-2 flex items-center justify-between text-sm">
-                            <span className="text-[#64748b]">Credits used</span>
+                            <span className="text-[#64748b]">
+                                {t('employer.packages.credits_used')}
+                            </span>
                             <span className="font-semibold text-[#050315]">
                                 {plan.jobs_posted} / {plan.job_credits}
                             </span>
@@ -232,25 +253,27 @@ export default function EmployerPackages({
                             />
                         </div>
                         <p className="mt-2 text-xs text-[#64748b]">
-                            {plan.credits_remaining} credits remaining
+                            {t('employer.packages.credits_remaining', {
+                                count: plan.credits_remaining,
+                            })}
                         </p>
                     </div>
                 </section>
 
                 <section className="rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
                     <h2 className="mb-5 text-base font-bold text-[#050315]">
-                        Credit Usage
+                        {t('employer.packages.credit_usage')}
                     </h2>
                     <div className="space-y-4">
                         {[
                             [
-                                'Jobs Posted',
+                                t('employer.packages.jobs_posted'),
                                 `${plan.jobs_posted}/${plan.job_credits}`,
                                 jobsPercent,
                                 'bg-[#0057c8]',
                             ],
                             [
-                                'Remaining Credits',
+                                t('employer.packages.remaining_credits'),
                                 `${plan.credits_remaining}/${plan.job_credits}`,
                                 remainingPercent,
                                 'bg-[#16a34a]',
@@ -278,7 +301,7 @@ export default function EmployerPackages({
 
                 <section id="available-plans">
                     <h2 className="mb-4 text-base font-bold text-[#050315]">
-                        Available Plans
+                        {t('employer.packages.available_plans')}
                     </h2>
                     <div className="grid gap-4 lg:grid-cols-3">
                         {packages.map((item) => (
@@ -293,7 +316,9 @@ export default function EmployerPackages({
                             >
                                 {item.current && (
                                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#e57124] px-3 py-1 text-xs font-semibold text-white">
-                                        Current Plan
+                                        {t(
+                                            'employer.packages.current_plan_badge',
+                                        )}
                                     </span>
                                 )}
                                 <h3 className="text-lg font-bold text-[#050315]">
@@ -353,6 +378,7 @@ export default function EmployerPackages({
                                         {planButtonLabel(
                                             item,
                                             selectingPackageId === item.id,
+                                            t,
                                         )}
                                     </button>
                                 </div>
@@ -360,7 +386,7 @@ export default function EmployerPackages({
                         ))}
                         {packages.length === 0 && (
                             <p className="text-sm text-[#99a1af]">
-                                No public plans are available yet.
+                                {t('employer.packages.no_plans')}
                             </p>
                         )}
                     </div>
@@ -368,27 +394,29 @@ export default function EmployerPackages({
 
                 <section className="rounded-2xl border border-[#e8d5e8] bg-white p-6 shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
                     <h2 className="mb-4 text-base font-bold text-[#050315]">
-                        Invoice History
+                        {t('employer.packages.invoice_history')}
                     </h2>
                     <div className="overflow-x-auto">
                         <table className="w-full min-w-[640px] text-left text-sm">
                             <thead className="text-xs tracking-wide text-[#64748b] uppercase">
                                 <tr>
                                     <th className="pb-3 font-semibold">
-                                        Invoice ID
-                                    </th>
-                                    <th className="pb-3 font-semibold">Date</th>
-                                    <th className="pb-3 font-semibold">
-                                        Description
+                                        {t('employer.packages.invoice_id')}
                                     </th>
                                     <th className="pb-3 font-semibold">
-                                        Amount
+                                        {t('employer.packages.date')}
                                     </th>
                                     <th className="pb-3 font-semibold">
-                                        Status
+                                        {t('employer.packages.description')}
                                     </th>
                                     <th className="pb-3 font-semibold">
-                                        Action
+                                        {t('employer.packages.amount')}
+                                    </th>
+                                    <th className="pb-3 font-semibold">
+                                        {t('common.status')}
+                                    </th>
+                                    <th className="pb-3 font-semibold">
+                                        {t('employer.packages.action')}
                                     </th>
                                 </tr>
                             </thead>
@@ -444,7 +472,7 @@ export default function EmployerPackages({
                         </table>
                         {invoices.length === 0 && (
                             <p className="py-6 text-sm text-[#99a1af]">
-                                No invoices yet.
+                                {t('employer.packages.no_invoices')}
                             </p>
                         )}
                     </div>

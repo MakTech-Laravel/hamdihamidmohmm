@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { PasswordInput } from '@/components/ui/password-input';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 
 type Option = { value: string; label: string };
@@ -24,18 +25,20 @@ type Props = {
 };
 
 export default function EmployerCreate({ options }: Props) {
+    const { t } = useLocale();
+
     return (
         <AdminPortalLayout>
-            <Head title="Add Employer" />
+            <Head title={t('admin.employers.add')} />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title="Add Employer"
-                    subtitle="Create an employer account and choose their package."
+                    title={t('admin.employers.add')}
+                    subtitle={t('admin.employers.create_subtitle')}
                     actions={
                         <Link href="/admin/employers">
                             <AdminSecondaryButton>
-                                ← All Employers
+                                {t('admin.employers.back_to_list')}
                             </AdminSecondaryButton>
                         </Link>
                     }
@@ -51,7 +54,7 @@ export default function EmployerCreate({ options }: Props) {
                             <>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="company_name">
-                                        Company name
+                                        {t('admin.employers.fields.company_name')}
                                     </Label>
                                     <Input
                                         id="company_name"
@@ -62,7 +65,7 @@ export default function EmployerCreate({ options }: Props) {
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="contact_name">
-                                        Contact name
+                                        {t('admin.employers.fields.contact_name')}
                                     </Label>
                                     <Input
                                         id="contact_name"
@@ -72,7 +75,9 @@ export default function EmployerCreate({ options }: Props) {
                                     <InputError message={errors.contact_name} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="email">
+                                        {t('admin.employers.fields.email')}
+                                    </Label>
                                     <Input
                                         id="email"
                                         name="email"
@@ -82,14 +87,20 @@ export default function EmployerCreate({ options }: Props) {
                                     <InputError message={errors.email} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="industry">Industry</Label>
+                                    <Label htmlFor="industry">
+                                        {t('admin.employers.fields.industry')}
+                                    </Label>
                                     <NativeSelect
                                         id="industry"
                                         name="industry"
                                         className="h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm"
                                         defaultValue=""
                                     >
-                                        <option value="">Select industry</option>
+                                        <option value="">
+                                            {t(
+                                                'admin.employers.fields.select_industry',
+                                            )}
+                                        </option>
                                         {options.industries.map((industry) => (
                                             <option
                                                 key={industry}
@@ -102,7 +113,9 @@ export default function EmployerCreate({ options }: Props) {
                                 </div>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="package">Package</Label>
+                                        <Label htmlFor="package">
+                                            {t('admin.employers.cols.package')}
+                                        </Label>
                                         <NativeSelect
                                             id="package"
                                             name="package"
@@ -122,7 +135,7 @@ export default function EmployerCreate({ options }: Props) {
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="account_status">
-                                            Status
+                                            {t('admin.employers.fields.status')}
                                         </Label>
                                         <NativeSelect
                                             id="account_status"
@@ -147,7 +160,7 @@ export default function EmployerCreate({ options }: Props) {
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="password">
-                                            Password
+                                            {t('admin.employers.fields.password')}
                                         </Label>
                                         <PasswordInput
                                             id="password"
@@ -159,7 +172,9 @@ export default function EmployerCreate({ options }: Props) {
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label htmlFor="password_confirmation">
-                                            Confirm password
+                                            {t(
+                                                'admin.employers.fields.confirm_password',
+                                            )}
                                         </Label>
                                         <PasswordInput
                                             id="password_confirmation"
@@ -178,8 +193,8 @@ export default function EmployerCreate({ options }: Props) {
                                     }
                                 >
                                     {processing
-                                        ? 'Creating…'
-                                        : 'Create employer'}
+                                        ? t('common.creating')
+                                        : t('admin.employers.create')}
                                 </AdminPrimaryButton>
                             </>
                         )}

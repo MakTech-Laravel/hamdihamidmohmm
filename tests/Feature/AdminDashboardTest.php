@@ -131,15 +131,15 @@ test('job seekers cannot view the admin dashboard', function () {
 
 test('admin portal ships the figma company logo', function () {
     $path = public_path('images/admin/logo.png');
+    $brand = public_path('images/home/logo.png');
     $info = getimagesize($path);
-    $image = imagecreatefrompng($path);
-    $corner = imagecolorsforindex($image, imagecolorat($image, 0, 0));
 
     expect($path)->toBeFile()
-        ->and($info[0])->toBe(152)
-        ->and($info[1])->toBe(102)
-        ->and($info['mime'])->toBe('image/png')
-        ->and($corner['alpha'])->toBe(127);
+        ->and($brand)->toBeFile()
+        ->and(md5_file($path))->toBe(md5_file($brand))
+        ->and($info[0])->toBe(250)
+        ->and($info[1])->toBe(166)
+        ->and($info['mime'])->toBe('image/png');
 });
 
 test('admin portal ships figma icon assets', function (string $file) {

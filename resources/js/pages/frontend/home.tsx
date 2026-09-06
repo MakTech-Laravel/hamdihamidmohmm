@@ -113,7 +113,7 @@ export default function Home({
 
     return (
         <FrontendLayout>
-            <Head title="RR Job Portal" />
+            <Head title={t('app.name')} />
 
             {/* Hero */}
             <section className="relative bg-[#d1f6ff]">
@@ -267,11 +267,11 @@ export default function Home({
                             aria-label={t('search.all_locations')}
                         >
                             <option value="all">{t('search.all_locations')}</option>
-                            <option value="riyadh">Riyadh</option>
-                            <option value="jeddah">Jeddah</option>
-                            <option value="dammam">Dammam</option>
-                            <option value="dubai">Dubai</option>
-                            <option value="remote">Remote</option>
+                            <option value="riyadh">{t('location.riyadh')}</option>
+                            <option value="jeddah">{t('location.jeddah')}</option>
+                            <option value="dammam">{t('location.dammam')}</option>
+                            <option value="dubai">{t('location.dubai')}</option>
+                            <option value="remote">{t('location.remote')}</option>
                         </NativeSelect>
                     </div>
 
@@ -386,10 +386,10 @@ export default function Home({
                     {recommendedJobs.length === 0 ? (
                         <div className="mt-10 rounded-2xl border border-dashed border-[#e2e8f0] bg-[#f8faff] px-6 py-16 text-center">
                             <p className="text-base font-semibold text-[#050315]">
-                                No recommended jobs yet.
+                                {t('home.recommended_empty_title')}
                             </p>
                             <p className="mt-2 text-sm text-[#64748b]">
-                                Check back soon for the latest opportunities.
+                                {t('home.recommended_empty_subtitle')}
                             </p>
                         </div>
                     ) : (

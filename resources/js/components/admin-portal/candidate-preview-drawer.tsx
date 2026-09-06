@@ -9,6 +9,7 @@ import {
     SheetDescription,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
 
 export type CandidatePreviewTimelineStep = {
@@ -64,6 +65,8 @@ export function CandidatePreviewDrawer({
     onOpenChange: (open: boolean) => void;
     preview: CandidatePreview | null;
 }) {
+    const { t } = useLocale();
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
@@ -76,7 +79,7 @@ export function CandidatePreviewDrawer({
                     <DrawerBody preview={preview} />
                 ) : (
                     <div className="p-5 text-sm text-[#3977a6]">
-                        No preview available.
+                        {t('admin.candidate.no_preview')}
                     </div>
                 )}
             </SheetContent>
@@ -85,6 +88,7 @@ export function CandidatePreviewDrawer({
 }
 
 function DrawerBody({ preview }: { preview: CandidatePreview }) {
+    const { t } = useLocale();
     const resumeEnabled = preview.resume_url !== null;
     const isApplicant = preview.is_applicant !== false;
     const education = preview.education ?? [];
@@ -113,7 +117,7 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                 <SheetClose asChild>
                     <button
                         type="button"
-                        aria-label="Close"
+                        aria-label={t('common.close')}
                         className="flex size-8 shrink-0 items-center justify-center text-[20px] text-[#3977a6] hover:text-[#050315]"
                     >
                         <X className="size-5" strokeWidth={1.75} />
@@ -122,7 +126,7 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5">
-                <Section title="Contact">
+                <Section title={t('admin.candidate.contact')}>
                     <div className="flex flex-col gap-[4.8px]">
                         <ContactRow icon={Mail} value={preview.email} />
                         <ContactRow icon={Phone} value={preview.phone} />
@@ -132,14 +136,23 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
 
                 {isApplicant ? (
                     <>
-                        <Section title="Professional">
+                        <Section title={t('admin.candidate.professional')}>
                             <DetailGrid
                                 items={[
-                                    ['Current title', preview.current_title],
-                                    ['Experience', preview.experience_years],
-                                    ['Industry', preview.industry],
                                     [
-                                        'Expected salary',
+                                        t('admin.candidate.current_title'),
+                                        preview.current_title,
+                                    ],
+                                    [
+                                        t('admin.candidate.experience'),
+                                        preview.experience_years,
+                                    ],
+                                    [
+                                        t('admin.candidate.industry'),
+                                        preview.industry,
+                                    ],
+                                    [
+                                        t('admin.candidate.expected_salary'),
                                         preview.expected_salary,
                                     ],
                                 ]}
@@ -159,7 +172,7 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                         </Section>
 
                         {preview.bio ? (
-                            <Section title="About">
+                            <Section title={t('admin.candidate.about')}>
                                 <p className="text-[13.6px] leading-5 text-[#050315]">
                                     {preview.bio}
                                 </p>
@@ -167,18 +180,18 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                         ) : null}
 
                         {(preview.linkedin_url || preview.github_url) && (
-                            <Section title="Links">
+                            <Section title={t('admin.candidate.links')}>
                                 <div className="flex flex-col gap-1.5">
                                     {preview.linkedin_url ? (
                                         <LinkRow
                                             href={preview.linkedin_url}
-                                            label="LinkedIn"
+                                            label={t('admin.candidate.linkedin')}
                                         />
                                     ) : null}
                                     {preview.github_url ? (
                                         <LinkRow
                                             href={preview.github_url}
-                                            label="GitHub"
+                                            label={t('admin.candidate.github')}
                                         />
                                     ) : null}
                                 </div>
@@ -187,10 +200,12 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                     </>
                 ) : null}
 
-                <Section title="Skills">
+                <Section title={t('admin.candidate.skills')}>
                     <div className="flex flex-wrap gap-[6.4px]">
                         {preview.skills.length === 0 ? (
-                            <EmptyText>No skills listed.</EmptyText>
+                            <EmptyText>
+                                {t('admin.candidate.no_skills')}
+                            </EmptyText>
                         ) : (
                             preview.skills.map((skill) => (
                                 <span
@@ -207,17 +222,19 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                 {isApplicant ? (
                     <>
                         <EntriesSection
-                            title="Experience"
+                            title={t('admin.candidate.experience')}
                             entries={experience}
                         />
                         <EntriesSection
-                            title="Education"
+                            title={t('admin.candidate.education')}
                             entries={education}
                         />
 
-                        <Section title="Languages">
+                        <Section title={t('admin.candidate.languages')}>
                             {languages.length === 0 ? (
-                                <EmptyText>No languages listed.</EmptyText>
+                                <EmptyText>
+                                    {t('admin.candidate.no_languages')}
+                                </EmptyText>
                             ) : (
                                 <div className="space-y-2">
                                     {languages.map((language) => (
@@ -239,10 +256,10 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                             )}
                         </Section>
 
-                        <Section title="Certifications">
+                        <Section title={t('admin.candidate.certifications')}>
                             {certifications.length === 0 ? (
                                 <EmptyText>
-                                    No certifications listed.
+                                    {t('admin.candidate.no_certifications')}
                                 </EmptyText>
                             ) : (
                                 <div className="space-y-2">
@@ -263,7 +280,7 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                         </Section>
 
                         {preview.cover_letter ? (
-                            <Section title="Cover Letter">
+                            <Section title={t('admin.candidate.cover_letter')}>
                                 <p className="whitespace-pre-wrap text-[13.6px] leading-5 text-[#050315]">
                                     {preview.cover_letter}
                                 </p>
@@ -272,7 +289,7 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                     </>
                 ) : null}
 
-                <Section title="Resume">
+                <Section title={t('admin.candidate.resume')}>
                     {preview.resume_name ? (
                         <p className="pb-2 text-[12.8px] text-[#3977a6]">
                             {preview.resume_name}
@@ -288,7 +305,7 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                                 className="size-3.5"
                                 strokeWidth={2}
                             />
-                            Download Resume
+                            {t('admin.candidate.download_resume')}
                         </a>
                     ) : (
                         <button
@@ -300,12 +317,12 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                                 className="size-3.5"
                                 strokeWidth={2}
                             />
-                            Download Resume
+                            {t('admin.candidate.download_resume')}
                         </button>
                     )}
                 </Section>
 
-                <Section title="Status Timeline">
+                <Section title={t('admin.candidate.status_timeline')}>
                     <ol className="flex flex-col">
                         {preview.timeline.map((step, index) => (
                             <TimelineStep
@@ -349,10 +366,13 @@ function DetailGrid({
 }: {
     items: Array<[string, string | null | undefined]>;
 }) {
+    const { t } = useLocale();
     const visible = items.filter(([, value]) => value && value !== '—');
 
     if (visible.length === 0) {
-        return <EmptyText>No professional details yet.</EmptyText>;
+        return (
+            <EmptyText>{t('admin.candidate.no_professional')}</EmptyText>
+        );
     }
 
     return (
@@ -378,10 +398,14 @@ function EntriesSection({
     title: string;
     entries: ProfileEntry[];
 }) {
+    const { t } = useLocale();
+
     return (
         <Section title={title}>
             {entries.length === 0 ? (
-                <EmptyText>No {title.toLowerCase()} listed.</EmptyText>
+                <EmptyText>
+                    {t('admin.candidate.no_entries', { section: title })}
+                </EmptyText>
             ) : (
                 <ol className="space-y-3">
                     {entries.map((entry, index) => (

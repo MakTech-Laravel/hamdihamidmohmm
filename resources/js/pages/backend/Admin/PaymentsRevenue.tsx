@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -90,6 +91,7 @@ export default function PaymentsRevenue({
     currency,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [creating, setCreating] = useState(false);
     const form = useForm({
         employer_id: '',
@@ -114,22 +116,22 @@ export default function PaymentsRevenue({
 
     return (
         <AdminPortalLayout>
-            <Head title="Payments & Revenue" />
+            <Head title={t('admin.payments.title')} />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title="Payments & Revenue"
-                    subtitle="Record, approve, refund, and retry in-app payments."
+                    title={t('admin.payments.title')}
+                    subtitle={t('admin.payments.subtitle')}
                     actions={
                         <div className="flex gap-2">
                             <a href="/admin/payments/export">
                                 <AdminSecondaryButton>
                                     <Download className="size-4" />
-                                    Export
+                                    {t('common.export')}
                                 </AdminSecondaryButton>
                             </a>
                             <AdminPrimaryButton onClick={() => setCreating(true)}>
-                                Record payment
+                                {t('admin.payments.record')}
                             </AdminPrimaryButton>
                         </div>
                     }
@@ -139,31 +141,31 @@ export default function PaymentsRevenue({
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <AdminStatCard
-                        label="Today's Revenue"
+                        label={t('admin.payments.stats.today')}
                         value={`${currency} ${stats.today.toLocaleString()}`}
                         valueClassName="text-[#e57124]"
                         icon={CreditCard}
                     />
                     <AdminStatCard
-                        label="Monthly Revenue"
+                        label={t('admin.payments.stats.monthly')}
                         value={`${currency} ${stats.monthly.toLocaleString()}`}
                         valueClassName="text-[#0057c8]"
                         icon={CreditCard}
                     />
                     <AdminStatCard
-                        label="Failed Payments"
+                        label={t('admin.payments.stats.failed')}
                         value={String(stats.failed)}
                         valueClassName="text-[#ef4444]"
                         icon={CreditCard}
                     />
                     <AdminStatCard
-                        label="Refunded"
+                        label={t('admin.payments.stats.refunded')}
                         value={String(stats.refunded)}
                         valueClassName="text-[#3977a6]"
                         icon={CreditCard}
@@ -201,11 +203,11 @@ export default function PaymentsRevenue({
                 <AdminPanel>
                     <div className="mb-4 flex flex-wrap gap-2">
                         {[
-                            ['all', 'All'],
-                            ['pending', 'Pending'],
-                            ['completed', 'Completed'],
-                            ['failed', 'Failed'],
-                            ['refunded', 'Refunded'],
+                            ['all', t('common.all')],
+                            ['pending', t('common.pending')],
+                            ['completed', t('status.completed')],
+                            ['failed', t('status.failed')],
+                            ['refunded', t('admin.payments.stats.refunded')],
                         ].map(([key, label]) => (
                             <AdminFilterChip
                                 key={key}
@@ -218,14 +220,13 @@ export default function PaymentsRevenue({
 
                     <AdminTableShell
                         headers={[
-                            'Reference',
-                            'Employer',
-                            'Package',
-                            'Amount',
-                            'Method',
-                            'Status',
-                            'Date',
-                            'Actions',
+                            t('admin.payments.cols.employer'),
+                            t('admin.payments.cols.package'),
+                            t('admin.payments.cols.amount'),
+                            t('admin.payments.cols.method'),
+                            t('common.status'),
+                            t('admin.payments.cols.date'),
+                            t('common.actions'),
                         ]}
                     >
                         {payments.data.map((row) => (
@@ -269,7 +270,7 @@ export default function PaymentsRevenue({
                                                     )
                                                 }
                                             >
-                                                Approve
+                                                {t('common.approve')}
                                             </button>
                                         )}
                                         {row.status_value === 'completed' && (
@@ -282,7 +283,7 @@ export default function PaymentsRevenue({
                                                     )
                                                 }
                                             >
-                                                Refund
+                                                {t('admin.payments.refund')}
                                             </button>
                                         )}
                                         {row.status_value === 'failed' && (
@@ -298,7 +299,7 @@ export default function PaymentsRevenue({
                                                 }
                                             >
                                                 <RefreshCw className="inline size-3" />{' '}
-                                                Retry
+                                                {t('admin.payments.retry')}
                                             </button>
                                         )}
                                     </div>
@@ -309,12 +310,16 @@ export default function PaymentsRevenue({
 
                     {payments.data.length === 0 && (
                         <p className="mt-6 text-center text-sm text-[#99a1af]">
-                            No payments recorded.
+                            {t('admin.payments.empty')}
                         </p>
                     )}
 
                     <AdminPagination
-                        showingLabel={`Showing ${payments.from ?? 0}-${payments.to ?? 0} of ${payments.total}`}
+                        showingLabel={t('common.showing_range', {
+                            from: payments.from ?? 0,
+                            to: payments.to ?? 0,
+                            total: payments.total,
+                        })}
                         links={payments.links}
                     />
                 </AdminPanel>
@@ -323,7 +328,7 @@ export default function PaymentsRevenue({
             <Dialog open={creating} onOpenChange={setCreating}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Record payment</DialogTitle>
+                        <DialogTitle>{t('admin.payments.record')}</DialogTitle>
                     </DialogHeader>
                     <form
                         className="space-y-3"
@@ -335,7 +340,7 @@ export default function PaymentsRevenue({
                         }}
                     >
                         <div>
-                            <Label>Employer</Label>
+                            <Label>{t('admin.payments.form.employer')}</Label>
                             <NativeSelect
                                 className="mt-1 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm"
                                 value={form.data.employer_id}
@@ -346,7 +351,7 @@ export default function PaymentsRevenue({
                                     )
                                 }
                             >
-                                <option value="">Select employer</option>
+                                <option value="">{t('admin.payments.form.select_employer')}</option>
                                 {employers.map((employer) => (
                                     <option key={employer.id} value={employer.id}>
                                         {employer.company_name || employer.name}
@@ -355,7 +360,7 @@ export default function PaymentsRevenue({
                             </NativeSelect>
                         </div>
                         <div>
-                            <Label>Package</Label>
+                            <Label>{t('admin.payments.form.package')}</Label>
                             <NativeSelect
                                 className="mt-1 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm"
                                 value={form.data.package_id}
@@ -371,7 +376,7 @@ export default function PaymentsRevenue({
                                     });
                                 }}
                             >
-                                <option value="">None</option>
+                                <option value="">{t('common.none')}</option>
                                 {packages.map((item) => (
                                     <option key={item.id} value={item.id}>
                                         {item.name} ({item.currency} {item.price})
@@ -380,7 +385,7 @@ export default function PaymentsRevenue({
                             </NativeSelect>
                         </div>
                         <div>
-                            <Label>Amount</Label>
+                            <Label>{t('admin.payments.form.amount')}</Label>
                             <Input
                                 type="number"
                                 value={form.data.amount}
@@ -393,7 +398,7 @@ export default function PaymentsRevenue({
                             />
                         </div>
                         <div>
-                            <Label>Method</Label>
+                            <Label>{t('admin.payments.form.method')}</Label>
                             <Input
                                 value={form.data.method}
                                 onChange={(event) =>
@@ -402,7 +407,7 @@ export default function PaymentsRevenue({
                             />
                         </div>
                         <div>
-                            <Label>Status</Label>
+                            <Label>{t('admin.payments.form.status')}</Label>
                             <NativeSelect
                                 className="mt-1 w-full rounded-xl border border-[#e2e8f0] px-3 py-2 text-sm"
                                 value={form.data.status}
@@ -410,14 +415,14 @@ export default function PaymentsRevenue({
                                     form.setData('status', event.target.value)
                                 }
                             >
-                                <option value="pending">Pending</option>
-                                <option value="completed">Completed</option>
-                                <option value="failed">Failed</option>
+                                <option value="pending">{t('common.pending')}</option>
+                                <option value="completed">{t('status.completed')}</option>
+                                <option value="failed">{t('status.failed')}</option>
                             </NativeSelect>
                         </div>
                         <DialogFooter>
                             <Button type="submit" disabled={form.processing}>
-                                Save
+                                {t('common.save')}
                             </Button>
                         </DialogFooter>
                     </form>

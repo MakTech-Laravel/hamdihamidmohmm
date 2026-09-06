@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Spinner } from '@/components/ui/spinner';
+import { useLocale } from '@/hooks/use-locale';
 import AuthLayout from '@/layouts/auth-layout';
 
 export default function AdminLogin() {
+    const { t } = useLocale();
     const { data, setData, post, processing, errors } = useForm({
         email: '',
         password: '',
@@ -22,17 +24,19 @@ export default function AdminLogin() {
 
     return (
         <AuthLayout
-            title="Admin Access"
-            description="Enter your admin credentials to continue"
+            title={t('auth.admin_access')}
+            description={t('auth.admin_description')}
             context="login"
         >
-            <Head title="Admin Login" />
+            <Head title={t('auth.admin_login')} />
 
             <div className="w-full space-y-3 md:space-y-6 lg:space-y-10 px-2 py-4 lg:py-10">
                 <div className="rounded-3xl border border-primary-50/40 bg-primary-50/20 px-4 py-3 text-sm text-primary-600 sm:px-5 sm:py-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <p className="text-xs uppercase tracking-[0.35em] text-primary-600">Admin Portal</p>
+                    <p className="text-xs uppercase tracking-[0.35em] text-primary-600">
+                        {t('admin.portal')}
+                    </p>
                     <p className="mt-1 text-base font-medium text-primary-600">
-                        Sign in with your administrator credentials.
+                        {t('auth.admin_credentials_hint')}
                     </p>
                 </div>
 
@@ -43,7 +47,7 @@ export default function AdminLogin() {
                                 htmlFor="email"
                                 className="text-xs font-semibold uppercase tracking-[0.35em] text-primary-500"
                             >
-                                Email address
+                                {t('auth.email')}
                             </Label>
                             <Input
                                 id="email"
@@ -52,7 +56,7 @@ export default function AdminLogin() {
                                 onChange={(e) => setData('email', e.target.value)}
                                 required
                                 autoFocus
-                                placeholder="admin@company.com"
+                                placeholder={t('auth.admin_email_placeholder')}
                                 className="mt-2 h-11 rounded-2xl border border-muted/60 bg-white text-sm text-primary-500 placeholder:text-primary-500/60 focus:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-200 sm:h-12 sm:text-base"
                             />
                             <InputError message={errors.email} />
@@ -63,7 +67,7 @@ export default function AdminLogin() {
                                 htmlFor="password"
                                 className="text-xs font-semibold uppercase tracking-[0.35em] text-primary-500"
                             >
-                                Password
+                                {t('auth.password')}
                             </Label>
                             <PasswordInput
                                 id="password"
@@ -82,7 +86,7 @@ export default function AdminLogin() {
                             <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white/15 text-lg">
                                 🛡️
                             </span>
-                            Admin-only restricted access · Audit logged
+                            {t('auth.admin_restricted')}
                         </div>
 
                         <Button
@@ -95,7 +99,7 @@ export default function AdminLogin() {
                                     <Spinner className="h-4 w-4" />
                                 ) : (
                                     <>
-                                        <span>Admin Login</span>
+                                        <span>{t('auth.admin_login')}</span>
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
                                             fill="none"

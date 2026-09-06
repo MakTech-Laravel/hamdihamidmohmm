@@ -11,6 +11,7 @@ import {
 } from '@/components/employer/application-preview-drawer';
 import { getInitials } from '@/components/employer/demo-data';
 import { NativeSelect } from '@/components/ui/native-select';
+import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 
@@ -75,12 +76,18 @@ const statusTone: Record<string, string> = {
 const actionClass =
     'inline-flex h-[30px] cursor-pointer items-center justify-center rounded-[6.4px] px-2.5 text-xs font-semibold';
 
-function toPreview(row: ApplicationRow): ApplicationPreview {
+function toPreview(
+    row: ApplicationRow,
+    t: (key: string, replacements?: Record<string, string | number>) => string,
+): ApplicationPreview {
     return {
         id: row.id,
-        name: row.name || 'Candidate',
-        title: row.headline || row.job || 'Applicant',
-        status: row.status || 'Applied',
+        name: row.name || t('employer.applications.candidate'),
+        title:
+            row.headline ||
+            row.job ||
+            t('employer.applications.applicant'),
+        status: row.status || t('employer.applications.applied'),
         status_value: row.status_value || 'applied',
         email: row.email || '—',
         phone: row.phone || '—',
@@ -111,6 +118,7 @@ export default function EmployerApplications({
     stats,
     statuses,
 }: Props) {
+    const { t } = useLocale();
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
     const [viewing, setViewing] = useState<ApplicationRow | null>(null);
@@ -166,27 +174,33 @@ export default function EmployerApplications({
     };
 
     return (
-        <EmployerLayout title="Applications">
-            <Head title="Applications" />
+        <EmployerLayout title={t('employer.applications.title')}>
+            <Head title={t('employer.applications.title')} />
 
             <div className="flex flex-col px-6 py-6">
                 <div className="flex h-[85px] items-center pb-6">
                     <div>
                         <h1 className="text-2xl leading-9 font-extrabold text-[#050315]">
-                            Applications
+                            {t('employer.applications.title')}
                         </h1>
                         <p className="pt-1 text-sm leading-[21px] text-[#6b7280]">
-                            Manage candidates across all stages
+                            {t('employer.applications.subtitle')}
                         </p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     {[
-                        ['Total Applications', stats.total],
-                        ['New This Week', stats.new],
-                        ['Shortlisted', stats.shortlisted],
-                        ['Interviews Scheduled', stats.interview],
+                        [t('employer.dashboard.total_applications'), stats.total],
+                        [t('employer.dashboard.new_this_week'), stats.new],
+                        [
+                            t('employer.applications.stat.shortlisted'),
+                            stats.shortlisted,
+                        ],
+                        [
+                            t('employer.applications.stat.interviews'),
+                            stats.interview,
+                        ],
                     ].map(([label, value]) => (
                         <div
                             key={label}
@@ -218,7 +232,9 @@ export default function EmployerApplications({
                                     onChange={(event) =>
                                         setSearch(event.target.value)
                                     }
-                                    placeholder="Search candidates..."
+                                    placeholder={t(
+                                        'employer.applications.search',
+                                    )}
                                     className="h-[39px] w-full rounded-lg border border-[#e8d5e8] bg-white py-2 pr-3 pl-11 text-sm text-[#050315] outline-none placeholder:text-[#050315]/50"
                                 />
                             </div>
@@ -230,9 +246,11 @@ export default function EmployerApplications({
                                 onChange={(event) =>
                                     setStatusFilter(event.target.value)
                                 }
-                                aria-label="Filter by status"
+                                aria-label={t(
+                                    'employer.applications.filter_status',
+                                )}
                             >
-                                <option value="">All</option>
+                                <option value="">{t('common.all')}</option>
                                 {statuses.map((item) => (
                                     <option key={item.value} value={item.value}>
                                         {item.label}
@@ -246,13 +264,19 @@ export default function EmployerApplications({
                                 <thead>
                                     <tr className="border-b border-[#d1f6ff] bg-white">
                                         {[
-                                            'Candidate',
-                                            'Job Applied',
-                                            'Status',
-                                            'Applied Date',
-                                            'Experience',
-                                            'Location',
-                                            'Actions',
+                                            t(
+                                                'employer.applications.col.candidate',
+                                            ),
+                                            t('employer.applications.col.job'),
+                                            t('common.status'),
+                                            t('employer.applications.col.date'),
+                                            t(
+                                                'employer.applications.col.experience',
+                                            ),
+                                            t(
+                                                'employer.applications.col.location',
+                                            ),
+                                            t('common.actions'),
                                         ].map((heading) => (
                                             <th
                                                 key={heading}
@@ -319,7 +343,7 @@ export default function EmployerApplications({
                                                             setViewing(row)
                                                         }
                                                     >
-                                                        View
+                                                        {t('common.view')}
                                                     </button>
                                                     {row.can_move &&
                                                         row.next_status && (
@@ -340,7 +364,9 @@ export default function EmployerApplications({
                                                                     }
                                                                 }}
                                                             >
-                                                                Move
+                                                                {t(
+                                                                    'employer.applications.move',
+                                                                )}
                                                             </button>
                                                         )}
                                                     {row.can_reject && (
@@ -357,7 +383,7 @@ export default function EmployerApplications({
                                                                 )
                                                             }
                                                         >
-                                                            Reject
+                                                            {t('common.reject')}
                                                         </button>
                                                     )}
                                                 </div>
@@ -368,7 +394,7 @@ export default function EmployerApplications({
                             </table>
                             {filtered.length === 0 && (
                                 <p className="px-5 py-10 text-center text-sm text-[#99a1af]">
-                                    No applications yet.
+                                    {t('employer.applications.empty_yet')}
                                 </p>
                             )}
                         </div>
@@ -383,7 +409,7 @@ export default function EmployerApplications({
                         setViewing(null);
                     }
                 }}
-                preview={viewing ? toPreview(viewing) : null}
+                preview={viewing ? toPreview(viewing, t) : null}
                 statuses={statuses}
                 onUpdateStatus={updateStatus}
             />

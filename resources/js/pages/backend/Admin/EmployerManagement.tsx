@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
@@ -72,14 +73,6 @@ type Props = {
     };
 };
 
-const filterChips = [
-    ['all', 'All'],
-    ['active', 'Active'],
-    ['pending', 'Pending Verification'],
-    ['suspended', 'Suspended'],
-    ['rejected', 'Rejected'],
-] as const;
-
 function verificationTone(
     value: string,
 ): 'success' | 'warning' | 'danger' | 'neutral' {
@@ -113,7 +106,11 @@ function statusTone(
 function packageTone(
     value: string,
 ): 'info' | 'purple' | 'orange' | 'neutral' {
-    if (value === 'Enterprise' || value === 'Premium' || value === 'Business Package') {
+    if (
+        value === 'Enterprise' ||
+        value === 'Premium' ||
+        value === 'Business Package'
+    ) {
         return 'purple';
     }
     if (value === 'Professional' || value === 'Single Posting') {
@@ -131,9 +128,18 @@ export default function EmployerManagement({
     stats,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
     const [search, setSearch] = useState(filters.search ?? '');
     const [rejecting, setRejecting] = useState<EmployerRow | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
+
+    const filterChips = [
+        ['all', t('common.all')],
+        ['active', t('common.active')],
+        ['pending', t('status.pending_verification')],
+        ['suspended', t('status.suspended')],
+        ['rejected', t('common.rejected')],
+    ] as const;
 
     const query = useMemo(() => {
         const params = new URLSearchParams();
@@ -166,17 +172,17 @@ export default function EmployerManagement({
 
     return (
         <AdminPortalLayout>
-            <Head title="Employer Management" />
+            <Head title={t('admin.employers.title')} />
 
             <div className="space-y-6 p-6">
                 <AdminPageHeader
-                    title="Employer Management"
-                    subtitle="Manage employer accounts, verification, and subscriptions."
+                    title={t('admin.employers.title')}
+                    subtitle={t('admin.employers.subtitle')}
                     actions={
                         <Link href="/admin/employers/create">
                             <AdminPrimaryButton>
                                 <Plus className="size-4" />
-                                Add Employer
+                                {t('admin.employers.add')}
                             </AdminPrimaryButton>
                         </Link>
                     }
@@ -186,31 +192,43 @@ export default function EmployerManagement({
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                     {[
-                        ['Total Employers', stats.total, 'text-[#0057c8]'],
-                        ['Active Employers', stats.active, 'text-[#10b981]'],
-                        ['Pending Employers', stats.pending, 'text-[#e57124]'],
                         [
-                            'Suspended Employers',
+                            t('admin.employers.stats.total'),
+                            stats.total,
+                            'text-[#0057c8]',
+                        ],
+                        [
+                            t('admin.employers.stats.active'),
+                            stats.active,
+                            'text-[#10b981]',
+                        ],
+                        [
+                            t('admin.employers.stats.pending'),
+                            stats.pending,
+                            'text-[#e57124]',
+                        ],
+                        [
+                            t('admin.employers.stats.suspended'),
                             stats.suspended,
                             'text-[#ef4444]',
                         ],
                         [
-                            'Rejected Employers',
+                            t('admin.employers.stats.rejected'),
                             stats.rejected,
                             'text-[#64748b]',
                         ],
                     ].map(([label, value, tone]) => (
                         <AdminStatCard
-                            key={label}
-                            label={label}
+                            key={String(label)}
+                            label={String(label)}
                             value={Number(value).toLocaleString()}
-                            valueClassName={tone}
+                            valueClassName={String(tone)}
                             icon={Building2}
                         />
                     ))}
@@ -228,7 +246,9 @@ export default function EmployerManagement({
                             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#94a3b8]" />
                             <input
                                 type="search"
-                                placeholder="Search employers..."
+                                placeholder={t(
+                                    'admin.employers.search_placeholder',
+                                )}
                                 value={search}
                                 onChange={(event) =>
                                     setSearch(event.target.value)
@@ -248,7 +268,7 @@ export default function EmployerManagement({
                             <a href={`/admin/employers/export${query}`}>
                                 <AdminSecondaryButton className="ml-1">
                                     <Download className="size-4" />
-                                    Export
+                                    {t('common.export')}
                                 </AdminSecondaryButton>
                             </a>
                         </div>
@@ -256,16 +276,16 @@ export default function EmployerManagement({
 
                     <AdminTableShell
                         headers={[
-                            'Company',
-                            'Industry',
-                            'Contact',
-                            'Email',
-                            'Verification',
-                            'Package',
-                            'Active Jobs',
-                            'Reg. Date',
-                            'Status',
-                            'Actions',
+                            t('admin.employers.cols.company'),
+                            t('admin.employers.fields.industry'),
+                            t('admin.employers.cols.contact'),
+                            t('common.email'),
+                            t('common.verified'),
+                            t('admin.employers.cols.package'),
+                            t('admin.dashboard.active_jobs'),
+                            t('admin.employers.cols.registered'),
+                            t('common.status'),
+                            t('common.actions'),
                         ]}
                     >
                         {employers.data.map((row) => (
@@ -288,7 +308,9 @@ export default function EmployerManagement({
                                 <td className="px-3 py-3">
                                     <AdminStatusBadge
                                         label={row.verification}
-                                        tone={verificationTone(row.verification)}
+                                        tone={verificationTone(
+                                            row.verification,
+                                        )}
                                     />
                                 </td>
                                 <td className="px-3 py-3">
@@ -314,14 +336,18 @@ export default function EmployerManagement({
                                         <Link
                                             href={`/admin/employers/${row.id}`}
                                             className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8faff]"
-                                            aria-label="View employer"
+                                            aria-label={t(
+                                                'admin.employers.view',
+                                            )}
                                         >
                                             <Eye className="size-4" />
                                         </Link>
                                         <Link
                                             href={`/admin/employers/${row.id}/edit`}
                                             className="flex size-8 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8faff]"
-                                            aria-label="Edit employer"
+                                            aria-label={t(
+                                                'admin.employers.edit',
+                                            )}
                                         >
                                             <Pencil className="size-4" />
                                         </Link>
@@ -330,7 +356,9 @@ export default function EmployerManagement({
                                                 <button
                                                     type="button"
                                                     className="flex size-8 items-center justify-center rounded-lg border border-[#d1fae5] bg-[#d1fae5] text-[#065f46] hover:bg-[#a7f3d0]"
-                                                    aria-label="Approve employer"
+                                                    aria-label={t(
+                                                        'admin.employers.approve',
+                                                    )}
                                                     onClick={() =>
                                                         router.post(
                                                             `/admin/employers/${row.id}/approve`,
@@ -342,7 +370,9 @@ export default function EmployerManagement({
                                                 <button
                                                     type="button"
                                                     className="flex size-8 items-center justify-center rounded-lg border border-[#fee2e2] bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca]"
-                                                    aria-label="Reject employer"
+                                                    aria-label={t(
+                                                        'admin.employers.reject',
+                                                    )}
                                                     onClick={() => {
                                                         setRejectionReason('');
                                                         setRejecting(row);
@@ -360,12 +390,16 @@ export default function EmployerManagement({
 
                     {employers.data.length === 0 && (
                         <p className="mt-6 text-center text-sm text-[#99a1af]">
-                            No employers match these filters.
+                            {t('admin.employers.empty')}
                         </p>
                     )}
 
                     <AdminPagination
-                        showingLabel={`Showing ${employers.from ?? 0}-${employers.to ?? 0} of ${employers.total}`}
+                        showingLabel={t('common.showing_range', {
+                            from: employers.from ?? 0,
+                            to: employers.to ?? 0,
+                            total: employers.total,
+                        })}
                         links={employers.links}
                     />
                 </AdminPanel>
@@ -381,15 +415,17 @@ export default function EmployerManagement({
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Reject employer</DialogTitle>
+                        <DialogTitle>
+                            {t('admin.employers.reject_title')}
+                        </DialogTitle>
                         <DialogDescription>
-                            {rejecting
-                                ? `Tell ${rejecting.company_name} why this account is being rejected.`
-                                : 'Provide a rejection reason.'}
+                            {t('admin.employers.reject_prompt')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-1.5">
-                        <Label htmlFor="rejection_reason">Reason</Label>
+                        <Label htmlFor="rejection_reason">
+                            {t('common.reason')}
+                        </Label>
                         <Textarea
                             id="rejection_reason"
                             value={rejectionReason}
@@ -405,7 +441,7 @@ export default function EmployerManagement({
                             variant="outline"
                             onClick={() => setRejecting(null)}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button
                             type="button"
@@ -428,7 +464,7 @@ export default function EmployerManagement({
                                 );
                             }}
                         >
-                            Reject
+                            {t('common.reject')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -1,6 +1,7 @@
 import { Head, router, usePage } from '@inertiajs/react';
 
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
+import { useLocale } from '@/hooks/use-locale';
 import type { SharedData } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -21,15 +22,19 @@ export default function JobSeekerNotifications({
     unread: number;
 }) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
 
     return (
-        <JobSeekerLayout title="Notifications" unreadCount={unread}>
-            <Head title="Notifications" />
+        <JobSeekerLayout
+            title={t('job_seeker.notifications.title')}
+            unreadCount={unread}
+        >
+            <Head title={t('job_seeker.notifications.title')} />
 
             <div className="space-y-5 p-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-extrabold text-[#0057c8]">
-                        Notifications
+                        {t('job_seeker.notifications.title')}
                     </h1>
                     {unread > 0 && (
                         <button
@@ -41,7 +46,7 @@ export default function JobSeekerNotifications({
                                 )
                             }
                         >
-                            Mark all read
+                            {t('job_seeker.notifications.mark_all')}
                         </button>
                     )}
                 </div>
@@ -49,7 +54,7 @@ export default function JobSeekerNotifications({
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
                 <div className="space-y-3">
@@ -80,7 +85,7 @@ export default function JobSeekerNotifications({
                     ))}
                     {notifications.length === 0 && (
                         <p className="text-center text-sm text-[#99a1af]">
-                            No notifications yet.
+                            {t('job_seeker.notifications.empty')}
                         </p>
                     )}
                 </div>

@@ -11,7 +11,10 @@ class RejectEmployerRequest extends FormRequest
     {
         $target = $this->route('user');
 
-        return $this->user()?->canManageEmployers() === true
+        $canManage = $this->user()?->canManageEmployers() === true
+            || $this->user()?->canManageVerification() === true;
+
+        return $canManage
             && $target instanceof User
             && $target->canApproveEmployer();
     }

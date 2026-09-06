@@ -29,7 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/profile/resume', [JobSeekerProfileController::class, 'downloadResume'])->name('profile.resume.download');
         Route::delete('/profile/resume', [JobSeekerProfileController::class, 'destroyResume'])->name('profile.resume.destroy');
         Route::post('/profile/certifications/file', [JobSeekerProfileController::class, 'uploadCertificationDocument'])->name('profile.certifications.upload');
-        Route::get('/profile/certifications/{index}/file', [JobSeekerProfileController::class, 'downloadCertificationDocument'])->name('profile.certifications.download');
+        Route::get('/profile/certifications/{index}/file/{attachment?}', [JobSeekerProfileController::class, 'downloadCertificationDocument'])->name('profile.certifications.download');
         Route::delete('/profile/certifications/{index}/file', [JobSeekerProfileController::class, 'destroyCertificationDocument'])->name('profile.certifications.destroy');
         Route::get('/applications', [JobSeekerApplicationsController::class, 'index'])->name('applications');
         Route::post('/applications/{application}/withdraw', [JobSeekerApplicationsController::class, 'withdraw'])->name('applications.withdraw');

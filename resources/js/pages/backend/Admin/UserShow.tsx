@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 
 import { AdminIcon } from '@/components/admin-icon';
+import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
@@ -45,26 +46,46 @@ const roleBadgeStyles: Record<string, string> = {
 
 export default function UserShow({ managedUser, activities }: Props) {
     const { flash } = usePage<SharedData>().props;
+    const { t } = useLocale();
 
     const facts = [
-        ['Created', managedUser.created_at ?? '—'],
-        ['Last updated', managedUser.updated_at ?? '—'],
-        ['Last login', managedUser.last_login_at ?? 'Never'],
-        ['Email verified', managedUser.email_verified ? 'Yes' : 'No'],
-        ['Two-factor', managedUser.two_factor_enabled ? 'Enabled' : 'Off'],
-        ['Company', managedUser.company_name || '—'],
+        [t('admin.users.meta.created'), managedUser.created_at ?? '—'],
+        [
+            t('admin.users.meta.last_updated'),
+            managedUser.updated_at ?? '—',
+        ],
+        [
+            t('admin.users.meta.last_login'),
+            managedUser.last_login_at ?? t('common.never'),
+        ],
+        [
+            t('admin.users.meta.email_verified'),
+            managedUser.email_verified ? t('common.yes') : t('common.no'),
+        ],
+        [
+            t('admin.users.meta.two_factor'),
+            managedUser.two_factor_enabled
+                ? t('common.enabled')
+                : t('common.off'),
+        ],
+        [t('common.company'), managedUser.company_name || '—'],
     ];
 
     const profile = [
-        ['Full name', managedUser.name],
-        ['Email', managedUser.email],
-        ['Company name', managedUser.company_name || '—'],
-        ['Role', managedUser.role_label],
+        [t('admin.users.fields.full_name'), managedUser.name],
+        [t('admin.users.fields.email'), managedUser.email],
+        [
+            t('admin.users.fields.company_name'),
+            managedUser.company_name || '—',
+        ],
+        [t('common.role'), managedUser.role_label],
     ];
 
     return (
         <AdminPortalLayout>
-            <Head title={`${managedUser.name} · User`} />
+            <Head
+                title={`${managedUser.name} · ${t('admin.users.title')}`}
+            />
 
             <div className="space-y-6 p-6">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -73,13 +94,13 @@ export default function UserShow({ managedUser, activities }: Props) {
                             href="/admin/users"
                             className="text-xs font-semibold text-[#0057c8]"
                         >
-                            ← All Users
+                            {t('admin.users.back_to_list')}
                         </Link>
                         <h1 className="mt-2 text-[28px] font-extrabold tracking-tight text-[#050315]">
                             {managedUser.name}
                         </h1>
                         <p className="mt-1 text-sm text-[#3977a6]">
-                            View account details and track activity.
+                            {t('admin.users.show_subtitle')}
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -87,7 +108,7 @@ export default function UserShow({ managedUser, activities }: Props) {
                             className={cn(
                                 'inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold',
                                 roleBadgeStyles[managedUser.role_name ?? ''] ??
-                                'bg-[#f1f5f9] text-[#64748b]',
+                                    'bg-[#f1f5f9] text-[#64748b]',
                             )}
                         >
                             {managedUser.role_label}
@@ -97,7 +118,7 @@ export default function UserShow({ managedUser, activities }: Props) {
                                 href={`/admin/users/${managedUser.id}/edit`}
                                 className="inline-flex h-9 items-center rounded-xl bg-[#0057c8] px-4 text-sm font-semibold text-white hover:bg-[#0046a3]"
                             >
-                                Edit
+                                {t('common.edit')}
                             </Link>
                         )}
                     </div>
@@ -107,7 +128,7 @@ export default function UserShow({ managedUser, activities }: Props) {
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
                             ? flash.success
-                            : 'Saved successfully.'}
+                            : t('common.saved')}
                     </div>
                 )}
 
@@ -137,7 +158,7 @@ export default function UserShow({ managedUser, activities }: Props) {
                                 className="text-[#0057c8]"
                             />
                             <h2 className="text-base font-bold text-[#101828]">
-                                Profile
+                                {t('admin.users.sections.profile')}
                             </h2>
                         </div>
                         <dl className="space-y-4">
@@ -157,30 +178,34 @@ export default function UserShow({ managedUser, activities }: Props) {
                     <div className="space-y-6">
                         <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                             <h2 className="text-base font-bold text-[#101828]">
-                                Account details
+                                {t('admin.users.sections.account')}
                             </h2>
                             <dl className="mt-4 space-y-3 text-sm">
                                 <div className="flex justify-between gap-4">
-                                    <dt className="text-[#6a7282]">User ID</dt>
+                                    <dt className="text-[#6a7282]">
+                                        {t('admin.users.sections.user_id')}
+                                    </dt>
                                     <dd className="font-semibold text-[#101828]">
                                         ID-{managedUser.id}
                                     </dd>
                                 </div>
                                 <div className="flex justify-between gap-4">
-                                    <dt className="text-[#6a7282]">Email</dt>
+                                    <dt className="text-[#6a7282]">
+                                        {t('common.email')}
+                                    </dt>
                                     <dd className="truncate font-semibold text-[#101828]">
                                         {managedUser.email}
                                     </dd>
                                 </div>
                                 <div>
                                     <dt className="text-[#6a7282]">
-                                        Permissions
+                                        {t('admin.users.sections.permissions')}
                                     </dt>
                                     <dd className="mt-2 flex flex-wrap gap-1.5">
                                         {managedUser.permissions.length ===
-                                            0 ? (
+                                        0 ? (
                                             <span className="text-xs text-[#99a1af]">
-                                                Role defaults
+                                                {t('admin.users.role_defaults')}
                                             </span>
                                         ) : (
                                             managedUser.permissions.map(
@@ -208,12 +233,12 @@ export default function UserShow({ managedUser, activities }: Props) {
                                     className="text-[#0057c8]"
                                 />
                                 <h2 className="text-base font-bold text-[#101828]">
-                                    Activity tracking
+                                    {t('admin.users.sections.activity')}
                                 </h2>
                             </div>
                             {activities.length === 0 ? (
                                 <p className="text-sm text-[#99a1af]">
-                                    No tracked activity yet.
+                                    {t('admin.activity.empty')}
                                 </p>
                             ) : (
                                 <ol className="space-y-4">
@@ -229,8 +254,9 @@ export default function UserShow({ managedUser, activities }: Props) {
                                                 {item.description}
                                             </p>
                                             <p className="mt-1 text-[11px] text-[#99a1af]">
-                                                {item.actor_name ?? 'System'} ·{' '}
-                                                {item.created_at}
+                                                {item.actor_name ??
+                                                    t('common.system')}{' '}
+                                                · {item.created_at}
                                             </p>
                                         </li>
                                     ))}
