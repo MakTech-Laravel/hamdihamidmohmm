@@ -12,7 +12,6 @@ export function EmployerSidebar() {
     const { t } = useLocale();
     const currentUrl = page.url;
     const user = auth.user;
-<<<<<<< HEAD
     const personName = user.name || user.contact_name || t('employer.portal');
     const initials = getInitials(personName);
     const [avatarFailed, setAvatarFailed] = useState(false);
@@ -62,12 +61,6 @@ export function EmployerSidebar() {
             match: '/employer/settings',
         },
     ];
-=======
-    const personName = user.name || user.contact_name || 'Employer';
-    const initials = getInitials(personName);
-    const [avatarFailed, setAvatarFailed] = useState(false);
-    const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
->>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
 
     return (
         <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-white">

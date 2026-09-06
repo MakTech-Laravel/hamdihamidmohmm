@@ -205,10 +205,10 @@ export default function EmployerCompanyProfile({
                             {profile.verification_value === 'approved' &&
                                 profile.verified_on
                                 ? t('employer.profile.verified_on', {
-                                      date: profile.verified_on,
-                                  })
+                                    date: profile.verified_on,
+                                })
                                 : profile.verification ||
-                                  t('employer.profile.not_verified')}
+                                t('employer.profile.not_verified')}
                         </p>
                     </div>
                     <span
@@ -358,13 +358,8 @@ export default function EmployerCompanyProfile({
                                     {uploading === 'logo'
                                         ? t('common.uploading')
                                         : profile.logo_url
-<<<<<<< HEAD
                                             ? t('common.replace')
                                             : t('common.upload')}
-=======
-                                            ? 'Replace'
-                                            : 'Upload'}
->>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                                 </button>
                                 {profile.logo_url && (
                                     <button
@@ -543,8 +538,8 @@ export default function EmployerCompanyProfile({
                         <p className="text-sm text-[#364153]">
                             {profile.verification_document_name
                                 ? t('employer.profile.uploaded_document', {
-                                      name: profile.verification_document_name,
-                                  })
+                                    name: profile.verification_document_name,
+                                })
                                 : t('employer.profile.verification_hint')}
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -559,13 +554,8 @@ export default function EmployerCompanyProfile({
                                 {uploading === 'document'
                                     ? t('common.uploading')
                                     : profile.verification_document_name
-<<<<<<< HEAD
                                         ? t('common.replace')
                                         : t('common.upload')}
-=======
-                                        ? 'Replace Document'
-                                        : 'Upload Document'}
->>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
                             </button>
                             {profile.verification_document_url && (
                                 <a
