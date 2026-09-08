@@ -9,10 +9,10 @@ test('job seeker dashboard shares job seeker portal translation keys', function 
     $this->actingAs($seeker)
         ->get(route('job-seeker.dashboard'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/JobSeekerDashboard')
             ->has('translations')
-            ->where('translations', fn ($translations) => ($translations['job_seeker.portal'] ?? null) === 'Job Seeker Portal'
+            ->where('translations', fn($translations) => ($translations['job_seeker.portal'] ?? null) === 'Job Seeker Portal'
                 && ($translations['job_seeker.nav.dashboard'] ?? null) === 'Dashboard'
                 && ($translations['job_seeker.dashboard.title'] ?? null) === 'Dashboard'
                 && ($translations['job_seeker.dashboard.tagline'] ?? null) === "Let's help you find your next opportunity."
@@ -63,6 +63,7 @@ test('job seeker portal translation keys exist in english and arabic', function 
         'job_seeker.header.user_menu',
         'job_seeker.nav.applications',
         'job_seeker.nav.dashboard',
+        'job_seeker.nav.jobs',
         'job_seeker.nav.notifications',
         'job_seeker.nav.profile',
         'job_seeker.nav.settings',
@@ -113,10 +114,10 @@ test('arabic locale shares arabic job seeker portal translations on dashboard', 
         ->withSession([Locale::COOKIE => Locale::ARABIC])
         ->get(route('job-seeker.dashboard'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('locale', Locale::ARABIC)
             ->where('dir', 'rtl')
-            ->where('translations', fn ($translations) => ($translations['job_seeker.portal'] ?? null) === 'بوابة الباحثين عن عمل'
+            ->where('translations', fn($translations) => ($translations['job_seeker.portal'] ?? null) === 'بوابة الباحثين عن عمل'
                 && ($translations['job_seeker.dashboard.title'] ?? null) === 'لوحة التحكم'
                 && ($translations['job_seeker.dashboard.quick_actions'] ?? null) === 'إجراءات سريعة'
                 && ($translations['job_seeker.nav.dashboard'] ?? null) === 'لوحة التحكم'));

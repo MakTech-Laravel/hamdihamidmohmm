@@ -74,6 +74,8 @@ class HandleInertiaRequests extends Middleware
                         'can_manage_admins' => $user->canManageAdmins(),
                         'avatar_url' => $user->avatar_url,
                         'headline' => $seekerHeadline,
+                        'dashboard_url' => route($user->dashboardRoute(), absolute: false),
+                        'profile_url' => $this->profileUrl($user),
                     ]
                 ) : null,
             ],
@@ -95,6 +97,23 @@ class HandleInertiaRequests extends Middleware
     private function displayName($user): string
     {
         return ! empty($user->name) ? $user->name : $user->email;
+    }
+
+    private function profileUrl($user): string
+    {
+        if ($user->isJobSeeker()) {
+            return route('job-seeker.profile', absolute: false);
+        }
+
+        if ($user->isEmployer()) {
+            return route('employer.profile', absolute: false);
+        }
+
+        if ($user->isAdmin()) {
+            return route('admin.dashboard', absolute: false);
+        }
+
+        return route('dashboard', absolute: false);
     }
 
     /**

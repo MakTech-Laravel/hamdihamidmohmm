@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Backend\User;
 use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
+use App\Models\JobPost;
 use App\Models\JobSeekerProfile;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -24,6 +25,32 @@ class JobSeekerDashboardController extends Controller
             ->latest()
             ->limit(5)
             ->get();
+
+        $appliedJobIds = JobApplication::query()
+            ->where('job_seeker_id', $user?->id)
+            ->pluck('job_post_id');
+
+        $openJobs = JobPost::query()
+            ->active()
+            ->with('employer:id,name,company_name')
+            ->when(
+                $appliedJobIds->isNotEmpty(),
+                fn ($query) => $query->whereNotIn('id', $appliedJobIds),
+            )
+            ->latest()
+            ->limit(8)
+            ->get()
+            ->map(fn (JobPost $job) => [
+                'id' => $job->id,
+                'slug' => $job->slug,
+                'title' => $job->title,
+                'company' => $job->employer?->company_name ?: $job->employer?->name,
+                'location' => $job->location,
+                'type' => $job->employment_type,
+                'salary' => $job->salary_range,
+                'job_url' => $job->slug ? route('jobs.show', $job->slug) : null,
+            ])
+            ->values();
 
         $completion = $profile->exists ? $profile->completionPercent() : 0;
 
@@ -52,6 +79,7 @@ class JobSeekerDashboardController extends Controller
                 'status_value' => $application->status?->value,
                 'date' => $application->created_at?->format('M j, Y'),
             ]),
+            'open_jobs' => $openJobs,
             'notifications' => $user?->notifications()->latest()->limit(5)->get()->map(fn ($notification) => [
                 'id' => $notification->id,
                 'title' => $notification->data['title'] ?? 'Notification',

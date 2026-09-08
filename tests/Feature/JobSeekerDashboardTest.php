@@ -41,6 +41,13 @@ test('job seeker dashboard matches the Figma stats checklist and notifications p
         'status' => JobApplicationStatus::Shortlisted,
     ]);
 
+    JobPost::factory()->create([
+        'title' => 'Open Backend Role',
+        'status' => JobPostStatus::Active,
+        'location' => 'Jeddah',
+        'employment_type' => 'Full-time',
+    ]);
+
     $seeker->notify(new PortalNotification(
         'Interview Invitation',
         'You have been invited to interview.',
@@ -60,8 +67,38 @@ test('job seeker dashboard matches the Figma stats checklist and notifications p
             ->where('applications.0.status', 'Under Review')
             ->where('notifications.0.title', 'Interview Invitation')
             ->where('notifications.0.read', false)
+            ->has('open_jobs', 1)
+            ->where('open_jobs.0.title', 'Open Backend Role')
             ->missing('stats.active')
             ->missing('stats.interviews'));
+});
+
+test('job seekers can apply to an open job from the dashboard', function () {
+    $seeker = User::factory()->jobSeeker()->create();
+    JobSeekerProfile::factory()->create(['user_id' => $seeker->id]);
+
+    $job = JobPost::factory()->create([
+        'title' => 'Dashboard Apply Role',
+        'status' => JobPostStatus::Active,
+    ]);
+
+    $this->actingAs($seeker)
+        ->from(route('job-seeker.dashboard'))
+        ->post(route('jobs.apply', $job))
+        ->assertRedirect(route('job-seeker.dashboard'));
+
+    expect(JobApplication::query()
+        ->where('job_seeker_id', $seeker->id)
+        ->where('job_post_id', $job->id)
+        ->exists())->toBeTrue();
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('stats.total', 1)
+            ->has('open_jobs', 0)
+            ->where('applications.0.title', 'Dashboard Apply Role'));
 });
 
 test('job seekers can update extended professional profile fields', function () {

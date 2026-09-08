@@ -3,6 +3,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { AdminIcon } from '@/components/admin-icon';
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
+import { home } from '@/routes';
 import type { SharedData } from '@/types';
 
 type NavItem = {
@@ -121,21 +122,27 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
             )}
         >
             <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
-                <img
-                    src="/images/admin/logo.png"
-                    alt={t('admin.brand')}
-                    className="h-[51px] w-[76px] object-contain"
-                    width={76}
-                    height={51}
-                />
-                <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-[#050315]">
-                        {t('admin.brand')}
-                    </p>
-                    <p className="truncate text-xs font-normal text-[#3977a6]">
-                        {t('admin.portal')}
-                    </p>
-                </div>
+                <Link
+                    href={home()}
+                    className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80"
+                    aria-label={t('nav.home')}
+                >
+                    <img
+                        src="/images/admin/logo.png"
+                        alt={t('admin.brand')}
+                        className="h-[51px] w-[76px] shrink-0 object-contain"
+                        width={76}
+                        height={51}
+                    />
+                    <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-[#050315]">
+                            {t('admin.brand')}
+                        </p>
+                        <p className="truncate text-xs font-normal text-[#3977a6]">
+                            {t('admin.portal')}
+                        </p>
+                    </div>
+                </Link>
             </div>
 
             <nav className="flex-1 space-y-0 overflow-y-auto px-2 py-3">

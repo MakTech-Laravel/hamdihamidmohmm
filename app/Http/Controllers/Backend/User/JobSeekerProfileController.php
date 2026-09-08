@@ -6,6 +6,8 @@ use App\Enums\JobSeekerResumeStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\UpdateJobSeekerProfileRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerCertificationRequest;
+use App\Http\Requests\Backend\User\UploadJobSeekerCoverLetterRequest;
+use App\Http\Requests\Backend\User\UploadJobSeekerHighestDegreeRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerPhotoRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerResumeRequest;
 use App\Models\JobSeekerProfile;
@@ -30,6 +32,10 @@ class JobSeekerProfileController extends Controller
 
         $hasResume = filled($user?->resume_path)
             && Storage::disk('local')->exists((string) $user->resume_path);
+        $hasCoverLetter = filled($user?->cover_letter_path)
+            && Storage::disk('local')->exists((string) $user->cover_letter_path);
+        $hasHighestDegree = filled($user?->highest_degree_path)
+            && Storage::disk('local')->exists((string) $user->highest_degree_path);
 
         $photoUrl = $user?->avatar_url;
 
@@ -78,6 +84,10 @@ class JobSeekerProfileController extends Controller
                     : null,
                 'resume_name' => $hasResume ? $user?->resume_original_name : null,
                 'resume_url' => $hasResume ? route('job-seeker.profile.resume.download') : null,
+                'cover_letter_name' => $hasCoverLetter ? $user?->cover_letter_original_name : null,
+                'cover_letter_url' => $hasCoverLetter ? route('job-seeker.profile.cover-letter.download') : null,
+                'highest_degree_name' => $hasHighestDegree ? $user?->highest_degree_original_name : null,
+                'highest_degree_url' => $hasHighestDegree ? route('job-seeker.profile.highest-degree.download') : null,
                 'completion' => $profile->exists ? $profile->completionPercent() : 0,
                 'checklist' => $profile->checklist($user),
             ],
@@ -362,6 +372,120 @@ class JobSeekerProfileController extends Controller
         ])->save();
 
         return back()->with('success', __('job_seeker.profile.resume_removed'));
+    }
+
+    public function uploadCoverLetter(UploadJobSeekerCoverLetterRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        $file = $request->file('cover_letter');
+
+        if ($user === null || $file === null) {
+            return back()->withErrors(['cover_letter' => __('job_seeker.profile.cover_letter_required')]);
+        }
+
+        if (filled($user->cover_letter_path)) {
+            Storage::disk('local')->delete($user->cover_letter_path);
+        }
+
+        $path = $file->store('cover-letters/'.$user->id, 'local');
+
+        $user->forceFill([
+            'cover_letter_path' => $path,
+            'cover_letter_original_name' => $file->getClientOriginalName(),
+        ])->save();
+
+        return back()->with('success', __('job_seeker.profile.cover_letter_uploaded'));
+    }
+
+    public function downloadCoverLetter(Request $request): StreamedResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user !== null
+                && filled($user->cover_letter_path)
+                && Storage::disk('local')->exists((string) $user->cover_letter_path),
+            404,
+        );
+
+        $downloadName = $user->cover_letter_original_name ?: basename((string) $user->cover_letter_path);
+
+        return Storage::disk('local')->download((string) $user->cover_letter_path, $downloadName);
+    }
+
+    public function destroyCoverLetter(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user?->isJobSeeker() === true, 403);
+
+        if (filled($user->cover_letter_path)) {
+            Storage::disk('local')->delete((string) $user->cover_letter_path);
+        }
+
+        $user->forceFill([
+            'cover_letter_path' => null,
+            'cover_letter_original_name' => null,
+        ])->save();
+
+        return back()->with('success', __('job_seeker.profile.cover_letter_removed'));
+    }
+
+    public function uploadHighestDegree(UploadJobSeekerHighestDegreeRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        $file = $request->file('highest_degree');
+
+        if ($user === null || $file === null) {
+            return back()->withErrors(['highest_degree' => __('job_seeker.profile.highest_degree_required')]);
+        }
+
+        if (filled($user->highest_degree_path)) {
+            Storage::disk('local')->delete($user->highest_degree_path);
+        }
+
+        $path = $file->store('highest-degrees/'.$user->id, 'local');
+
+        $user->forceFill([
+            'highest_degree_path' => $path,
+            'highest_degree_original_name' => $file->getClientOriginalName(),
+        ])->save();
+
+        return back()->with('success', __('job_seeker.profile.highest_degree_uploaded'));
+    }
+
+    public function downloadHighestDegree(Request $request): StreamedResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user !== null
+                && filled($user->highest_degree_path)
+                && Storage::disk('local')->exists((string) $user->highest_degree_path),
+            404,
+        );
+
+        $downloadName = $user->highest_degree_original_name ?: basename((string) $user->highest_degree_path);
+
+        return Storage::disk('local')->download((string) $user->highest_degree_path, $downloadName);
+    }
+
+    public function destroyHighestDegree(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user?->isJobSeeker() === true, 403);
+
+        if (filled($user->highest_degree_path)) {
+            Storage::disk('local')->delete((string) $user->highest_degree_path);
+        }
+
+        $user->forceFill([
+            'highest_degree_path' => null,
+            'highest_degree_original_name' => null,
+        ])->save();
+
+        return back()->with('success', __('job_seeker.profile.highest_degree_removed'));
     }
 
     /**

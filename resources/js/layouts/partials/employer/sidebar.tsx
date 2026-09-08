@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { getInitials } from '@/components/employer/demo-data';
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
+import { home } from '@/routes';
 import type { SharedData } from '@/types';
 
 export function EmployerSidebar() {
@@ -12,7 +13,6 @@ export function EmployerSidebar() {
     const { t } = useLocale();
     const currentUrl = page.url;
     const user = auth.user;
-<<<<<<< HEAD
     const personName = user.name || user.contact_name || t('employer.portal');
     const initials = getInitials(personName);
     const [avatarFailed, setAvatarFailed] = useState(false);
@@ -62,31 +62,31 @@ export function EmployerSidebar() {
             match: '/employer/settings',
         },
     ];
-=======
-    const personName = user.name || user.contact_name || 'Employer';
-    const initials = getInitials(personName);
-    const [avatarFailed, setAvatarFailed] = useState(false);
-    const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
->>>>>>> a348b170977133e1d86112a905bde613ca8bc05f
 
     return (
         <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-white">
             <div className="flex h-[60px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
-                <img
-                    src="/images/admin/logo.png"
-                    alt={t('app.name')}
-                    className="h-[51px] w-[76px] object-contain"
-                    width={76}
-                    height={51}
-                />
-                <div className="min-w-0">
-                    <p className="truncate text-sm leading-5 font-bold text-[#050315]">
-                        {t('app.name')}
-                    </p>
-                    <p className="truncate text-xs leading-4 text-[#0057c8]">
-                        {t('employer.portal')}
-                    </p>
-                </div>
+                <Link
+                    href={home()}
+                    className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80"
+                    aria-label={t('nav.home')}
+                >
+                    <img
+                        src="/images/admin/logo.png"
+                        alt={t('app.name')}
+                        className="h-[51px] w-[76px] shrink-0 object-contain"
+                        width={76}
+                        height={51}
+                    />
+                    <div className="min-w-0">
+                        <p className="truncate text-sm leading-5 font-bold text-[#050315]">
+                            {t('app.name')}
+                        </p>
+                        <p className="truncate text-xs leading-4 text-[#0057c8]">
+                            {t('employer.portal')}
+                        </p>
+                    </div>
+                </Link>
             </div>
 
             <nav className="flex-1 overflow-y-auto py-4">
