@@ -9,6 +9,7 @@ use App\Http\Controllers\Backend\User\EmployerPortalPageController;
 use App\Http\Controllers\Backend\User\EmployerProfileController;
 use App\Http\Controllers\Backend\User\JobSeekerApplicationsController;
 use App\Http\Controllers\Backend\User\JobSeekerDashboardController;
+use App\Http\Controllers\Backend\User\JobSeekerJobsController;
 use App\Http\Controllers\Backend\User\JobSeekerNotificationsController;
 use App\Http\Controllers\Backend\User\JobSeekerProfileController;
 use App\Http\Controllers\Backend\User\JobSeekerSettingsController;
@@ -21,6 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('role:'.RoleName::JobSeeker->value)->prefix('job-seeker')->name('job-seeker.')->group(function () {
         Route::get('/dashboard', JobSeekerDashboardController::class)->name('dashboard');
+        Route::get('/jobs', JobSeekerJobsController::class)->name('jobs');
         Route::get('/profile', [JobSeekerProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [JobSeekerProfileController::class, 'update'])->name('profile.update');
         Route::post('/profile/photo', [JobSeekerProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
@@ -28,6 +30,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/profile/resume', [JobSeekerProfileController::class, 'uploadResume'])->name('profile.resume.upload');
         Route::get('/profile/resume', [JobSeekerProfileController::class, 'downloadResume'])->name('profile.resume.download');
         Route::delete('/profile/resume', [JobSeekerProfileController::class, 'destroyResume'])->name('profile.resume.destroy');
+        Route::post('/profile/cover-letter', [JobSeekerProfileController::class, 'uploadCoverLetter'])->name('profile.cover-letter.upload');
+        Route::get('/profile/cover-letter', [JobSeekerProfileController::class, 'downloadCoverLetter'])->name('profile.cover-letter.download');
+        Route::delete('/profile/cover-letter', [JobSeekerProfileController::class, 'destroyCoverLetter'])->name('profile.cover-letter.destroy');
+        Route::post('/profile/highest-degree', [JobSeekerProfileController::class, 'uploadHighestDegree'])->name('profile.highest-degree.upload');
+        Route::get('/profile/highest-degree', [JobSeekerProfileController::class, 'downloadHighestDegree'])->name('profile.highest-degree.download');
+        Route::delete('/profile/highest-degree', [JobSeekerProfileController::class, 'destroyHighestDegree'])->name('profile.highest-degree.destroy');
         Route::post('/profile/certifications/file', [JobSeekerProfileController::class, 'uploadCertificationDocument'])->name('profile.certifications.upload');
         Route::get('/profile/certifications/{index}/file/{attachment?}', [JobSeekerProfileController::class, 'downloadCertificationDocument'])->name('profile.certifications.download');
         Route::delete('/profile/certifications/{index}/file', [JobSeekerProfileController::class, 'destroyCertificationDocument'])->name('profile.certifications.destroy');

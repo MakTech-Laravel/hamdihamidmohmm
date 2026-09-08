@@ -1,13 +1,15 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Briefcase,
     Check,
     FileText,
+    MapPin,
     Search,
     Star,
     UserRound,
     X,
 } from 'lucide-react';
+import { useState } from 'react';
 
 import {
     firstName,
@@ -18,12 +20,24 @@ import { StatusBadge } from '@/components/job-seeker/status-badge';
 import { useLocale } from '@/hooks/use-locale';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { cn } from '@/lib/utils';
+import { apply as applyToJob } from '@/routes/jobs';
 import type { SharedData } from '@/types';
 
 type ChecklistItem = {
     id: string;
     label: string;
     complete: boolean;
+};
+
+type OpenJob = {
+    id: number;
+    slug: string;
+    title: string;
+    company: string | null;
+    location: string | null;
+    type: string | null;
+    salary: string | null;
+    job_url: string | null;
 };
 
 type Props = {
@@ -36,6 +50,7 @@ type Props = {
         completion: number;
     };
     checklist: ChecklistItem[];
+    open_jobs: OpenJob[];
     applications: Array<{
         id: number;
         title: string | null;
@@ -58,17 +73,31 @@ export default function JobSeekerDashboard({
     completion,
     stats,
     checklist,
+    open_jobs,
     applications,
     notifications,
 }: Props) {
     const { auth } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const [applyingJobId, setApplyingJobId] = useState<number | null>(null);
     const name = firstName(auth.user.name) || first_name;
     const today = new Intl.DateTimeFormat('en-US', {
         weekday: 'long',
         month: 'long',
         day: 'numeric',
     }).format(new Date());
+
+    const handleApply = (jobId: number) => {
+        setApplyingJobId(jobId);
+        router.post(
+            applyToJob.url(jobId),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setApplyingJobId(null),
+            },
+        );
+    };
 
     const statCards = [
         {
@@ -141,7 +170,7 @@ export default function JobSeekerDashboard({
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <Link
-                            href="/jobs"
+                            href="/job-seeker/jobs"
                             className="inline-flex items-center justify-center rounded-xl bg-[#e57124] px-4 py-2.5 text-base font-medium text-white hover:brightness-110"
                         >
                             {t('job_seeker.dashboard.browse_jobs')}
@@ -193,6 +222,112 @@ export default function JobSeekerDashboard({
 
                 <div className="grid gap-5 xl:grid-cols-[1fr_414px]">
                     <div className="space-y-5">
+                        <div className="rounded-2xl border border-[#e2e8f0] bg-white shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
+                            <div className="flex items-center justify-between border-b border-[#f1f5f9] p-5">
+                                <h2 className="text-base font-bold text-[#050315]">
+                                    {t('job_seeker.dashboard.open_jobs')}
+                                </h2>
+                                <Link
+                                    href="/job-seeker/jobs"
+                                    className="text-xs font-bold text-[#0057c8]"
+                                >
+                                    {t('job_seeker.dashboard.view_all')} →
+                                </Link>
+                            </div>
+                            <div className="space-y-3 p-4">
+                                {open_jobs.map((job) => (
+                                    <div
+                                        key={job.id}
+                                        className="flex flex-col gap-3 rounded-xl border border-[#f1f5f9] p-3 sm:flex-row sm:items-center"
+                                    >
+                                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#0057c8] text-xs font-bold text-white">
+                                                {getInitials(
+                                                    job.company || 'JP',
+                                                )}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-semibold text-[#050315]">
+                                                    {job.title}
+                                                </p>
+                                                <p className="text-xs text-[#99a1af]">
+                                                    {job.company}
+                                                </p>
+                                                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#6a7282]">
+                                                    {job.location && (
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <MapPin className="size-3 shrink-0" />
+                                                            {job.location}
+                                                        </span>
+                                                    )}
+                                                    {job.type && (
+                                                        <>
+                                                            {job.location && (
+                                                                <span className="text-[#d1d5db]">
+                                                                    ·
+                                                                </span>
+                                                            )}
+                                                            <span>{job.type}</span>
+                                                        </>
+                                                    )}
+                                                    {job.salary && (
+                                                        <>
+                                                            {(job.location ||
+                                                                job.type) && (
+                                                                    <span className="text-[#d1d5db]">
+                                                                        ·
+                                                                    </span>
+                                                                )}
+                                                            <span className="font-semibold text-[#0057c8]">
+                                                                {job.salary}
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex shrink-0 items-center gap-2 sm:justify-end">
+                                            {job.job_url && (
+                                                <Link
+                                                    href={job.job_url}
+                                                    className="inline-flex items-center justify-center rounded-xl border border-[#e2e8f0] px-3 py-2 text-xs font-bold text-[#0057c8] hover:bg-[#f8faff]"
+                                                >
+                                                    {t(
+                                                        'job_seeker.dashboard.view_job',
+                                                    )}
+                                                </Link>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleApply(job.id)
+                                                }
+                                                disabled={
+                                                    applyingJobId === job.id
+                                                }
+                                                className="inline-flex items-center justify-center rounded-xl bg-[#0057c8] px-3 py-2 text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
+                                            >
+                                                {applyingJobId === job.id
+                                                    ? t(
+                                                        'job_seeker.dashboard.applying',
+                                                    )
+                                                    : t(
+                                                        'job_seeker.dashboard.apply',
+                                                    )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {open_jobs.length === 0 && (
+                                    <p className="text-sm text-[#99a1af]">
+                                        {t(
+                                            'job_seeker.dashboard.no_open_jobs',
+                                        )}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
                         <div className="rounded-2xl border border-[#e2e8f0] bg-white shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
                             <div className="flex items-center justify-between border-b border-[#f1f5f9] p-5">
                                 <h2 className="text-base font-bold text-[#050315]">
@@ -256,7 +391,7 @@ export default function JobSeekerDashboard({
                                     {t('job_seeker.dashboard.update_profile')}
                                 </Link>
                                 <Link
-                                    href="/jobs"
+                                    href="/job-seeker/jobs"
                                     className="flex items-center gap-3 rounded-xl border border-[#e2e8f0] bg-[#f8faff] px-4 py-3 text-sm font-semibold text-[#0057c8] hover:bg-white"
                                 >
                                     <Briefcase className="size-4" />

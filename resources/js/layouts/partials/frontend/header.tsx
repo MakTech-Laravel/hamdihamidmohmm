@@ -1,12 +1,108 @@
-import { Link, usePage } from '@inertiajs/react';
-import { Menu, X } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { ChevronDown, LayoutDashboard, LogOut, Menu, UserRound, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { LanguageSwitcher } from '@/components/language-switcher';
-import BrandLogo from '@/components/brand-logo';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { getInitials } from '@/components/job-seeker/demo-data';
 import { useLocale } from '@/hooks/use-locale';
 import { about, contact, home, jobs, login, pricing, register, training } from '@/routes';
 import type { SharedData } from '@/types';
+
+function FrontendUserMenu({
+    user,
+    compact = false,
+}: {
+    user: NonNullable<SharedData['auth']['user']>;
+    compact?: boolean;
+}) {
+    const { t } = useLocale();
+    const [avatarFailed, setAvatarFailed] = useState(false);
+    const displayName = user.name || user.email;
+    const initials = getInitials(displayName);
+    const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
+    const dashboardUrl =
+        typeof user.dashboard_url === 'string' && user.dashboard_url !== ''
+            ? user.dashboard_url
+            : '/dashboard';
+    const profileUrl =
+        typeof user.profile_url === 'string' && user.profile_url !== ''
+            ? user.profile_url
+            : dashboardUrl;
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    type="button"
+                    className={
+                        compact
+                            ? 'inline-flex max-w-[280px] items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-base font-medium text-[#d1f6ff] transition hover:bg-white/10'
+                            : 'inline-flex max-w-[280px] items-center gap-2.5 rounded-xl border border-[#d1f6ff] bg-white px-3 py-2 text-base font-semibold text-[#050315] transition hover:bg-[#f8faff]'
+                    }
+                    aria-label={t('nav.account_menu')}
+                >
+                    {showAvatar ? (
+                        <img
+                            src={user.avatar_url}
+                            alt=""
+                            onError={() => setAvatarFailed(true)}
+                            className="size-11 shrink-0 rounded-full object-cover"
+                        />
+                    ) : (
+                        <span
+                            className={
+                                compact
+                                    ? 'flex size-11 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white'
+                                    : 'flex size-11 shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-sm font-bold text-white'
+                            }
+                        >
+                            {initials}
+                        </span>
+                    )}
+                    <span className="min-w-0 truncate">{displayName}</span>
+                    <ChevronDown className="size-5 shrink-0 opacity-80" />
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[200px]">
+                <DropdownMenuLabel className="font-normal">
+                    <p className="truncate text-sm font-semibold text-[#050315]">
+                        {displayName}
+                    </p>
+                    <p className="truncate text-xs text-[#64748b]">{user.email}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link href={dashboardUrl} className="cursor-pointer">
+                        <LayoutDashboard className="mr-2 size-4" />
+                        {t('nav.dashboard')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href={profileUrl} className="cursor-pointer">
+                        <UserRound className="mr-2 size-4" />
+                        {t('common.profile')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                    className="cursor-pointer text-[#b91c1c] focus:text-[#b91c1c]"
+                    onSelect={() => router.post('/logout')}
+                >
+                    <LogOut className="mr-2 size-4" />
+                    {t('common.logout')}
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
 
 export function FrontendHeader() {
     const { auth } = usePage<SharedData>().props;
@@ -15,6 +111,7 @@ export function FrontendHeader() {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const currentPath = url.split('?')[0] ?? '/';
+    const user = auth.user;
 
     const navItems = [
         { label: t('nav.home'), href: home.url(), match: '/' },
@@ -42,8 +139,10 @@ export function FrontendHeader() {
             <div className="border-b border-black/0 bg-white">
                 <div className="mx-auto flex h-[72px] max-w-[1344px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
                     <Link href={home()} className="shrink-0">
-                        <BrandLogo
-                            className="h-[65px] w-[98px]"
+                        <img
+                            src="/images/home/logo.png"
+                            alt={t('app.name')}
+                            className="h-[65px] w-[98px] object-contain"
                             width={98}
                             height={65}
                         />
@@ -73,13 +172,8 @@ export function FrontendHeader() {
                     </nav>
 
                     <div className="hidden items-center gap-2 lg:flex">
-                        {auth.user ? (
-                            <Link
-                                href="/dashboard"
-                                className="rounded-lg bg-[#0057c8] px-4 py-2 text-base font-medium tracking-[-0.18px] text-[#d1f6ff] transition hover:brightness-110"
-                            >
-                                {t('nav.dashboard')}
-                            </Link>
+                        {user ? (
+                            <FrontendUserMenu user={user} />
                         ) : (
                             <>
                                 <Link
@@ -125,7 +219,11 @@ export function FrontendHeader() {
                         <div className="mt-3 border-t border-[#e2e8f0] pt-3">
                             <LanguageSwitcher variant="footer" />
                         </div>
-                        {!auth.user && (
+                        {user ? (
+                            <div className="mt-4 border-t border-[#e2e8f0] pt-4">
+                                <FrontendUserMenu user={user} />
+                            </div>
+                        ) : (
                             <div className="mt-4 flex gap-2">
                                 <Link
                                     href={register()}

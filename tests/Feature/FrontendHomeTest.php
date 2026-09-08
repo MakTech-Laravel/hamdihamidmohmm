@@ -10,18 +10,24 @@ use Database\Seeders\PackageSeeder;
 test('home page can be rendered', function () {
     $this->get(route('home'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('frontend/home')
             ->has('recommendedJobs'));
 });
 
 test('authenticated users can still view the home page', function () {
-    $user = User::factory()->jobSeeker()->create();
+    $user = User::factory()->jobSeeker()->create([
+        'name' => 'Amina Seeker',
+    ]);
 
     $this->actingAs($user)
         ->get(route('home'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page->component('frontend/home'));
+        ->assertInertia(fn ($page) => $page
+            ->component('frontend/home')
+            ->where('auth.user.name', 'Amina Seeker')
+            ->where('auth.user.dashboard_url', route('job-seeker.dashboard', absolute: false))
+            ->where('auth.user.profile_url', route('job-seeker.profile', absolute: false)));
 });
 
 test('home page only shows active public packages', function () {
@@ -40,10 +46,10 @@ test('home page only shows active public packages', function () {
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('frontend/home')
             ->has('packages', 2)
-            ->where('packages', fn($packages) => collect($packages)->pluck('name')->doesntContain('Single Posting')
+            ->where('packages', fn ($packages) => collect($packages)->pluck('name')->doesntContain('Single Posting')
                 && collect($packages)->pluck('name')->doesntContain('Hidden Draft')
                 && collect($packages)->pluck('name')->doesntContain('Starter')
                 && collect($packages)->pluck('name')->contains('Business Package')
@@ -72,7 +78,7 @@ test('home page shows recommended active jobs dynamically', function () {
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('frontend/home')
             ->has('recommendedJobs', 1)
             ->where('recommendedJobs.0.title', 'Recommended Laravel Engineer')

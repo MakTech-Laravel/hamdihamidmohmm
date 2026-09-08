@@ -5,15 +5,16 @@ import {
     ChevronLeft,
     LayoutDashboard,
     LogOut,
+    Search,
     Settings,
     UserRound,
 } from 'lucide-react';
 import { useState } from 'react';
 
 import { getInitials } from '@/components/job-seeker/demo-data';
-import BrandLogo from '@/components/brand-logo';
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
+import { home } from '@/routes';
 import type { SharedData } from '@/types';
 
 const navItems = [
@@ -22,6 +23,12 @@ const navItems = [
         href: '/job-seeker/dashboard',
         icon: LayoutDashboard,
         match: '/job-seeker/dashboard',
+    },
+    {
+        titleKey: 'job_seeker.nav.jobs',
+        href: '/job-seeker/jobs',
+        icon: Search,
+        match: '/job-seeker/jobs',
     },
     {
         titleKey: 'job_seeker.nav.profile',
@@ -73,15 +80,30 @@ export function JobSeekerSidebar({
                 'hidden md:flex',
             )}
         >
-            <div className="flex h-[72px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
-                <BrandLogo
-                    className={cn(
-                        'object-contain',
-                        collapsed ? 'h-[48px] w-[72px]' : 'h-[65px] w-[98px]',
+            <div className="flex h-[60px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
+                <Link
+                    href={home()}
+                    className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80"
+                    aria-label={t('nav.home')}
+                >
+                    <img
+                        src="/images/admin/logo.png"
+                        alt={t('app.name')}
+                        className="h-[51px] w-[76px] shrink-0 object-contain"
+                        width={76}
+                        height={51}
+                    />
+                    {!collapsed && (
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-[#050315]">
+                                {t('app.name')}
+                            </p>
+                            <p className="truncate text-xs text-[#3977a6]">
+                                {t('job_seeker.portal')}
+                            </p>
+                        </div>
                     )}
-                    width={collapsed ? 72 : 98}
-                    height={collapsed ? 48 : 65}
-                />
+                </Link>
             </div>
 
             <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-4">

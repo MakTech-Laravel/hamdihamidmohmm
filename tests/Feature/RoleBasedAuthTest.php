@@ -25,7 +25,7 @@ test('employer registration screen can be rendered', function () {
             ->where('isEmployer', true));
 });
 
-test('job seekers can register and land on the job seeker dashboard', function () {
+test('job seekers can register and land on the job seeker profile', function () {
     $response = $this->post(route('register.store'), [
         'name' => 'Amina Seeker',
         'email' => 'seeker@example.com',
@@ -43,7 +43,7 @@ test('job seekers can register and land on the job seeker dashboard', function (
         ->and($user->role)->toBe(UserRole::JobSeeker)
         ->and($user->company_name)->toBeNull();
 
-    $response->assertRedirect(route('job-seeker.dashboard', absolute: false));
+    $response->assertRedirect(route('job-seeker.profile', absolute: false));
 });
 
 test('employers can register and land on the employer dashboard', function () {
@@ -80,13 +80,13 @@ test('registration requires an accepted terms agreement', function () {
     $this->assertGuest();
 });
 
-test('job seekers are redirected to their dashboard after login', function () {
+test('job seekers are redirected to their profile after login', function () {
     $user = User::factory()->jobSeeker()->create();
 
     $this->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'password',
-    ])->assertRedirect(route('job-seeker.dashboard', absolute: false));
+    ])->assertRedirect(route('job-seeker.profile', absolute: false));
 });
 
 test('employers are redirected to their dashboard after login', function () {

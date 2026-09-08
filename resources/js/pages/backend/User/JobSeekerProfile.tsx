@@ -18,10 +18,14 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode 
 
 import {
     destroyCertificationDocument,
+    destroyCoverLetter,
+    destroyHighestDegree,
     destroyPhoto,
     destroyResume,
     update as updateProfile,
     uploadCertificationDocument,
+    uploadCoverLetter,
+    uploadHighestDegree,
     uploadPhoto,
     uploadResume,
 } from '@/actions/App/Http/Controllers/Backend/User/JobSeekerProfileController';
@@ -103,6 +107,10 @@ type Profile = {
     resume_status: string | null;
     resume_name: string | null;
     resume_url: string | null;
+    cover_letter_name: string | null;
+    cover_letter_url: string | null;
+    highest_degree_name: string | null;
+    highest_degree_url: string | null;
     completion: number;
     checklist: ChecklistItem[];
 };
@@ -769,11 +777,14 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     processing={false}
                     hideEdit
                 >
-                    <ResumeUploader
+                    <ResumeDocumentsUploader
                         resumeName={profile.resume_name}
                         resumeStatus={profile.resume_status}
                         resumeUrl={profile.resume_url}
-                        extractProfile
+                        coverLetterName={profile.cover_letter_name}
+                        coverLetterUrl={profile.cover_letter_url}
+                        highestDegreeName={profile.highest_degree_name}
+                        highestDegreeUrl={profile.highest_degree_url}
                     />
                 </SectionCard>
 
@@ -1865,7 +1876,6 @@ function ProfilePhotoUploader({
     const { t } = useLocale();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const displayName = name || t('job_seeker.profile.fallback_name');
 
     const onChange = (event: ChangeEvent<HTMLInputElement>): void => {
@@ -1876,27 +1886,12 @@ function ProfilePhotoUploader({
             return;
         }
 
-        if (file.size > 5 * 1024 * 1024) {
-            setError(t('job_seeker.profile.photo_max'));
-
-            return;
-        }
-
         const data = new FormData();
         data.append('photo', file);
-        setError(null);
         setUploading(true);
         router.post(uploadPhoto.url(), data, {
             forceFormData: true,
             preserveScroll: true,
-            onError: (errors) => {
-                setError(
-                    errors.photo ||
-                    Object.values(errors)[0] ||
-                    t('job_seeker.profile.photo_max'),
-                );
-            },
-            onSuccess: () => setError(null),
             onFinish: () => setUploading(false),
         });
     };
@@ -1952,9 +1947,6 @@ function ProfilePhotoUploader({
                         ) : null}
                     </div>
                 ) : null}
-                {error ? (
-                    <p className="mt-2 text-sm text-[#b91c1c]">{error}</p>
-                ) : null}
             </div>
         </div>
     );
@@ -1970,7 +1962,6 @@ function CertificationFileUploader({
     const { t } = useLocale();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const attachments = entry.attachments ?? [];
     const canAddMore = attachments.length < 5;
 
@@ -1982,32 +1973,16 @@ function CertificationFileUploader({
             return;
         }
 
-        if (file.size > 5 * 1024 * 1024) {
-            setError(t('job_seeker.profile.certification_file_max'));
-
-            return;
-        }
-
         const data = new FormData();
         data.append('index', String(index));
         data.append('name', entry.name);
         data.append('issuer', entry.issuer);
         data.append('date', entry.date);
         data.append('document', file);
-        setError(null);
         setUploading(true);
         router.post(uploadCertificationDocument.url(), data, {
             forceFormData: true,
             preserveScroll: true,
-            onError: (errors) => {
-                setError(
-                    errors.document ||
-                    errors.attachments ||
-                    Object.values(errors)[0] ||
-                    t('job_seeker.profile.certification_file_max'),
-                );
-            },
-            onSuccess: () => setError(null),
             onFinish: () => setUploading(false),
         });
     };
@@ -2087,81 +2062,193 @@ function CertificationFileUploader({
                             : t('job_seeker.profile.upload_certificate')}
                 </button>
             </div>
-            {error ? (
-                <p className="mt-2 text-sm text-[#b91c1c]">{error}</p>
-            ) : null}
         </div>
     );
 }
 
-function ResumeUploader({
+function ResumeDocumentsUploader({
     resumeName,
     resumeStatus,
     resumeUrl,
-    extractProfile = true,
+    coverLetterName,
+    coverLetterUrl,
+    highestDegreeName,
+    highestDegreeUrl,
 }: {
     resumeName: string | null;
     resumeStatus: string | null;
     resumeUrl: string | null;
+    coverLetterName: string | null;
+    coverLetterUrl: string | null;
+    highestDegreeName: string | null;
+    highestDegreeUrl: string | null;
+}) {
+    return (
+        <div className="max-w-xl space-y-8">
+            <ProfileDocumentField
+                id="job-seeker-cv-upload"
+                labelKey="job_seeker.profile.resume_label_cv"
+                useExistingKey="job_seeker.profile.resume_use_existing"
+                fieldName="resume"
+                fileName={resumeName}
+                fileUrl={resumeUrl}
+                statusLabel={resumeStatus}
+                extractProfile
+                uploadUrl={uploadResume.url()}
+                destroyUrl={destroyResume.url()}
+            />
+            <ProfileDocumentField
+                id="job-seeker-cover-letter-upload"
+                labelKey="job_seeker.profile.resume_label_cover_letter"
+                useExistingKey="job_seeker.profile.cover_letter_use_existing"
+                fieldName="cover_letter"
+                fileName={coverLetterName}
+                fileUrl={coverLetterUrl}
+                uploadUrl={uploadCoverLetter.url()}
+                destroyUrl={destroyCoverLetter.url()}
+            />
+            <ProfileDocumentField
+                id="job-seeker-highest-degree-upload"
+                labelKey="job_seeker.profile.resume_label_highest_degree"
+                useExistingKey="job_seeker.profile.highest_degree_use_existing"
+                fieldName="highest_degree"
+                fileName={highestDegreeName}
+                fileUrl={highestDegreeUrl}
+                uploadUrl={uploadHighestDegree.url()}
+                destroyUrl={destroyHighestDegree.url()}
+            />
+        </div>
+    );
+}
+
+function ProfileDocumentField({
+    id,
+    labelKey,
+    useExistingKey,
+    fieldName,
+    fileName,
+    fileUrl,
+    statusLabel = null,
+    extractProfile = false,
+    uploadUrl,
+    destroyUrl,
+}: {
+    id: string;
+    labelKey: string;
+    useExistingKey: string;
+    fieldName: 'resume' | 'cover_letter' | 'highest_degree';
+    fileName: string | null;
+    fileUrl: string | null;
+    statusLabel?: string | null;
     extractProfile?: boolean;
+    uploadUrl: string;
+    destroyUrl: string;
 }) {
     const { t } = useLocale();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const resumeForm = useForm<{ resume: File | null; extract_profile: boolean }>({
-        resume: null,
-        extract_profile: extractProfile,
+    const [selectedFileName, setSelectedFileName] = useState<string | null>(
+        null,
+    );
+    const [uploadMode, setUploadMode] = useState<'new' | 'existing'>('new');
+    const form = useForm<Record<string, File | boolean | null>>({
+        [fieldName]: null,
+        ...(extractProfile ? { extract_profile: true } : {}),
     });
 
-    const hasResume = resumeUrl !== null && resumeName !== null;
+    const hasFile = fileUrl !== null && fileName !== null;
 
-    const pickFile = (): void => {
-        fileInputRef.current?.click();
+    const uploadFile = (file: File): void => {
+        setSelectedFileName(file.name);
+        form.setData({
+            [fieldName]: file,
+            ...(extractProfile ? { extract_profile: true } : {}),
+        });
+        form.post(uploadUrl, {
+            forceFormData: true,
+            preserveScroll: true,
+            onFinish: () => {
+                form.setData(fieldName, null);
+                setSelectedFileName(null);
+
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            },
+        });
     };
 
     return (
-        <div className="space-y-3">
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                className="hidden"
-                onChange={(event) => {
-                    const file = event.target.files?.[0] ?? null;
+        <div className="space-y-4">
+            <div className="space-y-2">
+                <label
+                    htmlFor={id}
+                    className="block text-sm font-semibold text-[#101828]"
+                >
+                    {t(labelKey)}
+                </label>
 
-                    if (!file) {
-                        return;
-                    }
+                <input
+                    id={id}
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    disabled={form.processing || uploadMode === 'existing'}
+                    className="block w-full rounded-md border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#364153] file:mr-3 file:rounded file:border-0 file:bg-[#f1f5f9] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#101828] disabled:cursor-not-allowed disabled:opacity-60"
+                    onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
 
-                    if (file.size > 5 * 1024 * 1024) {
-                        resumeForm.setError(
-                            'resume',
-                            t('job_seeker.profile.resume_max'),
-                        );
-                        event.target.value = '';
+                        if (!file || uploadMode !== 'new') {
+                            return;
+                        }
 
-                        return;
-                    }
+                        uploadFile(file);
+                    }}
+                />
 
-                    resumeForm.clearErrors('resume');
-                    resumeForm.setData({
-                        resume: file,
-                        extract_profile: extractProfile,
-                    });
-                    resumeForm.post(uploadResume.url(), {
-                        forceFormData: true,
-                        preserveScroll: true,
-                        onFinish: () => {
-                            resumeForm.setData('resume', null);
+                <select
+                    value={uploadMode}
+                    disabled={form.processing}
+                    onChange={(event) => {
+                        const mode = event.target.value as 'new' | 'existing';
+                        setUploadMode(mode);
 
-                            if (fileInputRef.current) {
-                                fileInputRef.current.value = '';
-                            }
-                        },
-                    });
-                }}
-            />
+                        if (mode === 'new' && fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                            setSelectedFileName(null);
+                        }
+                    }}
+                    className="block w-full max-w-xs rounded-md border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#364153] disabled:opacity-60"
+                >
+                    <option value="new">
+                        {t('job_seeker.profile.resume_upload_new')}
+                    </option>
+                    {hasFile ? (
+                        <option value="existing">
+                            {t(useExistingKey)}
+                            {fileName ? ` — ${fileName}` : ''}
+                        </option>
+                    ) : null}
+                </select>
 
-            {hasResume ? (
+                <p className="text-sm text-[#64748b]">
+                    {t('job_seeker.profile.resume_hint')}
+                </p>
+
+                {form.processing ? (
+                    <p className="text-sm text-[#0057c8]">
+                        {t('job_seeker.profile.uploading')}
+                        {selectedFileName ? ` — ${selectedFileName}` : ''}
+                    </p>
+                ) : null}
+
+                {form.errors[fieldName] ? (
+                    <p className="text-sm text-[#b91c1c]">
+                        {form.errors[fieldName]}
+                    </p>
+                ) : null}
+            </div>
+
+            {hasFile ? (
                 <div className="flex flex-col gap-3 rounded-xl border border-[#e2e8f0] p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-center gap-3">
                         <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#fee2e2] text-sm font-bold text-[#fb2c36]">
@@ -2169,42 +2256,33 @@ function ResumeUploader({
                         </div>
                         <div className="min-w-0">
                             <p className="truncate text-base font-semibold text-[#101828]">
-                                {resumeName}
+                                {fileName}
                             </p>
                             <p className="text-xs text-[#99a1af]">
-                                {translatedOrRaw(
-                                    t,
-                                    `job_seeker.profile.resume_status.${(resumeStatus ?? 'uploaded').toLowerCase()}`,
-                                    resumeStatus ||
-                                    t(
-                                        'job_seeker.profile.resume_status.uploaded',
-                                    ),
-                                )}
+                                {statusLabel
+                                    ? translatedOrRaw(
+                                          t,
+                                          `job_seeker.profile.resume_status.${statusLabel.toLowerCase()}`,
+                                          statusLabel,
+                                      )
+                                    : t(
+                                          'job_seeker.profile.resume_status.uploaded',
+                                      )}
                             </p>
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <a
-                            href={resumeUrl}
+                            href={fileUrl}
                             className="inline-flex items-center justify-center rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
                         >
                             {t('job_seeker.profile.download')}
                         </a>
                         <button
                             type="button"
-                            disabled={resumeForm.processing}
-                            onClick={pickFile}
-                            className="inline-flex items-center justify-center rounded-lg bg-[#0057c8] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
-                        >
-                            {resumeForm.processing
-                                ? t('job_seeker.profile.uploading')
-                                : t('job_seeker.profile.replace')}
-                        </button>
-                        <button
-                            type="button"
                             className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold text-[#fb2c36]"
                             onClick={() =>
-                                router.delete(destroyResume.url(), {
+                                router.delete(destroyUrl, {
                                     preserveScroll: true,
                                 })
                             }
@@ -2213,27 +2291,6 @@ function ResumeUploader({
                         </button>
                     </div>
                 </div>
-            ) : null}
-
-            <button
-                type="button"
-                disabled={resumeForm.processing}
-                onClick={pickFile}
-                className="flex w-full flex-col items-center rounded-xl border-2 border-dashed border-[#cbd5e1] bg-[#f8fafc] px-8 py-8 text-center transition hover:border-[#0057c8]/40 disabled:opacity-60"
-            >
-                <FileUp className="size-8 text-[#64748b]" />
-                <p className="mt-2 text-base font-semibold text-[#364153]">
-                    {t('job_seeker.profile.upload_resume')}
-                </p>
-                <p className="mt-1 text-sm text-[#99a1af]">
-                    {t('job_seeker.profile.resume_hint')}
-                </p>
-            </button>
-
-            {resumeForm.errors.resume ? (
-                <p className="text-sm text-[#b91c1c]">
-                    {resumeForm.errors.resume}
-                </p>
             ) : null}
         </div>
     );

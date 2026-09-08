@@ -2,9 +2,9 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 import { getInitials } from '@/components/employer/demo-data';
-import BrandLogo from '@/components/brand-logo';
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
+import { home } from '@/routes';
 import type { SharedData } from '@/types';
 
 export function EmployerSidebar() {
@@ -65,12 +65,28 @@ export function EmployerSidebar() {
 
     return (
         <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-white">
-            <div className="flex h-[72px] items-center px-4 border-b border-[rgba(57,119,166,0.2)]">
-                <BrandLogo
-                    className="h-[65px] w-[98px]"
-                    width={98}
-                    height={65}
-                />
+            <div className="flex h-[60px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
+                <Link
+                    href={home()}
+                    className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80"
+                    aria-label={t('nav.home')}
+                >
+                    <img
+                        src="/images/admin/logo.png"
+                        alt={t('app.name')}
+                        className="h-[51px] w-[76px] shrink-0 object-contain"
+                        width={76}
+                        height={51}
+                    />
+                    <div className="min-w-0">
+                        <p className="truncate text-sm leading-5 font-bold text-[#050315]">
+                            {t('app.name')}
+                        </p>
+                        <p className="truncate text-xs leading-4 text-[#0057c8]">
+                            {t('employer.portal')}
+                        </p>
+                    </div>
+                </Link>
             </div>
 
             <nav className="flex-1 overflow-y-auto py-4">

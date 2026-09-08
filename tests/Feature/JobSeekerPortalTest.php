@@ -8,9 +8,10 @@ test('job seekers can view their portal pages', function (string $routeName, str
     $this->actingAs($seeker)
         ->get(route($routeName))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component($component));
+        ->assertInertia(fn($page) => $page->component($component));
 })->with([
     'dashboard' => ['job-seeker.dashboard', 'backend/User/JobSeekerDashboard'],
+    'jobs' => ['job-seeker.jobs', 'backend/User/JobSeekerJobs'],
     'profile' => ['job-seeker.profile', 'backend/User/JobSeekerProfile'],
     'applications' => ['job-seeker.applications', 'backend/User/JobSeekerApplications'],
     'notifications' => ['job-seeker.notifications', 'backend/User/JobSeekerNotifications'],
@@ -25,6 +26,7 @@ test('employers cannot access job seeker portal pages', function (string $routeN
         ->assertRedirect(route('employer.dashboard'));
 })->with([
     'dashboard' => ['job-seeker.dashboard'],
+    'jobs' => ['job-seeker.jobs'],
     'profile' => ['job-seeker.profile'],
     'applications' => ['job-seeker.applications'],
     'notifications' => ['job-seeker.notifications'],
@@ -35,6 +37,7 @@ test('guests are redirected from job seeker portal pages', function (string $rou
     $this->get(route($routeName))->assertRedirect(route('login'));
 })->with([
     'dashboard' => ['job-seeker.dashboard'],
+    'jobs' => ['job-seeker.jobs'],
     'profile' => ['job-seeker.profile'],
     'applications' => ['job-seeker.applications'],
     'notifications' => ['job-seeker.notifications'],
