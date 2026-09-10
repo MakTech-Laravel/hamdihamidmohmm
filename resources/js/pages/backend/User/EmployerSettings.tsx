@@ -38,7 +38,6 @@ type Profile = {
     photo_url: string | null;
     personal_initials: string;
 };
-
 const fieldClass =
     'h-[42px] w-full max-w-[550px] rounded-lg border border-[#e8d5e8] bg-white px-3 text-sm text-[#050315] outline-none placeholder:text-[#050315]/50';
 
