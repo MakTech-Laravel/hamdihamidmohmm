@@ -2,12 +2,12 @@ import { Form, Head, Link } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 import { AdminIcon } from '@/components/admin-icon';
-import InputError from '@/components/input-error';
 import {
     RolePermissionPicker,
     type PermissionGroup,
     type PermissionOption,
 } from '@/components/admin-portal/role-permission-picker';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

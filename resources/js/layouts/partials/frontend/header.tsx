@@ -2,6 +2,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { ChevronDown, LayoutDashboard, LogOut, Menu, UserRound, X } from 'lucide-react';
 import { useState } from 'react';
 
+import { getInitials } from '@/components/job-seeker/demo-data';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import {
     DropdownMenu,
@@ -11,7 +12,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getInitials } from '@/components/job-seeker/demo-data';
 import { useLocale } from '@/hooks/use-locale';
 import { about, contact, home, jobs, login, pricing, register, training } from '@/routes';
 import type { SharedData } from '@/types';

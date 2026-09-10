@@ -1,9 +1,9 @@
 import { Head, router, usePage } from '@inertiajs/react';
 
-import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { useLocale } from '@/hooks/use-locale';
-import type { SharedData } from '@/types';
+import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { cn } from '@/lib/utils';
+import type { SharedData } from '@/types';
 
 type NotificationRow = {
     id: string;

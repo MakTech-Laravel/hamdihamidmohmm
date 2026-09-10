@@ -1,9 +1,9 @@
-import { cn } from '@/lib/utils';
-
 import {
     STATUS_STYLES,
     type ApplicationStatus,
 } from '@/components/job-seeker/demo-data';
+import { cn } from '@/lib/utils';
+
 
 export function StatusBadge({
     status,

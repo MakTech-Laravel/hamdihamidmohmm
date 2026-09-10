@@ -3,8 +3,8 @@ import { useMemo, useState } from 'react';
 
 import { ApplicationDetailDrawer } from '@/components/job-seeker/application-detail-drawer';
 import { getInitials } from '@/components/job-seeker/demo-data';
-import { StatusBadge } from '@/components/job-seeker/status-badge';
 import type { ApplicationStatus } from '@/components/job-seeker/demo-data';
+import { StatusBadge } from '@/components/job-seeker/status-badge';
 import { useLocale } from '@/hooks/use-locale';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { cn } from '@/lib/utils';

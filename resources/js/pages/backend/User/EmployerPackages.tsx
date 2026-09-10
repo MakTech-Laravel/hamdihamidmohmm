@@ -2,8 +2,8 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Check, Download } from 'lucide-react';
 import { useState } from 'react';
 
-import EmployerLayout from '@/layouts/employer-layout';
 import { useLocale } from '@/hooks/use-locale';
+import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 

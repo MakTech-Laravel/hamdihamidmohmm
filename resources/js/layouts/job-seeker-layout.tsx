@@ -1,5 +1,5 @@
-import { type ReactNode, useState } from 'react';
 import { usePage } from '@inertiajs/react';
+import { type ReactNode, useState } from 'react';
 
 import { Toaster } from '@/components/ui/sonner';
 import { JobSeekerHeader } from '@/layouts/partials/job-seeker/header';

@@ -2,8 +2,8 @@ import { Link } from '@inertiajs/react';
 import { X } from 'lucide-react';
 
 import { getInitials } from '@/components/job-seeker/demo-data';
-import { StatusBadge } from '@/components/job-seeker/status-badge';
 import type { ApplicationStatus } from '@/components/job-seeker/demo-data';
+import { StatusBadge } from '@/components/job-seeker/status-badge';
 import {
     Sheet,
     SheetClose,

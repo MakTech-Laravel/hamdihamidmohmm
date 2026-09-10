@@ -8,7 +8,7 @@ import {
     Send,
     X,
 } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { getInitials } from '@/components/employer/demo-data';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -97,6 +97,7 @@ export function ApplicationPreviewDrawer({
             >
                 {preview ? (
                     <DrawerBody
+                        key={`${preview.id}-${preview.status_value}`}
                         preview={preview}
                         statuses={statuses}
                         onUpdateStatus={onUpdateStatus}
@@ -124,10 +125,6 @@ function DrawerBody({
     const [selectedStatus, setSelectedStatus] = useState(preview.status_value);
     const resumeEnabled = preview.resume_url !== null;
     const mailto = preview.email !== '—' ? `mailto:${preview.email}` : null;
-
-    useEffect(() => {
-        setSelectedStatus(preview.status_value);
-    }, [preview.id, preview.status_value]);
 
     return (
         <div className="flex h-full flex-col bg-white">

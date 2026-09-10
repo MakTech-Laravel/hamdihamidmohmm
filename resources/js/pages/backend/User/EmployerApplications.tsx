@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
     index,
@@ -121,19 +121,15 @@ export default function EmployerApplications({
     const { t } = useLocale();
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
-    const [viewing, setViewing] = useState<ApplicationRow | null>(null);
+    const [viewingId, setViewingId] = useState<number | null>(null);
 
-    useEffect(() => {
-        if (viewing === null) {
-            return;
-        }
-
-        const fresh = applications.find((row) => row.id === viewing.id);
-
-        if (fresh) {
-            setViewing(fresh);
-        }
-    }, [applications, viewing?.id]);
+    const viewing = useMemo(
+        () =>
+            viewingId === null
+                ? null
+                : (applications.find((row) => row.id === viewingId) ?? null),
+        [applications, viewingId],
+    );
 
     const filtered = useMemo(() => {
         const query = search.toLowerCase();
@@ -340,7 +336,7 @@ export default function EmployerApplications({
                                                             'border border-[#e8d5e8] bg-white text-[#0057c8]',
                                                         )}
                                                         onClick={() =>
-                                                            setViewing(row)
+                                                            setViewingId(row.id)
                                                         }
                                                     >
                                                         {t('common.view')}
@@ -406,7 +402,7 @@ export default function EmployerApplications({
                 open={viewing !== null}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setViewing(null);
+                        setViewingId(null);
                     }
                 }}
                 preview={viewing ? toPreview(viewing, t) : null}

@@ -1,7 +1,7 @@
+import { router } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { router } from '@inertiajs/react';
 
 import { cn } from '@/lib/utils';
 

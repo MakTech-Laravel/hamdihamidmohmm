@@ -35,7 +35,7 @@ const statusTone: Record<string, string> = {
     rejected: 'bg-[#f3f4f6] text-[#6b7280]',
 };
 
-const filterIds = ['all', 'active', 'draft', 'expired', 'closed'] as const;
+type FilterId = 'all' | 'active' | 'draft' | 'expired' | 'closed';
 
 const formatJobType = (type: string | null): string => {
     if (!type) {
@@ -53,7 +53,7 @@ const actionClass =
 export default function EmployerJobs({ jobs, stats, plan }: Props) {
     const { t } = useLocale();
     const [search, setSearch] = useState('');
-    const [filter, setFilter] = useState<(typeof filterIds)[number]>('all');
+    const [filter, setFilter] = useState<FilterId>('all');
 
     const filters = [
         { id: 'all' as const, label: t('common.all') },

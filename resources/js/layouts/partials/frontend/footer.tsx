@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
 
-import { LanguageSwitcher } from '@/components/language-switcher';
 import BrandLogo from '@/components/brand-logo';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { useLocale } from '@/hooks/use-locale';
 import { about, contact, home, jobs, pricing, training } from '@/routes';
 
