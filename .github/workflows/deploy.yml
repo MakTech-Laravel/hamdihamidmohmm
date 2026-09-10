@@ -95,11 +95,41 @@ jobs:
           npm run build
 
       - name: Setup SSH key
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          HOST: ${{ secrets.HOSTINGER_HOST }}
+          PORT: ${{ secrets.HOSTINGER_PORT }}
+          USER: ${{ secrets.HOSTINGER_USER }}
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 700 ~/.ssh
+
+          if [ -z "${SSH_KEY:-}" ]; then
+            echo "HOSTINGER_SSH_KEY secret is empty"
+            exit 1
+          fi
+
+          # Write private key safely (preserve newlines, strip Windows CR)
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "${{ secrets.HOSTINGER_PORT }}" -H "${{ secrets.HOSTINGER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
+            echo "HOSTINGER_SSH_KEY is not a valid OpenSSH private key"
+            echo "Paste the full private key including BEGIN/END lines into the GitHub secret"
+            exit 1
+          fi
+
+          ssh-keyscan -p "${PORT}" -H "${HOST}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          echo "Testing SSH auth as ${USER}@${HOST}:${PORT} ..."
+          ssh -i ~/.ssh/deploy_key \
+            -p "${PORT}" \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=accept-new \
+            -o ConnectTimeout=15 \
+            "${USER}@${HOST}" "echo SSH_OK"
 
       - name: Rsync application to Hostinger
         env:
@@ -121,7 +151,7 @@ jobs:
             --exclude='storage/framework/views/*' \
             --exclude='storage/app/public/*' \
             --exclude='database/*.sqlite' \
-            -e "ssh -i ~/.ssh/deploy_key -p ${PORT} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+            -e "ssh -i ~/.ssh/deploy_key -p ${PORT} -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
             ./ "${USER}@${HOST}:${PATH_REMOTE}/"
 
       - name: Remote Composer, migrate, and optimize
