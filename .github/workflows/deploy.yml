@@ -1,23 +1,149 @@
+name: Deploy to Hostinger
+
+# Auto-deploy ONLY when code is pushed to the `live` branch.
+# Manual runs are also limited to the `live` branch via the job `if` below.
+on:
+  push:
+    branches:
+      - live
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hostinger-live
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests
+    if: github.ref == 'refs/heads/live'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite
+          tools: composer:v2
+
+      - name: Copy env
+        run: cp .env.example .env
+
+      - name: Install Composer deps
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Generate APP_KEY
+        run: php artisan key:generate
+
+      - name: Prepare SQLite
+        run: |
+          mkdir -p database
+          touch database/database.sqlite
+
+      - name: Run migrations
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan migrate --force
+
+      - name: Run tests
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan test
+
+  deploy:
+    name: Deploy
+    needs: test
+    if: github.ref == 'refs/heads/live'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install npm deps and build assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${{ secrets.HOSTINGER_PORT }}" -H "${{ secrets.HOSTINGER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Rsync application to Hostinger
+        env:
+          HOST: ${{ secrets.HOSTINGER_HOST }}
+          USER: ${{ secrets.HOSTINGER_USER }}
+          PORT: ${{ secrets.HOSTINGER_PORT }}
+          PATH_REMOTE: ${{ secrets.HOSTINGER_PATH }}
+        run: |
+          rsync -az --delete \
+            --exclude='.env' \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='node_modules/' \
+            --exclude='vendor/' \
+            --exclude='tests/' \
+            --exclude='storage/logs/*' \
+            --exclude='storage/framework/cache/data/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            --exclude='storage/app/public/*' \
+            --exclude='database/*.sqlite' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${PORT} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+            ./ "${USER}@${HOST}:${PATH_REMOTE}/"
+
+      - name: Remote Composer, migrate, and optimize
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          script_stop: true
           script: |
             set -e
+            APP_DIR="${{ secrets.HOSTINGER_PATH }}"
+            PHP_BIN="/opt/alt/php84/usr/bin/php"
+            cd "$APP_DIR"
 
-            # allow git to update files (storage/cache can block reset)
-            sudo chown -R deploy:deploy /var/www/willwrite/storage /var/www/willwrite/bootstrap/cache
+            if command -v composer >/dev/null 2>&1; then
+              COMPOSER_BIN="$(command -v composer)"
+            elif [ -f "$HOME/composer.phar" ]; then
+              COMPOSER_BIN="$HOME/composer.phar"
+            elif [ -f /usr/local/bin/composer ]; then
+              COMPOSER_BIN="/usr/local/bin/composer"
+            else
+              echo "Composer not found on server"
+              exit 1
+            fi
 
-            cd /var/www/willwrite
-            git fetch --all
-            git reset --hard origin/main
+            "$PHP_BIN" "$COMPOSER_BIN" install --no-dev --optimize-autoloader --no-interaction
 
-            composer install --no-dev --optimize-autoloader
-            php artisan migrate --force
-            php artisan optimize:clear
+            mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache
+            chmod -R ug+rwx storage bootstrap/cache
 
-            npm ci
-            npm run build
+            "$PHP_BIN" artisan migrate --force
+            "$PHP_BIN" artisan storage:link || true
+            "$PHP_BIN" artisan optimize:clear
+            "$PHP_BIN" artisan config:cache
+            "$PHP_BIN" artisan route:cache
+            "$PHP_BIN" artisan view:cache
 
-            # restore correct runtime permissions
-            sudo chown -R www-data:www-data storage bootstrap/cache
-            sudo chmod -R 775 storage bootstrap/cache
-
-            sudo systemctl reload php8.3-fpm
-            sudo systemctl reload nginx
+            echo "Deploy finished successfully"
