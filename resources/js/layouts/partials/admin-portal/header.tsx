@@ -53,18 +53,6 @@ export function AdminPortalHeader({
                 >
                     <AdminIcon src="/images/admin/header-menu.svg" size={18} />
                 </button>
-                <div className="relative hidden max-w-[400px] flex-1 sm:block">
-                    <AdminIcon
-                        src="/images/admin/header-search.svg"
-                        size={14}
-                        className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
-                    />
-                    <input
-                        type="search"
-                        placeholder={t('admin.search_placeholder')}
-                        className="h-[34px] w-full rounded-lg border border-[#e2e8f0] bg-[#f8faff] pr-3 pl-8 text-xs text-[#050315] outline-none focus:border-[#0057c8]"
-                    />
-                </div>
             </div>
 
             <div className="flex items-center gap-3">
