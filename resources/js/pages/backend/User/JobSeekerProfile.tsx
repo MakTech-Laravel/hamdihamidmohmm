@@ -20,12 +20,14 @@ import {
     destroyCertificationDocument,
     destroyCoverLetter,
     destroyHighestDegree,
+    destroyOtherDocument,
     destroyPhoto,
     destroyResume,
     update as updateProfile,
     uploadCertificationDocument,
     uploadCoverLetter,
     uploadHighestDegree,
+    uploadOtherDocument,
     uploadPhoto,
     uploadResume,
 } from '@/actions/App/Http/Controllers/Backend/User/JobSeekerProfileController';
@@ -111,6 +113,8 @@ type Profile = {
     cover_letter_url: string | null;
     highest_degree_name: string | null;
     highest_degree_url: string | null;
+    other_document_name: string | null;
+    other_document_url: string | null;
     completion: number;
     checklist: ChecklistItem[];
 };
@@ -163,13 +167,6 @@ const sectionMeta: Array<{
     tone: string;
 }> = [
         {
-            id: 'resume',
-            labelKey: 'job_seeker.profile.resume',
-            icon: Download,
-            emoji: '📄',
-            tone: 'bg-[#dcfce7] text-[#15803d]',
-        },
-        {
             id: 'personal',
             labelKey: 'job_seeker.profile.personal',
             icon: UserRound,
@@ -217,6 +214,13 @@ const sectionMeta: Array<{
             icon: Award,
             emoji: '🏅',
             tone: 'bg-[#fee2e2] text-[#b91c1c]',
+        },
+        {
+            id: 'resume',
+            labelKey: 'job_seeker.profile.resume',
+            icon: Download,
+            emoji: '📄',
+            tone: 'bg-[#dcfce7] text-[#15803d]',
         },
     ];
 
@@ -764,29 +768,6 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                         );
                     })}
                 </div>
-
-                <SectionCard
-                    id="resume"
-                    title={t('job_seeker.profile.resume')}
-                    emoji="📄"
-                    complete={completeMap.resume ?? false}
-                    editing={false}
-                    onEdit={() => undefined}
-                    onCancel={() => undefined}
-                    onSave={() => undefined}
-                    processing={false}
-                    hideEdit
-                >
-                    <ResumeDocumentsUploader
-                        resumeName={profile.resume_name}
-                        resumeStatus={profile.resume_status}
-                        resumeUrl={profile.resume_url}
-                        coverLetterName={profile.cover_letter_name}
-                        coverLetterUrl={profile.cover_letter_url}
-                        highestDegreeName={profile.highest_degree_name}
-                        highestDegreeUrl={profile.highest_degree_url}
-                    />
-                </SectionCard>
 
                 <SectionCard
                     id="personal"
@@ -1818,6 +1799,31 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                         </div>
                     )}
                 </SectionCard>
+
+                <SectionCard
+                    id="resume"
+                    title={t('job_seeker.profile.resume')}
+                    emoji="📄"
+                    complete={completeMap.resume ?? false}
+                    editing={false}
+                    onEdit={() => undefined}
+                    onCancel={() => undefined}
+                    onSave={() => undefined}
+                    processing={false}
+                    hideEdit
+                >
+                    <ResumeDocumentsUploader
+                        resumeName={profile.resume_name}
+                        resumeStatus={profile.resume_status}
+                        resumeUrl={profile.resume_url}
+                        coverLetterName={profile.cover_letter_name}
+                        coverLetterUrl={profile.cover_letter_url}
+                        highestDegreeName={profile.highest_degree_name}
+                        highestDegreeUrl={profile.highest_degree_url}
+                        otherDocumentName={profile.other_document_name}
+                        otherDocumentUrl={profile.other_document_url}
+                    />
+                </SectionCard>
             </div>
         </JobSeekerLayout>
     );
@@ -2074,6 +2080,8 @@ function ResumeDocumentsUploader({
     coverLetterUrl,
     highestDegreeName,
     highestDegreeUrl,
+    otherDocumentName,
+    otherDocumentUrl,
 }: {
     resumeName: string | null;
     resumeStatus: string | null;
@@ -2082,6 +2090,8 @@ function ResumeDocumentsUploader({
     coverLetterUrl: string | null;
     highestDegreeName: string | null;
     highestDegreeUrl: string | null;
+    otherDocumentName: string | null;
+    otherDocumentUrl: string | null;
 }) {
     return (
         <div className="max-w-xl space-y-8">
@@ -2117,6 +2127,16 @@ function ResumeDocumentsUploader({
                 uploadUrl={uploadHighestDegree.url()}
                 destroyUrl={destroyHighestDegree.url()}
             />
+            <ProfileDocumentField
+                id="job-seeker-other-document-upload"
+                labelKey="job_seeker.profile.resume_label_other"
+                useExistingKey="job_seeker.profile.other_document_use_existing"
+                fieldName="other_document"
+                fileName={otherDocumentName}
+                fileUrl={otherDocumentUrl}
+                uploadUrl={uploadOtherDocument.url()}
+                destroyUrl={destroyOtherDocument.url()}
+            />
         </div>
     );
 }
@@ -2136,7 +2156,7 @@ function ProfileDocumentField({
     id: string;
     labelKey: string;
     useExistingKey: string;
-    fieldName: 'resume' | 'cover_letter' | 'highest_degree';
+    fieldName: 'resume' | 'cover_letter' | 'highest_degree' | 'other_document';
     fileName: string | null;
     fileUrl: string | null;
     statusLabel?: string | null;

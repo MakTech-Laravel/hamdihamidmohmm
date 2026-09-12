@@ -22,3 +22,16 @@ it('links portal notification buttons to their notifications pages', function (s
         '/job-seeker/notifications',
     ],
 ]);
+
+it('wires the admin portal user menu to profile and logout', function () use ($resources) {
+    $path = $resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'partials' . DIRECTORY_SEPARATOR . 'admin-portal' . DIRECTORY_SEPARATOR . 'header.tsx';
+    $contents = file_get_contents($path);
+
+    expect($contents)->not->toBeFalse()
+        ->toContain('DropdownMenu')
+        ->toContain('admin.header.user_menu')
+        ->toContain('/settings/profile')
+        ->toContain("router.post('/logout')")
+        ->toContain('common.profile')
+        ->toContain('common.log_out');
+});

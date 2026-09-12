@@ -8,6 +8,7 @@ use App\Http\Requests\Backend\User\UpdateJobSeekerProfileRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerCertificationRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerCoverLetterRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerHighestDegreeRequest;
+use App\Http\Requests\Backend\User\UploadJobSeekerOtherDocumentRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerPhotoRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerResumeRequest;
 use App\Models\JobSeekerProfile;
@@ -36,6 +37,8 @@ class JobSeekerProfileController extends Controller
             && Storage::disk('local')->exists((string) $user->cover_letter_path);
         $hasHighestDegree = filled($user?->highest_degree_path)
             && Storage::disk('local')->exists((string) $user->highest_degree_path);
+        $hasOtherDocument = filled($user?->other_document_path)
+            && Storage::disk('local')->exists((string) $user->other_document_path);
 
         $photoUrl = $user?->avatar_url;
 
@@ -88,6 +91,8 @@ class JobSeekerProfileController extends Controller
                 'cover_letter_url' => $hasCoverLetter ? route('job-seeker.profile.cover-letter.download') : null,
                 'highest_degree_name' => $hasHighestDegree ? $user?->highest_degree_original_name : null,
                 'highest_degree_url' => $hasHighestDegree ? route('job-seeker.profile.highest-degree.download') : null,
+                'other_document_name' => $hasOtherDocument ? $user?->other_document_original_name : null,
+                'other_document_url' => $hasOtherDocument ? route('job-seeker.profile.other-document.download') : null,
                 'completion' => $profile->exists ? $profile->completionPercent() : 0,
                 'checklist' => $profile->checklist($user),
             ],
@@ -158,7 +163,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('public')->delete((string) $user->avatar);
         }
 
-        $path = $photo->store('avatars/' . $user->id, 'public');
+        $path = $photo->store('avatars/'.$user->id, 'public');
 
         $user->forceFill([
             'avatar' => $path,
@@ -216,7 +221,7 @@ class JobSeekerProfileController extends Controller
             return back()->withErrors(['document' => __('job_seeker.profile.certification_attachments_max')]);
         }
 
-        $path = $document->store('certifications/' . $user->id, 'local');
+        $path = $document->store('certifications/'.$user->id, 'local');
 
         $attachments[] = [
             'file_path' => $path,
@@ -317,7 +322,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('local')->delete($user->resume_path);
         }
 
-        $path = $resume->store('resumes/' . $user->id, 'local');
+        $path = $resume->store('resumes/'.$user->id, 'local');
 
         $user->forceFill([
             'resume_path' => $path,
@@ -488,6 +493,63 @@ class JobSeekerProfileController extends Controller
         return back()->with('success', __('job_seeker.profile.highest_degree_removed'));
     }
 
+    public function uploadOtherDocument(UploadJobSeekerOtherDocumentRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        $file = $request->file('other_document');
+
+        if ($user === null || $file === null) {
+            return back()->withErrors(['other_document' => __('job_seeker.profile.other_document_required')]);
+        }
+
+        if (filled($user->other_document_path)) {
+            Storage::disk('local')->delete($user->other_document_path);
+        }
+
+        $path = $file->store('other-documents/'.$user->id, 'local');
+
+        $user->forceFill([
+            'other_document_path' => $path,
+            'other_document_original_name' => $file->getClientOriginalName(),
+        ])->save();
+
+        return back()->with('success', __('job_seeker.profile.other_document_uploaded'));
+    }
+
+    public function downloadOtherDocument(Request $request): StreamedResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user !== null
+                && filled($user->other_document_path)
+                && Storage::disk('local')->exists((string) $user->other_document_path),
+            404,
+        );
+
+        $downloadName = $user->other_document_original_name ?: basename((string) $user->other_document_path);
+
+        return Storage::disk('local')->download((string) $user->other_document_path, $downloadName);
+    }
+
+    public function destroyOtherDocument(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user?->isJobSeeker() === true, 403);
+
+        if (filled($user->other_document_path)) {
+            Storage::disk('local')->delete((string) $user->other_document_path);
+        }
+
+        $user->forceFill([
+            'other_document_path' => null,
+            'other_document_original_name' => null,
+        ])->save();
+
+        return back()->with('success', __('job_seeker.profile.other_document_removed'));
+    }
+
     /**
      * @param  array<int, mixed>  $incoming
      * @param  array<int, mixed>  $previous
@@ -509,9 +571,9 @@ class JobSeekerProfileController extends Controller
                 ];
 
                 $attachments = collect($this->normalizeAttachmentList($record))
-                    ->filter(fn(array $file): bool => filled($file['file_path'] ?? null)
+                    ->filter(fn (array $file): bool => filled($file['file_path'] ?? null)
                         && Storage::disk('local')->exists((string) $file['file_path']))
-                    ->map(fn(array $file): array => [
+                    ->map(fn (array $file): array => [
                         'file_path' => (string) $file['file_path'],
                         'file_name' => filled($file['file_name'] ?? null)
                             ? (string) $file['file_name']
@@ -526,7 +588,7 @@ class JobSeekerProfileController extends Controller
 
                 return $normalized;
             })
-            ->filter(fn(array $entry): bool => $entry['name'] !== ''
+            ->filter(fn (array $entry): bool => $entry['name'] !== ''
                 || $entry['issuer'] !== ''
                 || $entry['date'] !== ''
                 || isset($entry['attachments']))
@@ -541,8 +603,8 @@ class JobSeekerProfileController extends Controller
     private function deleteOrphanedCertificationFiles(array $previous, array $current): void
     {
         $keep = collect($current)
-            ->flatMap(fn(mixed $item): array => is_array($item) ? $this->normalizeAttachmentList($item) : [])
-            ->map(fn(array $file): ?string => $file['file_path'] ?? null)
+            ->flatMap(fn (mixed $item): array => is_array($item) ? $this->normalizeAttachmentList($item) : [])
+            ->map(fn (array $file): ?string => $file['file_path'] ?? null)
             ->filter()
             ->values()
             ->all();

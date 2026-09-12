@@ -2,6 +2,11 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 import {
+    approve,
+    index,
+    reject,
+} from '@/actions/App/Http/Controllers/Backend/Admin/JobManagementController';
+import {
     AdminPageHeader,
     AdminPanel,
     AdminPrimaryButton,
@@ -35,6 +40,9 @@ type Job = {
     status: string;
     created: string | null;
     description: string | null;
+    requirements: string | null;
+    skills: string[];
+    experience_level: string | null;
     employment_type: string | null;
     salary_range: string | null;
     rejection_reason: string | null;
@@ -48,6 +56,29 @@ export default function JobShow({ job }: { job: Job }) {
     const [rejectOpen, setRejectOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
 
+    const complianceItems = [
+        {
+            label: t('admin.jobs.compliance.description'),
+            ok: filled(job.description),
+        },
+        {
+            label: t('admin.jobs.compliance.requirements'),
+            ok: filled(job.requirements),
+        },
+        {
+            label: t('admin.jobs.compliance.skills'),
+            ok: job.skills.length > 0,
+        },
+        {
+            label: t('admin.jobs.compliance.dates'),
+            ok: filled(job.created) || filled(job.expires_at),
+        },
+        {
+            label: t('admin.jobs.compliance.employer_contact'),
+            ok: filled(job.employer_email),
+        },
+    ];
+
     return (
         <AdminPortalLayout>
             <Head title={job.title} />
@@ -58,7 +89,7 @@ export default function JobShow({ job }: { job: Job }) {
                     subtitle={`${job.employer} · ${job.location}`}
                     actions={
                         <div className="flex flex-wrap gap-2">
-                            <Link href="/admin/jobs">
+                            <Link href={index.url()}>
                                 <AdminSecondaryButton>
                                     {t('common.back')}
                                 </AdminSecondaryButton>
@@ -67,9 +98,7 @@ export default function JobShow({ job }: { job: Job }) {
                                 <>
                                     <AdminPrimaryButton
                                         onClick={() =>
-                                            router.post(
-                                                `/admin/jobs/${job.id}/approve`,
-                                            )
+                                            router.post(approve.url(job.id))
                                         }
                                     >
                                         {t('common.approve')}
@@ -96,52 +125,134 @@ export default function JobShow({ job }: { job: Job }) {
                 )}
 
                 <div className="grid gap-4 lg:grid-cols-3">
-                    <AdminPanel className="lg:col-span-2">
-                        <h2 className="text-base font-bold text-[#050315]">
-                            {t('common.description')}
-                        </h2>
-                        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#475569]">
-                            {job.description || t('admin.jobs.no_description')}
-                        </p>
-                    </AdminPanel>
-                    <AdminPanel className="space-y-3">
-                        <AdminStatusBadge label={job.status} tone="info" />
-                        <p className="text-sm text-[#64748b]">
-                            {t('admin.jobs.fields.employer')}: {job.employer}
-                        </p>
-                        <p className="text-sm text-[#64748b]">
-                            {t('admin.jobs.fields.email')}:{' '}
-                            {job.employer_email || '—'}
-                        </p>
-                        <p className="text-sm text-[#64748b]">
-                            {t('admin.jobs.fields.category')}: {job.category}
-                        </p>
-                        <p className="text-sm text-[#64748b]">
-                            {t('admin.jobs.fields.type')}:{' '}
-                            {job.employment_type || '—'}
-                        </p>
-                        <p className="text-sm text-[#64748b]">
-                            {t('admin.jobs.fields.salary')}:{' '}
-                            {job.salary_range || '—'}
-                        </p>
-                        <p className="text-sm text-[#64748b]">
-                            {t('admin.jobs.fields.applications')}:{' '}
-                            {job.applications}
-                        </p>
-                        <p className="text-sm text-[#64748b]">
-                            {t('admin.jobs.fields.views')}: {job.views}
-                        </p>
-                        <p className="text-sm text-[#64748b]">
-                            {t('admin.jobs.fields.expires')}:{' '}
-                            {job.expires_at || '—'}
-                        </p>
-                        {job.rejection_reason && (
-                            <p className="text-sm text-[#b91c1c]">
-                                {t('admin.jobs.fields.rejection')}:{' '}
-                                {job.rejection_reason}
+                    <div className="space-y-4 lg:col-span-2">
+                        <AdminPanel>
+                            <h2 className="text-base font-bold text-[#050315]">
+                                {t('common.description')}
+                            </h2>
+                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#475569]">
+                                {job.description ||
+                                    t('admin.jobs.no_description')}
                             </p>
-                        )}
-                    </AdminPanel>
+                        </AdminPanel>
+
+                        <AdminPanel>
+                            <h2 className="text-base font-bold text-[#050315]">
+                                {t('admin.jobs.fields.requirements')}
+                            </h2>
+                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#475569]">
+                                {job.requirements ||
+                                    t('admin.jobs.no_requirements')}
+                            </p>
+                        </AdminPanel>
+
+                        <AdminPanel>
+                            <h2 className="text-base font-bold text-[#050315]">
+                                {t('admin.jobs.fields.skills')}
+                            </h2>
+                            {job.skills.length > 0 ? (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {job.skills.map((skill) => (
+                                        <span
+                                            key={skill}
+                                            className="inline-flex rounded-full bg-[#dbeafe] px-2.5 py-1 text-xs font-semibold text-[#1e40af]"
+                                        >
+                                            {skill}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="mt-3 text-sm text-[#94a3b8]">
+                                    {t('admin.jobs.no_skills')}
+                                </p>
+                            )}
+                        </AdminPanel>
+                    </div>
+
+                    <div className="space-y-4">
+                        <AdminPanel className="space-y-3">
+                            <AdminStatusBadge label={job.status} tone="info" />
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.employer')}:{' '}
+                                {job.employer}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.email')}:{' '}
+                                {job.employer_email || '—'}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.category')}:{' '}
+                                {job.category}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.type')}:{' '}
+                                {job.employment_type || '—'}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.experience')}:{' '}
+                                {job.experience_level || '—'}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.salary')}:{' '}
+                                {job.salary_range || '—'}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.posted')}:{' '}
+                                {job.created || '—'}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.expires')}:{' '}
+                                {job.expires_at || '—'}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.applications')}:{' '}
+                                {job.applications}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.views')}: {job.views}
+                            </p>
+                            {job.rejection_reason && (
+                                <p className="text-sm text-[#b91c1c]">
+                                    {t('admin.jobs.fields.rejection')}:{' '}
+                                    {job.rejection_reason}
+                                </p>
+                            )}
+                        </AdminPanel>
+
+                        <AdminPanel>
+                            <h2 className="text-base font-bold text-[#050315]">
+                                {t('admin.jobs.compliance.title')}
+                            </h2>
+                            <p className="mt-1 text-xs text-[#64748b]">
+                                {t('admin.jobs.compliance.hint')}
+                            </p>
+                            <ul className="mt-3 space-y-2">
+                                {complianceItems.map((item) => (
+                                    <li
+                                        key={item.label}
+                                        className="flex items-center justify-between gap-3 text-sm"
+                                    >
+                                        <span className="text-[#475569]">
+                                            {item.label}
+                                        </span>
+                                        <span
+                                            className={
+                                                item.ok
+                                                    ? 'font-semibold text-[#15803d]'
+                                                    : 'font-semibold text-[#b91c1c]'
+                                            }
+                                        >
+                                            {item.ok
+                                                ? t('admin.jobs.compliance.ok')
+                                                : t(
+                                                      'admin.jobs.compliance.missing',
+                                                  )}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </AdminPanel>
+                    </div>
                 </div>
             </div>
 
@@ -153,7 +264,9 @@ export default function JobShow({ job }: { job: Job }) {
                             {t('admin.jobs.reject_prompt')}
                         </DialogDescription>
                     </DialogHeader>
-                    <Label htmlFor="job_reject_reason">{t('common.reason')}</Label>
+                    <Label htmlFor="job_reject_reason">
+                        {t('common.reason')}
+                    </Label>
                     <Textarea
                         id="job_reject_reason"
                         value={rejectionReason}
@@ -175,7 +288,7 @@ export default function JobShow({ job }: { job: Job }) {
                             className="bg-[#b91c1c] text-white hover:bg-[#991b1b]"
                             onClick={() =>
                                 router.post(
-                                    `/admin/jobs/${job.id}/reject`,
+                                    reject.url(job.id),
                                     {
                                         rejection_reason:
                                             rejectionReason.trim(),
@@ -191,4 +304,8 @@ export default function JobShow({ job }: { job: Job }) {
             </Dialog>
         </AdminPortalLayout>
     );
+}
+
+function filled(value: string | null | undefined): boolean {
+    return typeof value === 'string' && value.trim() !== '';
 }

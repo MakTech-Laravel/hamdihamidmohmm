@@ -133,11 +133,6 @@ class JobSeekerProfile extends Model
 
         return [
             [
-                'id' => 'resume',
-                'label' => 'Resume',
-                'complete' => filled($user?->resume_path),
-            ],
-            [
                 'id' => 'personal',
                 'label' => 'Personal Info',
                 'complete' => filled($user?->name) && filled($user?->email) && filled($user?->phone) && filled($user?->location),
@@ -171,6 +166,11 @@ class JobSeekerProfile extends Model
                 'id' => 'certifications',
                 'label' => 'Certifications',
                 'complete' => is_array($this->certifications) && $this->certifications !== [],
+            ],
+            [
+                'id' => 'resume',
+                'label' => 'Resume',
+                'complete' => filled($user?->resume_path),
             ],
         ];
     }

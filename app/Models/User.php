@@ -56,6 +56,8 @@ class User extends Authenticatable
         'cover_letter_original_name',
         'highest_degree_path',
         'highest_degree_original_name',
+        'other_document_path',
+        'other_document_original_name',
         'avatar',
         'company_logo_path',
         'company_cover_path',

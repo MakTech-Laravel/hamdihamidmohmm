@@ -36,6 +36,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/profile/highest-degree', [JobSeekerProfileController::class, 'uploadHighestDegree'])->name('profile.highest-degree.upload');
         Route::get('/profile/highest-degree', [JobSeekerProfileController::class, 'downloadHighestDegree'])->name('profile.highest-degree.download');
         Route::delete('/profile/highest-degree', [JobSeekerProfileController::class, 'destroyHighestDegree'])->name('profile.highest-degree.destroy');
+        Route::post('/profile/other-document', [JobSeekerProfileController::class, 'uploadOtherDocument'])->name('profile.other-document.upload');
+        Route::get('/profile/other-document', [JobSeekerProfileController::class, 'downloadOtherDocument'])->name('profile.other-document.download');
+        Route::delete('/profile/other-document', [JobSeekerProfileController::class, 'destroyOtherDocument'])->name('profile.other-document.destroy');
         Route::post('/profile/certifications/file', [JobSeekerProfileController::class, 'uploadCertificationDocument'])->name('profile.certifications.upload');
         Route::get('/profile/certifications/{index}/file/{attachment?}', [JobSeekerProfileController::class, 'downloadCertificationDocument'])->name('profile.certifications.download');
         Route::delete('/profile/certifications/{index}/file', [JobSeekerProfileController::class, 'destroyCertificationDocument'])->name('profile.certifications.destroy');

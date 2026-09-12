@@ -3,32 +3,16 @@ import { Check, Download, Eye, Search, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
-    approve,
     exportMethod,
     index,
-    reject,
+    show,
 } from '@/actions/App/Http/Controllers/Backend/Admin/JobManagementController';
-import {
-    CandidatePreviewDrawer,
-    type CandidatePreview,
-} from '@/components/admin-portal/candidate-preview-drawer';
 import {
     AdminPagination,
     AdminPanel,
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
-import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
@@ -46,7 +30,6 @@ type JobRow = {
     status_value: string;
     created: string | null;
     can_review: boolean;
-    preview: CandidatePreview;
 };
 
 type Props = {
@@ -99,9 +82,6 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
     const [search, setSearch] = useState(filters.search ?? '');
-    const [rejecting, setRejecting] = useState<JobRow | null>(null);
-    const [previewing, setPreviewing] = useState<JobRow | null>(null);
-    const [rejectionReason, setRejectionReason] = useState('');
 
     const query = useMemo(() => {
         const params = new URLSearchParams();
@@ -277,12 +257,20 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                 className="border-b border-[#f1f5f9] last:border-0"
                             >
                                 <td className="px-3 py-2.5">
-                                    <p className="text-[13px] leading-[19.5px] font-semibold text-[#0f172a]">
-                                        {row.title}
-                                    </p>
-                                    <p className="text-[11px] leading-[16.5px] text-[#94a3b8]">
-                                        {jobReference(row.id)}
-                                    </p>
+                                    <button
+                                        type="button"
+                                        className="text-left hover:underline"
+                                        onClick={() =>
+                                            router.visit(show.url(row.id))
+                                        }
+                                    >
+                                        <p className="text-[13px] leading-[19.5px] font-semibold text-[#0f172a]">
+                                            {row.title}
+                                        </p>
+                                        <p className="text-[11px] leading-[16.5px] text-[#94a3b8]">
+                                            {jobReference(row.id)}
+                                        </p>
+                                    </button>
                                 </td>
                                 <td className="px-4 py-3 text-[12px] text-[#64748b]">
                                     {row.employer}
@@ -315,8 +303,10 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                         <button
                                             type="button"
                                             className="flex h-[23px] items-center rounded-[6px] px-2.5 py-[5px] text-[#64748b] hover:bg-[#f8fafc]"
-                                            aria-label={t('admin.jobs.view_applicant')}
-                                            onClick={() => setPreviewing(row)}
+                                            aria-label={t('admin.jobs.view_details')}
+                                            onClick={() =>
+                                                router.visit(show.url(row.id))
+                                            }
                                         >
                                             <Eye
                                                 className="size-[13px]"
@@ -330,8 +320,8 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                                     className="flex h-[23px] items-center rounded-[6px] bg-[#d1fae5] px-2.5 py-[5px] text-[#065f46] hover:bg-[#a7f3d0]"
                                                     aria-label={t('admin.jobs.approve')}
                                                     onClick={() =>
-                                                        router.post(
-                                                            approve.url(row.id),
+                                                        router.visit(
+                                                            show.url(row.id),
                                                         )
                                                     }
                                                 >
@@ -344,10 +334,11 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                                     type="button"
                                                     className="flex h-[23px] items-center rounded-[6px] bg-[#fee2e2] px-2.5 py-[5px] text-[#991b1b] hover:bg-[#fecaca]"
                                                     aria-label={t('admin.jobs.reject')}
-                                                    onClick={() => {
-                                                        setRejectionReason('');
-                                                        setRejecting(row);
-                                                    }}
+                                                    onClick={() =>
+                                                        router.visit(
+                                                            show.url(row.id),
+                                                        )
+                                                    }
                                                 >
                                                     <X
                                                         className="size-[11px]"
@@ -380,79 +371,6 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                     </div>
                 </AdminPanel>
             </div>
-
-            <Dialog
-                open={rejecting !== null}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setRejecting(null);
-                    }
-                }}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('admin.jobs.reject_title')}</DialogTitle>
-                        <DialogDescription>
-                            {rejecting
-                                ? t('admin.jobs.reject_prompt')
-                                : t('admin.jobs.reject_prompt')}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-1.5">
-                        <Label htmlFor="rejection_reason">{t('common.reason')}</Label>
-                        <Textarea
-                            id="rejection_reason"
-                            value={rejectionReason}
-                            onChange={(event) =>
-                                setRejectionReason(event.target.value)
-                            }
-                            className="min-h-24 rounded-xl"
-                        />
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setRejecting(null)}
-                        >
-                            {t('common.cancel')}
-                        </Button>
-                        <Button
-                            type="button"
-                            className="bg-[#b91c1c] text-white hover:bg-[#991b1b]"
-                            disabled={rejectionReason.trim() === ''}
-                            onClick={() => {
-                                if (rejecting === null) {
-                                    return;
-                                }
-
-                                router.post(
-                                    reject.url(rejecting.id),
-                                    {
-                                        rejection_reason:
-                                            rejectionReason.trim(),
-                                    },
-                                    {
-                                        onSuccess: () => setRejecting(null),
-                                    },
-                                );
-                            }}
-                        >
-                            {t('common.reject')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <CandidatePreviewDrawer
-                open={previewing !== null}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setPreviewing(null);
-                    }
-                }}
-                preview={previewing?.preview ?? null}
-            />
         </AdminPortalLayout>
     );
 }

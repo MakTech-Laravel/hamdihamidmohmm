@@ -89,6 +89,12 @@ class JobManagementController extends Controller
             'job' => [
                 ...$this->row($jobPost),
                 'description' => $jobPost->description,
+                'requirements' => $jobPost->requirements,
+                'skills' => array_values(array_filter(
+                    is_array($jobPost->skills) ? $jobPost->skills : [],
+                    fn (mixed $skill): bool => filled($skill),
+                )),
+                'experience_level' => $jobPost->experience_level,
                 'employment_type' => $jobPost->employment_type,
                 'salary_range' => $jobPost->salary_range,
                 'rejection_reason' => $jobPost->rejection_reason,
