@@ -120,16 +120,34 @@ jobs:
             exit 1
           fi
 
-          ssh-keyscan -p "${PORT}" -H "${HOST}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          for i in 1 2 3 4 5; do
+            if ssh-keyscan -p "${PORT}" -T 20 -H "${HOST}" >> ~/.ssh/known_hosts 2>/dev/null; then
+              break
+            fi
+            echo "ssh-keyscan attempt ${i} failed, retrying..."
+            sleep $((i * 5))
+          done
 
           echo "Testing SSH auth as ${USER}@${HOST}:${PORT} ..."
-          ssh -i ~/.ssh/deploy_key \
-            -p "${PORT}" \
-            -o IdentitiesOnly=yes \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=accept-new \
-            -o ConnectTimeout=15 \
-            "${USER}@${HOST}" "echo SSH_OK"
+          for i in 1 2 3 4 5; do
+            if ssh -i ~/.ssh/deploy_key \
+              -p "${PORT}" \
+              -o IdentitiesOnly=yes \
+              -o BatchMode=yes \
+              -o StrictHostKeyChecking=accept-new \
+              -o ConnectTimeout=30 \
+              -o ServerAliveInterval=10 \
+              -o ServerAliveCountMax=3 \
+              "${USER}@${HOST}" "echo SSH_OK"; then
+              exit 0
+            fi
+            echo "SSH attempt ${i}/5 failed, waiting before retry..."
+            sleep $((i * 8))
+          done
+
+          echo "SSH connection timed out from GitHub runner."
+          echo "Check Hostinger IP Access / firewall allows external SSH (port ${PORT})."
+          exit 1
 
       - name: Rsync application to Hostinger
         env:
