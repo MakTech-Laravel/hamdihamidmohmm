@@ -9,6 +9,7 @@ use App\Http\Requests\Backend\User\SelectEmployerPackageRequest;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Services\Stripe\StripeSubscriptionService;
+use App\Services\YallaPay\YallaPayPackageCheckoutService;
 use App\Support\EmployerPlanChange;
 use App\Support\EmployerPlanSnapshot;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +23,10 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class EmployerPackageController extends Controller
 {
-    public function __construct(private StripeSubscriptionService $subscriptions) {}
+    public function __construct(
+        private StripeSubscriptionService $subscriptions,
+        private YallaPayPackageCheckoutService $yallaPayCheckout,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -92,8 +96,9 @@ class EmployerPackageController extends Controller
             'packages' => $packages,
             'invoices' => $invoices,
             'billing' => [
-                'enabled' => $this->subscriptions->enabled(),
-                'can_manage' => filled($employer->stripe_customer_id),
+                'enabled' => $this->yallaPayCheckout->enabled() || $this->subscriptions->enabled(),
+                'provider' => $this->yallaPayCheckout->enabled() ? 'yallapay' : ($this->subscriptions->enabled() ? 'stripe' : null),
+                'can_manage' => filled($employer->stripe_customer_id) && ! $this->yallaPayCheckout->enabled(),
             ],
         ]);
     }
@@ -105,7 +110,13 @@ class EmployerPackageController extends Controller
         $employer->refresh();
 
         try {
-            $result = $this->subscriptions->startCheckout($employer, $package);
+            if ($package->price < 1) {
+                $result = $this->subscriptions->startCheckout($employer, $package);
+            } elseif ($this->yallaPayCheckout->enabled()) {
+                $result = $this->yallaPayCheckout->startCheckout($employer, $package);
+            } else {
+                $result = $this->subscriptions->startCheckout($employer, $package);
+            }
         } catch (RuntimeException|ApiErrorException $exception) {
             return back()->with('error', $this->billingErrorMessage($exception));
         }
@@ -122,6 +133,36 @@ class EmployerPackageController extends Controller
         $employer = $request->user();
         abort_unless($employer !== null, 403);
         $employer->refresh();
+
+        if ($request->string('provider')->toString() === 'yallapay') {
+            $reference = $request->string('reference')->toString();
+
+            if ($reference === '') {
+                return redirect()->route('employer.packages')->with('error', 'Missing YallaPay payment reference.');
+            }
+
+            $payment = Payment::query()
+                ->where('reference', $reference)
+                ->where('employer_id', $employer->id)
+                ->where('method', 'yallapay')
+                ->first();
+
+            if (! $payment instanceof Payment) {
+                return redirect()->route('employer.packages')->with('error', 'YallaPay payment was not found.');
+            }
+
+            $confirmed = $this->yallaPayCheckout->confirmFromRedirect($reference)
+                || $this->yallaPayCheckout->fulfillByReference($reference);
+
+            if (! $confirmed && $payment->fresh()?->status !== PaymentStatus::Completed) {
+                return redirect()->route('employer.packages')->with(
+                    'success',
+                    'Payment submitted. Your plan will activate once YallaPay confirms the payment.',
+                );
+            }
+
+            return redirect()->route('employer.packages')->with('success', 'Payment received. Your plan is now active.');
+        }
 
         $sessionId = $request->string('session_id')->toString();
 

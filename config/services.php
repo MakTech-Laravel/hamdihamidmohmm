@@ -48,4 +48,16 @@ return [
         'api_version' => env('STRIPE_API_VERSION', '2026-07-29.dahlia'),
     ],
 
+    'yallapay' => [
+        'env' => env('YALLAPAY_ENV', 'sandbox'),
+        'sandbox_url' => env('YALLAPAY_SANDBOX_URL', 'https://gateway-dev.yallapaysudan.com/api/v1'),
+        'production_url' => env('YALLAPAY_PRODUCTION_URL', 'https://gateway.yallapaysudan.com/api/v1'),
+        'token' => env('YALLAPAY_AUTH_TOKEN'),
+        'webhook_secret' => env('YALLAPAY_WEBHOOK_SECRET'),
+        // Public URLs for the YallaPay dashboard (Developer → Webhooks / Redirects).
+        'webhook_url' => env('YALLAPAY_WEBHOOK_URL', rtrim((string) env('APP_URL', 'http://localhost'), '/').'/api/webhooks/yallapay'),
+        'success_url' => env('YALLAPAY_SUCCESS_URL', rtrim((string) env('APP_URL', 'http://localhost'), '/').'/payment/yallapay/success'),
+        'failed_url' => env('YALLAPAY_FAILED_URL', rtrim((string) env('APP_URL', 'http://localhost'), '/').'/payment/yallapay/failed'),
+    ],
+
 ];

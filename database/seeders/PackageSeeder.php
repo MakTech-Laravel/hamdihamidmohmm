@@ -32,7 +32,7 @@ class PackageSeeder extends Seeder
             EmployerPackage::Professional->value => [
                 'name' => EmployerPackage::Professional->label(),
                 'description' => 'pricing.packages.professional.description',
-                'price' => 299,
+                'price' => 1500,
                 'currency' => 'SDG',
                 'billing_period' => 'month',
                 'job_credits' => 1,
@@ -57,7 +57,7 @@ class PackageSeeder extends Seeder
             EmployerPackage::Premium->value => [
                 'name' => EmployerPackage::Premium->label(),
                 'description' => 'pricing.packages.premium.description',
-                'price' => 999,
+                'price' => 2500,
                 'currency' => 'SDG',
                 'billing_period' => 'month',
                 'job_credits' => 15,
@@ -81,7 +81,7 @@ class PackageSeeder extends Seeder
             EmployerPackage::Enterprise->value => [
                 'name' => EmployerPackage::Enterprise->label(),
                 'description' => 'pricing.packages.enterprise.description',
-                'price' => 1199,
+                'price' => 5000,
                 'currency' => 'SDG',
                 'billing_period' => 'month',
                 'job_credits' => 30,
