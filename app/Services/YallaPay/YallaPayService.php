@@ -4,6 +4,8 @@ namespace App\Services\YallaPay;
 
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class YallaPayService
 {
@@ -29,12 +31,19 @@ class YallaPayService
     }
 
     /**
+     * @param  array<string, mixed>  $result
+     */
+    public function isSuccessfulResponse(array $result): bool
+    {
+        return (string) ($result['responseCode'] ?? '') === '0'
+            && filled($result['paymentUrl'] ?? null);
+    }
+
+    /**
      * Create a one-time payment checkout link.
      *
      * @param  array{amount: int|float|string, reference: string, description: string, success_url: string, failed_url: string}  $data
      * @return array<string, mixed>
-     *
-     * @throws RequestException
      */
     public function createPayment(array $data): array
     {
@@ -42,17 +51,31 @@ class YallaPayService
             ->acceptJson()
             ->asJson()
             ->post("{$this->baseUrl}/gateway/generatePaymentLink", [
-                'amount' => $data['amount'],
+                'amount' => (int) $data['amount'],
                 'clientReferenceId' => $data['reference'],
                 'description' => $data['description'],
                 'paymentSuccessfulRedirectUrl' => $data['success_url'],
                 'paymentFailedRedirectUrl' => $data['failed_url'],
             ]);
 
-        $response->throw();
+        /** @var array<string, mixed> $json */
+        $json = $response->json() ?? [];
 
-        /** @var array<string, mixed> */
-        return $response->json() ?? [];
+        if ($response->failed()) {
+            Log::warning('YallaPay generatePaymentLink HTTP error', [
+                'status' => $response->status(),
+                'body' => $json,
+                'reference' => $data['reference'],
+            ]);
+
+            throw new RuntimeException(
+                is_string($json['responseMessage'] ?? null)
+                    ? $json['responseMessage']
+                    : 'YallaPay could not create a payment link (HTTP ' . $response->status() . ').'
+            );
+        }
+
+        return $json;
     }
 
     /**

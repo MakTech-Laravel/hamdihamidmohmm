@@ -18,7 +18,7 @@ beforeEach(function () {
 test('checkout page renders', function () {
     $this->get(route('yallapay.checkout'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/yallapay-checkout')
             ->where('minAmount', 1000)
             ->where('defaultAmount', 5000));
@@ -27,7 +27,7 @@ test('checkout page renders', function () {
 test('pay redirects to yallapay payment url when link is created', function () {
     Http::fake([
         'gateway-dev.yallapaysudan.com/*' => Http::response([
-            'responseCode' => '0',
+            'responseCode' => 0,
             'responseMessage' => 'Success',
             'paymentUrl' => 'https://checkout.yallapay.test/pay/abc',
         ], 200),
@@ -102,13 +102,13 @@ test('pay returns error when yallapay rejects the request', function () {
 test('success and failed pages render', function () {
     $this->get(route('yallapay.success'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/yallapay-result')
             ->where('status', 'success'));
 
     $this->get(route('yallapay.failed'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/yallapay-result')
             ->where('status', 'failed'));
 });

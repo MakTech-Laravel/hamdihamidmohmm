@@ -6,7 +6,6 @@ use App\Enums\PaymentStatus;
 use App\Http\Requests\YallaPayCheckoutRequest;
 use App\Models\Payment;
 use App\Services\YallaPay\YallaPayService;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -52,19 +51,18 @@ class YallaPayPaymentController extends Controller
                 'success_url' => route('yallapay.success', absolute: true),
                 'failed_url' => route('yallapay.failed', absolute: true),
             ]);
-        } catch (RequestException $exception) {
+        } catch (\RuntimeException $exception) {
             Log::warning('YallaPay payment link creation failed', [
                 'reference' => $reference,
                 'message' => $exception->getMessage(),
-                'body' => $exception->response?->json(),
             ]);
 
             return back()->withErrors([
-                'payment' => 'Unable to start YallaPay checkout. Please try again.',
+                'payment' => $exception->getMessage(),
             ]);
         }
 
-        if (($result['responseCode'] ?? null) === '0' && filled($result['paymentUrl'] ?? null)) {
+        if ($yallaPay->isSuccessfulResponse($result)) {
             return Inertia::location((string) $result['paymentUrl']);
         }
 

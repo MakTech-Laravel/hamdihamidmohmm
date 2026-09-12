@@ -51,7 +51,7 @@ class YallaPayPackageCheckoutService
 
         if ($package->price < self::MINIMUM_AMOUNT) {
             throw new RuntimeException(
-                'YallaPay requires a minimum of '.self::MINIMUM_AMOUNT.' SDG. Update this package price in admin, then try again.'
+                'YallaPay requires a minimum of ' . self::MINIMUM_AMOUNT . ' SDG. Update this package price in admin, then try again.'
             );
         }
 
@@ -78,23 +78,22 @@ class YallaPayPackageCheckoutService
             $result = $this->yallaPay->createPayment([
                 'amount' => $package->price,
                 'reference' => $reference,
-                'description' => 'Package: '.($package->name ?: $package->slug),
+                'description' => 'Package: ' . ($package->name ?: $package->slug),
                 'success_url' => $successUrl,
                 'failed_url' => $failedUrl,
             ]);
-        } catch (RequestException $exception) {
-            $payment->forceFill(['status' => PaymentStatus::Failed])->save();
+        } catch (RuntimeException $exception) {
+            $payment->delete();
 
             Log::warning('YallaPay package checkout failed', [
-                'payment_id' => $payment->id,
+                'reference' => $reference,
                 'message' => $exception->getMessage(),
-                'body' => $exception->response?->json(),
             ]);
 
-            throw new RuntimeException('Unable to start YallaPay checkout. Please try again.');
+            throw new RuntimeException($exception->getMessage());
         }
 
-        if (($result['responseCode'] ?? null) === '0' && filled($result['paymentUrl'] ?? null)) {
+        if ($this->yallaPay->isSuccessfulResponse($result)) {
             return [
                 'status' => 'redirect',
                 'url' => (string) $result['paymentUrl'],
@@ -102,7 +101,12 @@ class YallaPayPackageCheckoutService
             ];
         }
 
-        $payment->forceFill(['status' => PaymentStatus::Failed])->save();
+        $payment->delete();
+
+        Log::warning('YallaPay package checkout rejected', [
+            'reference' => $reference,
+            'result' => $result,
+        ]);
 
         throw new RuntimeException((string) ($result['responseMessage'] ?? 'YallaPay payment failed to initiate.'));
     }
@@ -192,7 +196,7 @@ class YallaPayPackageCheckoutService
 
         $normalized = strtolower((string) ($status['status'] ?? $status['paymentStatus'] ?? ''));
         $isSuccessful = in_array($normalized, ['success', 'successful', 'paid', 'completed'], true)
-            || ($status['responseCode'] ?? null) === '0';
+            || (string) ($status['responseCode'] ?? '') === '0';
 
         if (! $isSuccessful) {
             return false;

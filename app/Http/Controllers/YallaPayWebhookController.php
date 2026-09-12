@@ -41,7 +41,7 @@ class YallaPayWebhookController extends Controller
 
             if ($payment instanceof Payment) {
                 $isSuccessful = in_array($status, ['success', 'successful', 'paid', 'completed'], true)
-                    || ($data['responseCode'] ?? null) === '0';
+                    || (string) ($data['responseCode'] ?? '') === '0';
 
                 $isFailed = in_array($status, ['failed', 'cancelled', 'canceled', 'declined'], true);
 
