@@ -18,11 +18,15 @@ class YallaPayService
         /** @var array{env?: string, sandbox_url?: string|null, production_url?: string|null, token?: string|null} $config */
         $config = config('services.yallapay', []);
 
-        $this->baseUrl = ($config['env'] ?? 'sandbox') === 'production'
-            ? (string) ($config['production_url'] ?? '')
-            : (string) ($config['sandbox_url'] ?? '');
+        $this->baseUrl = rtrim(
+            ($config['env'] ?? 'sandbox') === 'production'
+                ? (string) ($config['production_url'] ?? '')
+                : (string) ($config['sandbox_url'] ?? ''),
+            '/',
+        );
 
-        $this->token = (string) ($config['token'] ?? '');
+        // Strip quotes/whitespace that often sneak in from .env or panel pastes.
+        $this->token = trim((string) ($config['token'] ?? ''), " \t\n\r\0\x0B\"'");
     }
 
     public function enabled(): bool
@@ -66,13 +70,21 @@ class YallaPayService
                 'status' => $response->status(),
                 'body' => $json,
                 'reference' => $data['reference'],
+                'base_url' => $this->baseUrl,
+                'token_prefix' => $this->token !== '' ? substr($this->token, 0, 8) . '…' : '(empty)',
             ]);
 
-            throw new RuntimeException(
-                is_string($json['responseMessage'] ?? null)
-                    ? $json['responseMessage']
-                    : 'YallaPay could not create a payment link (HTTP ' . $response->status() . ').'
-            );
+            $message = is_string($json['responseMessage'] ?? null)
+                ? $json['responseMessage']
+                : 'YallaPay could not create a payment link (HTTP ' . $response->status() . ').';
+
+            if ($response->status() === 401 || strcasecmp($message, 'Invalid credentials') === 0) {
+                $message = 'YallaPay rejected the API token (Invalid credentials). '
+                    . 'Copy the Test Mode token from Dashboard → Developers → API Credentials '
+                    . 'into the server .env as YALLAPAY_AUTH_TOKEN, then run php artisan config:clear.';
+            }
+
+            throw new RuntimeException($message);
         }
 
         return $json;
