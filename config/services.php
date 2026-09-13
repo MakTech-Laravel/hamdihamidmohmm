@@ -49,6 +49,8 @@ return [
     ],
 
     'yallapay' => [
+        // Set false to force Stripe while YallaPay credentials are fixed with their support.
+        'enabled' => env('YALLAPAY_ENABLED', true),
         'env' => env('YALLAPAY_ENV', 'sandbox'),
         'sandbox_url' => env('YALLAPAY_SANDBOX_URL', 'https://gateway-dev.yallapaysudan.com/api/v1'),
         'production_url' => env('YALLAPAY_PRODUCTION_URL', 'https://gateway.yallapaysudan.com/api/v1'),

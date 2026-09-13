@@ -25,6 +25,10 @@ class YallaPayService
 
     public function enabled(): bool
     {
+        if (! filter_var(config('services.yallapay.enabled', true), FILTER_VALIDATE_BOOLEAN)) {
+            return false;
+        }
+
         return $this->token !== '' && $this->baseUrl !== '';
     }
 
