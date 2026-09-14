@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Backend\User;
 
+use App\Support\SafeHtml;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreEmployerJobRequest extends FormRequest
@@ -27,6 +28,7 @@ class StoreEmployerJobRequest extends FormRequest
 
         $this->merge([
             'publish' => $this->boolean('publish', true),
+            'description' => SafeHtml::clean($this->input('description')),
         ]);
     }
 
@@ -37,15 +39,17 @@ class StoreEmployerJobRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
+            'subtitle' => ['nullable', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
             'employment_type' => ['required', 'string', 'max:50'],
             'experience_level' => ['nullable', 'string', 'max:50'],
             'salary_range' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'description' => ['nullable', 'string', 'max:20000'],
             'requirements' => ['nullable', 'string'],
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:80'],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'expires_at' => ['nullable', 'date'],
             'publish' => ['sometimes', 'boolean'],
         ];
@@ -59,6 +63,9 @@ class StoreEmployerJobRequest extends FormRequest
         return [
             'title.required' => 'Please enter a job title.',
             'employment_type.required' => 'Please choose a job type.',
+            'logo.image' => 'The job logo must be an image.',
+            'logo.mimes' => 'The job logo must be a JPG, PNG, or WEBP file.',
+            'logo.max' => 'The job logo may not be greater than 5MB.',
         ];
     }
 }

@@ -14,6 +14,7 @@ import {
     AdminStatusBadge,
 } from '@/components/admin-portal/ui';
 import { Button } from '@/components/ui/button';
+import { RichTextContent } from '@/components/ui/rich-text-editor';
 import {
     Dialog,
     DialogContent,
@@ -31,6 +32,7 @@ import type { SharedData } from '@/types';
 type Job = {
     id: number;
     title: string;
+    subtitle?: string | null;
     employer: string;
     employer_email?: string | null;
     category: string;
@@ -86,7 +88,9 @@ export default function JobShow({ job }: { job: Job }) {
             <div className="space-y-6 p-6">
                 <AdminPageHeader
                     title={job.title}
-                    subtitle={`${job.employer} · ${job.location}`}
+                    subtitle={[job.subtitle, job.employer, job.location]
+                        .filter(Boolean)
+                        .join(' · ')}
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Link href={index.url()}>
@@ -130,10 +134,15 @@ export default function JobShow({ job }: { job: Job }) {
                             <h2 className="text-base font-bold text-[#050315]">
                                 {t('common.description')}
                             </h2>
-                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#475569]">
-                                {job.description ||
-                                    t('admin.jobs.no_description')}
-                            </p>
+                            {job.description ? (
+                                <div className="mt-3">
+                                    <RichTextContent html={job.description} />
+                                </div>
+                            ) : (
+                                <p className="mt-3 text-sm leading-6 text-[#475569]">
+                                    {t('admin.jobs.no_description')}
+                                </p>
+                            )}
                         </AdminPanel>
 
                         <AdminPanel>
@@ -245,8 +254,8 @@ export default function JobShow({ job }: { job: Job }) {
                                             {item.ok
                                                 ? t('admin.jobs.compliance.ok')
                                                 : t(
-                                                      'admin.jobs.compliance.missing',
-                                                  )}
+                                                    'admin.jobs.compliance.missing',
+                                                )}
                                         </span>
                                     </li>
                                 ))}

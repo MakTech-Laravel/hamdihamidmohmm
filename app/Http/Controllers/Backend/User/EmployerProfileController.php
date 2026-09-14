@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Backend\User;
 use App\Enums\EmployerVerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\UpdateEmployerProfileRequest;
+use App\Http\Requests\Backend\User\UpdateEmployerPublicAboutRequest;
 use App\Http\Requests\Backend\User\UploadEmployerCoverRequest;
 use App\Http\Requests\Backend\User\UploadEmployerLogoRequest;
 use App\Http\Requests\Backend\User\UploadEmployerPhotoRequest;
@@ -48,7 +49,7 @@ class EmployerProfileController extends Controller
             'initials' => collect(explode(' ', (string) ($employer->company_name ?: $employer->name)))
                 ->filter()
                 ->take(2)
-                ->map(fn(string $part): string => strtoupper(substr($part, 0, 1)))
+                ->map(fn (string $part): string => strtoupper(substr($part, 0, 1)))
                 ->implode(''),
             'logo_url' => $hasLogo ? $employer->companyLogoUrl() : null,
             'cover_url' => $hasCover ? $employer->companyCoverUrl() : null,
@@ -91,6 +92,13 @@ class EmployerProfileController extends Controller
         return back()->with('success', 'Company profile updated.');
     }
 
+    public function updatePublicAbout(UpdateEmployerPublicAboutRequest $request): RedirectResponse
+    {
+        $request->user()?->forceFill($request->validated())->save();
+
+        return back()->with('success', 'About company details updated.');
+    }
+
     public function uploadPhoto(UploadEmployerPhotoRequest $request): RedirectResponse
     {
         $employer = $request->user();
@@ -104,7 +112,7 @@ class EmployerProfileController extends Controller
             Storage::disk('public')->delete((string) $employer->avatar);
         }
 
-        $path = $photo->store('avatars/' . $employer->id, 'public');
+        $path = $photo->store('avatars/'.$employer->id, 'public');
 
         $employer->forceFill([
             'avatar' => $path,
@@ -142,7 +150,7 @@ class EmployerProfileController extends Controller
             Storage::disk('public')->delete($employer->company_logo_path);
         }
 
-        $path = $logo->store('company-logos/' . $employer->id, 'public');
+        $path = $logo->store('company-logos/'.$employer->id, 'public');
 
         $employer->forceFill([
             'company_logo_path' => $path,
@@ -180,7 +188,7 @@ class EmployerProfileController extends Controller
             Storage::disk('public')->delete($employer->company_cover_path);
         }
 
-        $path = $cover->store('company-covers/' . $employer->id, 'public');
+        $path = $cover->store('company-covers/'.$employer->id, 'public');
 
         $employer->forceFill([
             'company_cover_path' => $path,
@@ -218,7 +226,7 @@ class EmployerProfileController extends Controller
             Storage::disk('local')->delete($employer->verification_document_path);
         }
 
-        $path = $document->store('verification-documents/' . $employer->id, 'local');
+        $path = $document->store('verification-documents/'.$employer->id, 'local');
 
         $employer->forceFill([
             'verification_document_path' => $path,

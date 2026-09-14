@@ -59,6 +59,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', EmployerDashboardController::class)->name('dashboard');
         Route::get('/profile', [EmployerProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [EmployerProfileController::class, 'update'])->name('profile.update');
+        Route::put('/profile/public-about', [EmployerProfileController::class, 'updatePublicAbout'])->name('profile.public-about.update');
         Route::post('/profile/photo', [EmployerProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
         Route::delete('/profile/photo', [EmployerProfileController::class, 'destroyPhoto'])->name('profile.photo.destroy');
         Route::post('/profile/logo', [EmployerProfileController::class, 'uploadLogo'])->name('profile.logo.upload');
@@ -77,6 +78,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/jobs', [EmployerJobController::class, 'store'])->name('jobs.store');
         Route::get('/jobs/{job}/edit', [EmployerJobController::class, 'edit'])->name('jobs.edit');
         Route::put('/jobs/{job}', [EmployerJobController::class, 'update'])->name('jobs.update');
+        Route::post('/jobs/{job}/logo', [EmployerJobController::class, 'uploadLogo'])->name('jobs.logo.upload');
+        Route::delete('/jobs/{job}/logo', [EmployerJobController::class, 'destroyLogo'])->name('jobs.logo.destroy');
         Route::post('/jobs/{job}/duplicate', [EmployerJobController::class, 'duplicate'])->name('jobs.duplicate');
         Route::post('/jobs/{job}/pause', [EmployerJobController::class, 'pause'])->name('jobs.pause');
         Route::post('/jobs/{job}/publish', [EmployerJobController::class, 'publish'])->name('jobs.publish');

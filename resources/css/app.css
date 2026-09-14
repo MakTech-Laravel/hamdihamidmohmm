@@ -534,3 +534,40 @@ html[dir='rtl'] body {
 .animate-fade-in-delay-2 {
   animation: fadeIn 0.8s ease-out 0.4s both;
 }
+
+/* TipTap rich text editor + preview */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: #94a3b8;
+}
+
+.tiptap:focus {
+  outline: none;
+}
+
+.tiptap strong,
+.tiptap b,
+.rich-text-content strong,
+.rich-text-content b {
+  font-weight: 700 !important;
+}
+
+.tiptap em,
+.tiptap i,
+.rich-text-content em,
+.rich-text-content i {
+  font-style: italic !important;
+}
+
+.tiptap u,
+.rich-text-content u {
+  text-decoration: underline !important;
+}
+
+.tiptap span[style*='font-size'],
+.rich-text-content span[style*='font-size'] {
+  line-height: 1.45;
+}

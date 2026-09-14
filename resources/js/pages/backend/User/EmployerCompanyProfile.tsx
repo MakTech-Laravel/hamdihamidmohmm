@@ -2,7 +2,9 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { CheckCircle2, Pencil, TriangleAlert } from 'lucide-react';
 import { useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 
+import { AboutCompanyCard } from '@/components/employer/about-company-card';
 import { getInitials } from '@/components/employer/demo-data';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
@@ -135,7 +137,7 @@ export default function EmployerCompanyProfile({
     const sectionTitleKey: Record<string, string> = {
         company: 'employer.profile.company_information',
         logo: 'employer.profile.company_logo',
-        about: 'employer.profile.about_company',
+        about: 'employer.profile.public_about',
         contact: 'employer.profile.contact_information',
         social: 'employer.profile.social_links',
         verification: 'employer.profile.verification_documents',
@@ -151,6 +153,13 @@ export default function EmployerCompanyProfile({
             <Head title={t('employer.profile.title')} />
 
             <div className="space-y-6 px-4 py-6 sm:px-6">
+                <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={onLogoChange}
+                />
                 <h1 className="text-2xl leading-9 font-extrabold text-[#050315]">
                     {t('employer.profile.title')}
                 </h1>
@@ -239,6 +248,164 @@ export default function EmployerCompanyProfile({
                 </div>
 
                 <Section
+                    title={t('employer.profile.public_about')}
+                    complete={
+                        completion.sections.about &&
+                        completion.sections.company &&
+                        completion.sections.logo
+                    }
+                    onEdit={() => setEditing('about')}
+                >
+                    <p className="mb-4 text-sm text-[#64748b]">
+                        {t('employer.profile.public_about_hint')}
+                    </p>
+
+                    <div className="mb-5 w-full min-w-0 max-w-md overflow-hidden">
+                        <AboutCompanyCard
+                            title={t('job_detail.about_company')}
+                            companyName={
+                                form.data.company_name ||
+                                profile.company_name ||
+                                t('employer.profile.company_fallback')
+                            }
+                            industry={
+                                form.data.industry || profile.industry
+                            }
+                            about={form.data.about || profile.about}
+                            website={form.data.website || profile.website}
+                            logoUrl={profile.logo_url}
+                            initials={
+                                profile.initials ||
+                                getInitials(
+                                    form.data.company_name ||
+                                    profile.company_name ||
+                                    'C',
+                                )
+                            }
+                            visitWebsiteLabel={t('job_detail.visit_website')}
+                        />
+                    </div>
+
+                    {editing === 'about' ? (
+                        <div className="space-y-3 rounded-xl border border-[#e8d5e8] bg-[#f8faff] p-4">
+                            <div className="flex flex-wrap items-center gap-3">
+                                {profile.logo_url ? (
+                                    <img
+                                        src={profile.logo_url}
+                                        alt=""
+                                        className="size-12 rounded-xl object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex size-12 items-center justify-center rounded-xl bg-[#0057c8] text-sm font-bold text-white">
+                                        {profile.initials ||
+                                            getInitials(
+                                                form.data.company_name || 'C',
+                                            )}
+                                    </div>
+                                )}
+                                <button
+                                    type="button"
+                                    disabled={uploading === 'logo'}
+                                    onClick={() =>
+                                        logoInputRef.current?.click()
+                                    }
+                                    className="cursor-pointer rounded-lg border border-[#0057c8] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
+                                >
+                                    {uploading === 'logo'
+                                        ? t('common.uploading')
+                                        : profile.logo_url
+                                            ? t('common.replace')
+                                            : t(
+                                                'employer.profile.upload_logo',
+                                            )}
+                                </button>
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-[#64748b]">
+                                    {t('employer.profile.company_name')}
+                                </label>
+                                <input
+                                    className={inputClass}
+                                    value={form.data.company_name}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'company_name',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder={t(
+                                        'employer.profile.company_name',
+                                    )}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-[#64748b]">
+                                    {t('employer.profile.industry')}
+                                </label>
+                                <input
+                                    className={inputClass}
+                                    value={form.data.industry}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'industry',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder={t(
+                                        'employer.profile.industry_placeholder',
+                                    )}
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1.5 block text-xs font-semibold text-[#64748b]">
+                                    {t('employer.profile.about_company')}
+                                </label>
+                                <RichTextEditor
+                                    value={form.data.about}
+                                    onChange={(value) =>
+                                        form.setData('about', value)
+                                    }
+                                    placeholder={t(
+                                        'employer.profile.about_placeholder',
+                                    )}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-[#64748b]">
+                                    {t('employer.profile.website')}
+                                </label>
+                                <input
+                                    className={inputClass}
+                                    value={form.data.website}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'website',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder={t(
+                                        'employer.profile.website_placeholder',
+                                    )}
+                                />
+                            </div>
+                            <SaveRow
+                                processing={form.processing}
+                                onSave={save}
+                                onCancel={() => setEditing(null)}
+                            />
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => setEditing('about')}
+                            className="cursor-pointer rounded-xl bg-[#0057c8] px-4 py-2.5 text-sm font-semibold text-white"
+                        >
+                            {t('employer.profile.edit_public_about')}
+                        </button>
+                    )}
+                </Section>
+
+                <Section
                     title={t('employer.profile.company_information')}
                     complete={completion.sections.company}
                     onEdit={() => setEditing('company')}
@@ -319,13 +486,6 @@ export default function EmployerCompanyProfile({
                     complete={completion.sections.logo}
                     onEdit={() => logoInputRef.current?.click()}
                 >
-                    <input
-                        ref={logoInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        className="hidden"
-                        onChange={onLogoChange}
-                    />
                     <div className="flex flex-wrap items-center gap-4">
                         {profile.logo_url ? (
                             <img
@@ -378,34 +538,6 @@ export default function EmployerCompanyProfile({
                             </div>
                         </div>
                     </div>
-                </Section>
-
-                <Section
-                    title={t('employer.profile.about_company')}
-                    complete={completion.sections.about}
-                    onEdit={() => setEditing('about')}
-                >
-                    {editing === 'about' ? (
-                        <div className="space-y-3">
-                            <textarea
-                                rows={5}
-                                className={inputClass}
-                                value={form.data.about}
-                                onChange={(event) =>
-                                    form.setData('about', event.target.value)
-                                }
-                            />
-                            <SaveRow
-                                processing={form.processing}
-                                onSave={save}
-                                onCancel={() => setEditing(null)}
-                            />
-                        </div>
-                    ) : (
-                        <p className="text-sm whitespace-pre-wrap text-[#364153]">
-                            {profile.about || t('employer.profile.add_overview')}
-                        </p>
-                    )}
                 </Section>
 
                 <Section

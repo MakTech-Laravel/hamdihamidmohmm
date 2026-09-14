@@ -71,7 +71,7 @@ class FrontendController extends Controller
         abort_unless($jobPost->effectiveStatus()->value === 'active', 404);
 
         $jobPost->incrementViews();
-        $jobPost->load('employer:id,name,company_name,about,industry,website,portal_preferences');
+        $jobPost->load('employer:id,name,company_name,company_logo_path,about,industry,website,portal_preferences');
 
         $applied = $request->user()?->isJobSeeker()
             ? JobApplication::query()
@@ -85,7 +85,12 @@ class FrontendController extends Controller
                 'id' => $jobPost->id,
                 'slug' => $jobPost->slug,
                 'title' => $jobPost->title,
+                'subtitle' => $jobPost->subtitle,
+                'logo_url' => $jobPost->hasLogo() ? $jobPost->logoUrl() : null,
                 'company' => $jobPost->employer?->company_name ?: $jobPost->employer?->name,
+                'company_logo_url' => $jobPost->employer?->hasCompanyLogo()
+                    ? $jobPost->employer->companyLogoUrl()
+                    : null,
                 'initials' => $this->initials($jobPost->employer?->company_name ?: $jobPost->employer?->name),
                 'location' => $jobPost->location,
                 'type' => $jobPost->employment_type,
