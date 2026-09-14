@@ -237,16 +237,25 @@ export default function EmployerJobEditor({
     };
 
     const submit = (publish: boolean) => {
-        form.transform((data) => ({ ...data, publish }));
+        form.transform((data) => {
+            const { logo, ...rest } = data;
+            const payload = { ...rest, publish };
 
-        const options = {
-            forceFormData: true as const,
-        };
+            // Logo uploads on edit use a dedicated endpoint. Never send multipart PUT —
+            // PHP does not populate multipart bodies on PUT, so fields like title vanish.
+            if (!isEdit && logo) {
+                return { ...payload, logo };
+            }
+
+            return payload;
+        });
 
         if (isEdit && job) {
-            form.put(`/employer/jobs/${job.id}`, options);
+            form.put(`/employer/jobs/${job.id}`);
+        } else if (form.data.logo) {
+            form.post('/employer/jobs', { forceFormData: true });
         } else {
-            form.post('/employer/jobs', options);
+            form.post('/employer/jobs');
         }
     };
 
