@@ -33,12 +33,14 @@ test('job seeker dashboard matches the Figma stats checklist and notifications p
         'job_post_id' => $job->id,
         'job_seeker_id' => $seeker->id,
         'status' => JobApplicationStatus::UnderReview,
+        'created_at' => now()->subMinute(),
     ]);
 
     JobApplication::factory()->create([
         'job_post_id' => JobPost::factory()->create(['status' => JobPostStatus::Active])->id,
         'job_seeker_id' => $seeker->id,
         'status' => JobApplicationStatus::Shortlisted,
+        'created_at' => now()->subMinutes(2),
     ]);
 
     JobPost::factory()->create([
