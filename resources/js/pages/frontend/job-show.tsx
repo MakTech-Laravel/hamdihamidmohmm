@@ -1,6 +1,8 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
+import { AboutCompanyCard } from '@/components/employer/about-company-card';
+import { RichTextContent } from '@/components/ui/rich-text-editor';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
 import { home, jobs as jobsRoute, login } from '@/routes';
@@ -18,7 +20,10 @@ type JobDetail = {
     slug: string;
     initials?: string;
     title: string;
+    subtitle?: string | null;
+    logo_url?: string | null;
     company: string | null;
+    company_logo_url?: string | null;
     company_industry?: string | null;
     company_about?: string | null;
     company_website?: string | null;
@@ -192,22 +197,51 @@ export default function JobShow({
 
                             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] sm:p-7">
                                 <div className="flex items-start gap-4">
-                                    <div
-                                        className="flex size-16 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white"
-                                        style={{
-                                            backgroundImage:
-                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
-                                        }}
-                                    >
-                                        {job.initials || 'JP'}
+                                    <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] text-lg font-bold text-[#0057c8]">
+                                        {job.logo_url ? (
+                                            <img
+                                                src={job.logo_url}
+                                                alt={job.title}
+                                                className="size-full object-contain p-1.5"
+                                            />
+                                        ) : (
+                                            job.initials || 'JP'
+                                        )}
                                     </div>
-                                    <div className="min-w-0">
-                                        <h1 className="text-2xl font-bold text-[#050315]">
-                                            {job.title}
-                                        </h1>
-                                        <p className="mt-1 text-base text-[#4a5565]">
-                                            {job.company}
-                                        </p>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <h1 className="text-2xl font-bold text-[#050315]">
+                                                    {job.title}
+                                                </h1>
+                                                <p className="mt-1.5 text-base font-normal text-[#64748b]">
+                                                    {job.subtitle || job.company}
+                                                </p>
+                                                {job.subtitle && job.company ? (
+                                                    <p className="mt-1 text-sm text-[#4a5565]">
+                                                        {job.company}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                            <div className="hidden shrink-0 items-center gap-2 sm:flex">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setShareOpen((open) => !open)
+                                                    }
+                                                    className="inline-flex size-8 items-center justify-center rounded-full border border-[#e2e8f0] text-[#64748b] transition hover:bg-[#f8faff]"
+                                                    aria-label={t('job_detail.share')}
+                                                >
+                                                    <img
+                                                        src="/images/job-detail/share.svg"
+                                                        alt=""
+                                                        className="size-3.5"
+                                                        width={14}
+                                                        height={14}
+                                                    />
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -335,9 +369,9 @@ export default function JobShow({
                                     <h2 className="text-lg font-bold text-[#050315]">
                                         {t('job_detail.overview')}
                                     </h2>
-                                    <p className="mt-3 text-sm leading-[23px] text-[#4a5565]">
-                                        {overview}
-                                    </p>
+                                    <div className="mt-3 text-sm leading-[23px] text-[#4a5565]">
+                                        <RichTextContent html={overview} />
+                                    </div>
                                 </section>
 
                                 <section className="mt-8">
@@ -409,47 +443,22 @@ export default function JobShow({
                         </div>
 
                         <aside className="space-y-5">
-                            <article className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
-                                <h2 className="text-lg font-bold text-[#050315]">
-                                    {t('job_detail.about_company')}
-                                </h2>
-                                <div className="mt-4 flex items-center gap-3">
-                                    <div
-                                        className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-                                        style={{
-                                            backgroundImage:
-                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
-                                        }}
-                                    >
-                                        {job.initials || 'JP'}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-[#050315]">
-                                            {job.company}
-                                        </p>
-                                        <p className="text-xs text-[#6a7282]">
-                                            {job.company_industry}
-                                        </p>
-                                    </div>
-                                </div>
-                                <p className="mt-4 text-sm leading-[23px] text-[#4a5565]">
-                                    {job.company_about}
-                                </p>
-                                <a
-                                    href={job.company_website}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#0057c8] transition hover:underline"
-                                >
-                                    <img
-                                        src="/images/job-detail/external-link.svg"
-                                        alt=""
-                                        className="size-4"
-                                        width={16}
-                                        height={16}
-                                    />
-                                    {t('job_detail.visit_website')}
-                                </a>
+                            <div>
+                                <AboutCompanyCard
+                                    title={t('job_detail.about_company')}
+                                    companyName={
+                                        job.company ||
+                                        t('employer.profile.company_fallback')
+                                    }
+                                    industry={job.company_industry}
+                                    about={job.company_about}
+                                    website={job.company_website}
+                                    logoUrl={job.company_logo_url}
+                                    initials={job.initials || 'JP'}
+                                    visitWebsiteLabel={t(
+                                        'job_detail.visit_website',
+                                    )}
+                                />
 
                                 {!auth.user && (
                                     <div className="mt-5 rounded-xl bg-[#eff6ff] p-4">
@@ -464,7 +473,7 @@ export default function JobShow({
                                         </Link>
                                     </div>
                                 )}
-                            </article>
+                            </div>
 
                             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
                                 <h2 className="text-lg font-bold text-[#050315]">

@@ -211,6 +211,7 @@ class JobManagementController extends Controller
         return [
             'id' => $job->id,
             'title' => $job->title,
+            'subtitle' => $job->subtitle,
             'slug' => $job->slug,
             'employer' => $job->employer?->company_name ?: $job->employer?->name,
             'category' => $job->category ?: '—',

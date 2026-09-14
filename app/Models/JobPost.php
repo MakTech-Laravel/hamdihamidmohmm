@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class JobPost extends Model
@@ -23,6 +24,8 @@ class JobPost extends Model
     protected $fillable = [
         'employer_id',
         'title',
+        'subtitle',
+        'logo_path',
         'slug',
         'category',
         'location',
@@ -57,9 +60,35 @@ class JobPost extends Model
     {
         static::creating(function (JobPost $job): void {
             if (blank($job->slug)) {
-                $job->slug = Str::slug($job->title) . '-' . Str::lower(Str::random(6));
+                $job->slug = Str::slug($job->title).'-'.Str::lower(Str::random(6));
             }
         });
+
+        static::deleting(function (JobPost $job): void {
+            $job->deleteLogoFile();
+        });
+    }
+
+    public function hasLogo(): bool
+    {
+        return filled($this->logo_path)
+            && Storage::disk('public')->exists((string) $this->logo_path);
+    }
+
+    public function logoUrl(): ?string
+    {
+        if (! $this->hasLogo()) {
+            return null;
+        }
+
+        return '/storage/'.$this->logo_path;
+    }
+
+    public function deleteLogoFile(): void
+    {
+        if (filled($this->logo_path)) {
+            Storage::disk('public')->delete((string) $this->logo_path);
+        }
     }
 
     /**

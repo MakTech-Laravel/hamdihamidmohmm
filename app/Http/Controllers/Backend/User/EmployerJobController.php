@@ -6,11 +6,13 @@ use App\Enums\JobPostStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\StoreEmployerJobRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerJobRequest;
+use App\Http\Requests\Backend\User\UploadEmployerJobLogoRequest;
 use App\Models\JobPost;
 use App\Models\User;
 use App\Support\EmployerPlanSnapshot;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -50,6 +52,7 @@ class EmployerJobController extends Controller
         return Inertia::render('backend/User/EmployerJobEditor', [
             'job' => null,
             'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
+            'company' => $employer ? $this->companySummary($employer) : null,
             'options' => $this->formOptions(),
         ]);
     }
@@ -67,13 +70,15 @@ class EmployerJobController extends Controller
             return back()->withErrors(['title' => $creditError]);
         }
 
-        JobPost::query()->create([
-            ...$request->safe()->except(['publish', 'featured']),
+        $job = JobPost::query()->create([
+            ...$request->safe()->except(['publish', 'featured', 'logo']),
             'employer_id' => $employer->id,
             'featured' => false,
             'status' => $publish ? JobPostStatus::Pending : JobPostStatus::Draft,
             'expires_at' => $request->date('expires_at') ?? ($publish ? now()->addDays(30) : null),
         ]);
+
+        $this->storeJobLogo($job, $request->file('logo'));
 
         return redirect()
             ->route('employer.jobs')
@@ -90,6 +95,9 @@ class EmployerJobController extends Controller
             'job' => [
                 'id' => $job->id,
                 'title' => $job->title,
+                'subtitle' => $job->subtitle,
+                'slug' => $job->slug,
+                'logo_url' => $job->hasLogo() ? $job->logoUrl() : null,
                 'category' => $job->category,
                 'location' => $job->location,
                 'employment_type' => $job->employment_type,
@@ -102,6 +110,7 @@ class EmployerJobController extends Controller
                 'status' => $job->effectiveStatus()->value,
             ],
             'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
+            'company' => $employer ? $this->companySummary($employer) : null,
             'options' => $this->formOptions(),
         ]);
     }
@@ -123,9 +132,11 @@ class EmployerJobController extends Controller
         }
 
         $job->update([
-            ...$request->safe()->except(['publish', 'featured']),
+            ...$request->safe()->except(['publish', 'featured', 'logo']),
             'featured' => false,
         ]);
+
+        $this->storeJobLogo($job, $request->file('logo'));
 
         if ($publish && in_array($job->status, [JobPostStatus::Draft, JobPostStatus::Rejected], true)) {
             $job->forceFill([
@@ -138,6 +149,24 @@ class EmployerJobController extends Controller
         return redirect()
             ->route('employer.jobs')
             ->with('success', 'Job updated.');
+    }
+
+    public function uploadLogo(UploadEmployerJobLogoRequest $request, JobPost $job): RedirectResponse
+    {
+        $this->authorizeJob($request, $job);
+        $this->storeJobLogo($job, $request->file('logo'));
+
+        return back()->with('success', 'Job logo updated.');
+    }
+
+    public function destroyLogo(Request $request, JobPost $job): RedirectResponse
+    {
+        $this->authorizeJob($request, $job);
+
+        $job->deleteLogoFile();
+        $job->forceFill(['logo_path' => null])->save();
+
+        return back()->with('success', 'Job logo removed.');
     }
 
     public function duplicate(Request $request, JobPost $job): RedirectResponse
@@ -243,10 +272,63 @@ class EmployerJobController extends Controller
     private function formOptions(): array
     {
         return [
-            'categories' => ['Technology', 'Design', 'Marketing', 'Finance', 'Healthcare', 'Construction', 'Logistics', 'Retail'],
+            'categories' => [
+                'Technology',
+                'Design',
+                'Marketing',
+                'Finance',
+                'Healthcare',
+                'Construction',
+                'Logistics',
+                'Retail',
+                'Other',
+            ],
             'types' => ['Full-time', 'Part-time', 'Contract', 'Remote'],
             'experience_levels' => ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'],
         ];
+    }
+
+    /**
+     * @return array{
+     *     name: string,
+     *     industry: string|null,
+     *     about: string|null,
+     *     website: string|null,
+     *     initials: string,
+     *     logo_url: string|null
+     * }
+     */
+    private function companySummary(User $employer): array
+    {
+        $name = (string) ($employer->company_name ?: $employer->name ?: 'Company');
+
+        return [
+            'name' => $name,
+            'industry' => $employer->industry,
+            'about' => $employer->about,
+            'website' => $employer->website,
+            'initials' => collect(explode(' ', $name))
+                ->filter()
+                ->take(2)
+                ->map(fn (string $part): string => Str::upper(Str::substr($part, 0, 1)))
+                ->implode(''),
+            'logo_url' => $employer->hasCompanyLogo() ? $employer->companyLogoUrl() : null,
+        ];
+    }
+
+    private function storeJobLogo(JobPost $job, ?UploadedFile $logo): void
+    {
+        if ($logo === null) {
+            return;
+        }
+
+        $job->deleteLogoFile();
+
+        $path = $logo->store('job-logos/'.$job->employer_id, 'public');
+
+        $job->forceFill([
+            'logo_path' => $path,
+        ])->save();
     }
 
     private function authorizeJob(Request $request, JobPost $job): void

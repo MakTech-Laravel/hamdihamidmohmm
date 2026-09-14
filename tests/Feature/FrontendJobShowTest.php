@@ -11,6 +11,7 @@ test('job detail page can be rendered', function () {
     $job = JobPost::factory()->create([
         'employer_id' => $employer->id,
         'title' => 'Senior Frontend Developer',
+        'subtitle' => 'Shape the product experience',
         'slug' => 'senior-frontend-developer',
         'status' => JobPostStatus::Active,
     ]);
@@ -21,7 +22,9 @@ test('job detail page can be rendered', function () {
             ->component('frontend/job-show')
             ->where('job.slug', 'senior-frontend-developer')
             ->where('job.title', 'Senior Frontend Developer')
-            ->where('job.company', 'TechCorp Solutions'));
+            ->where('job.subtitle', 'Shape the product experience')
+            ->where('job.company', 'TechCorp Solutions')
+            ->has('job.company_logo_url'));
 });
 
 test('job detail page returns not found for unknown slug', function () {

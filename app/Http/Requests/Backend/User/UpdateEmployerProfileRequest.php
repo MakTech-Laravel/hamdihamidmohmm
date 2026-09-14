@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Backend\User;
 
+use App\Support\SafeHtml;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,6 +19,12 @@ class UpdateEmployerProfileRequest extends FormRequest
 
         if ($year === '' || $year === null) {
             $this->merge(['founded_year' => null]);
+        }
+
+        if ($this->exists('about')) {
+            $this->merge([
+                'about' => SafeHtml::clean($this->input('about')),
+            ]);
         }
     }
 
@@ -36,7 +43,7 @@ class UpdateEmployerProfileRequest extends FormRequest
             'linkedin_url' => ['nullable', 'string', 'max:255'],
             'x_url' => ['nullable', 'string', 'max:255'],
             'instagram_url' => ['nullable', 'string', 'max:255'],
-            'about' => ['nullable', 'string'],
+            'about' => ['nullable', 'string', 'max:20000'],
             'address' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->user()?->id)],

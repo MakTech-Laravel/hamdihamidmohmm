@@ -23,6 +23,7 @@ class JobPostFactory extends Factory
         return [
             'employer_id' => User::factory()->employer(),
             'title' => $title,
+            'subtitle' => fake()->optional(0.6)->sentence(6),
             'slug' => Str::slug($title).'-'.Str::lower(Str::random(6)),
             'category' => fake()->randomElement(['Technology', 'Construction', 'Finance', 'Retail', 'Healthcare', 'Logistics']),
             'location' => fake()->randomElement(['Dubai, UAE', 'Abu Dhabi, UAE', 'Sharjah, UAE', 'Remote']),
