@@ -83,7 +83,9 @@ class JobManagementController extends Controller
     {
         abort_unless($request->user()?->canManageJobs(), 403);
 
-        $jobPost->load(['employer:id,name,company_name,email'])->loadCount('applications');
+        $jobPost->load([
+            'employer:id,name,company_name,email,company_logo_path,about,industry,website',
+        ])->loadCount('applications');
 
         return Inertia::render('backend/Admin/JobShow', [
             'job' => [
@@ -100,6 +102,13 @@ class JobManagementController extends Controller
                 'rejection_reason' => $jobPost->rejection_reason,
                 'expires_at' => $jobPost->expires_at?->toDateString(),
                 'employer_email' => $jobPost->employer?->email,
+                'logo_url' => $jobPost->hasLogo() ? $jobPost->logoUrl() : null,
+                'company_logo_url' => $jobPost->employer?->hasCompanyLogo()
+                    ? $jobPost->employer->companyLogoUrl()
+                    : null,
+                'company_about' => $jobPost->employer?->about,
+                'company_industry' => $jobPost->employer?->industry,
+                'company_website' => $jobPost->employer?->website,
             ],
         ]);
     }

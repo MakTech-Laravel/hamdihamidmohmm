@@ -95,9 +95,17 @@ class FrontendController extends Controller
                 'location' => $jobPost->location,
                 'type' => $jobPost->employment_type,
                 'category' => $jobPost->category,
+                'experience' => $jobPost->experience_level,
                 'salary' => $this->publicSalary($jobPost->employer, $jobPost->salary_range),
+                'posted' => $jobPost->created_at?->diffForHumans(),
+                'deadline' => $jobPost->expires_at?->toDateString(),
                 'description' => $jobPost->description,
                 'overview' => $jobPost->description,
+                'requirements' => $this->lines($jobPost->requirements),
+                'skills' => array_values(array_filter(
+                    is_array($jobPost->skills) ? $jobPost->skills : [],
+                    fn (mixed $skill): bool => filled($skill),
+                )),
                 'about' => $jobPost->employer?->about,
                 'industry' => $jobPost->employer?->industry,
                 'company_industry' => $jobPost->employer?->industry,
@@ -180,5 +188,21 @@ class FrontendController extends Controller
         $letters = preg_replace('/[^A-Za-z]/', '', (string) $name) ?: 'JP';
 
         return Str::upper(Str::substr($letters, 0, 2));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lines(?string $value): array
+    {
+        if (! filled($value)) {
+            return [];
+        }
+
+        return collect(preg_split('/\r\n|\r|\n/', $value) ?: [])
+            ->map(fn (string $line): string => trim($line))
+            ->filter()
+            ->values()
+            ->all();
     }
 }

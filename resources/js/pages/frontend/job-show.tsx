@@ -28,17 +28,19 @@ type JobDetail = {
     company_about?: string | null;
     company_website?: string | null;
     type?: string | null;
+    category?: string | null;
     location?: string | null;
-    experience?: string;
+    experience?: string | null;
     salary?: string | null;
-    posted?: string;
-    deadline?: string;
-    vacancies?: string;
+    posted?: string | null;
+    deadline?: string | null;
+    vacancies?: string | null;
     industry?: string | null;
     overview?: string | null;
     description?: string | null;
     responsibilities?: string[];
     requirements?: string[];
+    skills?: string[];
     benefits?: string[];
     similar?: SimilarJob[];
 };
@@ -85,6 +87,7 @@ export default function JobShow({
     const similar = job.similar ?? [];
     const responsibilities = job.responsibilities ?? [];
     const requirements = job.requirements ?? [];
+    const skills = job.skills ?? [];
     const benefits = job.benefits ?? [];
 
     const shareItems = [
@@ -133,11 +136,12 @@ export default function JobShow({
         { label: t('job_detail.deadline'), value: job.deadline },
         { label: t('job_detail.experience'), value: job.experience },
         { label: t('job_detail.job_type'), value: job.type },
+        { label: t('job_detail.category'), value: job.category },
         { label: t('job_detail.salary'), value: job.salary },
         { label: t('job_detail.location'), value: job.location },
         { label: t('job_detail.vacancies'), value: job.vacancies },
         { label: t('job_detail.industry'), value: job.industry },
-    ];
+    ].filter((item) => Boolean(item.value));
 
     return (
         <FrontendLayout>
@@ -246,32 +250,47 @@ export default function JobShow({
                                 </div>
 
                                 <div className="mt-5 flex flex-wrap gap-2">
-                                    <span className="rounded-full bg-[#dcfce7] px-2.5 py-0.5 text-xs font-semibold text-[#16a34a]">
-                                        {job.type}
-                                    </span>
-                                    <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
-                                        📍 {job.location}
-                                    </span>
-                                    <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
-                                        💼 {job.experience}
-                                    </span>
-                                    <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
-                                        💰 {job.salary}
-                                    </span>
+                                    {job.type ? (
+                                        <span className="rounded-full bg-[#dcfce7] px-2.5 py-0.5 text-xs font-semibold text-[#16a34a]">
+                                            {job.type}
+                                        </span>
+                                    ) : null}
+                                    {job.category ? (
+                                        <span className="rounded-full bg-[#eef5ff] px-2.5 py-0.5 text-xs font-semibold text-[#0057c8]">
+                                            {job.category}
+                                        </span>
+                                    ) : null}
+                                    {job.location ? (
+                                        <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
+                                            📍 {job.location}
+                                        </span>
+                                    ) : null}
+                                    {job.experience ? (
+                                        <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
+                                            💼 {job.experience}
+                                        </span>
+                                    ) : null}
+                                    {job.salary ? (
+                                        <span className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#475569]">
+                                            💰 {job.salary}
+                                        </span>
+                                    ) : null}
                                 </div>
 
-                                <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-[#f1f5f9] pt-5 sm:grid-cols-4">
-                                    {metaItems.map((item) => (
-                                        <div key={item.label}>
-                                            <p className="text-xs text-[#99a1af]">
-                                                {item.label}
-                                            </p>
-                                            <p className="mt-1 text-sm font-semibold text-[#050315]">
-                                                {item.value}
-                                            </p>
-                                        </div>
-                                    ))}
-                                </div>
+                                {metaItems.length > 0 ? (
+                                    <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-[#f1f5f9] pt-5 sm:grid-cols-4">
+                                        {metaItems.map((item) => (
+                                            <div key={item.label}>
+                                                <p className="text-xs text-[#99a1af]">
+                                                    {item.label}
+                                                </p>
+                                                <p className="mt-1 text-sm font-semibold text-[#050315]">
+                                                    {item.value}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : null}
 
                                 <div className="relative mt-6 flex flex-col gap-3 sm:flex-row">
                                     {can_apply ? (
@@ -365,80 +384,106 @@ export default function JobShow({
                             </article>
 
                             <article className="mt-5 rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] sm:p-7">
-                                <section>
-                                    <h2 className="text-lg font-bold text-[#050315]">
-                                        {t('job_detail.overview')}
-                                    </h2>
-                                    <div className="mt-3 text-sm leading-[23px] text-[#4a5565]">
-                                        <RichTextContent html={overview} />
-                                    </div>
-                                </section>
+                                {overview ? (
+                                    <section>
+                                        <h2 className="text-lg font-bold text-[#050315]">
+                                            {t('job_detail.overview')}
+                                        </h2>
+                                        <div className="mt-3 text-sm leading-[23px] text-[#4a5565]">
+                                            <RichTextContent html={overview} />
+                                        </div>
+                                    </section>
+                                ) : null}
 
-                                <section className="mt-8">
-                                    <h2 className="text-lg font-bold text-[#050315]">
-                                        {t('job_detail.responsibilities')}
-                                    </h2>
-                                    <ul className="mt-4 space-y-3">
-                                        {responsibilities.map((item) => (
-                                            <li
-                                                key={item}
-                                                className="flex items-start gap-3 text-sm text-[#364153]"
-                                            >
-                                                <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[#eff6ff]">
-                                                    <img
-                                                        src="/images/job-detail/check-blue.svg"
-                                                        alt=""
-                                                        className="size-3"
-                                                        width={12}
-                                                        height={12}
-                                                    />
+                                {responsibilities.length > 0 ? (
+                                    <section className="mt-8">
+                                        <h2 className="text-lg font-bold text-[#050315]">
+                                            {t('job_detail.responsibilities')}
+                                        </h2>
+                                        <ul className="mt-4 space-y-3">
+                                            {responsibilities.map((item) => (
+                                                <li
+                                                    key={item}
+                                                    className="flex items-start gap-3 text-sm text-[#364153]"
+                                                >
+                                                    <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[#eff6ff]">
+                                                        <img
+                                                            src="/images/job-detail/check-blue.svg"
+                                                            alt=""
+                                                            className="size-3"
+                                                            width={12}
+                                                            height={12}
+                                                        />
+                                                    </span>
+                                                    {item}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </section>
+                                ) : null}
+
+                                {requirements.length > 0 ? (
+                                    <section className="mt-8">
+                                        <h2 className="text-lg font-bold text-[#050315]">
+                                            {t('job_detail.requirements')}
+                                        </h2>
+                                        <ul className="mt-4 space-y-3">
+                                            {requirements.map((item) => (
+                                                <li
+                                                    key={item}
+                                                    className="flex items-start gap-3 text-sm text-[#364153]"
+                                                >
+                                                    <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[#dcfce7]">
+                                                        <img
+                                                            src="/images/job-detail/check-green.svg"
+                                                            alt=""
+                                                            className="size-3"
+                                                            width={12}
+                                                            height={12}
+                                                        />
+                                                    </span>
+                                                    {item}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </section>
+                                ) : null}
+
+                                {skills.length > 0 ? (
+                                    <section className="mt-8">
+                                        <h2 className="text-lg font-bold text-[#050315]">
+                                            {t('job_detail.skills')}
+                                        </h2>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            {skills.map((skill) => (
+                                                <span
+                                                    key={skill}
+                                                    className="inline-flex rounded-full bg-[#eef5ff] px-3 py-1.5 text-xs font-semibold text-[#0057c8]"
+                                                >
+                                                    {skill}
                                                 </span>
-                                                {item}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </section>
+                                            ))}
+                                        </div>
+                                    </section>
+                                ) : null}
 
-                                <section className="mt-8">
-                                    <h2 className="text-lg font-bold text-[#050315]">
-                                        {t('job_detail.requirements')}
-                                    </h2>
-                                    <ul className="mt-4 space-y-3">
-                                        {requirements.map((item) => (
-                                            <li
-                                                key={item}
-                                                className="flex items-start gap-3 text-sm text-[#364153]"
-                                            >
-                                                <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[#dcfce7]">
-                                                    <img
-                                                        src="/images/job-detail/check-green.svg"
-                                                        alt=""
-                                                        className="size-3"
-                                                        width={12}
-                                                        height={12}
-                                                    />
+                                {benefits.length > 0 ? (
+                                    <section className="mt-8">
+                                        <h2 className="text-lg font-bold text-[#050315]">
+                                            {t('job_detail.benefits')}
+                                        </h2>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            {benefits.map((benefit) => (
+                                                <span
+                                                    key={benefit}
+                                                    className="inline-flex items-center gap-1.5 rounded-full border border-[#bbf7d0] bg-[#f0fdf4] px-3 py-1.5 text-xs font-semibold text-[#15803d]"
+                                                >
+                                                    ✓ {benefit}
                                                 </span>
-                                                {item}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </section>
-
-                                <section className="mt-8">
-                                    <h2 className="text-lg font-bold text-[#050315]">
-                                        {t('job_detail.benefits')}
-                                    </h2>
-                                    <div className="mt-4 flex flex-wrap gap-2">
-                                        {benefits.map((benefit) => (
-                                            <span
-                                                key={benefit}
-                                                className="inline-flex items-center gap-1.5 rounded-full border border-[#bbf7d0] bg-[#f0fdf4] px-3 py-1.5 text-xs font-semibold text-[#15803d]"
-                                            >
-                                                ✓ {benefit}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </section>
+                                            ))}
+                                        </div>
+                                    </section>
+                                ) : null}
                             </article>
                         </div>
 

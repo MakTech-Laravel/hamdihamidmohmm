@@ -9,11 +9,15 @@ test('admins can view full job details before approving', function () {
     $employer = User::factory()->employer()->create([
         'email' => 'employer@example.com',
         'company_name' => 'Horizon Labs',
+        'industry' => 'Software',
+        'about' => '<p>Product studio.</p>',
+        'website' => 'https://horizon.example',
     ]);
 
     $job = JobPost::factory()->pending()->create([
         'employer_id' => $employer->id,
         'title' => 'Senior Laravel Engineer',
+        'subtitle' => 'Own the hiring platform',
         'description' => 'Build reliable hiring workflows.',
         'requirements' => '5+ years PHP experience.',
         'skills' => ['Laravel', 'PHP', 'MySQL'],
@@ -29,6 +33,7 @@ test('admins can view full job details before approving', function () {
         ->assertInertia(fn($page) => $page
             ->component('backend/Admin/JobShow')
             ->where('job.title', 'Senior Laravel Engineer')
+            ->where('job.subtitle', 'Own the hiring platform')
             ->where('job.employer', 'Horizon Labs')
             ->where('job.employer_email', 'employer@example.com')
             ->where('job.description', 'Build reliable hiring workflows.')
@@ -39,6 +44,11 @@ test('admins can view full job details before approving', function () {
             ->where('job.salary_range', '15,000 - 20,000 SAR')
             ->where('job.created', $job->created_at?->toDateString())
             ->where('job.expires_at', $job->expires_at?->toDateString())
+            ->where('job.company_industry', 'Software')
+            ->where('job.company_about', '<p>Product studio.</p>')
+            ->where('job.company_website', 'https://horizon.example')
+            ->has('job.logo_url')
+            ->has('job.company_logo_url')
             ->where('job.can_review', true)
             ->where('job.status', JobPostStatus::Pending->label()));
 });

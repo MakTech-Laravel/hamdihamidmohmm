@@ -13,6 +13,7 @@ import {
     AdminSecondaryButton,
     AdminStatusBadge,
 } from '@/components/admin-portal/ui';
+import { AboutCompanyCard } from '@/components/employer/about-company-card';
 import { Button } from '@/components/ui/button';
 import { RichTextContent } from '@/components/ui/rich-text-editor';
 import {
@@ -50,6 +51,11 @@ type Job = {
     rejection_reason: string | null;
     expires_at: string | null;
     can_review: boolean;
+    logo_url?: string | null;
+    company_logo_url?: string | null;
+    company_about?: string | null;
+    company_industry?: string | null;
+    company_website?: string | null;
 };
 
 export default function JobShow({ job }: { job: Job }) {
@@ -120,6 +126,18 @@ export default function JobShow({ job }: { job: Job }) {
                     }
                 />
 
+                {job.logo_url ? (
+                    <AdminPanel>
+                        <h2 className="text-base font-bold text-[#050315]">
+                            {t('admin.jobs.fields.job_logo')}
+                        </h2>
+                        <img
+                            src={job.logo_url}
+                            alt={job.title}
+                            className="mt-3 size-20 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
+                        />
+                    </AdminPanel>
+                ) : null}
                 {flash.success && (
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
                         {typeof flash.success === 'string'
@@ -176,6 +194,17 @@ export default function JobShow({ job }: { job: Job }) {
                                 </p>
                             )}
                         </AdminPanel>
+
+                        <AboutCompanyCard
+                            title={t('job_detail.about_company')}
+                            companyName={job.employer}
+                            industry={job.company_industry}
+                            about={job.company_about}
+                            website={job.company_website}
+                            logoUrl={job.company_logo_url}
+                            initials={job.employer.slice(0, 2).toUpperCase()}
+                            visitWebsiteLabel={t('job_detail.visit_website')}
+                        />
                     </div>
 
                     <div className="space-y-4">
@@ -188,6 +217,14 @@ export default function JobShow({ job }: { job: Job }) {
                             <p className="text-sm text-[#64748b]">
                                 {t('admin.jobs.fields.email')}:{' '}
                                 {job.employer_email || '—'}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.industry')}:{' '}
+                                {job.company_industry || '—'}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('admin.jobs.fields.website')}:{' '}
+                                {job.company_website || '—'}
                             </p>
                             <p className="text-sm text-[#64748b]">
                                 {t('admin.jobs.fields.category')}:{' '}
