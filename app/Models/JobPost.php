@@ -84,6 +84,19 @@ class JobPost extends Model
         return '/storage/'.$this->logo_path;
     }
 
+    public function listingLogoUrl(): ?string
+    {
+        if ($this->hasLogo()) {
+            return $this->logoUrl();
+        }
+
+        if ($this->employer?->hasCompanyLogo()) {
+            return $this->employer->companyLogoUrl();
+        }
+
+        return null;
+    }
+
     public function deleteLogoFile(): void
     {
         if (filled($this->logo_path)) {

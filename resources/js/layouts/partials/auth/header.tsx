@@ -11,7 +11,7 @@ import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTrigger } from '@/co
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
 import { useLocale } from '@/hooks/use-locale';
-import { home, login, register } from '@/routes';
+import { jobs, login, register } from '@/routes';
 import { type SharedData } from '@/types';
 
 export function AuthHeader() {
@@ -30,7 +30,7 @@ export function AuthHeader() {
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-primary-50 py-4 backdrop-blur-md">
             <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-8">
                 <div className="flex items-center gap-8">
-                    <Link href={home()} className="transition-transform active:scale-95" aria-label={t('nav.home')}>
+                    <Link href={jobs()} className="transition-transform active:scale-95" aria-label={t('nav.jobs')}>
                         <AppLogo />
                     </Link>
 

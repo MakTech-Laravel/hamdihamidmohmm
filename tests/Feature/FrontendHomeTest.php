@@ -9,30 +9,35 @@ use Database\Seeders\PackageSeeder;
 
 test('website root opens the jobs page by default', function () {
     $this->get('/')
-        ->assertRedirect('/jobs');
-
-    $this->get('/jobs')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('frontend/jobs')
             ->has('jobs'));
+
+    $this->get('/jobs')
+        ->assertRedirect('/');
 });
 
-test('home page can be rendered', function () {
-    $this->get(route('home'))
+test('discover page can be rendered', function () {
+    $this->get(route('discover'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('frontend/home')
             ->has('recommendedJobs'));
 });
 
-test('authenticated users can still view the home page', function () {
+test('legacy home path redirects to discover', function () {
+    $this->get('/home')
+        ->assertRedirect('/discover');
+});
+
+test('authenticated users can still view the discover page', function () {
     $user = User::factory()->jobSeeker()->create([
         'name' => 'Amina Seeker',
     ]);
 
     $this->actingAs($user)
-        ->get(route('home'))
+        ->get(route('discover'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('frontend/home')
@@ -41,7 +46,7 @@ test('authenticated users can still view the home page', function () {
             ->where('auth.user.profile_url', route('job-seeker.profile', absolute: false)));
 });
 
-test('home page only shows active public packages', function () {
+test('discover page only shows active public packages', function () {
     $this->seed(PackageSeeder::class);
 
     Package::query()
@@ -55,7 +60,7 @@ test('home page only shows active public packages', function () {
         'sort_order' => 99,
     ]);
 
-    $this->get(route('home'))
+    $this->get(route('discover'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('frontend/home')
@@ -67,7 +72,7 @@ test('home page only shows active public packages', function () {
                 && collect($packages)->pluck('name')->contains('Enterprise')));
 });
 
-test('home page shows recommended active jobs dynamically', function () {
+test('discover page shows recommended active jobs dynamically', function () {
     $employer = User::factory()->employer()->create(['company_name' => 'Nova Labs']);
 
     JobPost::factory()->create([
@@ -87,7 +92,7 @@ test('home page shows recommended active jobs dynamically', function () {
         'status' => JobPostStatus::Draft,
     ]);
 
-    $this->get(route('home'))
+    $this->get(route('discover'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('frontend/home')

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import FrontendLayout from '@/layouts/frontend-layout';
-import { home } from '@/routes';
+import { jobs } from '@/routes';
 
 type Props = {
     minAmount: number;
@@ -79,7 +79,7 @@ export default function YallaPayCheckout({
                 </Form>
 
                 <Link
-                    href={home()}
+                    href={jobs()}
                     className="mt-6 text-sm text-[#0b57d0] hover:underline"
                 >
                     Back to home

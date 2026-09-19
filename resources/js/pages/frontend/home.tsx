@@ -7,6 +7,7 @@ import PricingPackageCards, {
 } from '@/components/frontend/pricing-package-cards';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
+import { sudanLocationKeys } from '@/lib/sudan-locations';
 import { jobs, pricing } from '@/routes';
 import { show as jobShow } from '@/routes/jobs';
 import { role as registerRole } from '@/routes/register';
@@ -37,12 +38,10 @@ export default function Home({
     const locationOptions = useMemo(
         () => [
             { value: '', label: t('search.all_locations') },
-            { value: 'riyadh', label: t('location.riyadh') },
-            { value: 'jeddah', label: t('location.jeddah') },
-            { value: 'dammam', label: t('location.dammam') },
-            { value: 'dubai', label: t('location.dubai') },
-            { value: 'doha', label: t('location.doha') },
-            { value: 'remote', label: t('location.remote') },
+            ...sudanLocationKeys.map((key) => ({
+                value: key,
+                label: t(`location.${key}`),
+            })),
         ],
         [t],
     );
@@ -123,8 +122,11 @@ export default function Home({
         const selected = locationOptions.find(
             (option) => option.value === location,
         );
-        const locationFilter =
-            selected && selected.value !== '' ? selected.label : undefined;
+        const locationFilter = selected
+            ? selected.value !== ''
+                ? selected.label
+                : undefined
+            : location.trim() || undefined;
 
         router.get(jobs.url(), {
             search: keyword || undefined,
@@ -262,6 +264,13 @@ export default function Home({
                     locationOptions={locationOptions}
                     keywordPlaceholder={t('search.keyword_placeholder')}
                     locationAriaLabel={t('search.all_locations')}
+                    locationSearchPlaceholder={t(
+                        'jobs_page.location_search_placeholder',
+                    )}
+                    locationUseCustomLabel={(query) =>
+                        t('jobs_page.location_use_custom', { query })
+                    }
+                    locationEmptyLabel={t('jobs_page.location_empty')}
                     submitLabel={t('search.submit')}
                     onKeywordChange={setKeyword}
                     onLocationChange={setLocation}
