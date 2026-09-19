@@ -9,17 +9,21 @@ use App\Models\Package;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\PortalNotification;
+use Database\Seeders\JobTaxonomySeeder;
 use Illuminate\Support\Facades\Notification;
 
 test('employer can create a pending job and admin can approve it onto the public board', function () {
+    $this->seed(JobTaxonomySeeder::class);
     $employer = User::factory()->employer()->create();
     $admin = User::factory()->admin()->create();
 
     $this->actingAs($employer)
         ->post(route('employer.jobs.store'), [
             'title' => 'Senior Laravel Engineer',
-            'location' => 'Dubai, UAE',
-            'employment_type' => 'Full-time',
+            'location' => 'khartoum',
+            'country' => 'sudan',
+            'category' => 'technology',
+            'employment_type' => 'full_time',
             'description' => 'Build the job portal.',
         ])
         ->assertRedirect();
@@ -38,13 +42,13 @@ test('employer can create a pending job and admin can approve it onto the public
 
     $this->get(route('jobs'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('frontend/jobs')
             ->where('jobs.data.0.title', 'Senior Laravel Engineer'));
 
     $this->get(route('jobs.show', $job->slug))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('frontend/job-show')
             ->where('job.slug', $job->slug)
             ->where('job.title', 'Senior Laravel Engineer'));
@@ -84,7 +88,7 @@ test('a seeker can apply once, see employer status updates, and withdraw', funct
     $this->actingAs($seeker)
         ->get(route('job-seeker.applications'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->where('applications.0.status_value', JobApplicationStatus::Interview->value)
             ->where('applications.0.can_withdraw', true));
 
@@ -101,7 +105,7 @@ test('admin module indexes receive live props', function (string $route, string 
     $this->actingAs($admin)
         ->get(route($route))
         ->assertOk()
-        ->assertInertia(fn($page) => $page->has($prop));
+        ->assertInertia(fn ($page) => $page->has($prop));
 })->with([
     ['admin.jobs.index', 'jobs'],
     ['admin.applications.index', 'applications'],
@@ -149,7 +153,7 @@ test('dashboard counts match created records', function () {
     $this->actingAs($admin)
         ->get(route('admin.dashboard'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->where('stats.active_jobs', 1)
             ->where('stats.pending_jobs', 1)
             ->where('stats.applications_today', 1)
@@ -159,7 +163,7 @@ test('dashboard counts match created records', function () {
     $this->actingAs($employer)
         ->get(route('employer.dashboard'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->where('stats.total_jobs', 2)
             ->where('stats.active_jobs', 1)
             ->has('plan'));

@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+﻿import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
     ArrowRight,
@@ -38,7 +38,10 @@ import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
-const OTHER_CATEGORY = 'Other';
+type TaxonomyOption = {
+    value: string;
+    label: string;
+};
 
 type JobForm = {
     id: number;
@@ -47,6 +50,7 @@ type JobForm = {
     slug?: string | null;
     logo_url?: string | null;
     category: string | null;
+    country?: string | null;
     location: string | null;
     employment_type: string | null;
     experience_level: string | null;
@@ -78,8 +82,10 @@ type Props = {
     plan: Plan | null;
     company: Company | null;
     options: {
-        categories: string[];
-        types: string[];
+        countries: TaxonomyOption[];
+        dutyStations: TaxonomyOption[];
+        positionAreas: TaxonomyOption[];
+        employmentTypes: TaxonomyOption[];
         experience_levels: string[];
     };
 };
@@ -109,6 +115,7 @@ export default function EmployerJobEditor({
         title: string;
         subtitle: string;
         category: string;
+        country: string;
         location: string;
         employment_type: string;
         experience_level: string;
@@ -123,8 +130,9 @@ export default function EmployerJobEditor({
         title: job?.title ?? '',
         subtitle: job?.subtitle ?? '',
         category: job?.category ?? '',
+        country: job?.country ?? '',
         location: job?.location ?? '',
-        employment_type: job?.employment_type ?? 'Full-time',
+        employment_type: job?.employment_type ?? options.employmentTypes[0]?.value ?? 'full_time',
         experience_level: job?.experience_level ?? '',
         salary_range: job?.salary_range ?? '',
         description: job?.description ?? '',
@@ -176,7 +184,7 @@ export default function EmployerJobEditor({
             .slice(0, 160),
     ]
         .filter(Boolean)
-        .join(' — ');
+        .join(' â€” ');
 
     useEffect(() => {
         if (!shareOpen) {
@@ -241,7 +249,7 @@ export default function EmployerJobEditor({
             const { logo, ...rest } = data;
             const payload = { ...rest, publish };
 
-            // Logo uploads on edit use a dedicated endpoint. Never send multipart PUT —
+            // Logo uploads on edit use a dedicated endpoint. Never send multipart PUT â€”
             // PHP does not populate multipart bodies on PUT, so fields like title vanish.
             if (!isEdit && logo) {
                 return { ...payload, logo };
@@ -540,41 +548,39 @@ export default function EmployerJobEditor({
                             </Field>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <Field
-                                    label={t(
-                                        'employer.job_editor.field.category',
-                                    )}
+                                    label={t('employer.jobs.form.position_area')}
                                     error={form.errors.category}
                                 >
-                                    <CategoryCombobox
+                                    <NativeSelect
                                         value={form.data.category}
-                                        options={options.categories}
-                                        onChange={(value) =>
-                                            form.setData('category', value)
-                                        }
-                                        placeholder={t(
-                                            'employer.job_editor.field.select_category',
-                                        )}
-                                        otherLabel={t(
-                                            'employer.job_editor.field.category_other',
-                                        )}
-                                        customPlaceholder={t(
-                                            'employer.job_editor.field.category_custom_placeholder',
-                                        )}
-                                        addLabel={(query) =>
-                                            t(
-                                                'employer.job_editor.field.category_add',
-                                                { name: query },
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'category',
+                                                event.target.value,
                                             )
                                         }
-                                        searchHint={t(
-                                            'employer.job_editor.field.category_search_hint',
-                                        )}
-                                    />
+                                        className={selectClass}
+                                    >
+                                        <option value="">
+                                            {t(
+                                                'employer.job_editor.field.select_category',
+                                            )}
+                                        </option>
+                                        {options.positionAreas.map((item) => (
+                                            <option
+                                                key={item.value}
+                                                value={item.value}
+                                            >
+                                                {item.label}
+                                            </option>
+                                        ))}
+                                    </NativeSelect>
                                 </Field>
                                 <Field
                                     label={t(
                                         'employer.job_editor.field.job_type',
                                     )}
+                                    error={form.errors.employment_type}
                                 >
                                     <NativeSelect
                                         value={form.data.employment_type}
@@ -586,19 +592,48 @@ export default function EmployerJobEditor({
                                         }
                                         className={selectClass}
                                     >
-                                        {options.types.map((item) => (
-                                            <option key={item} value={item}>
-                                                {item}
+                                        {options.employmentTypes.map((item) => (
+                                            <option
+                                                key={item.value}
+                                                value={item.value}
+                                            >
+                                                {item.label}
                                             </option>
                                         ))}
                                     </NativeSelect>
                                 </Field>
                                 <Field
-                                    label={t(
-                                        'employer.job_editor.field.location',
-                                    )}
+                                    label={t('employer.jobs.form.country')}
+                                    error={form.errors.country}
                                 >
-                                    <input
+                                    <NativeSelect
+                                        value={form.data.country}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'country',
+                                                event.target.value,
+                                            )
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="">
+                                            {t('jobs_page.select_option')}
+                                        </option>
+                                        {options.countries.map((item) => (
+                                            <option
+                                                key={item.value}
+                                                value={item.value}
+                                            >
+                                                {item.label}
+                                            </option>
+                                        ))}
+                                    </NativeSelect>
+                                </Field>
+                                <Field
+                                    label={t('employer.jobs.form.duty_station')}
+                                    error={form.errors.location}
+                                >
+                                    <NativeSelect
                                         value={form.data.location}
                                         onChange={(event) =>
                                             form.setData(
@@ -606,11 +641,20 @@ export default function EmployerJobEditor({
                                                 event.target.value,
                                             )
                                         }
-                                        placeholder={t(
-                                            'employer.job_editor.field.location_placeholder',
-                                        )}
-                                        className={inputClass}
-                                    />
+                                        className={selectClass}
+                                    >
+                                        <option value="">
+                                            {t('jobs_page.select_option')}
+                                        </option>
+                                        {options.dutyStations.map((item) => (
+                                            <option
+                                                key={item.value}
+                                                value={item.value}
+                                            >
+                                                {item.label}
+                                            </option>
+                                        ))}
+                                    </NativeSelect>
                                 </Field>
                                 <Field
                                     label={t(
@@ -1347,258 +1391,6 @@ function Field({
             <span className="block">{label}</span>
             {children}
             {error && <p className="mt-1 text-xs text-[#b91c1c]">{error}</p>}
-        </div>
-    );
-}
-
-function CategoryCombobox({
-    value,
-    options,
-    onChange,
-    placeholder,
-    otherLabel,
-    customPlaceholder,
-    addLabel,
-    searchHint,
-}: {
-    value: string;
-    options: string[];
-    onChange: (value: string) => void;
-    placeholder: string;
-    otherLabel: string;
-    customPlaceholder: string;
-    addLabel: (query: string) => string;
-    searchHint: string;
-}) {
-    const rootRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const presetOptions = useMemo(
-        () => options.filter((item) => item !== OTHER_CATEGORY),
-        [options],
-    );
-    const isPreset = presetOptions.some(
-        (item) => item.toLowerCase() === value.toLowerCase(),
-    );
-    const [open, setOpen] = useState(false);
-    const [query, setQuery] = useState(isPreset ? value : '');
-    const [customMode, setCustomMode] = useState(
-        value !== '' && !isPreset,
-    );
-    const [customValue, setCustomValue] = useState(
-        value !== '' && !isPreset ? value : '',
-    );
-
-    useEffect(() => {
-        const onPointerDown = (event: MouseEvent): void => {
-            if (
-                rootRef.current &&
-                !rootRef.current.contains(event.target as Node)
-            ) {
-                setOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', onPointerDown);
-
-        return () => document.removeEventListener('mousedown', onPointerDown);
-    }, []);
-
-    const filtered = useMemo(() => {
-        const needle = query.trim().toLowerCase();
-
-        if (!needle) {
-            return presetOptions;
-        }
-
-        return presetOptions.filter((item) =>
-            item.toLowerCase().includes(needle),
-        );
-    }, [presetOptions, query]);
-
-    const canAddCustom = useMemo(() => {
-        const needle = query.trim();
-
-        if (!needle) {
-            return false;
-        }
-
-        return !presetOptions.some(
-            (item) => item.toLowerCase() === needle.toLowerCase(),
-        );
-    }, [presetOptions, query]);
-
-    const selectPreset = (item: string): void => {
-        setCustomMode(false);
-        setCustomValue('');
-        setQuery(item);
-        onChange(item);
-        setOpen(false);
-    };
-
-    const selectOther = (): void => {
-        setCustomMode(true);
-        setQuery('');
-        setCustomValue('');
-        onChange('');
-        setOpen(false);
-    };
-
-    const addCustom = (raw: string): void => {
-        const next = raw.trim();
-
-        if (!next) {
-            return;
-        }
-
-        setCustomMode(true);
-        setCustomValue(next);
-        setQuery('');
-        onChange(next);
-        setOpen(false);
-    };
-
-    const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-
-            if (canAddCustom) {
-                addCustom(query);
-                return;
-            }
-
-            if (filtered[0]) {
-                selectPreset(filtered[0]);
-            }
-        }
-
-        if (event.key === 'Escape') {
-            setOpen(false);
-        }
-    };
-
-    return (
-        <div ref={rootRef} className="relative mt-1">
-            <div className="relative">
-                <input
-                    ref={inputRef}
-                    value={customMode ? otherLabel : query}
-                    readOnly={customMode}
-                    onFocus={() => {
-                        if (!customMode) {
-                            setOpen(true);
-                        }
-                    }}
-                    onChange={(event) => {
-                        setCustomMode(false);
-                        setQuery(event.target.value);
-                        setOpen(true);
-                        onChange('');
-                    }}
-                    onKeyDown={onKeyDown}
-                    placeholder={value || placeholder}
-                    className={cn(
-                        'w-full rounded-xl border border-[#e8d5e8] bg-gradient-to-b from-white to-[#f8faff] py-2.5 ps-3 pe-10 text-sm text-[#050315] outline-none focus:border-[#0057c8]',
-                        customMode && 'cursor-pointer text-[#64748b]',
-                    )}
-                    aria-expanded={open}
-                    aria-haspopup="listbox"
-                    role="combobox"
-                />
-                <button
-                    type="button"
-                    className="absolute end-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#64748b] hover:bg-[#eef2ff]"
-                    onClick={() => {
-                        if (customMode) {
-                            setCustomMode(false);
-                            setCustomValue('');
-                            setQuery('');
-                            onChange('');
-                            setOpen(true);
-                            inputRef.current?.focus();
-                            return;
-                        }
-
-                        setOpen((current) => !current);
-                        inputRef.current?.focus();
-                    }}
-                    aria-label={placeholder}
-                >
-                    {customMode ? (
-                        <X className="size-4" />
-                    ) : (
-                        <ChevronDown
-                            className={cn(
-                                'size-4 transition',
-                                open && 'rotate-180',
-                            )}
-                        />
-                    )}
-                </button>
-            </div>
-
-            {open && !customMode && (
-                <div
-                    className="absolute z-30 mt-1 max-h-64 w-full overflow-auto rounded-2xl border border-[#dbe4ef] bg-white p-1.5 shadow-[0_18px_40px_rgba(5,3,21,0.14)]"
-                    role="listbox"
-                >
-                    <p className="px-3 py-1.5 text-[11px] font-medium tracking-wide text-[#94a3b8] uppercase">
-                        {searchHint}
-                    </p>
-                    {filtered.map((item) => (
-                        <button
-                            key={item}
-                            type="button"
-                            role="option"
-                            aria-selected={value === item}
-                            onClick={() => selectPreset(item)}
-                            className={cn(
-                                'flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-start text-sm font-medium text-[#334155] hover:bg-[#eef5ff] hover:text-[#0057c8]',
-                                value === item &&
-                                'bg-[#eef5ff] font-semibold text-[#0057c8]',
-                            )}
-                        >
-                            <span>{item}</span>
-                            {value === item && <Check className="size-4" />}
-                        </button>
-                    ))}
-                    {canAddCustom && (
-                        <button
-                            type="button"
-                            onClick={() => addCustom(query)}
-                            className="mt-0.5 flex w-full cursor-pointer items-center gap-2 rounded-xl border border-dashed border-[#bfd5f2] bg-[#f8faff] px-3 py-2.5 text-start text-sm font-semibold text-[#0057c8] hover:bg-[#eef5ff]"
-                        >
-                            <Plus className="size-4 shrink-0" />
-                            <span>{addLabel(query.trim())}</span>
-                        </button>
-                    )}
-                    <button
-                        type="button"
-                        role="option"
-                        onClick={selectOther}
-                        className="mt-0.5 flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-start text-sm font-medium text-[#334155] hover:bg-[#eef5ff] hover:text-[#0057c8]"
-                    >
-                        <span>{otherLabel}</span>
-                    </button>
-                    {filtered.length === 0 && !canAddCustom && (
-                        <p className="px-3 py-2 text-sm text-[#94a3b8]">
-                            {placeholder}
-                        </p>
-                    )}
-                </div>
-            )}
-
-            {customMode && (
-                <input
-                    value={customValue}
-                    onChange={(event) => {
-                        setCustomValue(event.target.value);
-                        onChange(event.target.value);
-                    }}
-                    placeholder={customPlaceholder}
-                    className={cn(inputClass, 'mt-2')}
-                    autoFocus
-                />
-            )}
         </div>
     );
 }

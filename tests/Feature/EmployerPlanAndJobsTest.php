@@ -7,6 +7,11 @@ use App\Models\JobPost;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\User;
+use Database\Seeders\JobTaxonomySeeder;
+
+beforeEach(function () {
+    $this->seed(JobTaxonomySeeder::class);
+});
 
 test('employer dashboard includes the live plan snapshot', function () {
     $employer = User::factory()->employer()->create();
@@ -50,8 +55,13 @@ test('employers can open the post job wizard and edit an existing job', function
             ->where('job', null)
             ->where('company.name', 'Horizon Hiring Ltd')
             ->has('company.logo_url')
-            ->has('options.categories')
-            ->where('options.categories', fn ($categories) => collect($categories)->contains('Other')));
+            ->has('options.positionAreas')
+            ->where('options.positionAreas', fn ($areas) => collect($areas)->contains(
+                fn ($item) => ($item['value'] ?? null) === 'other' || ($item['label'] ?? null) === 'Other'
+            ))
+            ->has('options.employmentTypes')
+            ->has('options.countries')
+            ->has('options.dutyStations'));
 
     $this->actingAs($employer)
         ->get(route('employer.jobs.edit', $job))
@@ -64,7 +74,7 @@ test('employers can open the post job wizard and edit an existing job', function
             ->where('company.name', 'Horizon Hiring Ltd'));
 });
 
-test('employers can save a job with a custom category', function () {
+test('employers cannot save a job with a free-text category', function () {
     $employer = User::factory()->employer()->create();
 
     $this->actingAs($employer)
@@ -77,12 +87,31 @@ test('employers can save a job with a custom category', function () {
             'experience_level' => 'Mid Level',
             'publish' => false,
         ])
+        ->assertSessionHasErrors(['category', 'location', 'employment_type']);
+});
+
+test('employers can save a job with taxonomy selects', function () {
+    $employer = User::factory()->employer()->create();
+
+    $this->actingAs($employer)
+        ->post(route('employer.jobs.store'), [
+            'title' => 'Hospital Administrator',
+            'subtitle' => 'Lead patient operations across clinics',
+            'category' => 'healthcare',
+            'location' => 'khartoum',
+            'country' => 'sudan',
+            'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
+            'publish' => false,
+        ])
         ->assertRedirect(route('employer.jobs'));
 
     $job = JobPost::query()->first();
 
     expect($job)->not->toBeNull()
-        ->and($job->category)->toBe('Hospitality Management')
+        ->and($job->category)->toBe('healthcare')
+        ->and($job->location)->toBe('khartoum')
+        ->and($job->country)->toBe('sudan')
         ->and($job->subtitle)->toBe('Lead patient operations across clinics')
         ->and($job->status)->toBe(JobPostStatus::Draft);
 });
@@ -93,9 +122,10 @@ test('employers can save a draft and later submit it for review', function () {
     $this->actingAs($employer)
         ->post(route('employer.jobs.store'), [
             'title' => 'Product Designer',
-            'category' => 'Design',
-            'location' => 'Riyadh',
-            'employment_type' => 'Full-time',
+            'category' => 'design',
+            'location' => 'remote',
+            'country' => 'remote',
+            'employment_type' => 'full_time',
             'experience_level' => 'Senior',
             'salary_range' => 'SAR 18,000–25,000',
             'description' => '<p><strong>Design</strong> the portal. <span style="font-size: 18px">Impact role.</span></p><script>alert(1)</script>',
@@ -109,7 +139,7 @@ test('employers can save a draft and later submit it for review', function () {
 
     expect($job)->not->toBeNull()
         ->and($job->status)->toBe(JobPostStatus::Draft)
-        ->and($job->category)->toBe('Design')
+        ->and($job->category)->toBe('design')
         ->and($job->skills)->toBe(['Figma', 'UX'])
         ->and($job->description)->toContain('<strong>Design</strong>')
         ->and($job->description)->toContain('font-size: 18px')
@@ -118,9 +148,10 @@ test('employers can save a draft and later submit it for review', function () {
     $this->actingAs($employer)
         ->put(route('employer.jobs.update', $job), [
             'title' => 'Senior Product Designer',
-            'category' => 'Design',
-            'location' => 'Riyadh',
-            'employment_type' => 'Full-time',
+            'category' => 'design',
+            'location' => 'remote',
+            'country' => 'remote',
+            'employment_type' => 'full_time',
             'experience_level' => 'Senior',
             'description' => 'Design the portal.',
             'publish' => true,
@@ -150,7 +181,7 @@ test('publishing is blocked when the current public plan has no remaining credit
     $this->actingAs($employer)
         ->post(route('employer.jobs.store'), [
             'title' => 'Second Role',
-            'employment_type' => 'Full-time',
+            'employment_type' => 'full_time',
             'publish' => true,
         ])
         ->assertSessionHasErrors('title');
@@ -158,7 +189,7 @@ test('publishing is blocked when the current public plan has no remaining credit
     $this->actingAs($employer)
         ->post(route('employer.jobs.store'), [
             'title' => 'Draft Role',
-            'employment_type' => 'Full-time',
+            'employment_type' => 'full_time',
             'publish' => false,
         ])
         ->assertRedirect(route('employer.jobs'));

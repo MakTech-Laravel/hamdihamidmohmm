@@ -52,6 +52,12 @@ const navItems: NavItem[] = [
         match: '/admin/jobs',
     },
     {
+        titleKey: 'admin.nav.job_filters',
+        href: '/admin/job-filters',
+        icon: '/images/admin/nav-content.svg',
+        match: '/admin/job-filters',
+    },
+    {
         titleKey: 'admin.nav.applications',
         href: '/admin/applications',
         icon: '/images/admin/nav-applications.svg',
@@ -86,6 +92,12 @@ const navItems: NavItem[] = [
         href: '/admin/content',
         icon: '/images/admin/nav-content.svg',
         match: '/admin/content',
+    },
+    {
+        titleKey: 'admin.nav.training',
+        href: '/admin/training',
+        icon: '/images/admin/nav-content.svg',
+        match: '/admin/training',
     },
     {
         titleKey: 'admin.nav.notifications',

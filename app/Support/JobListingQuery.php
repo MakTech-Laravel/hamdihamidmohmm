@@ -2,7 +2,9 @@
 
 namespace App\Support;
 
+use App\Enums\JobTaxonomyType;
 use App\Models\JobPost;
+use App\Models\JobTaxonomy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -14,20 +16,10 @@ class JobListingQuery
      */
     public static function categoryOptions(): array
     {
-        return [
-            'Technology',
-            'Engineering',
-            'Design',
-            'Marketing',
-            'Finance',
-            'Healthcare',
-            'HR',
-            'Sales',
-            'Construction',
-            'Logistics',
-            'Retail',
-            'Other',
-        ];
+        return collect(JobTaxonomy::optionsFor(JobTaxonomyType::PositionArea))
+            ->pluck('label')
+            ->values()
+            ->all();
     }
 
     /**
@@ -35,14 +27,10 @@ class JobListingQuery
      */
     public static function employmentTypeKeys(): array
     {
-        return [
-            'full_time',
-            'part_time',
-            'contract',
-            'freelance',
-            'internship',
-            'remote',
-        ];
+        return collect(JobTaxonomy::optionsFor(JobTaxonomyType::EmploymentType))
+            ->pluck('value')
+            ->values()
+            ->all();
     }
 
     public static function normalizeToken(?string $value): string
@@ -61,6 +49,7 @@ class JobListingQuery
         string $location = '',
         string $category = '',
         array|Collection $types = [],
+        string $country = '',
     ): Builder {
         $types = collect($types)
             ->map(fn (mixed $type): string => trim((string) $type))
@@ -73,27 +62,63 @@ class JobListingQuery
                     $inner->where('title', 'like', "%{$search}%")
                         ->orWhere('category', 'like', "%{$search}%")
                         ->orWhere('location', 'like', "%{$search}%")
+                        ->orWhere('country', 'like', "%{$search}%")
                         ->orWhereHas('employer', function (Builder $employer) use ($search): void {
                             $employer->where('company_name', 'like', "%{$search}%")
                                 ->orWhere('name', 'like', "%{$search}%");
                         });
                 });
             })
+            ->when($country !== '', function (Builder $builder) use ($country): void {
+                self::applyTaxonomyFilter($builder, 'country', JobTaxonomyType::Country, $country);
+            })
             ->when($location !== '', function (Builder $builder) use ($location): void {
-                $builder->where('location', 'like', "%{$location}%");
+                self::applyTaxonomyFilter($builder, 'location', JobTaxonomyType::DutyStation, $location);
             })
             ->when($category !== '' && $category !== 'all', function (Builder $builder) use ($category): void {
-                $builder->where('category', 'like', "%{$category}%");
+                self::applyTaxonomyFilter($builder, 'category', JobTaxonomyType::PositionArea, $category);
             })
             ->when($types->isNotEmpty(), function (Builder $builder) use ($types): void {
                 $builder->where(function (Builder $inner) use ($types): void {
                     foreach ($types as $type) {
                         foreach (self::employmentTypeVariants($type) as $variant) {
-                            $inner->orWhere('employment_type', 'like', $variant);
+                            $inner->orWhere('employment_type', $variant)
+                                ->orWhere('employment_type', 'like', $variant);
                         }
                     }
                 });
             });
+    }
+
+    /**
+     * @param  Builder<JobPost>  $builder
+     */
+    private static function applyTaxonomyFilter(
+        Builder $builder,
+        string $column,
+        JobTaxonomyType $type,
+        string $value,
+    ): void {
+        $value = trim($value);
+        $taxonomy = JobTaxonomy::query()
+            ->ofType($type)
+            ->where(function (Builder $query) use ($value): void {
+                $query->where('slug', $value)
+                    ->orWhere('name', $value);
+            })
+            ->first();
+
+        $builder->where(function (Builder $inner) use ($column, $value, $taxonomy): void {
+            $inner->where($column, $value);
+
+            if ($taxonomy !== null) {
+                $inner->orWhere($column, $taxonomy->slug)
+                    ->orWhere($column, $taxonomy->name)
+                    ->orWhere($column, 'like', '%'.$taxonomy->name.'%');
+            } else {
+                $inner->orWhere($column, 'like', "%{$value}%");
+            }
+        });
     }
 
     /**
@@ -149,5 +174,10 @@ class JobListingQuery
         }
 
         return false;
+    }
+
+    public static function displayLabel(JobTaxonomyType $type, ?string $stored): string
+    {
+        return JobTaxonomy::labelFor($type, $stored) ?? (string) $stored;
     }
 }

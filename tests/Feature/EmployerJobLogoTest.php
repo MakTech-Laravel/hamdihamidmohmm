@@ -3,11 +3,13 @@
 use App\Enums\JobPostStatus;
 use App\Models\JobPost;
 use App\Models\User;
+use Database\Seeders\JobTaxonomySeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     Storage::fake('public');
+    $this->seed(JobTaxonomySeeder::class);
 });
 
 test('employers can upload a job logo separately from the company logo', function () {
@@ -38,7 +40,7 @@ test('employers can attach a job logo while creating a job', function () {
         ->post(route('employer.jobs.store'), [
             'title' => 'Frontend Engineer',
             'subtitle' => 'Build the portal',
-            'employment_type' => 'Full-time',
+            'employment_type' => 'full_time',
             'publish' => false,
             'logo' => $logo,
         ])
@@ -55,7 +57,7 @@ test('job detail exposes separate job and company logos', function () {
     $employer = User::factory()->employer()->create([
         'company_name' => 'Gulf Tech Solutions',
     ]);
-    $companyLogoPath = 'company-logos/'.$employer->id.'/company.png';
+    $companyLogoPath = 'company-logos/' . $employer->id . '/company.png';
     Storage::disk('public')->put($companyLogoPath, 'company');
     $employer->forceFill(['company_logo_path' => $companyLogoPath])->save();
 
@@ -64,16 +66,16 @@ test('job detail exposes separate job and company logos', function () {
         'slug' => 'cva-officer',
         'status' => JobPostStatus::Active,
     ]);
-    $jobLogoPath = 'job-logos/'.$employer->id.'/job.png';
+    $jobLogoPath = 'job-logos/' . $employer->id . '/job.png';
     Storage::disk('public')->put($jobLogoPath, 'job');
     $job->forceFill(['logo_path' => $jobLogoPath])->save();
 
     $this->get(route('jobs.show', $job->slug))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/job-show')
-            ->where('job.logo_url', '/storage/'.$jobLogoPath)
-            ->where('job.company_logo_url', '/storage/'.$companyLogoPath));
+            ->where('job.logo_url', '/storage/' . $jobLogoPath)
+            ->where('job.company_logo_url', '/storage/' . $companyLogoPath));
 });
 
 test('employer jobs list includes job logo urls', function () {
@@ -83,16 +85,17 @@ test('employer jobs list includes job logo urls', function () {
         'title' => 'Logo List Role',
         'status' => JobPostStatus::Active,
     ]);
-    $logoPath = 'job-logos/'.$employer->id.'/list.png';
+    $logoPath = 'job-logos/' . $employer->id . '/list.png';
     Storage::disk('public')->put($logoPath, 'logo');
     $job->forceFill(['logo_path' => $logoPath])->save();
 
     $this->actingAs($employer)
         ->get(route('employer.jobs'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerJobs')
-            ->where('jobs.0.logo_url', '/storage/'.$logoPath));
+            ->where('jobs.0.logo_url', '/storage/' . $logoPath)
+            ->where('jobs.0.slug', $job->slug));
 });
 
 test('employers can remove a job logo', function () {

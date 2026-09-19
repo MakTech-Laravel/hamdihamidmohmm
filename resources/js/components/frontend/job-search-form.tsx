@@ -102,15 +102,15 @@ export function JobSearchForm({
                 <button
                     type="submit"
                     className={cn(
-                        'inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0057c8] text-sm font-semibold text-white shadow-[0px_8px_16px_rgba(0,87,200,0.22)] transition hover:brightness-110 active:scale-[0.99]',
+                        'inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0057c8] px-5 text-sm font-semibold text-white transition hover:bg-[#0046a3]',
                         compact
-                            ? 'h-10 w-full px-5 sm:w-auto'
-                            : 'h-11 w-full px-5 sm:w-auto sm:min-w-[108px]',
+                            ? 'h-10 w-full sm:w-auto'
+                            : 'h-11 w-full sm:w-auto',
                     )}
                 >
                     {showSubmitIcon ? (
                         <img
-                            src="/images/home/search-btn.svg"
+                            src="/images/jobs/search-white.svg"
                             alt=""
                             className="size-4"
                             width={16}

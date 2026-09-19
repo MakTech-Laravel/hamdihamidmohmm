@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             UserSeeder::class,
             PackageSeeder::class,
+            JobTaxonomySeeder::class,
             PlatformSettingSeeder::class,
             AdminPortalDemoSeeder::class,
         ]);

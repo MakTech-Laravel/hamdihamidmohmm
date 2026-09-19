@@ -4,9 +4,11 @@ import { useMemo, useState } from 'react';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
+import { show as jobShow } from '@/routes/jobs';
 
 type JobRow = {
     id: number;
+    slug: string;
     title: string;
     logo_url?: string | null;
     category: string | null;
@@ -232,16 +234,16 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                         className="border-b border-[#d1f6ff] last:border-b-0"
                                     >
                                         <td className="px-5 py-4 align-top">
-                                            <div className="flex items-start gap-3">
+                                            <div className="flex items-start gap-3.5">
                                                 {job.logo_url ? (
                                                     <img
                                                         src={job.logo_url}
                                                         alt={job.title}
-                                                        className="size-11 shrink-0 rounded-xl border border-[#e8d5e8] bg-[#f8faff] object-contain p-1"
+                                                        className="size-16 shrink-0 rounded-xl border border-[#e8d5e8] bg-[#f8faff] object-contain p-1.5"
                                                     />
                                                 ) : (
                                                     <div
-                                                        className="flex size-11 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white"
+                                                        className="flex size-16 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
                                                         style={{
                                                             backgroundImage:
                                                                 'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
@@ -272,6 +274,16 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                                             },
                                                         )}
                                                     </p>
+                                                    {job.slug ? (
+                                                        <Link
+                                                            href={jobShow.url(
+                                                                job.slug,
+                                                            )}
+                                                            className="mt-2.5 inline-flex h-8 items-center justify-center rounded-lg bg-[#0057c8] px-3.5 text-sm font-semibold text-white transition hover:bg-[#0046a3]"
+                                                        >
+                                                            {t('common.view')}
+                                                        </Link>
+                                                    ) : null}
                                                 </div>
                                             </div>
                                         </td>

@@ -123,18 +123,21 @@ export function AdminPrimaryButton({
     className,
     type = 'button',
     onClick,
+    disabled = false,
 }: {
     children: ReactNode;
     className?: string;
     type?: 'button' | 'submit';
     onClick?: () => void;
+    disabled?: boolean;
 }) {
     return (
         <button
             type={type}
             onClick={onClick}
+            disabled={disabled}
             className={cn(
-                'inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0057c8] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0046a3]',
+                'inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0057c8] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0046a3] disabled:cursor-not-allowed disabled:opacity-60',
                 className,
             )}
         >

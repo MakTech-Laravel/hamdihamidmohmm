@@ -3,6 +3,7 @@
 use App\Enums\JobPostStatus;
 use App\Models\JobPost;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 test('jobs page can be rendered', function () {
@@ -48,6 +49,7 @@ test('jobs listing prefers the job logo then falls back to the company logo', fu
         'title' => 'Education Officer',
         'slug' => 'education-officer',
         'status' => JobPostStatus::Active,
+        'expires_at' => Carbon::parse('2026-09-24'),
     ]);
     $jobLogoPath = 'job-logos/'.$employer->id.'/job.png';
     Storage::disk('public')->put($jobLogoPath, 'job');
@@ -68,6 +70,7 @@ test('jobs listing prefers the job logo then falls back to the company logo', fu
             ->where('jobs.data', fn ($jobs) => collect($jobs)->contains(
                 fn ($job) => $job['slug'] === $withJobLogo->slug
                     && $job['logo_url'] === '/storage/'.$jobLogoPath
+                    && $job['closing_date'] === '24 Sept 2026'
             ) && collect($jobs)->contains(
                 fn ($job) => $job['slug'] === $companyOnly->slug
                     && $job['logo_url'] === '/storage/'.$companyLogoPath
@@ -136,8 +139,8 @@ test('jobs page can filter by category and employment type', function () {
             ->where('filters.types', ['full_time'])
             ->has('jobs.data', 1)
             ->where('jobs.data.0.slug', 'full-time-tech-role')
-            ->has('filterOptions.categories')
-            ->has('filterOptions.types'));
+            ->has('filterOptions.positionAreas')
+            ->has('filterOptions.employmentTypes'));
 
     $this->get(route('jobs', ['types' => ['remote']]))
         ->assertOk()

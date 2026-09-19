@@ -7,14 +7,28 @@ import PricingPackageCards, {
 } from '@/components/frontend/pricing-package-cards';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
-import { sudanLocationKeys } from '@/lib/sudan-locations';
 import { jobs, pricing } from '@/routes';
 import { show as jobShow } from '@/routes/jobs';
 import { role as registerRole } from '@/routes/register';
 
+type TaxonomyOption = { value: string; label: string };
+
+type FilterOptions = {
+    countries: TaxonomyOption[];
+    dutyStations: TaxonomyOption[];
+    positionAreas: TaxonomyOption[];
+    employmentTypes: TaxonomyOption[];
+};
+
 export default function Home({
     packages = [],
     recommendedJobs = [],
+    filterOptions = {
+        countries: [],
+        dutyStations: [],
+        positionAreas: [],
+        employmentTypes: [],
+    },
 }: {
     packages?: PricingPackage[];
     recommendedJobs?: Array<{
@@ -29,6 +43,7 @@ export default function Home({
         posted: string;
         salary: string;
     }>;
+    filterOptions?: FilterOptions;
 }) {
     const { t } = useLocale();
     const [keyword, setKeyword] = useState('');
@@ -38,12 +53,9 @@ export default function Home({
     const locationOptions = useMemo(
         () => [
             { value: '', label: t('search.all_locations') },
-            ...sudanLocationKeys.map((key) => ({
-                value: key,
-                label: t(`location.${key}`),
-            })),
+            ...filterOptions.dutyStations,
         ],
-        [t],
+        [filterOptions.dutyStations, t],
     );
 
     const features = useMemo(
@@ -119,18 +131,9 @@ export default function Home({
     const handleSearch = (event: FormEvent) => {
         event.preventDefault();
 
-        const selected = locationOptions.find(
-            (option) => option.value === location,
-        );
-        const locationFilter = selected
-            ? selected.value !== ''
-                ? selected.label
-                : undefined
-            : location.trim() || undefined;
-
         router.get(jobs.url(), {
             search: keyword || undefined,
-            location: locationFilter,
+            location: location || undefined,
         });
     };
 
