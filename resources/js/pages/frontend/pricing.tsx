@@ -7,7 +7,7 @@ import PricingPackageCards, {
 } from '@/components/frontend/pricing-package-cards';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
-import { home, register } from '@/routes';
+import { jobs, register } from '@/routes';
 
 type Props = {
     packages?: PricingPackage[];
@@ -82,10 +82,10 @@ export default function Pricing({ packages = [] }: Props) {
                 <div className="mx-auto max-w-[1280px] text-center">
                     <nav className="flex flex-wrap items-center justify-center gap-2 text-sm">
                         <Link
-                            href={home()}
+                            href={jobs()}
                             className="text-[#050315] transition hover:text-[#0057c8]"
                         >
-                            {t('nav.home')}
+                            {t('nav.jobs')}
                         </Link>
                         <img
                             src="/images/pricing/breadcrumb-chevron.svg"

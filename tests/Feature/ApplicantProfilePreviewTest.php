@@ -70,7 +70,28 @@ test('applicant profile preview exposes the seeker profile details for employers
         ->and($preview['languages'][0]['name'])->toBe('Arabic')
         ->and($preview['certifications'][0]['name'])->toBe('Laravel Certified')
         ->and($preview['cover_letter'])->toBe('Excited to apply.')
-        ->and($preview['preview_location'])->toBe('Jeddah · 5 years');
+        ->and($preview['preview_location'])->toBe('Jeddah · 5 years')
+        ->and($preview['avatar_url'])->toBeNull();
+});
+
+test('applicant profile preview includes the seeker avatar url when present', function () {
+    Storage::fake('public');
+
+    $seeker = User::factory()->jobSeeker()->create([
+        'name' => 'Photo Seeker',
+    ]);
+
+    $avatarPath = 'avatars/' . $seeker->id . '/face.png';
+    Storage::disk('public')->put($avatarPath, 'photo');
+    $seeker->forceFill(['avatar' => $avatarPath])->save();
+
+    JobSeekerProfile::factory()->create([
+        'user_id' => $seeker->id,
+    ]);
+
+    $preview = ApplicantProfilePreview::from($seeker->fresh());
+
+    expect($preview['avatar_url'])->toBe('/storage/' . $avatarPath);
 });
 
 test('employer and admin drawers receive the full seeker profile from live applications', function () {
@@ -110,7 +131,7 @@ test('employer and admin drawers receive the full seeker profile from live appli
     $this->actingAs($employer)
         ->get(route('employer.applications'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('applications.0.headline', 'UX Designer')
             ->where('applications.0.current_title', 'Product Designer')
             ->where('applications.0.experience_years', '4 years')
@@ -125,7 +146,7 @@ test('employer and admin drawers receive the full seeker profile from live appli
     $this->actingAs($admin)
         ->get(route('admin.jobs.index'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('jobs.data.0.preview.is_applicant', true)
             ->where('jobs.data.0.preview.current_title', 'Product Designer')
             ->where('jobs.data.0.preview.experience_years', '4 years')
@@ -142,7 +163,7 @@ test('employer resume download prefers the uploaded profile resume file', functi
     $seeker = User::factory()->jobSeeker()->create(['name' => 'Sara Ali']);
     JobSeekerProfile::factory()->create(['user_id' => $seeker->id]);
 
-    $path = 'resumes/'.$seeker->id.'/profile.pdf';
+    $path = 'resumes/' . $seeker->id . '/profile.pdf';
     Storage::disk('local')->put($path, '%PDF-1.4 profile-file');
 
     $seeker->forceFill([
