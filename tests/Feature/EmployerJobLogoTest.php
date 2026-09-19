@@ -76,6 +76,25 @@ test('job detail exposes separate job and company logos', function () {
             ->where('job.company_logo_url', '/storage/'.$companyLogoPath));
 });
 
+test('employer jobs list includes job logo urls', function () {
+    $employer = User::factory()->employer()->create();
+    $job = JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Logo List Role',
+        'status' => JobPostStatus::Active,
+    ]);
+    $logoPath = 'job-logos/'.$employer->id.'/list.png';
+    Storage::disk('public')->put($logoPath, 'logo');
+    $job->forceFill(['logo_path' => $logoPath])->save();
+
+    $this->actingAs($employer)
+        ->get(route('employer.jobs'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('backend/User/EmployerJobs')
+            ->where('jobs.0.logo_url', '/storage/'.$logoPath));
+});
+
 test('employers can remove a job logo', function () {
     $employer = User::factory()->employer()->create();
     $job = JobPost::factory()->create([

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 import BrandLogo from '@/components/brand-logo';
 import { useLocale } from '@/hooks/use-locale';
-import { home } from '@/routes';
+import { jobs } from '@/routes';
 
 interface AuthLayoutProps {
     children: ReactNode;
@@ -36,7 +36,7 @@ export default function AuthLayout({
             <div className="relative z-10 flex min-h-svh items-center justify-center px-4 py-12">
                 <div className={`w-full ${maxWidthClassName} animate-fadeInUp`}>
                     <div className="mb-8 flex justify-center">
-                        <Link href={home()} className="block w-[178px]">
+                        <Link href={jobs()} className="block w-[178px]">
                             <BrandLogo
                                 className="h-[118px] w-[178px]"
                                 width={178}

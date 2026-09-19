@@ -154,6 +154,7 @@ class EmployerApplicationController extends Controller
                 'cover_letter' => $application->cover_letter,
                 'resume_name' => null,
                 'has_resume_file' => false,
+                'avatar_url' => null,
                 'job' => $application->jobPost?->title,
                 'job_id' => $application->job_post_id,
                 'status' => $application->status?->label(),

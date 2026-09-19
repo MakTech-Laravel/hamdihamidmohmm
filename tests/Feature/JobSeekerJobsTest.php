@@ -5,6 +5,33 @@ use App\Enums\JobPostStatus;
 use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
+
+test('job seekers see job logos on the portal jobs page', function () {
+    Storage::fake('public');
+
+    $seeker = User::factory()->jobSeeker()->create();
+    $employer = User::factory()->employer()->create([
+        'company_name' => 'Logo Co',
+    ]);
+    $logoPath = 'job-logos/'.$employer->id.'/seeker-list.png';
+    Storage::disk('public')->put($logoPath, 'logo');
+
+    $job = JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Logo Visible Role',
+        'status' => JobPostStatus::Active,
+        'logo_path' => $logoPath,
+    ]);
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.jobs'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('backend/User/JobSeekerJobs')
+            ->where('jobs.data.0.id', $job->id)
+            ->where('jobs.data.0.logo_url', '/storage/'.$logoPath));
+});
 
 test('job seekers can browse open jobs in the portal with apply state', function () {
     $seeker = User::factory()->jobSeeker()->create();
@@ -32,28 +59,46 @@ test('job seekers can browse open jobs in the portal with apply state', function
     $this->actingAs($seeker)
         ->get(route('job-seeker.jobs'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/JobSeekerJobs')
             ->has('jobs.data', 2)
-            ->where('jobs.data', fn($rows) => collect($rows)->contains(
-                fn($row) => $row['title'] === 'Senior Laravel Developer' && $row['applied'] === false,
+            ->where('jobs.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['title'] === 'Senior Laravel Developer' && $row['applied'] === false,
             ) && collect($rows)->contains(
-                fn($row) => $row['title'] === 'Already Applied Role' && $row['applied'] === true,
+                fn ($row) => $row['title'] === 'Already Applied Role' && $row['applied'] === true,
             )));
 });
 
-test('job seekers can apply to a job from the portal jobs page', function () {
+test('job seekers can open a job to review before applying from the portal jobs page', function () {
     $seeker = User::factory()->jobSeeker()->create();
 
     $job = JobPost::factory()->create([
         'title' => 'Portal Apply Role',
         'status' => JobPostStatus::Active,
+        'slug' => 'portal-apply-role',
     ]);
 
     $this->actingAs($seeker)
-        ->from(route('job-seeker.jobs'))
+        ->get(route('job-seeker.jobs'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('backend/User/JobSeekerJobs')
+            ->where('jobs.data.0.job_url', route('jobs.show', $job->slug))
+            ->where('jobs.data.0.applied', false));
+
+    $this->actingAs($seeker)
+        ->get(route('jobs.show', $job->slug))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('frontend/job-show')
+            ->where('can_apply', true)
+            ->where('applied', false));
+
+    $this->actingAs($seeker)
+        ->from(route('jobs.show', $job->slug))
         ->post(route('jobs.apply', $job))
-        ->assertRedirect(route('job-seeker.jobs'));
+        ->assertRedirect(route('job-seeker.dashboard'))
+        ->assertSessionHas('success', 'application_submitted');
 
     expect(JobApplication::query()
         ->where('job_seeker_id', $seeker->id)
@@ -77,7 +122,7 @@ test('job seekers can search jobs in the portal', function () {
     $this->actingAs($seeker)
         ->get(route('job-seeker.jobs', ['search' => 'React']))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->has('jobs.data', 1)
             ->where('jobs.data.0.title', 'React Engineer')
             ->where('filters.search', 'React'));

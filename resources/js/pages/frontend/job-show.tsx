@@ -1,17 +1,27 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { BriefcaseBusiness, UserRoundPen } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { AboutCompanyCard } from '@/components/employer/about-company-card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { RichTextContent } from '@/components/ui/rich-text-editor';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
-import { home, jobs as jobsRoute, login } from '@/routes';
+import { jobs as jobsRoute, login } from '@/routes';
 import { show as jobShow } from '@/routes/jobs';
 import type { SharedData } from '@/types';
 
 type SimilarJob = {
     slug: string;
     initials: string;
+    logo_url?: string | null;
     title: string;
     company: string | null;
 };
@@ -58,6 +68,8 @@ export default function JobShow({
     const { auth } = usePage<SharedData>().props;
     const [shareOpen, setShareOpen] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [applyModalOpen, setApplyModalOpen] = useState(false);
+    const [applying, setApplying] = useState(false);
     const shareRef = useRef<HTMLDivElement>(null);
 
     const pageUrl =
@@ -83,12 +95,34 @@ export default function JobShow({
     }, [shareOpen]);
 
     const applyHref = auth.user ? '/dashboard' : login.url();
+    const profileHref = '/job-seeker/profile';
     const overview = job.overview || job.description || '';
     const similar = job.similar ?? [];
     const responsibilities = job.responsibilities ?? [];
     const requirements = job.requirements ?? [];
     const skills = job.skills ?? [];
     const benefits = job.benefits ?? [];
+
+    const confirmApply = (): void => {
+        if (applying) {
+            return;
+        }
+
+        setApplying(true);
+        router.post(
+            `/jobs/${job.slug}/apply`,
+            {},
+            {
+                onFinish: () => setApplying(false),
+                onError: () => setApplying(false),
+            },
+        );
+    };
+
+    const goToProfile = (): void => {
+        setApplyModalOpen(false);
+        router.visit(profileHref);
+    };
 
     const shareItems = [
         {
@@ -150,19 +184,6 @@ export default function JobShow({
             <section className="bg-[#d1f6ff] px-4 py-8 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px]">
                     <nav className="flex flex-wrap items-center gap-2 text-sm">
-                        <Link
-                            href={home()}
-                            className="text-[#050315] transition hover:text-[#0057c8]"
-                        >
-                            {t('nav.home')}
-                        </Link>
-                        <img
-                            src="/images/job-detail/breadcrumb-chevron.svg"
-                            alt=""
-                            className="size-4 rtl:rotate-180"
-                            width={16}
-                            height={16}
-                        />
                         <Link
                             href={jobsRoute()}
                             className="text-[#050315] transition hover:text-[#0057c8]"
@@ -296,9 +317,7 @@ export default function JobShow({
                                     {can_apply ? (
                                         <button
                                             type="button"
-                                            onClick={() =>
-                                                router.post(`/jobs/${job.slug}/apply`)
-                                            }
+                                            onClick={() => setApplyModalOpen(true)}
                                             className="inline-flex h-[46px] flex-1 items-center justify-center rounded-xl bg-[#0057c8] text-sm font-semibold text-white transition hover:brightness-110"
                                         >
                                             {t('job_detail.apply_now')}
@@ -531,15 +550,23 @@ export default function JobShow({
                                             href={jobShow.url(item.slug)}
                                             className="flex items-center gap-3 rounded-xl border border-[#f1f5f9] p-3 transition hover:border-[#dbeafe] hover:bg-[#f8faff]"
                                         >
-                                            <div
-                                                className="flex size-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
-                                                style={{
-                                                    backgroundImage:
-                                                        'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
-                                                }}
-                                            >
-                                                {item.initials}
-                                            </div>
+                                            {item.logo_url ? (
+                                                <img
+                                                    src={item.logo_url}
+                                                    alt={item.company || item.title}
+                                                    className="size-10 shrink-0 rounded-lg border border-[#e2e8f0] bg-[#f8faff] object-contain p-1"
+                                                />
+                                            ) : (
+                                                <div
+                                                    className="flex size-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
+                                                    style={{
+                                                        backgroundImage:
+                                                            'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                    }}
+                                                >
+                                                    {item.initials}
+                                                </div>
+                                            )}
                                             <div className="min-w-0">
                                                 <p className="truncate text-sm font-semibold text-[#050315]">
                                                     {item.title}
@@ -556,6 +583,59 @@ export default function JobShow({
                     </div>
                 </div>
             </section>
+
+            <Dialog open={applyModalOpen} onOpenChange={setApplyModalOpen}>
+                <DialogContent className="max-w-[440px] overflow-hidden rounded-3xl border-[#dbeafe] bg-white p-0 shadow-[0_24px_60px_rgba(5,3,21,0.18)] sm:max-w-[440px]">
+                    <div className="relative overflow-hidden bg-gradient-to-br from-[#eef5ff] via-white to-[#f8fbff] px-6 pb-5 pt-8 sm:px-7">
+                        <div
+                            aria-hidden
+                            className="pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-[#0057c8]/10 blur-2xl"
+                        />
+                        <div
+                            aria-hidden
+                            className="pointer-events-none absolute -start-8 bottom-0 size-24 rounded-full bg-[#38bdf8]/15 blur-2xl"
+                        />
+                        <DialogHeader className="relative items-center gap-3 text-center sm:text-center">
+                            <div className="flex size-14 items-center justify-center rounded-2xl bg-[#0057c8] text-white shadow-[0_10px_24px_rgba(0,87,200,0.28)]">
+                                <BriefcaseBusiness
+                                    className="size-7"
+                                    strokeWidth={2.2}
+                                />
+                            </div>
+                            <DialogTitle className="text-[22px] font-bold tracking-[-0.3px] text-[#050315]">
+                                {t('job_detail.apply_confirm_title')}
+                            </DialogTitle>
+                            <DialogDescription className="max-w-[320px] text-sm leading-6 text-[#64748b]">
+                                {t('job_detail.apply_confirm_message')}
+                            </DialogDescription>
+                        </DialogHeader>
+                    </div>
+
+                    <DialogFooter className="flex flex-row items-center justify-between gap-3 border-t border-[#eef2f7] bg-[#f8faff] px-5 py-4 sm:space-x-0">
+                        <button
+                            type="button"
+                            disabled={applying}
+                            onClick={goToProfile}
+                            className="inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border border-[#bfdbfe] bg-white px-3 text-sm font-semibold text-[#0057c8] shadow-sm transition hover:border-[#0057c8] hover:bg-[#eef5ff] disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            <UserRoundPen className="size-4 shrink-0" />
+                            <span className="truncate">
+                                {t('job_detail.modify_profile')}
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            disabled={applying}
+                            onClick={confirmApply}
+                            className="inline-flex h-11 min-w-0 flex-1 items-center justify-center rounded-xl bg-[#0057c8] px-3 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(0,87,200,0.28)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            <span className="truncate">
+                                {t('job_detail.apply_confirm')}
+                            </span>
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </FrontendLayout>
     );
 }

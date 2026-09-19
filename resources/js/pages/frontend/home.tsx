@@ -1,12 +1,13 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { FormEvent, useMemo, useState } from 'react';
 
+import { JobSearchForm } from '@/components/frontend/job-search-form';
 import PricingPackageCards, {
     type PricingPackage,
 } from '@/components/frontend/pricing-package-cards';
-import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
+import { sudanLocationKeys } from '@/lib/sudan-locations';
 import { jobs, pricing } from '@/routes';
 import { show as jobShow } from '@/routes/jobs';
 import { role as registerRole } from '@/routes/register';
@@ -19,6 +20,7 @@ export default function Home({
     recommendedJobs?: Array<{
         slug: string;
         initials: string;
+        logo_url?: string | null;
         title: string;
         company: string;
         type: string;
@@ -30,8 +32,19 @@ export default function Home({
 }) {
     const { t } = useLocale();
     const [keyword, setKeyword] = useState('');
-    const [location, setLocation] = useState('all');
+    const [location, setLocation] = useState('');
     const [email, setEmail] = useState('');
+
+    const locationOptions = useMemo(
+        () => [
+            { value: '', label: t('search.all_locations') },
+            ...sudanLocationKeys.map((key) => ({
+                value: key,
+                label: t(`location.${key}`),
+            })),
+        ],
+        [t],
+    );
 
     const features = useMemo(
         () => [
@@ -105,6 +118,20 @@ export default function Home({
 
     const handleSearch = (event: FormEvent) => {
         event.preventDefault();
+
+        const selected = locationOptions.find(
+            (option) => option.value === location,
+        );
+        const locationFilter = selected
+            ? selected.value !== ''
+                ? selected.label
+                : undefined
+            : location.trim() || undefined;
+
+        router.get(jobs.url(), {
+            search: keyword || undefined,
+            location: locationFilter,
+        });
     };
 
     const handleSubscribe = (event: FormEvent) => {
@@ -230,65 +257,27 @@ export default function Home({
             </section>
 
             {/* Floating search — overlaps hero / next section */}
-            <section className="relative z-20 -mt-10 px-4 sm:-mt-12 sm:px-6 lg:px-8">
-                <form
+            <section className="relative z-20 -mt-8 px-4 sm:-mt-10 sm:px-6 lg:px-8">
+                <JobSearchForm
+                    keyword={keyword}
+                    location={location}
+                    locationOptions={locationOptions}
+                    keywordPlaceholder={t('search.keyword_placeholder')}
+                    locationAriaLabel={t('search.all_locations')}
+                    locationSearchPlaceholder={t(
+                        'jobs_page.location_search_placeholder',
+                    )}
+                    locationUseCustomLabel={(query) =>
+                        t('jobs_page.location_use_custom', { query })
+                    }
+                    locationEmptyLabel={t('jobs_page.location_empty')}
+                    submitLabel={t('search.submit')}
+                    onKeywordChange={setKeyword}
+                    onLocationChange={setLocation}
                     onSubmit={handleSearch}
-                    className="mx-auto flex max-w-[1219px] flex-col gap-3 rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-[0px_20px_12.5px_rgba(0,0,0,0.1),0px_8px_5px_rgba(0,0,0,0.1)] sm:p-6 lg:flex-row lg:items-center"
-                >
-                    <label className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-[#dbe4ef] bg-gradient-to-b from-[#f9fafb] to-[#f3f7fc] px-4 py-3 shadow-[0_1px_2px_rgba(5,3,21,0.04)] transition hover:border-[#3977a6]/40 focus-within:border-[#0057c8] focus-within:ring-[3px] focus-within:ring-[#0057c8]/15">
-                        <img
-                            src="/images/home/search.svg"
-                            alt=""
-                            className="size-5 shrink-0"
-                            width={20}
-                            height={20}
-                        />
-                        <input
-                            type="text"
-                            value={keyword}
-                            onChange={(event) => setKeyword(event.target.value)}
-                            placeholder={t('search.keyword_placeholder')}
-                            className="w-full bg-transparent text-sm font-medium text-[#374151] outline-none placeholder:text-[rgba(55,65,81,0.5)]"
-                        />
-                    </label>
-
-                    <div className="flex items-center gap-3 rounded-xl border border-[#dbe4ef] bg-gradient-to-b from-[#f9fafb] to-[#f3f7fc] px-4 py-3 shadow-[0_1px_2px_rgba(5,3,21,0.04)] transition hover:border-[#3977a6]/40 focus-within:border-[#0057c8] focus-within:ring-[3px] focus-within:ring-[#0057c8]/15 lg:min-w-[240px]">
-                        <img
-                            src="/images/home/map-pin.svg"
-                            alt=""
-                            className="size-5 shrink-0"
-                            width={20}
-                            height={20}
-                        />
-                        <NativeSelect
-                            variant="ghost"
-                            value={location}
-                            onChange={(event) => setLocation(event.target.value)}
-                            aria-label={t('search.all_locations')}
-                        >
-                            <option value="all">{t('search.all_locations')}</option>
-                            <option value="riyadh">{t('location.riyadh')}</option>
-                            <option value="jeddah">{t('location.jeddah')}</option>
-                            <option value="dammam">{t('location.dammam')}</option>
-                            <option value="dubai">{t('location.dubai')}</option>
-                            <option value="remote">{t('location.remote')}</option>
-                        </NativeSelect>
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="inline-flex items-center justify-center gap-3 rounded-xl bg-[#0057c8] px-8 py-3 text-base font-medium tracking-[-0.18px] text-white transition hover:brightness-110 lg:min-w-[180px]"
-                    >
-                        <img
-                            src="/images/home/search-btn.svg"
-                            alt=""
-                            className="size-4"
-                            width={16}
-                            height={16}
-                        />
-                        {t('search.submit')}
-                    </button>
-                </form>
+                    showSubmitIcon
+                    className="mx-auto max-w-[960px] border-[#e2e8f0] bg-white shadow-[0px_16px_28px_rgba(5,3,21,0.1)]"
+                />
             </section>
 
             {/* Why Choose Us */}
@@ -400,15 +389,23 @@ export default function Home({
                                     className="flex h-full flex-col rounded-2xl border border-[rgba(57,119,166,0.52)] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:shadow-md"
                                 >
                                     <div className="flex items-start gap-3">
-                                        <div
-                                            className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-                                            style={{
-                                                backgroundImage:
-                                                    'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
-                                            }}
-                                        >
-                                            {job.initials}
-                                        </div>
+                                        {job.logo_url ? (
+                                            <img
+                                                src={job.logo_url}
+                                                alt={job.company || job.title}
+                                                className="size-12 shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1"
+                                            />
+                                        ) : (
+                                            <div
+                                                className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+                                                style={{
+                                                    backgroundImage:
+                                                        'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                }}
+                                            >
+                                                {job.initials}
+                                            </div>
+                                        )}
                                         <div className="min-w-0">
                                             <h3 className="truncate text-sm font-medium tracking-[-0.16px] text-[#050315]">
                                                 {job.title}

@@ -234,6 +234,7 @@ class EmployerJobController extends Controller
      * @return array{
      *     id: int,
      *     title: string,
+     *     logo_url: string|null,
      *     category: string|null,
      *     location: string|null,
      *     type: string|null,
@@ -252,6 +253,7 @@ class EmployerJobController extends Controller
         return [
             'id' => $job->id,
             'title' => $job->title,
+            'logo_url' => $job->hasLogo() ? $job->logoUrl() : null,
             'category' => $job->category,
             'location' => $job->location,
             'type' => $job->employment_type,

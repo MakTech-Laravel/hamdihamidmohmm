@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 type JobRow = {
     id: number;
     title: string;
+    logo_url?: string | null;
     category: string | null;
     location: string | null;
     type: string | null;
@@ -19,6 +20,12 @@ type JobRow = {
     views: number;
     expires_at: string | null;
     created_at: string | null;
+};
+
+const jobInitials = (title: string): string => {
+    const letters = title.replace(/[^A-Za-z]/g, '');
+
+    return (letters.slice(0, 2) || 'JP').toUpperCase();
 };
 
 type Props = {
@@ -225,27 +232,48 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                         className="border-b border-[#d1f6ff] last:border-b-0"
                                     >
                                         <td className="px-5 py-4 align-top">
-                                            <p className="text-[15px] leading-[22.5px] font-bold text-[#050315]">
-                                                {job.title}
-                                            </p>
-                                            {job.category && (
-                                                <span className="mt-1 inline-flex rounded-full bg-[#e6f0fb] px-2.5 py-px text-xs font-semibold text-[#0057c8]">
-                                                    {job.category}
-                                                </span>
-                                            )}
-                                            <p className="mt-1.5 text-xs leading-[18px] text-[#94a3b8]">
-                                                {t(
-                                                    'employer.jobs.posted_expires',
-                                                    {
-                                                        posted:
-                                                            job.created_at ||
-                                                            '—',
-                                                        expires:
-                                                            job.expires_at ||
-                                                            '—',
-                                                    },
+                                            <div className="flex items-start gap-3">
+                                                {job.logo_url ? (
+                                                    <img
+                                                        src={job.logo_url}
+                                                        alt={job.title}
+                                                        className="size-11 shrink-0 rounded-xl border border-[#e8d5e8] bg-[#f8faff] object-contain p-1"
+                                                    />
+                                                ) : (
+                                                    <div
+                                                        className="flex size-11 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white"
+                                                        style={{
+                                                            backgroundImage:
+                                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                        }}
+                                                    >
+                                                        {jobInitials(job.title)}
+                                                    </div>
                                                 )}
-                                            </p>
+                                                <div className="min-w-0">
+                                                    <p className="text-[15px] leading-[22.5px] font-bold text-[#050315]">
+                                                        {job.title}
+                                                    </p>
+                                                    {job.category && (
+                                                        <span className="mt-1 inline-flex rounded-full bg-[#e6f0fb] px-2.5 py-px text-xs font-semibold text-[#0057c8]">
+                                                            {job.category}
+                                                        </span>
+                                                    )}
+                                                    <p className="mt-1.5 text-xs leading-[18px] text-[#94a3b8]">
+                                                        {t(
+                                                            'employer.jobs.posted_expires',
+                                                            {
+                                                                posted:
+                                                                    job.created_at ||
+                                                                    '—',
+                                                                expires:
+                                                                    job.expires_at ||
+                                                                    '—',
+                                                            },
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="px-5 py-4 align-top">
                                             <p className="text-sm font-medium text-[#475569]">

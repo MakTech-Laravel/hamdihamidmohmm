@@ -59,7 +59,7 @@ test('job seeker dashboard matches the Figma stats checklist and notifications p
     $this->actingAs($seeker)
         ->get(route('job-seeker.dashboard'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/JobSeekerDashboard')
             ->where('stats.total', 2)
             ->where('stats.under_review', 1)
@@ -87,7 +87,8 @@ test('job seekers can apply to an open job from the dashboard', function () {
     $this->actingAs($seeker)
         ->from(route('job-seeker.dashboard'))
         ->post(route('jobs.apply', $job))
-        ->assertRedirect(route('job-seeker.dashboard'));
+        ->assertRedirect(route('job-seeker.dashboard'))
+        ->assertSessionHas('success', 'application_submitted');
 
     expect(JobApplication::query()
         ->where('job_seeker_id', $seeker->id)
@@ -97,7 +98,7 @@ test('job seekers can apply to an open job from the dashboard', function () {
     $this->actingAs($seeker)
         ->get(route('job-seeker.dashboard'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('stats.total', 1)
             ->has('open_jobs', 0)
             ->where('applications.0.title', 'Dashboard Apply Role'));
@@ -184,7 +185,7 @@ test('job seekers can save professional fields from comma-separated form strings
     $this->actingAs($seeker)
         ->get(route('job-seeker.profile'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('profile.current_title', 'Ipsa natus ut et te')
             ->where('profile.industry', 'Molestiae eiusmod nu')
             ->where('profile.expected_salary', 'Tempore suscipit in')
@@ -208,7 +209,7 @@ test('job seeker applications page includes filter counts and job urls', functio
     $this->actingAs($seeker)
         ->get(route('job-seeker.applications'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/JobSeekerApplications')
             ->where('stats.total', 1)
             ->where('stats.interviews', 1)

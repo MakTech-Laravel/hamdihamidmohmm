@@ -17,6 +17,14 @@ import {
     type ApplicationStatus,
 } from '@/components/job-seeker/demo-data';
 import { StatusBadge } from '@/components/job-seeker/status-badge';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useLocale } from '@/hooks/use-locale';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { cn } from '@/lib/utils';
@@ -34,6 +42,7 @@ type OpenJob = {
     slug: string;
     title: string;
     company: string | null;
+    logo_url?: string | null;
     location: string | null;
     type: string | null;
     salary: string | null;
@@ -77,9 +86,14 @@ export default function JobSeekerDashboard({
     applications,
     notifications,
 }: Props) {
-    const { auth } = usePage<SharedData>().props;
+    const { auth, flash } = usePage<SharedData>().props;
     const { t } = useLocale();
     const [applyingJobId, setApplyingJobId] = useState<number | null>(null);
+    const [applySuccessOpen, setApplySuccessOpen] = useState(
+        () =>
+            flash.success === 'application_submitted' ||
+            flash.success === 'Application submitted.',
+    );
     const name = firstName(auth.user.name) || first_name;
     const today = new Intl.DateTimeFormat('en-US', {
         weekday: 'long',
@@ -241,11 +255,21 @@ export default function JobSeekerDashboard({
                                         className="flex flex-col gap-3 rounded-xl border border-[#f1f5f9] p-3 sm:flex-row sm:items-center"
                                     >
                                         <div className="flex min-w-0 flex-1 items-start gap-3">
-                                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#0057c8] text-xs font-bold text-white">
-                                                {getInitials(
-                                                    job.company || 'JP',
-                                                )}
-                                            </div>
+                                            {job.logo_url ? (
+                                                <img
+                                                    src={job.logo_url}
+                                                    alt={
+                                                        job.company || job.title
+                                                    }
+                                                    className="size-9 shrink-0 rounded-lg border border-[#e2e8f0] bg-[#f8faff] object-contain p-0.5"
+                                                />
+                                            ) : (
+                                                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#0057c8] text-xs font-bold text-white">
+                                                    {getInitials(
+                                                        job.company || 'JP',
+                                                    )}
+                                                </div>
+                                            )}
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate text-sm font-semibold text-[#050315]">
                                                     {job.title}
@@ -517,6 +541,31 @@ export default function JobSeekerDashboard({
                     </div>
                 </div>
             </div>
+
+            <Dialog open={applySuccessOpen} onOpenChange={setApplySuccessOpen}>
+                <DialogContent className="max-w-md rounded-2xl border-[#e2e8f0] p-6 sm:p-7">
+                    <DialogHeader className="items-center text-center sm:text-center">
+                        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#dcfce7] text-[#166534]">
+                            <Check className="size-7" strokeWidth={2.5} />
+                        </div>
+                        <DialogTitle className="pt-3 text-xl font-bold text-[#050315]">
+                            {t('job_seeker.dashboard.apply_success_title')}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm leading-6 text-[#64748b]">
+                            {t('job_seeker.dashboard.apply_success_message')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-2 sm:justify-center">
+                        <button
+                            type="button"
+                            onClick={() => setApplySuccessOpen(false)}
+                            className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#0057c8] px-5 text-sm font-semibold text-white transition hover:brightness-110 sm:w-auto sm:min-w-[180px]"
+                        >
+                            {t('job_seeker.dashboard.apply_success_ok')}
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </JobSeekerLayout>
     );
 }

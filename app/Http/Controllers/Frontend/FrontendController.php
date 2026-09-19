@@ -7,6 +7,7 @@ use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\Package;
 use App\Models\User;
+use App\Support\JobListingQuery;
 use App\Support\PortalPreferences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -21,7 +22,7 @@ class FrontendController extends Controller
             'packages' => Package::publicCards(),
             'recommendedJobs' => JobPost::query()
                 ->active()
-                ->with('employer:id,name,company_name,portal_preferences')
+                ->with('employer:id,name,company_name,company_logo_path,portal_preferences')
                 ->latest()
                 ->limit(6)
                 ->get()
@@ -33,20 +34,30 @@ class FrontendController extends Controller
     public function jobs(Request $request): Response
     {
         $search = $request->string('search')->toString();
+        $location = $request->string('location')->toString();
+        $category = $request->string('category')->toString();
+        $types = collect($request->input('types', []))
+            ->map(fn (mixed $type): string => trim((string) $type))
+            ->filter()
+            ->values()
+            ->all();
 
-        $jobs = JobPost::query()
-            ->active()
-            ->with('employer:id,name,company_name,portal_preferences')
-            ->withCount('applications')
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($builder) use ($search): void {
-                    $builder->where('title', 'like', "%{$search}%")
-                        ->orWhere('location', 'like', "%{$search}%")
-                        ->orWhere('category', 'like', "%{$search}%");
-                });
-            })
+        if ($types === [] && $request->filled('type')) {
+            $types = [trim($request->string('type')->toString())];
+        }
+
+        $jobs = JobListingQuery::apply(
+            JobPost::query()
+                ->active()
+                ->with('employer:id,name,company_name,company_logo_path,portal_preferences')
+                ->withCount('applications'),
+            $search,
+            $location,
+            $category,
+            $types,
+        )
             ->latest()
-            ->paginate(12)
+            ->paginate(30)
             ->withQueryString()
             ->through(fn (JobPost $job) => [
                 'id' => $job->id,
@@ -54,6 +65,7 @@ class FrontendController extends Controller
                 'title' => $job->title,
                 'company' => $job->employer?->company_name ?: $job->employer?->name,
                 'initials' => $this->initials($job->employer?->company_name ?: $job->employer?->name),
+                'logo_url' => $this->jobListingLogoUrl($job),
                 'location' => $job->location,
                 'type' => $job->employment_type,
                 'category' => $job->category,
@@ -62,7 +74,16 @@ class FrontendController extends Controller
 
         return Inertia::render('frontend/jobs', [
             'jobs' => $jobs,
-            'filters' => ['search' => $search],
+            'filters' => [
+                'search' => $search,
+                'location' => $location,
+                'category' => $category,
+                'types' => $types,
+            ],
+            'filterOptions' => [
+                'categories' => JobListingQuery::categoryOptions(),
+                'types' => JobListingQuery::employmentTypeKeys(),
+            ],
         ]);
     }
 
@@ -114,7 +135,7 @@ class FrontendController extends Controller
                 'similar' => JobPost::query()
                     ->active()
                     ->where('id', '!=', $jobPost->id)
-                    ->with('employer:id,name,company_name,portal_preferences')
+                    ->with('employer:id,name,company_name,company_logo_path,portal_preferences')
                     ->latest()
                     ->limit(3)
                     ->get()
@@ -123,6 +144,7 @@ class FrontendController extends Controller
                         'title' => $similar->title,
                         'company' => $similar->employer?->company_name ?: $similar->employer?->name,
                         'initials' => $this->initials($similar->employer?->company_name ?: $similar->employer?->name),
+                        'logo_url' => $this->jobListingLogoUrl($similar),
                     ]),
             ],
             'applied' => $applied,
@@ -162,6 +184,7 @@ class FrontendController extends Controller
         return [
             'slug' => $job->slug,
             'initials' => $this->initials($company),
+            'logo_url' => $this->jobListingLogoUrl($job),
             'title' => $job->title,
             'company' => $company ?: 'Employer',
             'type' => $job->employment_type ?: 'Full-time',
@@ -170,6 +193,11 @@ class FrontendController extends Controller
             'posted' => $job->created_at?->diffForHumans() ?: '—',
             'salary' => $this->publicSalary($job->employer, $job->salary_range) ?: '—',
         ];
+    }
+
+    private function jobListingLogoUrl(JobPost $job): ?string
+    {
+        return $job->listingLogoUrl();
     }
 
     private function publicSalary(?User $employer, ?string $salary): ?string

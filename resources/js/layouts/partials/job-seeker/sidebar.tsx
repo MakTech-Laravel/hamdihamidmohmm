@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { getInitials } from '@/components/job-seeker/demo-data';
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
-import { home } from '@/routes';
+import { jobs } from '@/routes';
 import type { SharedData } from '@/types';
 
 const navItems = [
@@ -82,9 +82,9 @@ export function JobSeekerSidebar({
         >
             <div className="flex h-[60px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
                 <Link
-                    href={home()}
+                    href={jobs()}
                     className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80"
-                    aria-label={t('nav.home')}
+                    aria-label={t('nav.jobs')}
                 >
                     <img
                         src="/images/admin/logo.png"
