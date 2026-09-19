@@ -3,7 +3,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { AdminIcon } from '@/components/admin-icon';
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
-import { home } from '@/routes';
+import { jobs } from '@/routes';
 import type { SharedData } from '@/types';
 
 type NavItem = {
@@ -123,9 +123,9 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
         >
             <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
                 <Link
-                    href={home()}
+                    href={jobs()}
                     className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80"
-                    aria-label={t('nav.home')}
+                    aria-label={t('nav.jobs')}
                 >
                     <img
                         src="/images/admin/logo.png"

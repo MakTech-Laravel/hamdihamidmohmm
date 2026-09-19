@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useInitials } from '@/hooks/use-initials';
 import { useLocale } from '@/hooks/use-locale';
-import { home } from '@/routes';
+import { jobs } from '@/routes';
 import { type SharedData } from '@/types';
 
 export function AdminHeader() {
@@ -68,9 +68,9 @@ export function AdminHeader() {
         <header className="bg-primary-50">
             <div className="container mx-auto flex items-center justify-between px-4 py-4 text-primary-500">
                 <Link
-                    href={home()}
+                    href={jobs()}
                     className="flex items-center gap-2 text-primary-500"
-                    aria-label={t('nav.home')}
+                    aria-label={t('nav.jobs')}
                 >
                     <AppLogo className="h-16 w-auto" />
                 </Link>

@@ -11,6 +11,20 @@ test('jobs page can be rendered', function () {
         ->assertInertia(fn ($page) => $page->component('frontend/jobs'));
 });
 
+test('jobs page paginates thirty jobs per page', function () {
+    JobPost::factory()->count(31)->create([
+        'status' => JobPostStatus::Active,
+    ]);
+
+    $this->get(route('jobs'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('frontend/jobs')
+            ->has('jobs.data', 30)
+            ->where('jobs.per_page', 30)
+            ->where('jobs.last_page', 2));
+});
+
 test('jobs page shares locale translations', function () {
     $this->get(route('jobs'))
         ->assertOk()
@@ -65,25 +79,70 @@ test('jobs page can filter by searchable location input', function () {
 
     JobPost::factory()->create([
         'employer_id' => $employer->id,
-        'title' => 'Riyadh Role',
-        'slug' => 'riyadh-role',
-        'location' => 'Riyadh, Saudi Arabia',
+        'title' => 'Khartoum Role',
+        'slug' => 'khartoum-role',
+        'location' => 'Khartoum, Sudan',
         'status' => JobPostStatus::Active,
     ]);
 
     JobPost::factory()->create([
         'employer_id' => $employer->id,
-        'title' => 'Dubai Role',
-        'slug' => 'dubai-role',
+        'title' => 'Port Sudan Role',
+        'slug' => 'port-sudan-role',
+        'location' => 'Port Sudan, Sudan',
+        'status' => JobPostStatus::Active,
+    ]);
+
+    $this->get(route('jobs', ['location' => 'Khartoum']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('frontend/jobs')
+            ->where('filters.location', 'Khartoum')
+            ->has('jobs.data', 1)
+            ->where('jobs.data.0.slug', 'khartoum-role'));
+});
+
+test('jobs page can filter by category and employment type', function () {
+    $employer = User::factory()->employer()->create();
+
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Full Time Tech Role',
+        'slug' => 'full-time-tech-role',
+        'category' => 'Technology',
+        'employment_type' => 'Full-time',
         'location' => 'Dubai, UAE',
         'status' => JobPostStatus::Active,
     ]);
 
-    $this->get(route('jobs', ['location' => 'riyadh']))
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Remote Design Role',
+        'slug' => 'remote-design-role',
+        'category' => 'Design',
+        'employment_type' => 'Remote',
+        'location' => 'Khartoum, Sudan',
+        'status' => JobPostStatus::Active,
+    ]);
+
+    $this->get(route('jobs', [
+        'category' => 'Technology',
+        'types' => ['full_time'],
+    ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('frontend/jobs')
-            ->where('filters.location', 'riyadh')
+            ->where('filters.category', 'Technology')
+            ->where('filters.types', ['full_time'])
             ->has('jobs.data', 1)
-            ->where('jobs.data.0.slug', 'riyadh-role'));
+            ->where('jobs.data.0.slug', 'full-time-tech-role')
+            ->has('filterOptions.categories')
+            ->has('filterOptions.types'));
+
+    $this->get(route('jobs', ['types' => ['remote']]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('frontend/jobs')
+            ->has('jobs.data', 1)
+            ->where('jobs.data.0.slug', 'remote-design-role'));
 });
