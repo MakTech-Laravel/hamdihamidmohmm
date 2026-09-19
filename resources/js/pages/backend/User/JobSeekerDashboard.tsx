@@ -42,6 +42,7 @@ type OpenJob = {
     slug: string;
     title: string;
     company: string | null;
+    logo_url?: string | null;
     location: string | null;
     type: string | null;
     salary: string | null;
@@ -254,11 +255,21 @@ export default function JobSeekerDashboard({
                                         className="flex flex-col gap-3 rounded-xl border border-[#f1f5f9] p-3 sm:flex-row sm:items-center"
                                     >
                                         <div className="flex min-w-0 flex-1 items-start gap-3">
-                                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#0057c8] text-xs font-bold text-white">
-                                                {getInitials(
-                                                    job.company || 'JP',
-                                                )}
-                                            </div>
+                                            {job.logo_url ? (
+                                                <img
+                                                    src={job.logo_url}
+                                                    alt={
+                                                        job.company || job.title
+                                                    }
+                                                    className="size-9 shrink-0 rounded-lg border border-[#e2e8f0] bg-[#f8faff] object-contain p-0.5"
+                                                />
+                                            ) : (
+                                                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#0057c8] text-xs font-bold text-white">
+                                                    {getInitials(
+                                                        job.company || 'JP',
+                                                    )}
+                                                </div>
+                                            )}
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate text-sm font-semibold text-[#050315]">
                                                     {job.title}
