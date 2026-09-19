@@ -2,5 +2,5 @@
 
 it('returns a successful response', function () {
     $this->get('/')
-        ->assertRedirect('/jobs');
+        ->assertOk();
 });
