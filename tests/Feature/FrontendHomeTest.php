@@ -7,6 +7,17 @@ use App\Models\Package;
 use App\Models\User;
 use Database\Seeders\PackageSeeder;
 
+test('website root opens the jobs page by default', function () {
+    $this->get('/')
+        ->assertRedirect('/jobs');
+
+    $this->get('/jobs')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('frontend/jobs')
+            ->has('jobs'));
+});
+
 test('home page can be rendered', function () {
     $this->get(route('home'))
         ->assertOk()

@@ -6,7 +6,8 @@ use App\Http\Controllers\Frontend\FrontendController;
 use App\Http\Controllers\LocaleController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [FrontendController::class, 'index'])->name('home');
+Route::redirect('/', '/jobs');
+Route::get('/home', [FrontendController::class, 'index'])->name('home');
 Route::get('/jobs', [FrontendController::class, 'jobs'])->name('jobs');
 Route::get('/jobs/{jobPost:slug}', [FrontendController::class, 'jobShow'])->name('jobs.show');
 Route::get('/pricing', [FrontendController::class, 'pricing'])->name('pricing');

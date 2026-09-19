@@ -4,7 +4,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
-import { apply as applyToJob, show as jobShow } from '@/routes/jobs';
+import { show as jobShow } from '@/routes/jobs';
 
 const jobTypeKeys = [
     'full_time',
@@ -67,7 +67,6 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
     const [category, setCategory] = useState('all');
     const [sort, setSort] = useState('latest');
     const [selectedTypes, setSelectedTypes] = useState<JobTypeKey[]>([]);
-    const [applyingJobId, setApplyingJobId] = useState<number | null>(null);
 
     const filteredJobs = useMemo(() => {
         const rows = jobs.data.filter((job) => {
@@ -123,18 +122,6 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
             '/job-seeker/jobs',
             { search: keyword },
             { preserveState: true },
-        );
-    };
-
-    const applyForJob = (jobId: number): void => {
-        setApplyingJobId(jobId);
-        router.post(
-            applyToJob.url(jobId),
-            {},
-            {
-                preserveScroll: true,
-                onFinish: () => setApplyingJobId(null),
-            },
         );
     };
 
@@ -367,7 +354,8 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
 
                         <div className="mt-5 space-y-4">
                             {filteredJobs.map((job) => {
-                                const isApplying = applyingJobId === job.id;
+                                const jobHref =
+                                    job.job_url ?? jobShow.url(job.slug);
 
                                 return (
                                     <article
@@ -386,10 +374,7 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
                                             </div>
                                             <div className="min-w-0">
                                                 <Link
-                                                    href={
-                                                        job.job_url ??
-                                                        jobShow.url(job.slug)
-                                                    }
+                                                    href={jobHref}
                                                     className="truncate text-base font-semibold text-[#1c398e] hover:underline"
                                                 >
                                                     {job.title}
@@ -432,20 +417,12 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
                                                     )}
                                                 </span>
                                             ) : (
-                                                <button
-                                                    type="button"
-                                                    disabled={isApplying}
-                                                    onClick={() =>
-                                                        applyForJob(job.id)
-                                                    }
-                                                    className="inline-flex h-10 items-center justify-center rounded-xl bg-[#0057c8] px-5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                                                <Link
+                                                    href={jobHref}
+                                                    className="inline-flex h-10 items-center justify-center rounded-xl bg-[#0057c8] px-5 text-sm font-semibold text-white transition hover:brightness-110"
                                                 >
-                                                    {isApplying
-                                                        ? t(
-                                                              'job_seeker.dashboard.applying',
-                                                          )
-                                                        : t('jobs_page.apply')}
-                                                </button>
+                                                    {t('jobs_page.apply')}
+                                                </Link>
                                             )}
                                         </div>
                                     </article>

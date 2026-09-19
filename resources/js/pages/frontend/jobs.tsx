@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { FormEvent, useMemo, useState } from 'react';
 
+import { JobSearchForm } from '@/components/frontend/job-search-form';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
@@ -24,6 +25,7 @@ type JobRow = {
     title: string;
     company: string | null;
     initials: string;
+    logo_url?: string | null;
     location: string | null;
     type: string | null;
     category: string | null;
@@ -38,7 +40,7 @@ type Props = {
         current_page: number;
         last_page: number;
     };
-    filters: { search: string };
+    filters: { search: string; location: string };
 };
 
 function typeClass(type: string | null): string {
@@ -62,28 +64,80 @@ function typeClass(type: string | null): string {
 export default function Jobs({ jobs, filters }: Props) {
     const { t } = useLocale();
     const [keyword, setKeyword] = useState(filters.search ?? '');
-    const [location, setLocation] = useState('all');
+    const [location, setLocation] = useState(() => {
+        const initial = (filters.location ?? '').trim().toLowerCase();
+
+        if (!initial) {
+            return '';
+        }
+
+        if (
+            ['riyadh', 'jeddah', 'dammam', 'dubai', 'doha', 'remote'].includes(
+                initial,
+            )
+        ) {
+            return initial;
+        }
+
+        const known = [
+            'riyadh',
+            'jeddah',
+            'dammam',
+            'dubai',
+            'doha',
+            'remote',
+        ].find((item) => initial.includes(item));
+
+        return known ?? '';
+    });
     const [category, setCategory] = useState('all');
     const [sort, setSort] = useState('latest');
     const [selectedTypes, setSelectedTypes] = useState<JobTypeKey[]>([]);
 
+    const locationOptions = useMemo(
+        () => [
+            { value: '', label: t('jobs_page.all_locations') },
+            { value: 'riyadh', label: t('location.riyadh') },
+            { value: 'jeddah', label: t('location.jeddah') },
+            { value: 'dammam', label: t('location.dammam') },
+            { value: 'dubai', label: t('location.dubai') },
+            { value: 'doha', label: t('location.doha') },
+            { value: 'remote', label: t('location.remote') },
+        ],
+        [t],
+    );
+
     const filteredJobs = useMemo(() => {
+        const selected = locationOptions.find(
+            (option) => option.value === location,
+        );
+        const locationNeedle = (selected?.label || location)
+            .trim()
+            .toLowerCase();
+
         return jobs.data.filter((job) => {
             const matchesLocation =
-                location === 'all' ||
-                (job.location ?? '').toLowerCase().includes(location.toLowerCase());
+                location === '' ||
+                (job.location ?? '').toLowerCase().includes(locationNeedle) ||
+                (job.location ?? '')
+                    .toLowerCase()
+                    .includes(location.toLowerCase());
             const matchesCategory =
                 category === 'all' ||
-                (job.category ?? '').toLowerCase().includes(category.toLowerCase());
+                (job.category ?? '')
+                    .toLowerCase()
+                    .includes(category.toLowerCase());
             const matchesType =
                 selectedTypes.length === 0 ||
                 selectedTypes.some((type) =>
-                    (job.type ?? '').toLowerCase().includes(type.replace('_', ' ')),
+                    (job.type ?? '')
+                        .toLowerCase()
+                        .includes(type.replace('_', ' ')),
                 );
 
             return matchesLocation && matchesCategory && matchesType;
         });
-    }, [jobs.data, location, category, selectedTypes]);
+    }, [jobs.data, location, locationOptions, category, selectedTypes]);
 
     const toggleType = (type: JobTypeKey) => {
         setSelectedTypes((current) =>
@@ -94,7 +148,7 @@ export default function Jobs({ jobs, filters }: Props) {
     };
 
     const clearFilters = () => {
-        setLocation('all');
+        setLocation('');
         setCategory('all');
         setSelectedTypes([]);
         setKeyword('');
@@ -103,17 +157,47 @@ export default function Jobs({ jobs, filters }: Props) {
 
     const handleSearch = (event: FormEvent) => {
         event.preventDefault();
-        router.get('/jobs', { search: keyword }, { preserveState: true });
+
+        const selected = locationOptions.find(
+            (option) => option.value === location,
+        );
+        const locationFilter =
+            selected && selected.value !== '' ? selected.label : undefined;
+
+        router.get(
+            '/jobs',
+            {
+                search: keyword || undefined,
+                location: locationFilter,
+            },
+            { preserveState: true },
+        );
     };
 
     return (
         <FrontendLayout>
             <Head title={`${t('jobs_page.title')} - ${t('app.name')}`} />
 
-            <section className="bg-[#d1f6ff] px-4 py-10 sm:px-6 lg:px-8">
-                <div className="mx-auto max-w-[1280px]">
+            <section className="relative overflow-hidden bg-[#d1f6ff] px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute -start-24 -top-28 size-72 rounded-full bg-[#0057c8]/10 blur-3xl"
+                />
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute -end-16 top-10 size-64 rounded-full bg-[#e57124]/15 blur-3xl"
+                />
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/50 to-transparent"
+                />
+
+                <div className="relative mx-auto max-w-[1280px] animate-fadeInUp">
                     <nav className="flex flex-wrap items-center gap-2 text-sm text-[#6a7282]">
-                        <Link href={home()} className="transition hover:text-[#0057c8]">
+                        <Link
+                            href={home()}
+                            className="transition hover:text-[#0057c8]"
+                        >
                             {t('nav.home')}
                         </Link>
                         <img
@@ -123,67 +207,41 @@ export default function Jobs({ jobs, filters }: Props) {
                             width={16}
                             height={16}
                         />
-                        <span className="font-medium text-[#0057c8]">{t('nav.jobs')}</span>
+                        <span className="font-medium text-[#0057c8]">
+                            {t('nav.jobs')}
+                        </span>
                     </nav>
 
-                    <h1 className="mt-4 text-3xl font-bold tracking-[-0.3px] text-[#050315] sm:text-[40px] sm:leading-[56px]">
-                        {t('jobs_page.title')}
-                    </h1>
-
-                    <form
-                        onSubmit={handleSearch}
-                        className="mt-6 grid gap-3 rounded-2xl bg-white p-4 shadow-[0px_4px_2px_rgba(0,0,0,0.12)] sm:grid-cols-2 lg:grid-cols-[2fr_1fr_auto]"
-                    >
-                        <label className="relative flex items-center">
-                            <img
-                                src="/images/jobs/search.svg"
-                                alt=""
-                                className="pointer-events-none absolute start-3 size-4"
-                                width={16}
-                                height={16}
-                            />
-                            <input
-                                type="text"
-                                value={keyword}
-                                onChange={(event) => setKeyword(event.target.value)}
-                                placeholder={t('jobs_page.search_placeholder')}
-                                className="h-[46px] w-full rounded-xl border border-[#e2e8f0] bg-[#f9fafb] pe-4 ps-9 text-sm text-[#374151] outline-none placeholder:text-[rgba(55,65,81,0.5)] focus:border-[#0057c8]"
-                            />
-                        </label>
-
-                        <div className="flex items-center gap-3 rounded-xl border border-[#dbe4ef] bg-gradient-to-b from-[#f9fafb] to-[#f3f7fc] px-4 py-3 shadow-[0_1px_2px_rgba(5,3,21,0.04)] transition hover:border-[#3977a6]/40 focus-within:border-[#0057c8] focus-within:ring-[3px] focus-within:ring-[#0057c8]/15">
-                            <img
-                                src="/images/jobs/map-pin.svg"
-                                alt=""
-                                className="size-5 shrink-0"
-                                width={20}
-                                height={20}
-                            />
-                            <NativeSelect
-                                variant="ghost"
-                                value={location}
-                                onChange={(event) => {
-                                    setLocation(event.target.value);
-                                }}
-                                aria-label={t('jobs_page.all_locations')}
-                            >
-                                <option value="all">{t('jobs_page.all_locations')}</option>
-                                <option value="riyadh">{t('location.riyadh')}</option>
-                                <option value="jeddah">{t('location.jeddah')}</option>
-                                <option value="dammam">{t('location.dammam')}</option>
-                                <option value="dubai">{t('location.dubai')}</option>
-                                <option value="doha">{t('location.doha')}</option>
-                                <option value="remote">{t('location.remote')}</option>
-                            </NativeSelect>
+                    <div className="mt-6 max-w-3xl">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-3 py-1.5 shadow-sm backdrop-blur">
+                            <span className="size-1.5 rounded-full bg-[#05df72]" />
+                            <span className="text-xs font-semibold text-[#050315]">
+                                {t('jobs_page.live_openings', {
+                                    count: jobs.total,
+                                })}
+                            </span>
                         </div>
 
-                        <button
-                            type="submit"
-                            className="h-[46px] rounded-xl bg-[#0057c8] px-6 text-sm font-semibold text-white transition hover:brightness-110"
-                        >
-                            {t('jobs_page.search')}
-                        </button>
-                    </form>
+                        <h1 className="mt-4 text-3xl font-bold tracking-[-0.6px] text-[#050315] sm:text-[42px] sm:leading-[1.15]">
+                            {t('jobs_page.title')}
+                        </h1>
+                        <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-[#475569] sm:text-base">
+                            {t('jobs_page.subtitle')}
+                        </p>
+                    </div>
+
+                    <JobSearchForm
+                        keyword={keyword}
+                        location={location}
+                        locationOptions={locationOptions}
+                        keywordPlaceholder={t('jobs_page.search_placeholder')}
+                        locationAriaLabel={t('jobs_page.all_locations')}
+                        submitLabel={t('jobs_page.search')}
+                        onKeywordChange={setKeyword}
+                        onLocationChange={setLocation}
+                        onSubmit={handleSearch}
+                        className="mt-8"
+                    />
                 </div>
             </section>
 
@@ -211,18 +269,19 @@ export default function Jobs({ jobs, filters }: Props) {
                                 <NativeSelect
                                     variant="filter"
                                     value={location}
-                                    onChange={(event) => {
-                                        setLocation(event.target.value);
-                                    }}
+                                    onChange={(event) =>
+                                        setLocation(event.target.value)
+                                    }
                                     aria-label={t('jobs_page.location')}
                                 >
-                                    <option value="all">{t('jobs_page.all_locations')}</option>
-                                    <option value="riyadh">{t('location.riyadh')}</option>
-                                    <option value="jeddah">{t('location.jeddah')}</option>
-                                    <option value="dammam">{t('location.dammam')}</option>
-                                    <option value="dubai">{t('location.dubai')}</option>
-                                    <option value="doha">{t('location.doha')}</option>
-                                    <option value="remote">{t('location.remote')}</option>
+                                    {locationOptions.map((option) => (
+                                        <option
+                                            key={option.value || 'all'}
+                                            value={option.value}
+                                        >
+                                            {option.label}
+                                        </option>
+                                    ))}
                                 </NativeSelect>
                             </div>
 
@@ -302,15 +361,23 @@ export default function Jobs({ jobs, filters }: Props) {
                                     className="flex h-full flex-col rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:shadow-md"
                                 >
                                     <div className="flex items-start gap-3">
-                                        <div
-                                            className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-                                            style={{
-                                                backgroundImage:
-                                                    'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
-                                            }}
-                                        >
-                                            {job.initials}
-                                        </div>
+                                        {job.logo_url ? (
+                                            <img
+                                                src={job.logo_url}
+                                                alt={job.company || job.title}
+                                                className="size-12 shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1"
+                                            />
+                                        ) : (
+                                            <div
+                                                className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+                                                style={{
+                                                    backgroundImage:
+                                                        'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                }}
+                                            >
+                                                {job.initials}
+                                            </div>
+                                        )}
                                         <div className="min-w-0 flex-1">
                                             <h3 className="truncate text-sm font-semibold text-[#101828]">
                                                 {job.title}
@@ -395,3 +462,4 @@ export default function Jobs({ jobs, filters }: Props) {
         </FrontendLayout>
     );
 }
+

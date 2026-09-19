@@ -42,18 +42,36 @@ test('job seekers can browse open jobs in the portal with apply state', function
             )));
 });
 
-test('job seekers can apply to a job from the portal jobs page', function () {
+test('job seekers can open a job to review before applying from the portal jobs page', function () {
     $seeker = User::factory()->jobSeeker()->create();
 
     $job = JobPost::factory()->create([
         'title' => 'Portal Apply Role',
         'status' => JobPostStatus::Active,
+        'slug' => 'portal-apply-role',
     ]);
 
     $this->actingAs($seeker)
-        ->from(route('job-seeker.jobs'))
+        ->get(route('job-seeker.jobs'))
+        ->assertOk()
+        ->assertInertia(fn($page) => $page
+            ->component('backend/User/JobSeekerJobs')
+            ->where('jobs.data.0.job_url', route('jobs.show', $job->slug))
+            ->where('jobs.data.0.applied', false));
+
+    $this->actingAs($seeker)
+        ->get(route('jobs.show', $job->slug))
+        ->assertOk()
+        ->assertInertia(fn($page) => $page
+            ->component('frontend/job-show')
+            ->where('can_apply', true)
+            ->where('applied', false));
+
+    $this->actingAs($seeker)
+        ->from(route('jobs.show', $job->slug))
         ->post(route('jobs.apply', $job))
-        ->assertRedirect(route('job-seeker.jobs'));
+        ->assertRedirect(route('job-seeker.dashboard'))
+        ->assertSessionHas('success', 'application_submitted');
 
     expect(JobApplication::query()
         ->where('job_seeker_id', $seeker->id)

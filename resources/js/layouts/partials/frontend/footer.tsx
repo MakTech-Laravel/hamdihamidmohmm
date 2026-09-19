@@ -15,7 +15,7 @@ export function FrontendFooter() {
     const { t } = useLocale();
 
     const quickLinks = [
-        { label: t('nav.home'), href: '/' },
+        { label: t('nav.home'), href: home.url() },
         { label: t('footer.browse_jobs'), href: jobs.url() },
         { label: t('nav.pricing'), href: pricing.url() },
         { label: t('nav.training'), href: training.url() },

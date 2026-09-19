@@ -114,7 +114,7 @@ export function FrontendHeader() {
     const user = auth.user;
 
     const navItems = [
-        { label: t('nav.home'), href: home.url(), match: '/' },
+        { label: t('nav.home'), href: home.url(), match: '/home' },
         { label: t('nav.jobs'), href: jobs.url(), match: '/jobs' },
         { label: t('nav.pricing'), href: pricing.url(), match: '/pricing' },
         { label: t('nav.training'), href: training.url(), match: '/training' },

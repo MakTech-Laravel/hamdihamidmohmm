@@ -12,6 +12,7 @@ import type { SharedData } from '@/types';
 type SimilarJob = {
     slug: string;
     initials: string;
+    logo_url?: string | null;
     title: string;
     company: string | null;
 };
@@ -531,15 +532,23 @@ export default function JobShow({
                                             href={jobShow.url(item.slug)}
                                             className="flex items-center gap-3 rounded-xl border border-[#f1f5f9] p-3 transition hover:border-[#dbeafe] hover:bg-[#f8faff]"
                                         >
-                                            <div
-                                                className="flex size-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
-                                                style={{
-                                                    backgroundImage:
-                                                        'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
-                                                }}
-                                            >
-                                                {item.initials}
-                                            </div>
+                                            {item.logo_url ? (
+                                                <img
+                                                    src={item.logo_url}
+                                                    alt={item.company || item.title}
+                                                    className="size-10 shrink-0 rounded-lg border border-[#e2e8f0] bg-[#f8faff] object-contain p-1"
+                                                />
+                                            ) : (
+                                                <div
+                                                    className="flex size-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
+                                                    style={{
+                                                        backgroundImage:
+                                                            'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                    }}
+                                                >
+                                                    {item.initials}
+                                                </div>
+                                            )}
                                             <div className="min-w-0">
                                                 <p className="truncate text-sm font-semibold text-[#050315]">
                                                     {item.title}

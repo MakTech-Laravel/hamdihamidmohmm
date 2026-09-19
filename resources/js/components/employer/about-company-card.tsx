@@ -49,16 +49,16 @@ export function AboutCompanyCard({
         >
             <h2 className="text-lg font-bold text-[#050315]">{title}</h2>
 
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-4 flex items-center gap-4">
                 {logoUrl ? (
                     <img
                         src={logoUrl}
                         alt={companyName}
-                        className="size-12 shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1"
+                        className="size-20 shrink-0 rounded-2xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
                     />
                 ) : (
                     <div
-                        className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+                        className="flex size-20 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white"
                         style={{
                             backgroundImage:
                                 'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
@@ -68,7 +68,7 @@ export function AboutCompanyCard({
                     </div>
                 )}
                 <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[#050315]">
+                    <p className="truncate text-base font-semibold text-[#050315]">
                         {companyName}
                     </p>
                     {industry ? (
