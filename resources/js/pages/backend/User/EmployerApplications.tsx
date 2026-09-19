@@ -43,6 +43,7 @@ type ApplicationRow = {
     certifications: ApplicationPreview['certifications'];
     resume_name: string | null;
     resume_url: string | null;
+    avatar_url?: string | null;
     timeline: ApplicationPreview['timeline'];
     preview_location: string | null;
     next_status: string | null;
@@ -108,8 +109,37 @@ function toPreview(
         cover_letter: row.cover_letter,
         resume_name: row.resume_name,
         resume_url: row.resume_url,
+        avatar_url: row.avatar_url ?? null,
         timeline: row.timeline ?? [],
     };
+}
+
+function CandidateAvatar({
+    name,
+    avatarUrl,
+}: {
+    name: string;
+    avatarUrl?: string | null;
+}) {
+    const [failed, setFailed] = useState(false);
+    const showPhoto = Boolean(avatarUrl) && !failed;
+
+    if (showPhoto) {
+        return (
+            <img
+                src={avatarUrl ?? undefined}
+                alt={name}
+                onError={() => setFailed(true)}
+                className="size-8 shrink-0 rounded-full border border-[#e2e8f0] object-cover"
+            />
+        );
+    }
+
+    return (
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-[10.4px] leading-[15.6px] font-bold text-white">
+            {getInitials(name || 'A')}
+        </div>
+    );
 }
 
 export default function EmployerApplications({
@@ -291,11 +321,10 @@ export default function EmployerApplications({
                                         >
                                             <td className="px-4 py-[13px]">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-[10.4px] leading-[15.6px] font-bold text-white">
-                                                        {getInitials(
-                                                            row.name || 'A',
-                                                        )}
-                                                    </div>
+                                                    <CandidateAvatar
+                                                        name={row.name || 'A'}
+                                                        avatarUrl={row.avatar_url}
+                                                    />
                                                     <p className="text-sm leading-[21px] font-semibold text-[#050315]">
                                                         {row.name}
                                                     </p>

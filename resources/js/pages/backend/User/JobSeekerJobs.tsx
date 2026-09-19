@@ -1,9 +1,12 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { FormEvent, useMemo, useState } from 'react';
 
+import { LocationCombobox } from '@/components/frontend/location-combobox';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
+import { categoryTranslationKey } from '@/lib/job-filters';
+import { sudanLocationKeys } from '@/lib/sudan-locations';
 import { show as jobShow } from '@/routes/jobs';
 
 const jobTypeKeys = [
@@ -23,6 +26,7 @@ type JobRow = {
     title: string;
     company: string | null;
     initials: string;
+    logo_url?: string | null;
     location: string | null;
     type: string | null;
     category: string | null;
@@ -39,7 +43,16 @@ type Props = {
         current_page: number;
         last_page: number;
     };
-    filters: { search: string };
+    filters: {
+        search: string;
+        location?: string;
+        category?: string;
+        types?: string[];
+    };
+    filterOptions?: {
+        categories: string[];
+        types: string[];
+    };
 };
 
 function typeClass(type: string | null): string {
@@ -60,56 +73,146 @@ function typeClass(type: string | null): string {
     return 'bg-[#dcfce7] text-[#16a34a]';
 }
 
-export default function JobSeekerJobs({ jobs, filters }: Props) {
+function resolveLocationParam(
+    location: string,
+    locationOptions: Array<{ value: string; label: string }>,
+): string | undefined {
+    const selected = locationOptions.find((option) => option.value === location);
+
+    if (selected) {
+        return selected.value !== '' ? selected.label : undefined;
+    }
+
+    const trimmed = location.trim();
+
+    return trimmed || undefined;
+}
+
+export default function JobSeekerJobs({ jobs, filters, filterOptions }: Props) {
     const { t } = useLocale();
     const [keyword, setKeyword] = useState(filters.search ?? '');
-    const [location, setLocation] = useState('all');
-    const [category, setCategory] = useState('all');
+    const [location, setLocation] = useState(() => {
+        const initialRaw = (filters.location ?? '').trim();
+        const initial = initialRaw.toLowerCase();
+
+        if (!initial) {
+            return '';
+        }
+
+        if (
+            sudanLocationKeys.includes(
+                initial as (typeof sudanLocationKeys)[number],
+            )
+        ) {
+            return initial;
+        }
+
+        const known =
+            sudanLocationKeys.find((item) =>
+                initial.includes(item.replaceAll('_', ' ')),
+            ) ?? sudanLocationKeys.find((item) => initial.includes(item));
+
+        return known ?? initialRaw;
+    });
+    const [category, setCategory] = useState(
+        filters.category && filters.category !== ''
+            ? filters.category
+            : 'all',
+    );
     const [sort, setSort] = useState('latest');
-    const [selectedTypes, setSelectedTypes] = useState<JobTypeKey[]>([]);
+    const [selectedTypes, setSelectedTypes] = useState<JobTypeKey[]>(() => {
+        const incoming = (filters.types ?? []).filter((type): type is JobTypeKey =>
+            jobTypeKeys.includes(type as JobTypeKey),
+        );
 
-    const filteredJobs = useMemo(() => {
-        const rows = jobs.data.filter((job) => {
-            const matchesLocation =
-                location === 'all' ||
-                (job.location ?? '')
-                    .toLowerCase()
-                    .includes(location.toLowerCase());
-            const matchesCategory =
-                category === 'all' ||
-                (job.category ?? '')
-                    .toLowerCase()
-                    .includes(category.toLowerCase());
-            const matchesType =
-                selectedTypes.length === 0 ||
-                selectedTypes.some((type) =>
-                    (job.type ?? '')
-                        .toLowerCase()
-                        .includes(type.replace('_', ' ')),
-                );
+        return incoming;
+    });
 
-            return matchesLocation && matchesCategory && matchesType;
-        });
+    const categories = filterOptions?.categories ?? [
+        'Technology',
+        'Engineering',
+        'Design',
+        'Marketing',
+        'Finance',
+        'Healthcare',
+        'HR',
+        'Sales',
+        'Construction',
+        'Logistics',
+        'Retail',
+        'Other',
+    ];
+
+    const locationOptions = useMemo(
+        () => [
+            { value: '', label: t('jobs_page.all_locations') },
+            ...sudanLocationKeys.map((key) => ({
+                value: key,
+                label: t(`location.${key}`),
+            })),
+        ],
+        [t],
+    );
+
+    const applyFilters = (overrides: {
+        search?: string;
+        location?: string;
+        category?: string;
+        types?: JobTypeKey[];
+    } = {}): void => {
+        const nextSearch = overrides.search ?? keyword;
+        const nextLocation = overrides.location ?? location;
+        const nextCategory = overrides.category ?? category;
+        const nextTypes = overrides.types ?? selectedTypes;
+
+        router.get(
+            '/job-seeker/jobs',
+            {
+                search: nextSearch.trim() || undefined,
+                location: resolveLocationParam(nextLocation, locationOptions),
+                category:
+                    nextCategory !== 'all' && nextCategory !== ''
+                        ? nextCategory
+                        : undefined,
+                types: nextTypes.length > 0 ? nextTypes : undefined,
+            },
+            { preserveState: true, replace: true },
+        );
+    };
+
+    const displayedJobs = useMemo(() => {
+        const rows = [...jobs.data];
 
         if (sort === 'salary') {
-            return [...rows].sort((a, b) =>
+            return rows.sort((a, b) =>
                 (b.salary ?? '').localeCompare(a.salary ?? ''),
             );
         }
 
         return rows;
-    }, [jobs.data, location, category, selectedTypes, sort]);
+    }, [jobs.data, sort]);
+
+    const handleLocationChange = (value: string): void => {
+        setLocation(value);
+        applyFilters({ location: value });
+    };
+
+    const handleCategoryChange = (value: string): void => {
+        setCategory(value);
+        applyFilters({ category: value });
+    };
 
     const toggleType = (type: JobTypeKey): void => {
-        setSelectedTypes((current) =>
-            current.includes(type)
-                ? current.filter((item) => item !== type)
-                : [...current, type],
-        );
+        const next = selectedTypes.includes(type)
+            ? selectedTypes.filter((item) => item !== type)
+            : [...selectedTypes, type];
+
+        setSelectedTypes(next);
+        applyFilters({ types: next });
     };
 
     const clearFilters = (): void => {
-        setLocation('all');
+        setLocation('');
         setCategory('all');
         setSelectedTypes([]);
         setKeyword('');
@@ -118,11 +221,7 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
 
     const handleSearch = (event: FormEvent): void => {
         event.preventDefault();
-        router.get(
-            '/job-seeker/jobs',
-            { search: keyword },
-            { preserveState: true },
-        );
+        applyFilters({ search: keyword });
     };
 
     return (
@@ -160,41 +259,22 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
                         />
                     </label>
 
-                    <div className="flex items-center gap-3 rounded-xl border border-[#dbe4ef] bg-gradient-to-b from-[#f9fafb] to-[#f3f7fc] px-4 py-3">
-                        <img
-                            src="/images/jobs/map-pin.svg"
-                            alt=""
-                            className="size-5 shrink-0"
-                            width={20}
-                            height={20}
-                        />
-                        <NativeSelect
-                            variant="ghost"
-                            value={location}
-                            onChange={(event) =>
-                                setLocation(event.target.value)
-                            }
-                            aria-label={t('jobs_page.all_locations')}
-                        >
-                            <option value="all">
-                                {t('jobs_page.all_locations')}
-                            </option>
-                            <option value="riyadh">
-                                {t('location.riyadh')}
-                            </option>
-                            <option value="jeddah">
-                                {t('location.jeddah')}
-                            </option>
-                            <option value="dammam">
-                                {t('location.dammam')}
-                            </option>
-                            <option value="dubai">{t('location.dubai')}</option>
-                            <option value="doha">{t('location.doha')}</option>
-                            <option value="remote">
-                                {t('location.remote')}
-                            </option>
-                        </NativeSelect>
-                    </div>
+                    <LocationCombobox
+                        value={location}
+                        options={locationOptions}
+                        onChange={handleLocationChange}
+                        ariaLabel={t('jobs_page.all_locations')}
+                        placeholder={t('jobs_page.all_locations')}
+                        searchPlaceholder={t(
+                            'jobs_page.location_search_placeholder',
+                        )}
+                        useCustomLabel={(query) =>
+                            t('jobs_page.location_use_custom', { query })
+                        }
+                        emptyLabel={t('jobs_page.location_empty')}
+                        showPin
+                        className="min-w-0"
+                    />
 
                     <button
                         type="submit"
@@ -224,36 +304,22 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
                                 <label className="mb-2 block text-sm font-medium text-[#364153]">
                                     {t('jobs_page.location')}
                                 </label>
-                                <NativeSelect
-                                    variant="filter"
+                                <LocationCombobox
                                     value={location}
-                                    onChange={(event) =>
-                                        setLocation(event.target.value)
+                                    options={locationOptions}
+                                    onChange={handleLocationChange}
+                                    ariaLabel={t('jobs_page.location')}
+                                    placeholder={t('jobs_page.all_locations')}
+                                    searchPlaceholder={t(
+                                        'jobs_page.location_search_placeholder',
+                                    )}
+                                    useCustomLabel={(query) =>
+                                        t('jobs_page.location_use_custom', {
+                                            query,
+                                        })
                                     }
-                                    aria-label={t('jobs_page.location')}
-                                >
-                                    <option value="all">
-                                        {t('jobs_page.all_locations')}
-                                    </option>
-                                    <option value="riyadh">
-                                        {t('location.riyadh')}
-                                    </option>
-                                    <option value="jeddah">
-                                        {t('location.jeddah')}
-                                    </option>
-                                    <option value="dammam">
-                                        {t('location.dammam')}
-                                    </option>
-                                    <option value="dubai">
-                                        {t('location.dubai')}
-                                    </option>
-                                    <option value="doha">
-                                        {t('location.doha')}
-                                    </option>
-                                    <option value="remote">
-                                        {t('location.remote')}
-                                    </option>
-                                </NativeSelect>
+                                    emptyLabel={t('jobs_page.location_empty')}
+                                />
                             </div>
 
                             <div className="mt-5">
@@ -264,29 +330,23 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
                                     variant="filter"
                                     value={category}
                                     onChange={(event) =>
-                                        setCategory(event.target.value)
+                                        handleCategoryChange(event.target.value)
                                     }
                                     aria-label={t('jobs_page.category')}
                                 >
                                     <option value="all">
                                         {t('jobs_page.all_categories')}
                                     </option>
-                                    <option value="engineering">
-                                        {t('category.engineering')}
-                                    </option>
-                                    <option value="marketing">
-                                        {t('category.marketing')}
-                                    </option>
-                                    <option value="finance">
-                                        {t('category.finance')}
-                                    </option>
-                                    <option value="design">
-                                        {t('category.design')}
-                                    </option>
-                                    <option value="hr">{t('category.hr')}</option>
-                                    <option value="sales">
-                                        {t('category.sales')}
-                                    </option>
+                                    {categories.map((item) => {
+                                        const key = categoryTranslationKey(item);
+                                        const label = t(key);
+
+                                        return (
+                                            <option key={item} value={item}>
+                                                {label === key ? item : label}
+                                            </option>
+                                        );
+                                    })}
                                 </NativeSelect>
                             </div>
 
@@ -325,12 +385,12 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
                                     className="font-bold text-[#101828]"
                                     dir="ltr"
                                 >
-                                    {filteredJobs.length}
+                                    {jobs.total}
                                 </span>{' '}
                                 {t('jobs_page.results_found')}
                             </p>
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-[#6a7282]">
+                            <div className="flex shrink-0 items-center gap-2">
+                                <span className="whitespace-nowrap text-sm text-[#6a7282]">
                                     {t('jobs_page.sort_by')}
                                 </span>
                                 <NativeSelect
@@ -353,7 +413,7 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
                         </div>
 
                         <div className="mt-5 space-y-4">
-                            {filteredJobs.map((job) => {
+                            {displayedJobs.map((job) => {
                                 const jobHref =
                                     job.job_url ?? jobShow.url(job.slug);
 
@@ -363,15 +423,25 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
                                         className="flex flex-col gap-4 rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] sm:flex-row sm:items-center sm:justify-between"
                                     >
                                         <div className="flex min-w-0 items-start gap-3">
-                                            <div
-                                                className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-                                                style={{
-                                                    backgroundImage:
-                                                        'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
-                                                }}
-                                            >
-                                                {job.initials}
-                                            </div>
+                                            {job.logo_url ? (
+                                                <img
+                                                    src={job.logo_url}
+                                                    alt={
+                                                        job.company || job.title
+                                                    }
+                                                    className="size-12 shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1"
+                                                />
+                                            ) : (
+                                                <div
+                                                    className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+                                                    style={{
+                                                        backgroundImage:
+                                                            'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                    }}
+                                                >
+                                                    {job.initials}
+                                                </div>
+                                            )}
                                             <div className="min-w-0">
                                                 <Link
                                                     href={jobHref}
@@ -430,7 +500,7 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
                             })}
                         </div>
 
-                        {filteredJobs.length === 0 ? (
+                        {displayedJobs.length === 0 ? (
                             <div className="mt-10 rounded-2xl border border-dashed border-[#e2e8f0] bg-white px-6 py-16 text-center">
                                 <p className="text-base font-semibold text-[#101828]">
                                     {t('jobs_page.empty_title')}
@@ -448,7 +518,7 @@ export default function JobSeekerJobs({ jobs, filters }: Props) {
                             </div>
                         ) : null}
 
-                        {filteredJobs.length > 0 ? (
+                        {displayedJobs.length > 0 && jobs.last_page > 1 ? (
                             <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
                                 {jobs.links.map((link) => (
                                     <Link

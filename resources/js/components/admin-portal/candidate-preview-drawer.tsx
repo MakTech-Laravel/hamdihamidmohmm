@@ -1,5 +1,5 @@
 import { Download, ExternalLink, Mail, MapPin, Phone, X } from 'lucide-react';
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { getInitials } from '@/components/job-seeker/demo-data';
 import {
@@ -53,6 +53,7 @@ export type CandidatePreview = {
     cover_letter?: string | null;
     resume_name?: string | null;
     resume_url: string | null;
+    avatar_url?: string | null;
     timeline: CandidatePreviewTimelineStep[];
 };
 
@@ -89,6 +90,7 @@ export function CandidatePreviewDrawer({
 
 function DrawerBody({ preview }: { preview: CandidatePreview }) {
     const { t } = useLocale();
+    const [avatarFailed, setAvatarFailed] = useState(false);
     const resumeEnabled = preview.resume_url !== null;
     const isApplicant = preview.is_applicant !== false;
     const education = preview.education ?? [];
@@ -96,13 +98,23 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
     const languages = preview.languages ?? [];
     const certifications = preview.certifications ?? [];
     const availability = preview.availability ?? [];
+    const showAvatar = Boolean(preview.avatar_url) && !avatarFailed;
 
     return (
         <div className="flex h-full flex-col bg-white">
             <div className="flex shrink-0 items-center gap-4 border-b border-[#d1f6ff] bg-[#d1f6ff] p-5">
-                <div className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-base font-extrabold text-white">
-                    {getInitials(preview.name) || '—'}
-                </div>
+                {showAvatar ? (
+                    <img
+                        src={preview.avatar_url ?? undefined}
+                        alt={preview.name}
+                        onError={() => setAvatarFailed(true)}
+                        className="size-[52px] shrink-0 rounded-full border border-white object-cover shadow-sm"
+                    />
+                ) : (
+                    <div className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-base font-extrabold text-white">
+                        {getInitials(preview.name) || '—'}
+                    </div>
+                )}
                 <div className="min-w-0 flex-1">
                     <SheetTitle className="text-base font-extrabold text-[#050315]">
                         {preview.name}

@@ -67,5 +67,7 @@ test('job detail page shares job detail translations', function () {
         ->assertInertia(fn($page) => $page
             ->has('translations')
             ->where('translations', fn($translations) => ($translations['job_detail.apply_now'] ?? null) === 'Apply Now'
-                && ($translations['job_detail.share_via'] ?? null) === 'Share via:'));
+                && ($translations['job_detail.share_via'] ?? null) === 'Share via:'
+                && ($translations['job_detail.apply_confirm'] ?? null) === 'Confirm Apply'
+                && ($translations['job_detail.modify_profile'] ?? null) === 'Modify Profile'));
 });
