@@ -2,7 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 
 import { Button } from '@/components/ui/button';
 import FrontendLayout from '@/layouts/frontend-layout';
-import { home } from '@/routes';
+import { jobs } from '@/routes';
 
 type Props = {
     status: 'success' | 'failed';
@@ -33,7 +33,7 @@ export default function YallaPayResult({ status, title, message }: Props) {
                         <Link href="/checkout/yallapay">Try again</Link>
                     </Button>
                     <Button asChild variant="outline">
-                        <Link href={home()}>Home</Link>
+                        <Link href={jobs()}>Jobs</Link>
                     </Button>
                 </div>
             </section>

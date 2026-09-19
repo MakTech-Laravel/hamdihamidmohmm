@@ -6,7 +6,7 @@ import AppLogo from '@/components/app-logo';
 import { NavItem as NavItemComponent } from '@/components/ui/nav-item';
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
-import { dashboard, home } from '@/routes';
+import { dashboard, jobs } from '@/routes';
 import { type NavItem, type SharedData } from '@/types';
 
 interface AdminSidebarProps {
@@ -155,9 +155,9 @@ export const AdminSidebar = React.memo<AdminSidebarProps>(
                     )}
                 >
                     <Link
-                        href={home()}
+                        href={jobs()}
                         className="flex items-center gap-2 transition-opacity hover:opacity-80"
-                        aria-label={t('nav.home')}
+                        aria-label={t('nav.jobs')}
                     >
                         {isCollapsed ? (
                             <LayoutGrid className="h-6 w-6 text-primary" />

@@ -13,7 +13,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useLocale } from '@/hooks/use-locale';
-import { about, contact, home, jobs, login, pricing, register, training } from '@/routes';
+import { about, contact, discover, jobs, login, pricing, register, training } from '@/routes';
 import type { SharedData } from '@/types';
 
 function FrontendUserMenu({
@@ -114,10 +114,10 @@ export function FrontendHeader() {
     const user = auth.user;
 
     const navItems = [
-        { label: t('nav.home'), href: home.url(), match: '/home' },
-        { label: t('nav.jobs'), href: jobs.url(), match: '/jobs' },
+        { label: t('nav.jobs'), href: jobs.url(), match: '/' },
         { label: t('nav.pricing'), href: pricing.url(), match: '/pricing' },
         { label: t('nav.training'), href: training.url(), match: '/training' },
+        { label: t('nav.discover'), href: discover.url(), match: '/discover' },
         { label: t('nav.about'), href: about.url(), match: '/about' },
         { label: t('nav.contact'), href: contact.url(), match: '/contact' },
     ];
@@ -138,7 +138,7 @@ export function FrontendHeader() {
 
             <div className="border-b border-black/0 bg-white">
                 <div className="mx-auto flex h-[72px] max-w-[1344px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-                    <Link href={home()} className="shrink-0">
+                    <Link href={jobs()} className="shrink-0">
                         <img
                             src="/images/home/logo.png"
                             alt={t('app.name')}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import InputError from '@/components/input-error';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
-import { home } from '@/routes';
+import { jobs } from '@/routes';
 import { store } from '@/routes/contact';
 import type { SharedData } from '@/types';
 
@@ -29,10 +29,10 @@ export default function Contact() {
                 <div className="mx-auto flex max-w-[1280px] flex-col items-center text-center">
                     <nav className="flex flex-wrap items-center justify-center gap-2 text-sm">
                         <Link
-                            href={home()}
+                            href={jobs()}
                             className="text-[#050315] transition hover:text-[#0057c8]"
                         >
-                            {t('nav.home')}
+                            {t('nav.jobs')}
                         </Link>
                         <img
                             src="/images/contact/breadcrumb-chevron.svg"

@@ -39,7 +39,7 @@ class ApplicationMonitoringController extends Controller
         $applications = $appsQuery
             ->paginate(12)
             ->withQueryString()
-            ->through(fn (JobApplication $application) => $this->row($application));
+            ->through(fn(JobApplication $application) => $this->row($application));
 
         $trend = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -90,7 +90,7 @@ class ApplicationMonitoringController extends Controller
     {
         abort_unless($request->user()?->canManageJobs(), 403);
 
-        $filename = 'applications-'.now()->format('Y-m-d-His').'.csv';
+        $filename = 'applications-' . now()->format('Y-m-d-His') . '.csv';
 
         return response()->streamDownload(function (): void {
             $handle = fopen('php://output', 'w');
@@ -155,6 +155,7 @@ class ApplicationMonitoringController extends Controller
                     'cover_letter' => $application->cover_letter,
                     'resume_name' => null,
                     'resume_url' => $base['resume_url'],
+                    'avatar_url' => null,
                     'timeline' => $base['timeline'],
                 ],
             ];

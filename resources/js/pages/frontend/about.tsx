@@ -13,7 +13,7 @@ import { useMemo } from 'react';
 
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
-import { home, jobs } from '@/routes';
+import { jobs } from '@/routes';
 import { role as registerRole } from '@/routes/register';
 
 export default function About() {
@@ -86,8 +86,8 @@ export default function About() {
             <section className="bg-[#d1f6ff] px-4 py-12 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px]">
                     <nav className="flex flex-wrap items-center gap-2 text-sm">
-                        <Link href={home()} className="text-[#050315] transition hover:text-[#0057c8]">
-                            {t('nav.home')}
+                        <Link href={jobs()} className="text-[#050315] transition hover:text-[#0057c8]">
+                            {t('nav.jobs')}
                         </Link>
                         <img
                             src="/images/about/breadcrumb-chevron.svg"
