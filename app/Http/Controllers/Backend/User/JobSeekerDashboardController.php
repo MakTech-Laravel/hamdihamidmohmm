@@ -32,7 +32,7 @@ class JobSeekerDashboardController extends Controller
 
         $openJobs = JobPost::query()
             ->active()
-            ->with('employer:id,name,company_name')
+            ->with('employer:id,name,company_name,company_logo_path')
             ->when(
                 $appliedJobIds->isNotEmpty(),
                 fn ($query) => $query->whereNotIn('id', $appliedJobIds),
@@ -45,6 +45,7 @@ class JobSeekerDashboardController extends Controller
                 'slug' => $job->slug,
                 'title' => $job->title,
                 'company' => $job->employer?->company_name ?: $job->employer?->name,
+                'logo_url' => $job->listingLogoUrl(),
                 'location' => $job->location,
                 'type' => $job->employment_type,
                 'salary' => $job->salary_range,

@@ -33,7 +33,8 @@ class ApplicantProfilePreview
      *     certifications: list<array{name: string, issuer: string|null, date: string|null}>,
      *     cover_letter: string|null,
      *     resume_name: string|null,
-     *     has_resume_file: bool
+     *     has_resume_file: bool,
+     *     avatar_url: string|null
      * }
      */
     public static function from(User $seeker, ?JobApplication $application = null): array
@@ -68,6 +69,7 @@ class ApplicantProfilePreview
             'cover_letter' => self::nullableString($application?->cover_letter),
             'resume_name' => self::resumeName($seeker, $application),
             'has_resume_file' => self::hasResumeFile($seeker, $application),
+            'avatar_url' => $seeker->avatar_url,
         ];
     }
 
