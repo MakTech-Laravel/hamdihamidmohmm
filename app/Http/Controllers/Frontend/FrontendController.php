@@ -7,6 +7,7 @@ use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\Package;
 use App\Models\User;
+use App\Support\JobListingQuery;
 use App\Support\PortalPreferences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -34,26 +35,29 @@ class FrontendController extends Controller
     {
         $search = $request->string('search')->toString();
         $location = $request->string('location')->toString();
+        $category = $request->string('category')->toString();
+        $types = collect($request->input('types', []))
+            ->map(fn (mixed $type): string => trim((string) $type))
+            ->filter()
+            ->values()
+            ->all();
 
-        $jobs = JobPost::query()
-            ->active()
-            ->with('employer:id,name,company_name,company_logo_path,portal_preferences')
-            ->withCount('applications')
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($builder) use ($search): void {
-                    $builder->where('title', 'like', "%{$search}%")
-                        ->orWhere('category', 'like', "%{$search}%")
-                        ->orWhereHas('employer', function ($employer) use ($search): void {
-                            $employer->where('company_name', 'like', "%{$search}%")
-                                ->orWhere('name', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->when($location !== '', function ($query) use ($location): void {
-                $query->where('location', 'like', "%{$location}%");
-            })
+        if ($types === [] && $request->filled('type')) {
+            $types = [trim($request->string('type')->toString())];
+        }
+
+        $jobs = JobListingQuery::apply(
+            JobPost::query()
+                ->active()
+                ->with('employer:id,name,company_name,company_logo_path,portal_preferences')
+                ->withCount('applications'),
+            $search,
+            $location,
+            $category,
+            $types,
+        )
             ->latest()
-            ->paginate(12)
+            ->paginate(30)
             ->withQueryString()
             ->through(fn (JobPost $job) => [
                 'id' => $job->id,
@@ -73,6 +77,12 @@ class FrontendController extends Controller
             'filters' => [
                 'search' => $search,
                 'location' => $location,
+                'category' => $category,
+                'types' => $types,
+            ],
+            'filterOptions' => [
+                'categories' => JobListingQuery::categoryOptions(),
+                'types' => JobListingQuery::employmentTypeKeys(),
             ],
         ]);
     }
@@ -187,15 +197,7 @@ class FrontendController extends Controller
 
     private function jobListingLogoUrl(JobPost $job): ?string
     {
-        if ($job->hasLogo()) {
-            return $job->logoUrl();
-        }
-
-        if ($job->employer?->hasCompanyLogo()) {
-            return $job->employer->companyLogoUrl();
-        }
-
-        return null;
+        return $job->listingLogoUrl();
     }
 
     private function publicSalary(?User $employer, ?string $salary): ?string

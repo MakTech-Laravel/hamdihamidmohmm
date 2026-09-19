@@ -6,8 +6,11 @@ use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\JobSeekerProfile;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 test('employers see live application table props matching the Figma page', function () {
+    Storage::fake('public');
+
     $employer = User::factory()->employer()->create();
     $seeker = User::factory()->jobSeeker()->create([
         'name' => 'Ahmed Al-Rashidi',
@@ -15,6 +18,10 @@ test('employers see live application table props matching the Figma page', funct
         'phone' => '+966 50 123 4567',
         'location' => 'Riyadh',
     ]);
+
+    $avatarPath = 'avatars/' . $seeker->id . '/photo.png';
+    Storage::disk('public')->put($avatarPath, 'avatar');
+    $seeker->forceFill(['avatar' => $avatarPath])->save();
 
     JobSeekerProfile::factory()->create([
         'user_id' => $seeker->id,
@@ -43,12 +50,13 @@ test('employers see live application table props matching the Figma page', funct
     $this->actingAs($employer)
         ->get(route('employer.applications'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerApplications')
             ->where('stats.total', 1)
             ->where('stats.interview', 1)
             ->where('stats.shortlisted', 0)
             ->where('applications.0.name', 'Ahmed Al-Rashidi')
+            ->where('applications.0.avatar_url', '/storage/' . $avatarPath)
             ->where('applications.0.job', 'Senior Frontend Developer')
             ->where('applications.0.experience_years', '6 years')
             ->where('applications.0.location', 'Riyadh')
@@ -56,7 +64,7 @@ test('employers see live application table props matching the Figma page', funct
             ->where('applications.0.date', 'Aug 3, 2026')
             ->where('applications.0.phone', '+966 50 123 4567')
             ->where('applications.0.skills', ['React', 'TypeScript', 'Tailwind CSS', 'Node.js'])
-            ->where('applications.0.current_title', fn ($value) => filled($value))
+            ->where('applications.0.current_title', fn($value) => filled($value))
             ->where('applications.0.experience.0.title', 'Developer')
             ->where('applications.0.cover_letter', 'I would like to join the frontend team.')
             ->where('applications.0.preview_location', 'Riyadh · 6 years')

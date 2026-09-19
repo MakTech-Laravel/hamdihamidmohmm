@@ -3,7 +3,7 @@ import { Link } from '@inertiajs/react';
 import BrandLogo from '@/components/brand-logo';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { useLocale } from '@/hooks/use-locale';
-import { about, contact, home, jobs, pricing, training } from '@/routes';
+import { about, contact, discover, jobs, pricing, training } from '@/routes';
 
 const socialLinks = [
     { label: 'LinkedIn', src: '/images/home/linkedin.svg', href: '#' },
@@ -15,10 +15,10 @@ export function FrontendFooter() {
     const { t } = useLocale();
 
     const quickLinks = [
-        { label: t('nav.home'), href: home.url() },
-        { label: t('footer.browse_jobs'), href: jobs.url() },
+        { label: t('nav.jobs'), href: jobs.url() },
         { label: t('nav.pricing'), href: pricing.url() },
         { label: t('nav.training'), href: training.url() },
+        { label: t('nav.discover'), href: discover.url() },
         { label: t('nav.about'), href: about.url() },
         { label: t('nav.contact'), href: contact.url() },
     ];
@@ -33,7 +33,7 @@ export function FrontendFooter() {
             <div className="mx-auto max-w-[1344px] px-4 py-14 sm:px-6 lg:px-8">
                 <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
                     <div>
-                        <Link href={home()}>
+                        <Link href={jobs()}>
                             <BrandLogo
                                 className="h-[57px] w-[86px]"
                                 width={86}

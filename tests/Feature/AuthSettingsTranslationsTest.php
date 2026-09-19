@@ -53,7 +53,7 @@ test('auth and settings translation keys exist in english and arabic', function 
         'appearance.toggle_theme',
         'common.mark_as_read',
         'common.close_sidebar',
-        'location.riyadh',
+        'location.khartoum',
         'category.engineering',
         'home.recommended_empty_title',
         'footer.mts_copyright',
@@ -72,10 +72,10 @@ test('auth and settings translation keys exist in english and arabic', function 
 test('login page shares auth translation keys', function () {
     $this->get(route('login'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('auth/login')
             ->has('translations')
-            ->where('translations', fn($translations) => ($translations['auth.welcome_back'] ?? null) === 'Welcome Back'
+            ->where('translations', fn ($translations) => ($translations['auth.welcome_back'] ?? null) === 'Welcome Back'
                 && ($translations['auth.login'] ?? null) === 'Login'
                 && ($translations['auth.forgot_password_title'] ?? null) === 'Forgot password'
                 && ($translations['app.logo_alt'] ?? null) === 'Rena Reiam For Job'
