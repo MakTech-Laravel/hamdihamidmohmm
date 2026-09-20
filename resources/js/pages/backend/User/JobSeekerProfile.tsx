@@ -792,6 +792,8 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                 label={t('job_seeker.profile.full_name')}
                                 value={form.data.name}
                                 onChange={(value) => form.setData('name', value)}
+                                required
+                                error={form.errors.name}
                             />
                             <Field
                                 label={t('job_seeker.profile.headline')}
@@ -819,6 +821,8 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                 label={t('job_seeker.profile.phone')}
                                 value={form.data.phone}
                                 onChange={(value) => form.setData('phone', value)}
+                                required
+                                error={form.errors.phone}
                             />
                             <Field
                                 label={t('job_seeker.profile.linkedin')}
@@ -2410,17 +2414,23 @@ function Field({
     onChange,
     hint,
     placeholder,
+    required = false,
+    error,
 }: {
     label: string;
     value: string;
     onChange: (value: string) => void;
     hint?: string;
     placeholder?: string;
+    required?: boolean;
+    error?: string;
 }) {
     return (
         <label className="block text-xs font-semibold text-[#4a5565]">
             {label}
+            {required ? <span className="text-[#dc2626]"> *</span> : null}
             <input
+                required={required}
                 className="mt-1.5 h-[42px] w-full rounded-lg border border-[#e8d5e8] px-3 text-base text-[#050315] outline-none transition placeholder:text-[rgba(5,3,21,0.5)] focus:border-[#0057c8] focus:ring-[3px] focus:ring-[#0057c8]/15"
                 value={value}
                 placeholder={placeholder}
@@ -2429,6 +2439,11 @@ function Field({
             {hint ? (
                 <span className="mt-1 block text-[11px] font-normal text-[#99a1af]">
                     {hint}
+                </span>
+            ) : null}
+            {error ? (
+                <span className="mt-1 block text-[11px] font-normal text-[#dc2626]">
+                    {error}
                 </span>
             ) : null}
         </label>

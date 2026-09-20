@@ -927,6 +927,7 @@ export default function EmployerJobEditor({
                                     placeholder={t(
                                         'employer.job_editor.field.description_placeholder',
                                     )}
+                                    attachmentUploadUrl="/employer/jobs/description-attachments"
                                 />
                                 <p className="mt-1.5 text-xs text-[#94a3b8]">
                                     {t(

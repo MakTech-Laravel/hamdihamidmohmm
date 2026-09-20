@@ -654,7 +654,10 @@ export default function Home({
             </section>
 
             {/* Newsletter */}
-            <section className="bg-linear-to-b from-[#f8faff] to-[#eff6ff] px-4 py-24 sm:px-6 lg:px-8">
+            <section
+                id="newsletter"
+                className="bg-linear-to-b from-[#f8faff] to-[#eff6ff] px-4 py-24 sm:px-6 lg:px-8"
+            >
                 <div className="mx-auto max-w-2xl text-center">
                     <h2 className="text-3xl font-bold tracking-[-0.2px] text-[#050315]">
                         {t('newsletter.title')}

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\JobApplicationStatus;
+use App\Enums\RoleName;
 use App\Models\User;
 use App\Notifications\PortalNotification;
 
@@ -126,5 +127,23 @@ class PortalNotifier
             'Billing',
             'billing_alerts',
         );
+    }
+
+    public static function employerRegistered(User $employer): void
+    {
+        $company = $employer->company_name ?: $employer->name;
+
+        self::notifyAdmins(
+            'New employer registration',
+            "{$company} ({$employer->email}) registered and awaits verification approval.",
+            'Verification',
+        );
+    }
+
+    public static function notifyAdmins(string $title, string $message, string $category = 'System'): void
+    {
+        User::query()
+            ->role(RoleName::adminPanelValues())
+            ->each(fn (User $admin) => self::send($admin, $title, $message, $category));
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\AdminNavBadges;
 use App\Support\Locale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -80,6 +81,7 @@ class HandleInertiaRequests extends Middleware
                 ) : null,
             ],
             'unread_notifications' => $user?->unreadNotifications()->count() ?? 0,
+            'admin_nav_badges' => fn () => AdminNavBadges::for($user),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

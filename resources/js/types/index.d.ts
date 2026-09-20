@@ -57,6 +57,13 @@ export interface SharedData {
     translations: Record<string, string>;
     availableLocales: LocaleOption[];
     unread_notifications?: number;
+    admin_nav_badges?: {
+        employers: number;
+        verifications: number;
+        jobs: number;
+        payments: number;
+        notifications: number;
+    };
     [key: string]: unknown;
 }
 

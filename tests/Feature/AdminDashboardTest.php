@@ -53,7 +53,9 @@ test('the admin dashboard alerts on pending employer verifications', function ()
             ->where('stats.pending_verifications', 1)
             ->where('quickStats.tasks_today', 1)
             ->where('alerts.0.title', '1 pending employer verification')
-            ->where('alerts.0.href', '/admin/employers?status=pending'));
+            ->where('alerts.0.href', '/admin/employers?status=pending')
+            ->where('admin_nav_badges.employers', 1)
+            ->where('admin_nav_badges.verifications', 1));
 });
 
 test('the admin dashboard shows activity logs', function () {

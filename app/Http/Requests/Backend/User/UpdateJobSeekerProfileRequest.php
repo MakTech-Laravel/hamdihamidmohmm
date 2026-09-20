@@ -19,7 +19,7 @@ class UpdateJobSeekerProfileRequest extends FormRequest
             if (is_string($value)) {
                 $this->merge([
                     $field => collect(preg_split('/[\n,]+/', $value) ?: [])
-                        ->map(fn (string $item): string => trim($item))
+                        ->map(fn(string $item): string => trim($item))
                         ->filter()
                         ->values()
                         ->all(),
@@ -46,7 +46,7 @@ class UpdateJobSeekerProfileRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['required', 'string', 'max:30'],
             'location' => ['nullable', 'string', 'max:255'],
             'headline' => ['nullable', 'string', 'max:255'],
             'current_title' => ['nullable', 'string', 'max:255'],
@@ -74,6 +74,7 @@ class UpdateJobSeekerProfileRequest extends FormRequest
     {
         return [
             'name.required' => 'Please enter your full name.',
+            'phone.required' => 'Please enter your phone number.',
         ];
     }
 }

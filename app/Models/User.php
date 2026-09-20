@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\AccountStatusCast;
+use App\Enums\EmployerAccountStatus;
 use App\Enums\EmployerPackage;
 use App\Enums\EmployerVerificationStatus;
 use App\Enums\JobSeekerResumeStatus;
@@ -270,6 +271,29 @@ class User extends Authenticatable
     {
         return $this->hasRole(RoleName::Employer->value)
             || $this->role === UserRole::Employer;
+    }
+
+    public function employerAccountAllowsLogin(): bool
+    {
+        if (! $this->isEmployer()) {
+            return true;
+        }
+
+        return $this->account_status === EmployerAccountStatus::Active
+            && $this->verification_status === EmployerVerificationStatus::Approved;
+    }
+
+    public function employerLoginDenialReason(): ?string
+    {
+        if (! $this->isEmployer() || $this->employerAccountAllowsLogin()) {
+            return null;
+        }
+
+        return match ($this->account_status?->value) {
+            'rejected' => 'Your employer account was rejected. Please contact support for help.',
+            'suspended' => 'Your employer account has been suspended. Please contact support for help.',
+            default => 'Your employer account is awaiting admin approval before you can sign in.',
+        };
     }
 
     public function isUser(): bool

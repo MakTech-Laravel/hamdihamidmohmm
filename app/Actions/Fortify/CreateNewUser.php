@@ -13,6 +13,7 @@ use App\Enums\JobSeekerResumeStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\ActivityLogger;
+use App\Support\PortalNotifier;
 use App\Support\RoleAssigner;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -78,6 +79,10 @@ class CreateNewUser implements CreatesNewUsers
             'Account registered.',
             $user,
         );
+
+        if ($isEmployer) {
+            PortalNotifier::employerRegistered($user);
+        }
 
         return $user;
     }

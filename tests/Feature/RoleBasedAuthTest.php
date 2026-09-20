@@ -46,7 +46,7 @@ test('job seekers can register and land on the job seeker profile', function () 
     $response->assertRedirect(route('job-seeker.profile', absolute: false));
 });
 
-test('employers can register and land on the employer dashboard', function () {
+test('employers can register and must wait for admin approval', function () {
     $response = $this->post(route('register.store'), [
         'company_name' => 'Horizon Hiring Ltd',
         'email' => 'employer@example.com',
@@ -56,7 +56,7 @@ test('employers can register and land on the employer dashboard', function () {
         'terms' => '1',
     ]);
 
-    $this->assertAuthenticated();
+    $this->assertGuest();
 
     $user = User::query()->where('email', 'employer@example.com')->first();
 
@@ -65,7 +65,7 @@ test('employers can register and land on the employer dashboard', function () {
         ->and($user->company_name)->toBe('Horizon Hiring Ltd')
         ->and($user->name)->toBe('Horizon Hiring Ltd');
 
-    $response->assertRedirect(route('employer.dashboard', absolute: false));
+    $response->assertRedirect(route('login', absolute: false));
 });
 
 test('registration requires an accepted terms agreement', function () {

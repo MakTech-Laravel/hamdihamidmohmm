@@ -38,7 +38,7 @@ test('registration assigns spatie roles for job seekers and employers', function
         'password_confirmation' => 'password',
         'role' => UserRole::Employer->value,
         'terms' => '1',
-    ])->assertRedirect(route('employer.dashboard', absolute: false));
+    ])->assertRedirect(route('login', absolute: false));
 
     $employer = User::query()->where('email', 'employer-role@example.com')->first();
 

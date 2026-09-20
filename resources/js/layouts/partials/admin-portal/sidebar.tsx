@@ -6,12 +6,20 @@ import { cn } from '@/lib/utils';
 import { jobs } from '@/routes';
 import type { SharedData } from '@/types';
 
+type NavBadgeKey =
+    | 'employers'
+    | 'verifications'
+    | 'jobs'
+    | 'payments'
+    | 'notifications';
+
 type NavItem = {
     titleKey: string;
     href: string | null;
     icon: string;
     match?: string;
     superAdminOnly?: boolean;
+    badgeKey?: NavBadgeKey;
 };
 
 const navItems: NavItem[] = [
@@ -38,6 +46,7 @@ const navItems: NavItem[] = [
         href: '/admin/employers',
         icon: '/images/admin/nav-employers.svg',
         match: '/admin/employers',
+        badgeKey: 'employers',
     },
     {
         titleKey: 'admin.nav.job_seekers',
@@ -50,6 +59,7 @@ const navItems: NavItem[] = [
         href: '/admin/jobs',
         icon: '/images/admin/nav-jobs.svg',
         match: '/admin/jobs',
+        badgeKey: 'jobs',
     },
     {
         titleKey: 'admin.nav.job_filters',
@@ -74,12 +84,14 @@ const navItems: NavItem[] = [
         href: '/admin/payments',
         icon: '/images/admin/nav-payments.svg',
         match: '/admin/payments',
+        badgeKey: 'payments',
     },
     {
         titleKey: 'admin.nav.verifications',
         href: '/admin/verifications',
         icon: '/images/admin/nav-verification.svg',
         match: '/admin/verifications',
+        badgeKey: 'verifications',
     },
     {
         titleKey: 'admin.nav.reports',
@@ -104,6 +116,7 @@ const navItems: NavItem[] = [
         href: '/admin/notifications',
         icon: '/images/admin/nav-notifications.svg',
         match: '/admin/notifications',
+        badgeKey: 'notifications',
     },
     {
         titleKey: 'admin.nav.settings',
@@ -120,9 +133,11 @@ const navItems: NavItem[] = [
     },
 ];
 
+const formatBadge = (count: number): string => (count > 99 ? '99+' : String(count));
+
 export function AdminPortalSidebar({ className }: { className?: string }) {
     const page = usePage<SharedData>();
-    const { auth } = page.props;
+    const { auth, admin_nav_badges: badges } = page.props;
     const currentUrl = page.url;
     const { t } = useLocale();
 
@@ -167,19 +182,22 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
                         const active = item.match
                             ? currentUrl.startsWith(item.match)
                             : false;
-                        const className = cn(
+                        const itemClassName = cn(
                             'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium tracking-[-0.16px] transition-colors',
                             active
                                 ? 'bg-[rgba(0,87,200,0.1)] text-[#0057c8]'
                                 : 'text-[#3977a6] hover:bg-[rgba(0,87,200,0.06)]',
                         );
                         const title = t(item.titleKey);
+                        const badgeCount = item.badgeKey
+                            ? Number(badges?.[item.badgeKey] ?? 0)
+                            : 0;
 
                         return (
                             <Link
                                 key={item.titleKey}
                                 href={item.href!}
-                                className={className}
+                                className={itemClassName}
                             >
                                 <AdminIcon
                                     src={item.icon}
@@ -187,7 +205,14 @@ export function AdminPortalSidebar({ className }: { className?: string }) {
                                     tint
                                     className={cn(!active && 'opacity-60')}
                                 />
-                                <span className="truncate">{title}</span>
+                                <span className="min-w-0 flex-1 truncate">
+                                    {title}
+                                </span>
+                                {badgeCount > 0 ? (
+                                    <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#ef4444] px-1.5 text-[10px] font-bold text-white">
+                                        {formatBadge(badgeCount)}
+                                    </span>
+                                ) : null}
                             </Link>
                         );
                     })}

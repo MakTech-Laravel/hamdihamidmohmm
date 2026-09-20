@@ -7,12 +7,14 @@ use App\Enums\JobTaxonomyType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\StoreEmployerJobRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerJobRequest;
+use App\Http\Requests\Backend\User\UploadEmployerJobDescriptionAttachmentRequest;
 use App\Http\Requests\Backend\User\UploadEmployerJobLogoRequest;
 use App\Models\JobPost;
 use App\Models\JobTaxonomy;
 use App\Models\User;
 use App\Support\EmployerPlanSnapshot;
 use App\Support\JobListingQuery;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -30,11 +32,11 @@ class EmployerJobController extends Controller
             ->where('employer_id', $employer?->id)
             ->withCount([
                 'applications',
-                'applications as new_applications_count' => fn($query) => $query->where('created_at', '>=', now()->subDays(7)),
+                'applications as new_applications_count' => fn ($query) => $query->where('created_at', '>=', now()->subDays(7)),
             ])
             ->latest()
             ->get()
-            ->map(fn(JobPost $job) => $this->listRow($job));
+            ->map(fn (JobPost $job) => $this->listRow($job));
 
         return Inertia::render('backend/User/EmployerJobs', [
             'jobs' => $jobs,
@@ -179,8 +181,8 @@ class EmployerJobController extends Controller
 
         $copy = $job->replicate(['slug', 'views', 'rejection_reason', 'expires_at']);
         $copy->forceFill([
-            'title' => $job->title . ' (Copy)',
-            'slug' => Str::slug($job->title) . '-' . Str::lower(Str::random(6)),
+            'title' => $job->title.' (Copy)',
+            'slug' => Str::slug($job->title).'-'.Str::lower(Str::random(6)),
             'status' => JobPostStatus::Draft,
             'featured' => false,
             'views' => 0,
@@ -190,6 +192,21 @@ class EmployerJobController extends Controller
         return redirect()
             ->route('employer.jobs.edit', $copy)
             ->with('success', 'Job duplicated as a draft.');
+    }
+
+    public function uploadDescriptionAttachment(UploadEmployerJobDescriptionAttachmentRequest $request): JsonResponse
+    {
+        $employer = $request->user();
+        $file = $request->file('file');
+
+        abort_unless($employer !== null && $file !== null, 422);
+
+        $path = $file->store('job-description-attachments/'.$employer->id, 'public');
+
+        return response()->json([
+            'url' => '/storage/'.$path,
+            'name' => $file->getClientOriginalName(),
+        ]);
     }
 
     public function pause(Request $request, JobPost $job): RedirectResponse
@@ -314,7 +331,7 @@ class EmployerJobController extends Controller
             'initials' => collect(explode(' ', $name))
                 ->filter()
                 ->take(2)
-                ->map(fn(string $part): string => Str::upper(Str::substr($part, 0, 1)))
+                ->map(fn (string $part): string => Str::upper(Str::substr($part, 0, 1)))
                 ->implode(''),
             'logo_url' => $employer->hasCompanyLogo() ? $employer->companyLogoUrl() : null,
         ];
@@ -328,7 +345,7 @@ class EmployerJobController extends Controller
 
         $job->deleteLogoFile();
 
-        $path = $logo->store('job-logos/' . $job->employer_id, 'public');
+        $path = $logo->store('job-logos/'.$job->employer_id, 'public');
 
         $job->forceFill([
             'logo_path' => $path,

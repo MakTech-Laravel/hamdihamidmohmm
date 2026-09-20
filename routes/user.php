@@ -55,7 +55,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('role:'.RoleName::JobSeeker->value)->post('/jobs/{jobPost}/apply', [JobSeekerApplicationsController::class, 'store'])->name('jobs.apply');
 
-    Route::middleware('role:'.RoleName::Employer->value)->prefix('employer')->name('employer.')->group(function () {
+    Route::middleware(['role:'.RoleName::Employer->value, 'employer.approved'])->prefix('employer')->name('employer.')->group(function () {
         Route::get('/dashboard', EmployerDashboardController::class)->name('dashboard');
         Route::get('/profile', [EmployerProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [EmployerProfileController::class, 'update'])->name('profile.update');
@@ -75,6 +75,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/packages/billing-portal', [EmployerPackageController::class, 'portal'])->name('packages.portal');
         Route::get('/jobs', [EmployerJobController::class, 'index'])->name('jobs');
         Route::get('/jobs/create', [EmployerJobController::class, 'create'])->name('jobs.create');
+        Route::post('/jobs/description-attachments', [EmployerJobController::class, 'uploadDescriptionAttachment'])->name('jobs.description-attachments.store');
         Route::post('/jobs', [EmployerJobController::class, 'store'])->name('jobs.store');
         Route::get('/jobs/{job}/edit', [EmployerJobController::class, 'edit'])->name('jobs.edit');
         Route::put('/jobs/{job}', [EmployerJobController::class, 'update'])->name('jobs.update');

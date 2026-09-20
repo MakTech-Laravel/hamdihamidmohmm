@@ -1,118 +1,75 @@
 import { Link } from '@inertiajs/react';
 
-import BrandLogo from '@/components/brand-logo';
-import { LanguageSwitcher } from '@/components/language-switcher';
 import { useLocale } from '@/hooks/use-locale';
-import { about, contact, discover, jobs, pricing, training } from '@/routes';
+import { discover, pricing } from '@/routes';
 
 const socialLinks = [
-    { label: 'LinkedIn', src: '/images/home/linkedin.svg', href: '#' },
-    { label: 'X', src: '/images/home/x.svg', href: '#' },
     { label: 'Facebook', src: '/images/home/facebook.svg', href: '#' },
+    { label: 'X', src: '/images/home/x.svg', href: '#' },
+    { label: 'LinkedIn', src: '/images/home/linkedin.svg', href: '#' },
+    { label: 'Instagram', src: '/images/home/instagram.svg', href: '#' },
 ];
 
 export function FrontendFooter() {
     const { t } = useLocale();
 
-    const quickLinks = [
-        { label: t('nav.jobs'), href: jobs.url() },
-        { label: t('nav.pricing'), href: pricing.url() },
-        { label: t('nav.training'), href: training.url() },
-        { label: t('nav.discover'), href: discover.url() },
-        { label: t('nav.about'), href: about.url() },
-        { label: t('nav.contact'), href: contact.url() },
-    ];
-
-    const legalLinks = [
+    const links = [
         { label: t('footer.terms'), href: '#terms' },
+        { label: t('footer.stay_up_to_date'), href: `${discover.url()}#newsletter` },
         { label: t('footer.privacy'), href: '#privacy' },
+        {
+            label: t('footer.subscribe_newsletter'),
+            href: `${discover.url()}#newsletter`,
+        },
+        { label: t('nav.faq'), href: `${pricing.url()}#faq` },
     ];
 
     return (
-        <footer className="bg-[#d1f6ff] font-['Plus_Jakarta_Sans','Noto_Sans_Arabic',sans-serif] text-[#050315]">
-            <div className="mx-auto max-w-[1344px] px-4 py-14 sm:px-6 lg:px-8">
-                <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
-                    <div>
-                        <Link href={jobs()}>
-                            <BrandLogo
-                                className="h-[57px] w-[86px]"
-                                width={86}
-                                height={57}
-                            />
-                        </Link>
-                        <p className="mt-4 max-w-[274px] text-sm leading-[22.75px] text-[#050315]">
-                            {t('footer.tagline')}
-                        </p>
-                    </div>
+        <footer className="border-t border-[#0057c8] bg-[#1e3a8a] font-['Plus_Jakarta_Sans','Noto_Sans_Arabic',sans-serif] text-[#d1f6ff]">
+            <div className="mx-auto flex max-w-[1344px] flex-wrap items-center justify-center gap-x-3 gap-y-3 px-4 py-3.5 text-sm sm:px-6 lg:gap-x-4 lg:px-8">
+                <p className="whitespace-nowrap text-[#d1f6ff]">
+                    {t('footer.copyright')}
+                </p>
 
-                    <div>
-                        <h3 className="text-base font-semibold tracking-[-0.18px]">
-                            {t('footer.quick_links')}
-                        </h3>
-                        <ul className="mt-4 space-y-2.5">
-                            {quickLinks.map((link) => (
-                                <li key={link.href + link.label}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-sm text-[rgba(5,3,21,0.9)] transition hover:text-[#0057c8]"
-                                    >
-                                        {link.label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3 className="text-base font-semibold tracking-[-0.18px]">
-                            {t('footer.legal')}
-                        </h3>
-                        <ul className="mt-4 space-y-2.5">
-                            {legalLinks.map((link) => (
-                                <li key={link.href}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-sm text-[rgba(5,3,21,0.9)] transition hover:text-[#0057c8]"
-                                    >
-                                        {link.label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3 className="text-base font-semibold tracking-[-0.18px]">
-                            {t('lang.language')}
-                        </h3>
-                        <div className="mt-4">
-                            <LanguageSwitcher variant="footer" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-[#3977a6] pt-8 sm:flex-row">
-                    <p className="text-sm text-[rgba(5,3,21,0.6)]">
-                        {t('footer.copyright')}
-                    </p>
-                    <div className="flex items-center gap-4">
-                        {socialLinks.map((social) => (
-                            <a
-                                key={social.label}
-                                href={social.href}
-                                aria-label={social.label}
-                                className="inline-flex size-8 items-center justify-center rounded-lg transition hover:bg-white/40"
+                <nav
+                    aria-label={t('footer.legal')}
+                    className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 lg:gap-x-4"
+                >
+                    {links.map((link) => (
+                        <span
+                            key={link.label}
+                            className="inline-flex items-center gap-x-3 lg:gap-x-4"
+                        >
+                            <span aria-hidden="true" className="text-[#d1f6ff]/50">
+                                |
+                            </span>
+                            <Link
+                                href={link.href}
+                                className="whitespace-nowrap text-[#d1f6ff] transition hover:text-white"
                             >
-                                <img
-                                    src={social.src}
-                                    alt=""
-                                    className="size-4"
-                                    width={16}
-                                    height={16}
-                                />
-                            </a>
-                        ))}
-                    </div>
+                                {link.label}
+                            </Link>
+                        </span>
+                    ))}
+                </nav>
+
+                <div className="flex items-center gap-3 ps-1">
+                    {socialLinks.map((social) => (
+                        <a
+                            key={social.label}
+                            href={social.href}
+                            aria-label={social.label}
+                            className="inline-flex size-5 items-center justify-center transition hover:opacity-80"
+                        >
+                            <img
+                                src={social.src}
+                                alt=""
+                                className="size-4 brightness-0 invert"
+                                width={16}
+                                height={16}
+                            />
+                        </a>
+                    ))}
                 </div>
             </div>
         </footer>
