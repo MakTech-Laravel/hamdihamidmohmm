@@ -9,9 +9,7 @@ test('employers can upload replace and remove company logo cover and verificatio
     Storage::fake('public');
     Storage::fake('local');
 
-    $employer = User::factory()->employer()->create([
-        'verification_status' => EmployerVerificationStatus::Pending,
-    ]);
+    $employer = User::factory()->employer()->create();
 
     $logo = UploadedFile::fake()->image('logo.png', 200, 200);
     $cover = UploadedFile::fake()->image('cover.jpg', 1200, 400);
@@ -49,7 +47,7 @@ test('employers can upload replace and remove company logo cover and verificatio
     $this->actingAs($employer)
         ->get(route('employer.profile'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerCompanyProfile')
             ->where('completion.sections.logo', true)
             ->where('completion.sections.cover', true)
@@ -95,7 +93,7 @@ test('approved employers mark verification complete even without a document file
     $this->actingAs($employer)
         ->get(route('employer.profile'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('completion.sections.verification', true)
             ->where('completion.sections.logo', false)
             ->where('completion.sections.cover', false));
