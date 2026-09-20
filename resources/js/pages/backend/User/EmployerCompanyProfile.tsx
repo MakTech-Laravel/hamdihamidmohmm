@@ -293,10 +293,10 @@ export default function EmployerCompanyProfile({
                                     <img
                                         src={profile.logo_url}
                                         alt=""
-                                        className="size-12 rounded-xl object-cover"
+                                        className="size-[72px] rounded-xl object-cover sm:size-[88px]"
                                     />
                                 ) : (
-                                    <div className="flex size-12 items-center justify-center rounded-xl bg-[#0057c8] text-sm font-bold text-white">
+                                    <div className="flex size-[72px] items-center justify-center rounded-xl bg-[#0057c8] text-lg font-bold text-white sm:size-[88px]">
                                         {profile.initials ||
                                             getInitials(
                                                 form.data.company_name || 'C',
@@ -491,10 +491,10 @@ export default function EmployerCompanyProfile({
                             <img
                                 src={profile.logo_url}
                                 alt={`${profile.company_name || t('employer.profile.company_fallback')} logo`}
-                                className="size-14 rounded-full object-cover"
+                                className="size-[88px] rounded-2xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
                             />
                         ) : (
-                            <div className="flex size-14 items-center justify-center rounded-full bg-[#0057c8] text-lg font-bold text-white">
+                            <div className="flex size-[88px] items-center justify-center rounded-2xl bg-[#0057c8] text-2xl font-bold text-white">
                                 {profile.initials ||
                                     getInitials(profile.company_name || 'C')}
                             </div>

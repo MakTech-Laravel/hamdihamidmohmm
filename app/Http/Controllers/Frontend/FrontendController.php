@@ -170,6 +170,7 @@ class FrontendController extends Controller
     {
         return Inertia::render('frontend/training', [
             'heroVideoUrl' => TrainingMedia::heroVideoUrl(),
+            'documents' => TrainingMedia::documents(),
         ]);
     }
 

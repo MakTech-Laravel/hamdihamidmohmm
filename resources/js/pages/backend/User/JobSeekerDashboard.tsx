@@ -261,10 +261,10 @@ export default function JobSeekerDashboard({
                                                     alt={
                                                         job.company || job.title
                                                     }
-                                                    className="size-9 shrink-0 rounded-lg border border-[#e2e8f0] bg-[#f8faff] object-contain p-0.5"
+                                                    className="size-[72px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
                                                 />
                                             ) : (
-                                                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#0057c8] text-xs font-bold text-white">
+                                                <div className="flex size-[72px] shrink-0 items-center justify-center rounded-xl bg-[#0057c8] text-sm font-bold text-white">
                                                     {getInitials(
                                                         job.company || 'JP',
                                                     )}

@@ -239,11 +239,11 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                                     <img
                                                         src={job.logo_url}
                                                         alt={job.title}
-                                                        className="size-16 shrink-0 rounded-xl border border-[#e8d5e8] bg-[#f8faff] object-contain p-1.5"
+                                                        className="size-[72px] shrink-0 rounded-xl border border-[#e8d5e8] bg-[#f8faff] object-contain p-1.5 sm:size-[88px]"
                                                     />
                                                 ) : (
                                                     <div
-                                                        className="flex size-16 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+                                                        className="flex size-[72px] shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white sm:size-[88px] sm:text-base"
                                                         style={{
                                                             backgroundImage:
                                                                 'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',

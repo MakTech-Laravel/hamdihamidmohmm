@@ -105,6 +105,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/training', [TrainingMediaController::class, 'index'])->name('training.index');
         Route::post('/training/video', [TrainingMediaController::class, 'store'])->name('training.video.store');
         Route::delete('/training/video', [TrainingMediaController::class, 'destroy'])->name('training.video.destroy');
+        Route::post('/training/documents', [TrainingMediaController::class, 'storeDocument'])->name('training.documents.store');
+        Route::delete('/training/documents/{document}', [TrainingMediaController::class, 'destroyDocument'])->name('training.documents.destroy');
 
         Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');

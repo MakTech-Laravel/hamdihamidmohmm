@@ -134,7 +134,7 @@ export default function JobShow({ job }: { job: Job }) {
                         <img
                             src={job.logo_url}
                             alt={job.title}
-                            className="mt-3 size-20 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
+                            className="mt-3 size-[88px] rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
                         />
                     </AdminPanel>
                 ) : null}

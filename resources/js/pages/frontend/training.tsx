@@ -2,6 +2,8 @@ import { Head, Link } from '@inertiajs/react';
 import {
     Briefcase,
     CreditCard,
+    Download,
+    FileText,
     GraduationCap,
     PlayCircle,
     UserRound,
@@ -12,11 +14,36 @@ import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
 import { contact, register } from '@/routes';
 
-type Props = {
-    heroVideoUrl?: string | null;
+type TrainingDocument = {
+    id: string;
+    name: string;
+    file_name: string;
+    url: string;
+    mime: string | null;
+    size: number | null;
 };
 
-export default function Training({ heroVideoUrl = null }: Props) {
+type Props = {
+    heroVideoUrl?: string | null;
+    documents?: TrainingDocument[];
+};
+
+function formatBytes(bytes: number | null): string {
+    if (!bytes || bytes <= 0) {
+        return '';
+    }
+
+    if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export default function Training({
+    heroVideoUrl = null,
+    documents = [],
+}: Props) {
     const { t } = useLocale();
 
     const topics = useMemo(
@@ -101,6 +128,56 @@ export default function Training({ heroVideoUrl = null }: Props) {
                     </div>
                 </div>
             </section>
+
+            {documents.length > 0 ? (
+                <section className="mx-auto max-w-[1344px] px-4 py-14 sm:px-6 lg:px-8">
+                    <h2 className="text-2xl font-extrabold text-[#050315]">
+                        {t('training.documents_title')}
+                    </h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-[#64748b]">
+                        {t('training.documents_subtitle')}
+                    </p>
+
+                    <ul className="mt-8 divide-y divide-[#e2e8f0] overflow-hidden rounded-2xl border border-[#dbeafe] bg-white shadow-[0px_4px_12px_rgba(30,58,138,0.06)]">
+                        {documents.map((document) => {
+                            const sizeLabel = formatBytes(document.size);
+
+                            return (
+                                <li
+                                    key={document.id}
+                                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
+                                >
+                                    <div className="flex min-w-0 items-start gap-3">
+                                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#eff6ff] text-[#0057c8]">
+                                            <FileText className="size-5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-bold text-[#050315]">
+                                                {document.name}
+                                            </p>
+                                            <p className="mt-0.5 truncate text-xs text-[#64748b]">
+                                                {document.file_name}
+                                                {sizeLabel
+                                                    ? ` · ${sizeLabel}`
+                                                    : ''}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <a
+                                        href={document.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-2 rounded-lg bg-[#0057c8] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+                                    >
+                                        <Download className="size-4" />
+                                        {t('training.download')}
+                                    </a>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </section>
+            ) : null}
 
             <section className="mx-auto max-w-[1344px] px-4 py-14 sm:px-6 lg:px-8">
                 <h2 className="text-2xl font-extrabold text-[#050315]">

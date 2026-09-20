@@ -391,16 +391,16 @@ export default function Home({
                                     key={job.slug}
                                     className="flex h-full flex-col rounded-2xl border border-[rgba(57,119,166,0.52)] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:shadow-md"
                                 >
-                                    <div className="flex items-start gap-3">
+                                    <div className="flex items-start gap-4">
                                         {job.logo_url ? (
                                             <img
                                                 src={job.logo_url}
                                                 alt={job.company || job.title}
-                                                className="size-12 shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1"
+                                                className="size-[72px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5 sm:size-[88px]"
                                             />
                                         ) : (
                                             <div
-                                                className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+                                                className="flex size-[72px] shrink-0 items-center justify-center rounded-xl text-base font-bold text-white sm:size-[88px] sm:text-lg"
                                                 style={{
                                                     backgroundImage:
                                                         'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',

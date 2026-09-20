@@ -222,7 +222,7 @@ export default function JobShow({
 
                             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] sm:p-7">
                                 <div className="flex items-start gap-4">
-                                    <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] text-lg font-bold text-[#0057c8]">
+                                    <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] text-xl font-bold text-[#0057c8] sm:size-[88px]">
                                         {job.logo_url ? (
                                             <img
                                                 src={job.logo_url}
@@ -538,11 +538,11 @@ export default function JobShow({
                                                 <img
                                                     src={item.logo_url}
                                                     alt={item.company || item.title}
-                                                    className="size-10 shrink-0 rounded-lg border border-[#e2e8f0] bg-[#f8faff] object-contain p-1"
+                                                    className="size-[72px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
                                                 />
                                             ) : (
                                                 <div
-                                                    className="flex size-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
+                                                    className="flex size-[72px] shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
                                                     style={{
                                                         backgroundImage:
                                                             'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',

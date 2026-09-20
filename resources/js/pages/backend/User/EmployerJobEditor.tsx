@@ -361,7 +361,7 @@ export default function EmployerJobEditor({
                             type="button"
                             onClick={() => jobLogoInputRef.current?.click()}
                             disabled={uploadingLogo}
-                            className="group relative flex size-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-[#e8d5e8] bg-[#f8faff] shadow-[0px_2px_4px_rgba(5,3,21,0.06)] transition hover:border-[#0057c8]/50 disabled:opacity-60"
+                            className="group relative flex size-[72px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-[#e8d5e8] bg-[#f8faff] shadow-[0px_2px_4px_rgba(5,3,21,0.06)] transition hover:border-[#0057c8]/50 disabled:opacity-60 sm:size-[88px]"
                             aria-label={t('employer.job_editor.job_logo.upload')}
                         >
                             {jobLogoPreview ? (
@@ -1017,7 +1017,7 @@ export default function EmployerJobEditor({
                             <article className="overflow-hidden rounded-2xl border border-[#e8eef5] bg-[#f8fafc]">
                                 <div className="border-b border-[#e8eef5] bg-white px-5 py-5 sm:px-7 sm:py-6">
                                     <div className="flex items-start gap-4">
-                                        <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff]">
+                                        <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] sm:size-[88px]">
                                             {jobLogoPreview ? (
                                                 <img
                                                     src={jobLogoPreview}

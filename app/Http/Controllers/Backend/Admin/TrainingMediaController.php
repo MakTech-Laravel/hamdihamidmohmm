@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Backend\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Backend\Admin\UploadTrainingDocumentRequest;
 use App\Http\Requests\Backend\Admin\UploadTrainingVideoRequest;
 use App\Support\TrainingMedia;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,7 @@ class TrainingMediaController extends Controller
 
         return Inertia::render('backend/Admin/TrainingMedia', [
             'heroVideoUrl' => TrainingMedia::heroVideoUrl(),
+            'documents' => TrainingMedia::documents(),
         ]);
     }
 
@@ -41,5 +43,32 @@ class TrainingMediaController extends Controller
         TrainingMedia::clearHeroVideo();
 
         return back()->with('success', 'Training video removed.');
+    }
+
+    public function storeDocument(UploadTrainingDocumentRequest $request): RedirectResponse
+    {
+        $document = $request->file('document');
+
+        if ($document === null) {
+            return back()->withErrors(['document' => __('Please choose a document file.')]);
+        }
+
+        TrainingMedia::storeDocument(
+            $document,
+            $request->string('name')->toString() ?: null,
+        );
+
+        return back()->with('success', 'Training document uploaded.');
+    }
+
+    public function destroyDocument(Request $request, string $document): RedirectResponse
+    {
+        abort_unless($request->user()?->canManageCms(), 403);
+
+        if (! TrainingMedia::deleteDocument($document)) {
+            return back()->withErrors(['document' => __('Document not found.')]);
+        }
+
+        return back()->with('success', 'Training document removed.');
     }
 }
