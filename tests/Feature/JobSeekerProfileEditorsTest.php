@@ -91,6 +91,41 @@ test('job seekers can update education experience languages and certifications w
                 && ($translations['job_seeker.profile.save'] ?? null) === 'Save Changes'));
 });
 
+test('job seeker profile requires a phone number', function () {
+    $seeker = User::factory()->jobSeeker()->create([
+        'name' => 'No Phone Seeker',
+        'phone' => null,
+    ]);
+
+    JobSeekerProfile::factory()->create(['user_id' => $seeker->id]);
+
+    $this->actingAs($seeker)
+        ->from(route('job-seeker.profile'))
+        ->put(route('job-seeker.profile.update'), [
+            'name' => 'No Phone Seeker',
+            'phone' => '',
+            'location' => 'Dubai',
+            'headline' => 'Designer',
+            'current_title' => 'Designer',
+            'experience_years' => '2',
+            'bio' => 'Designs things.',
+            'linkedin_url' => '',
+            'github_url' => '',
+            'industry' => 'Design',
+            'expected_salary' => '',
+            'availability' => [],
+            'skills' => [],
+            'education' => [],
+            'experience' => [],
+            'languages' => [],
+            'certifications' => [],
+        ])
+        ->assertRedirect(route('job-seeker.profile'))
+        ->assertSessionHasErrors(['phone']);
+
+    expect($seeker->fresh()->phone)->toBeNull();
+});
+
 test('job seeker profile translation keys exist in english and arabic', function () {
     $english = json_decode((string) file_get_contents(lang_path('en.json')), true);
     $arabic = json_decode((string) file_get_contents(lang_path('ar.json')), true);

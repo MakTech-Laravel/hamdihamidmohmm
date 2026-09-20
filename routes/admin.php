@@ -9,11 +9,13 @@ use App\Http\Controllers\Backend\Admin\ContentManagementController;
 use App\Http\Controllers\Backend\Admin\EmployerManagementController;
 use App\Http\Controllers\Backend\Admin\JobManagementController;
 use App\Http\Controllers\Backend\Admin\JobSeekerManagementController;
+use App\Http\Controllers\Backend\Admin\JobTaxonomyController;
 use App\Http\Controllers\Backend\Admin\PackageManagementController;
 use App\Http\Controllers\Backend\Admin\PaymentManagementController;
 use App\Http\Controllers\Backend\Admin\PlatformSettingController;
 use App\Http\Controllers\Backend\Admin\ReportController;
 use App\Http\Controllers\Backend\Admin\RolePermissionController;
+use App\Http\Controllers\Backend\Admin\TrainingMediaController;
 use App\Http\Controllers\Backend\Admin\UserManagementController;
 use App\Http\Controllers\Backend\Admin\VerificationCenterController;
 use App\Http\Controllers\UserSelectionController;
@@ -65,6 +67,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/jobs/{jobPost}/approve', [JobManagementController::class, 'approve'])->name('jobs.approve');
         Route::post('/jobs/{jobPost}/reject', [JobManagementController::class, 'reject'])->name('jobs.reject');
 
+        Route::get('/job-filters', [JobTaxonomyController::class, 'index'])->name('job-filters.index');
+        Route::post('/job-filters', [JobTaxonomyController::class, 'store'])->name('job-filters.store');
+        Route::put('/job-filters/{jobTaxonomy}', [JobTaxonomyController::class, 'update'])->name('job-filters.update');
+        Route::delete('/job-filters/{jobTaxonomy}', [JobTaxonomyController::class, 'destroy'])->name('job-filters.destroy');
+
         Route::get('/applications/export', [ApplicationMonitoringController::class, 'export'])->name('applications.export');
         Route::get('/applications/{application}/resume', [ApplicationMonitoringController::class, 'downloadResume'])->name('applications.resume');
         Route::get('/applications', [ApplicationMonitoringController::class, 'index'])->name('applications.index');
@@ -94,6 +101,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/content/{contentPage}', [ContentManagementController::class, 'update'])->name('content.update');
         Route::post('/content/{contentPage}/publish', [ContentManagementController::class, 'publish'])->name('content.publish');
         Route::delete('/content/{contentPage}', [ContentManagementController::class, 'destroy'])->name('content.destroy');
+
+        Route::get('/training', [TrainingMediaController::class, 'index'])->name('training.index');
+        Route::post('/training/video', [TrainingMediaController::class, 'store'])->name('training.video.store');
+        Route::delete('/training/video', [TrainingMediaController::class, 'destroy'])->name('training.video.destroy');
+        Route::post('/training/documents', [TrainingMediaController::class, 'storeDocument'])->name('training.documents.store');
+        Route::delete('/training/documents/{document}', [TrainingMediaController::class, 'destroyDocument'])->name('training.documents.destroy');
 
         Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');

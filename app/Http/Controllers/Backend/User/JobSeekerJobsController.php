@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Backend\User;
 
+use App\Enums\JobTaxonomyType;
 use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
 use App\Models\JobPost;
+use App\Models\JobTaxonomy;
 use App\Models\User;
 use App\Support\JobListingQuery;
 use App\Support\PortalPreferences;
@@ -19,6 +21,7 @@ class JobSeekerJobsController extends Controller
     {
         $user = $request->user();
         $search = $request->string('search')->toString();
+        $country = $request->string('country')->toString();
         $location = $request->string('location')->toString();
         $category = $request->string('category')->toString();
         $types = collect($request->input('types', []))
@@ -40,6 +43,7 @@ class JobSeekerJobsController extends Controller
             $location,
             $category,
             $types,
+            $country,
         )
             ->latest()
             ->paginate(30)
@@ -54,10 +58,12 @@ class JobSeekerJobsController extends Controller
                     'company' => $company,
                     'initials' => $this->initials($company),
                     'logo_url' => $job->listingLogoUrl(),
-                    'location' => $job->location,
-                    'type' => $job->employment_type,
-                    'category' => $job->category,
+                    'country' => JobListingQuery::displayLabel(JobTaxonomyType::Country, $job->country),
+                    'location' => JobListingQuery::displayLabel(JobTaxonomyType::DutyStation, $job->location),
+                    'type' => JobListingQuery::displayLabel(JobTaxonomyType::EmploymentType, $job->employment_type),
+                    'category' => JobListingQuery::displayLabel(JobTaxonomyType::PositionArea, $job->category),
                     'salary' => $this->publicSalary($job->employer, $job->salary_range),
+                    'closing_date' => $job->closingDateLabel(),
                     'applied' => in_array($job->id, $appliedJobIds, true),
                     'job_url' => $job->slug ? route('jobs.show', $job->slug) : null,
                 ];
@@ -67,14 +73,12 @@ class JobSeekerJobsController extends Controller
             'jobs' => $jobs,
             'filters' => [
                 'search' => $search,
+                'country' => $country,
                 'location' => $location,
                 'category' => $category,
                 'types' => $types,
             ],
-            'filterOptions' => [
-                'categories' => JobListingQuery::categoryOptions(),
-                'types' => JobListingQuery::employmentTypeKeys(),
-            ],
+            'filterOptions' => JobTaxonomy::filterOptions(),
         ]);
     }
 

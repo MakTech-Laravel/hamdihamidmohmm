@@ -27,6 +27,9 @@ final class SafeHtml
         'h3',
         'h4',
         'span',
+        'a',
+        'div',
+        'iframe',
     ];
 
     /**
@@ -46,6 +49,10 @@ final class SafeHtml
     private const ALLOWED_CLASSES = [
         'font-bold',
         'italic',
+        'underline',
+        'youtube-embed',
+        'rich-text-attachment',
+        'text-[#0057c8]',
         'underline',
     ];
 
@@ -99,6 +106,24 @@ final class SafeHtml
                 continue;
             }
 
+            if ($tag === 'iframe' && ! self::isAllowedYoutubeIframe($element)) {
+                $element->parentNode?->removeChild($element);
+
+                continue;
+            }
+
+            if ($tag === 'a' && ! self::isAllowedAnchor($element)) {
+                self::unwrap($element);
+
+                continue;
+            }
+
+            if ($tag === 'div' && ! self::isAllowedDiv($element)) {
+                self::unwrap($element);
+
+                continue;
+            }
+
             self::sanitizeAttributes($element);
         }
 
@@ -110,7 +135,13 @@ final class SafeHtml
 
         $clean = trim(html_entity_decode($clean, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 
-        if ($clean === '' || trim(strip_tags($clean)) === '') {
+        if ($clean === '') {
+            return null;
+        }
+
+        $textOnly = trim(strip_tags($clean));
+
+        if ($textOnly === '' && ! str_contains($clean, '<iframe')) {
             return null;
         }
 
@@ -122,8 +153,80 @@ final class SafeHtml
         return self::clean($html) === null;
     }
 
+    private static function isAllowedAnchor(DOMElement $element): bool
+    {
+        $href = trim((string) $element->getAttribute('href'));
+
+        return self::isSafeHttpUrl($href);
+    }
+
+    private static function isAllowedDiv(DOMElement $element): bool
+    {
+        if ($element->hasAttribute('data-youtube-video')) {
+            return true;
+        }
+
+        $class = (string) $element->getAttribute('class');
+
+        return str_contains($class, 'youtube-embed')
+            || str_contains($class, 'rich-text-attachment');
+    }
+
+    private static function isAllowedYoutubeIframe(DOMElement $element): bool
+    {
+        $src = trim((string) $element->getAttribute('src'));
+
+        return self::isYoutubeEmbedUrl($src);
+    }
+
+    private static function isSafeHttpUrl(string $url): bool
+    {
+        if ($url === '' || str_starts_with(strtolower($url), 'javascript:')) {
+            return false;
+        }
+
+        if (str_starts_with($url, '/storage/')) {
+            return true;
+        }
+
+        $parts = parse_url($url);
+
+        if (! is_array($parts) || ! isset($parts['scheme'], $parts['host'])) {
+            return false;
+        }
+
+        return in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true);
+    }
+
+    private static function isYoutubeEmbedUrl(string $url): bool
+    {
+        $parts = parse_url($url);
+
+        if (! is_array($parts) || ! isset($parts['scheme'], $parts['host'], $parts['path'])) {
+            return false;
+        }
+
+        if (! in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+            return false;
+        }
+
+        $host = strtolower((string) $parts['host']);
+        $path = (string) $parts['path'];
+
+        $allowedHosts = [
+            'www.youtube.com',
+            'youtube.com',
+            'www.youtube-nocookie.com',
+            'youtube-nocookie.com',
+        ];
+
+        return in_array($host, $allowedHosts, true)
+            && str_starts_with($path, '/embed/');
+    }
+
     private static function sanitizeAttributes(DOMElement $element): void
     {
+        $tag = strtolower($element->tagName);
         $allowed = [];
 
         if ($element->hasAttribute('style')) {
@@ -142,6 +245,36 @@ final class SafeHtml
             }
         }
 
+        if ($tag === 'a') {
+            $href = trim((string) $element->getAttribute('href'));
+
+            if (self::isSafeHttpUrl($href)) {
+                $allowed['href'] = $href;
+                $allowed['target'] = '_blank';
+                $allowed['rel'] = 'noopener noreferrer';
+            }
+        }
+
+        if ($tag === 'div' && $element->hasAttribute('data-youtube-video')) {
+            $allowed['data-youtube-video'] = '';
+        }
+
+        if ($tag === 'iframe') {
+            $src = trim((string) $element->getAttribute('src'));
+
+            if (self::isYoutubeEmbedUrl($src)) {
+                $allowed['src'] = $src;
+                $allowed['width'] = '560';
+                $allowed['height'] = '315';
+                $allowed['frameborder'] = '0';
+                $allowed['allowfullscreen'] = 'allowfullscreen';
+                $allowed['allow'] = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                $allowed['loading'] = 'lazy';
+                $allowed['referrerpolicy'] = 'strict-origin-when-cross-origin';
+                $allowed['title'] = 'YouTube video';
+            }
+        }
+
         while ($element->attributes->length > 0) {
             $element->removeAttribute($element->attributes->item(0)?->name ?? '');
         }
@@ -154,7 +287,23 @@ final class SafeHtml
     private static function sanitizeClass(string $class): ?string
     {
         $kept = collect(preg_split('/\s+/', trim($class)) ?: [])
-            ->filter(fn (string $token): bool => in_array($token, self::ALLOWED_CLASSES, true))
+            ->filter(fn (string $token): bool => in_array($token, self::ALLOWED_CLASSES, true)
+                || str_starts_with($token, 'aspect-')
+                || str_starts_with($token, 'w-')
+                || str_starts_with($token, 'my-')
+                || str_starts_with($token, 'rounded')
+                || str_starts_with($token, 'overflow-')
+                || str_starts_with($token, 'border')
+                || str_starts_with($token, 'bg-')
+                || str_starts_with($token, 'text-')
+                || str_starts_with($token, 'inline-')
+                || str_starts_with($token, 'font-')
+                || str_starts_with($token, 'gap-')
+                || str_starts_with($token, 'px-')
+                || str_starts_with($token, 'py-')
+                || str_starts_with($token, 'items-')
+                || $token === 'youtube-embed'
+                || $token === 'rich-text-attachment')
             ->unique()
             ->values()
             ->all();

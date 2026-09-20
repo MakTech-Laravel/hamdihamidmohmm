@@ -21,7 +21,7 @@ test('native select component uses a styled radix dropdown', function () use ($r
         ->not->toContain('appearance-none');
 });
 
-test('home and jobs pages use the shared location combobox for location filters', function () use ($resources) {
+test('home and jobs pages use keyword location search on top and taxonomy filters in the sidebar', function () use ($resources) {
     $home = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'frontend'.DIRECTORY_SEPARATOR.'home.tsx');
     $jobs = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'frontend'.DIRECTORY_SEPARATOR.'jobs.tsx');
     $searchForm = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'components'.DIRECTORY_SEPARATOR.'frontend'.DIRECTORY_SEPARATOR.'job-search-form.tsx');
@@ -29,7 +29,8 @@ test('home and jobs pages use the shared location combobox for location filters'
 
     expect($home)->not->toBeFalse()
         ->toContain("from '@/components/frontend/job-search-form'")
-        ->toContain('JobSearchForm');
+        ->toContain('JobSearchForm')
+        ->toContain('filterOptions');
 
     expect($searchForm)->not->toBeFalse()
         ->toContain("from '@/components/frontend/location-combobox'")
@@ -40,9 +41,13 @@ test('home and jobs pages use the shared location combobox for location filters'
         ->toContain('Search locations');
 
     expect($jobs)->not->toBeFalse()
-        ->toContain("from '@/components/frontend/location-combobox'")
-        ->toContain('LocationCombobox')
+        ->toContain("from '@/components/frontend/job-search-form'")
+        ->toContain('JobSearchForm')
         ->toContain("from '@/components/ui/native-select'")
         ->toContain('variant="filter"')
-        ->toContain('variant="compact"');
+        ->toContain('variant="compact"')
+        ->toContain('jobs_page.country')
+        ->toContain('jobs_page.duty_station')
+        ->toContain('jobs_page.position_area')
+        ->toContain('employmentTypes');
 });

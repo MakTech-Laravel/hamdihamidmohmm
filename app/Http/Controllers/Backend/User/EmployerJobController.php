@@ -3,13 +3,18 @@
 namespace App\Http\Controllers\Backend\User;
 
 use App\Enums\JobPostStatus;
+use App\Enums\JobTaxonomyType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\StoreEmployerJobRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerJobRequest;
+use App\Http\Requests\Backend\User\UploadEmployerJobDescriptionAttachmentRequest;
 use App\Http\Requests\Backend\User\UploadEmployerJobLogoRequest;
 use App\Models\JobPost;
+use App\Models\JobTaxonomy;
 use App\Models\User;
 use App\Support\EmployerPlanSnapshot;
+use App\Support\JobListingQuery;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -99,6 +104,7 @@ class EmployerJobController extends Controller
                 'slug' => $job->slug,
                 'logo_url' => $job->hasLogo() ? $job->logoUrl() : null,
                 'category' => $job->category,
+                'country' => $job->country,
                 'location' => $job->location,
                 'employment_type' => $job->employment_type,
                 'experience_level' => $job->experience_level,
@@ -188,6 +194,21 @@ class EmployerJobController extends Controller
             ->with('success', 'Job duplicated as a draft.');
     }
 
+    public function uploadDescriptionAttachment(UploadEmployerJobDescriptionAttachmentRequest $request): JsonResponse
+    {
+        $employer = $request->user();
+        $file = $request->file('file');
+
+        abort_unless($employer !== null && $file !== null, 422);
+
+        $path = $file->store('job-description-attachments/'.$employer->id, 'public');
+
+        return response()->json([
+            'url' => '/storage/'.$path,
+            'name' => $file->getClientOriginalName(),
+        ]);
+    }
+
     public function pause(Request $request, JobPost $job): RedirectResponse
     {
         $this->authorizeJob($request, $job);
@@ -233,6 +254,7 @@ class EmployerJobController extends Controller
     /**
      * @return array{
      *     id: int,
+     *     slug: string,
      *     title: string,
      *     logo_url: string|null,
      *     category: string|null,
@@ -252,11 +274,13 @@ class EmployerJobController extends Controller
     {
         return [
             'id' => $job->id,
+            'slug' => $job->slug,
             'title' => $job->title,
             'logo_url' => $job->hasLogo() ? $job->logoUrl() : null,
-            'category' => $job->category,
-            'location' => $job->location,
-            'type' => $job->employment_type,
+            'category' => JobListingQuery::displayLabel(JobTaxonomyType::PositionArea, $job->category),
+            'country' => JobListingQuery::displayLabel(JobTaxonomyType::Country, $job->country),
+            'location' => JobListingQuery::displayLabel(JobTaxonomyType::DutyStation, $job->location),
+            'type' => JobListingQuery::displayLabel(JobTaxonomyType::EmploymentType, $job->employment_type),
             'salary_range' => $job->salary_range,
             'status' => $job->effectiveStatus()->label(),
             'status_value' => $job->effectiveStatus()->value,
@@ -269,23 +293,18 @@ class EmployerJobController extends Controller
     }
 
     /**
-     * @return array{categories: list<string>, types: list<string>, experience_levels: list<string>}
+     * @return array{
+     *     countries: list<array{value: string, label: string}>,
+     *     dutyStations: list<array{value: string, label: string}>,
+     *     positionAreas: list<array{value: string, label: string}>,
+     *     employmentTypes: list<array{value: string, label: string}>,
+     *     experience_levels: list<string>
+     * }
      */
     private function formOptions(): array
     {
         return [
-            'categories' => [
-                'Technology',
-                'Design',
-                'Marketing',
-                'Finance',
-                'Healthcare',
-                'Construction',
-                'Logistics',
-                'Retail',
-                'Other',
-            ],
-            'types' => ['Full-time', 'Part-time', 'Contract', 'Remote'],
+            ...JobTaxonomy::filterOptions(),
             'experience_levels' => ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'],
         ];
     }

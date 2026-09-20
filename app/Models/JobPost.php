@@ -28,6 +28,7 @@ class JobPost extends Model
         'logo_path',
         'slug',
         'category',
+        'country',
         'location',
         'employment_type',
         'experience_level',
@@ -95,6 +96,21 @@ class JobPost extends Model
         }
 
         return null;
+    }
+
+    public function closingDateLabel(): ?string
+    {
+        if ($this->expires_at === null) {
+            return null;
+        }
+
+        $month = $this->expires_at->format('M');
+
+        if ($month === 'Sep') {
+            $month = 'Sept';
+        }
+
+        return $this->expires_at->format('j').' '.$month.' '.$this->expires_at->format('Y');
     }
 
     public function deleteLogoFile(): void

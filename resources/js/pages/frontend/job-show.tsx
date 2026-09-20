@@ -222,7 +222,7 @@ export default function JobShow({
 
                             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] sm:p-7">
                                 <div className="flex items-start gap-4">
-                                    <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] text-lg font-bold text-[#0057c8]">
+                                    <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] text-xl font-bold text-[#0057c8] sm:size-[88px]">
                                         {job.logo_url ? (
                                             <img
                                                 src={job.logo_url}
@@ -247,24 +247,6 @@ export default function JobShow({
                                                         {job.company}
                                                     </p>
                                                 ) : null}
-                                            </div>
-                                            <div className="hidden shrink-0 items-center gap-2 sm:flex">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setShareOpen((open) => !open)
-                                                    }
-                                                    className="inline-flex size-8 items-center justify-center rounded-full border border-[#e2e8f0] text-[#64748b] transition hover:bg-[#f8faff]"
-                                                    aria-label={t('job_detail.share')}
-                                                >
-                                                    <img
-                                                        src="/images/job-detail/share.svg"
-                                                        alt=""
-                                                        className="size-3.5"
-                                                        width={14}
-                                                        height={14}
-                                                    />
-                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -312,94 +294,6 @@ export default function JobShow({
                                         ))}
                                     </div>
                                 ) : null}
-
-                                <div className="relative mt-6 flex flex-col gap-3 sm:flex-row">
-                                    {can_apply ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => setApplyModalOpen(true)}
-                                            className="inline-flex h-[46px] flex-1 items-center justify-center rounded-xl bg-[#0057c8] text-sm font-semibold text-white transition hover:brightness-110"
-                                        >
-                                            {t('job_detail.apply_now')}
-                                        </button>
-                                    ) : (
-                                        <Link
-                                            href={applied ? '/job-seeker/applications' : applyHref}
-                                            className="inline-flex h-[46px] flex-1 items-center justify-center rounded-xl bg-[#0057c8] text-sm font-semibold text-white transition hover:brightness-110"
-                                        >
-                                            {applied
-                                                ? 'Applied'
-                                                : t('job_detail.apply_now')}
-                                        </Link>
-                                    )}
-
-                                    <div className="relative" ref={shareRef}>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShareOpen((open) => !open)}
-                                            className="inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-[#0057c8] px-5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#0057c8]/5 sm:w-[106px]"
-                                        >
-                                            <img
-                                                src="/images/job-detail/share.svg"
-                                                alt=""
-                                                className="size-4"
-                                                width={16}
-                                                height={16}
-                                            />
-                                            {t('job_detail.share')}
-                                        </button>
-
-                                        {shareOpen && (
-                                            <div className="absolute end-0 top-[54px] z-20 w-48 rounded-xl border border-[#e2e8f0] bg-white p-4 shadow-[0px_8px_24px_rgba(0,0,0,0.08)]">
-                                                <p className="text-xs font-medium text-[#6a7282]">
-                                                    {t('job_detail.share_via')}
-                                                </p>
-                                                <div className="mt-3 space-y-1">
-                                                    {shareItems.map((item) =>
-                                                        item.onClick ? (
-                                                            <button
-                                                                key={item.key}
-                                                                type="button"
-                                                                onClick={item.onClick}
-                                                                className="flex w-full items-center gap-3 rounded-lg px-1 py-2 text-sm text-[#364153] transition hover:bg-[#f8faff]"
-                                                            >
-                                                                {item.icon ? (
-                                                                    <img
-                                                                        src={item.icon}
-                                                                        alt=""
-                                                                        className="size-4"
-                                                                        width={16}
-                                                                        height={16}
-                                                                    />
-                                                                ) : (
-                                                                    <span className="inline-flex size-4 items-center justify-center text-xs">
-                                                                        {item.emoji}
-                                                                    </span>
-                                                                )}
-                                                                {copied && item.key === 'copy'
-                                                                    ? t('job_detail.link_copied')
-                                                                    : item.label}
-                                                            </button>
-                                                        ) : (
-                                                            <a
-                                                                key={item.key}
-                                                                href={item.href}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                                className="flex items-center gap-3 rounded-lg px-1 py-2 text-sm text-[#364153] transition hover:bg-[#f8faff]"
-                                                            >
-                                                                <span className="inline-flex size-4 items-center justify-center text-xs font-semibold">
-                                                                    {item.emoji}
-                                                                </span>
-                                                                {item.label}
-                                                            </a>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
                             </article>
 
                             <article className="mt-5 rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] sm:p-7">
@@ -503,6 +397,96 @@ export default function JobShow({
                                         </div>
                                     </section>
                                 ) : null}
+
+                                <div className="relative mt-8 flex items-center gap-3 border-t border-[#e5e7eb] pt-5">
+                                    {can_apply ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setApplyModalOpen(true)}
+                                            className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#0057c8] px-6 text-sm font-bold text-white transition hover:bg-[#0046a3]"
+                                        >
+                                            {t('job_detail.apply_now')}
+                                        </button>
+                                    ) : applied ? (
+                                        <span className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#e2e8f0] px-6 text-sm font-bold text-[#64748b]">
+                                            {t('job_seeker.dashboard.applied')}
+                                        </span>
+                                    ) : (
+                                        <Link
+                                            href={applyHref}
+                                            className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#0057c8] px-6 text-sm font-bold text-white transition hover:bg-[#0046a3]"
+                                        >
+                                            {t('job_detail.apply_now')}
+                                        </Link>
+                                    )}
+
+                                    <div className="relative shrink-0" ref={shareRef}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShareOpen((open) => !open)}
+                                            className="inline-flex h-12 items-center justify-center gap-2 rounded-full border-2 border-[#0057c8] bg-white px-5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#eef5ff]"
+                                        >
+                                            <img
+                                                src="/images/job-detail/share.svg"
+                                                alt=""
+                                                className="size-4"
+                                                width={16}
+                                                height={16}
+                                            />
+                                            {t('job_detail.share')}
+                                        </button>
+
+                                        {shareOpen && (
+                                            <div className="absolute bottom-[56px] end-0 z-20 w-48 rounded-xl border border-[#e2e8f0] bg-white p-4 shadow-[0px_8px_24px_rgba(0,0,0,0.08)]">
+                                                <p className="text-xs font-medium text-[#6a7282]">
+                                                    {t('job_detail.share_via')}
+                                                </p>
+                                                <div className="mt-3 space-y-1">
+                                                    {shareItems.map((item) =>
+                                                        item.onClick ? (
+                                                            <button
+                                                                key={item.key}
+                                                                type="button"
+                                                                onClick={item.onClick}
+                                                                className="flex w-full items-center gap-3 rounded-lg px-1 py-2 text-sm text-[#364153] transition hover:bg-[#f8faff]"
+                                                            >
+                                                                {item.icon ? (
+                                                                    <img
+                                                                        src={item.icon}
+                                                                        alt=""
+                                                                        className="size-4"
+                                                                        width={16}
+                                                                        height={16}
+                                                                    />
+                                                                ) : (
+                                                                    <span className="inline-flex size-4 items-center justify-center text-xs">
+                                                                        {item.emoji}
+                                                                    </span>
+                                                                )}
+                                                                {copied && item.key === 'copy'
+                                                                    ? t('job_detail.link_copied')
+                                                                    : item.label}
+                                                            </button>
+                                                        ) : (
+                                                            <a
+                                                                key={item.key}
+                                                                href={item.href}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="flex items-center gap-3 rounded-lg px-1 py-2 text-sm text-[#364153] transition hover:bg-[#f8faff]"
+                                                            >
+                                                                <span className="inline-flex size-4 items-center justify-center text-xs font-semibold">
+                                                                    {item.emoji}
+                                                                </span>
+                                                                {item.label}
+                                                            </a>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </article>
                         </div>
 
@@ -531,9 +515,9 @@ export default function JobShow({
                                         </p>
                                         <Link
                                             href={login()}
-                                            className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#0057c8] text-sm font-semibold text-white transition hover:brightness-110"
+                                            className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-full bg-[#0057c8] text-sm font-semibold text-white transition hover:bg-[#0046a3]"
                                         >
-                                            {t('job_detail.login_to_apply')}
+                                            {t('auth.log_in')}
                                         </Link>
                                     </div>
                                 )}
@@ -554,11 +538,11 @@ export default function JobShow({
                                                 <img
                                                     src={item.logo_url}
                                                     alt={item.company || item.title}
-                                                    className="size-10 shrink-0 rounded-lg border border-[#e2e8f0] bg-[#f8faff] object-contain p-1"
+                                                    className="size-[72px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
                                                 />
                                             ) : (
                                                 <div
-                                                    className="flex size-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
+                                                    className="flex size-[72px] shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
                                                     style={{
                                                         backgroundImage:
                                                             'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',

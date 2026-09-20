@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Enums\JobTaxonomyType;
 use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
 use App\Models\JobPost;
+use App\Models\JobTaxonomy;
 use App\Models\Package;
 use App\Models\User;
 use App\Support\JobListingQuery;
 use App\Support\PortalPreferences;
+use App\Support\TrainingMedia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -20,6 +23,7 @@ class FrontendController extends Controller
     {
         return Inertia::render('frontend/home', [
             'packages' => Package::publicCards(),
+            'filterOptions' => JobTaxonomy::filterOptions(),
             'recommendedJobs' => JobPost::query()
                 ->active()
                 ->with('employer:id,name,company_name,company_logo_path,portal_preferences')
@@ -34,6 +38,7 @@ class FrontendController extends Controller
     public function jobs(Request $request): Response
     {
         $search = $request->string('search')->toString();
+        $country = $request->string('country')->toString();
         $location = $request->string('location')->toString();
         $category = $request->string('category')->toString();
         $types = collect($request->input('types', []))
@@ -55,6 +60,7 @@ class FrontendController extends Controller
             $location,
             $category,
             $types,
+            $country,
         )
             ->latest()
             ->paginate(30)
@@ -66,24 +72,24 @@ class FrontendController extends Controller
                 'company' => $job->employer?->company_name ?: $job->employer?->name,
                 'initials' => $this->initials($job->employer?->company_name ?: $job->employer?->name),
                 'logo_url' => $this->jobListingLogoUrl($job),
-                'location' => $job->location,
-                'type' => $job->employment_type,
-                'category' => $job->category,
+                'country' => JobListingQuery::displayLabel(JobTaxonomyType::Country, $job->country),
+                'location' => JobListingQuery::displayLabel(JobTaxonomyType::DutyStation, $job->location),
+                'type' => JobListingQuery::displayLabel(JobTaxonomyType::EmploymentType, $job->employment_type),
+                'category' => JobListingQuery::displayLabel(JobTaxonomyType::PositionArea, $job->category),
                 'salary' => $this->publicSalary($job->employer, $job->salary_range),
+                'closing_date' => $job->closingDateLabel(),
             ]);
 
         return Inertia::render('frontend/jobs', [
             'jobs' => $jobs,
             'filters' => [
                 'search' => $search,
+                'country' => $country,
                 'location' => $location,
                 'category' => $category,
                 'types' => $types,
             ],
-            'filterOptions' => [
-                'categories' => JobListingQuery::categoryOptions(),
-                'types' => JobListingQuery::employmentTypeKeys(),
-            ],
+            'filterOptions' => JobTaxonomy::filterOptions(),
         ]);
     }
 
@@ -113,9 +119,10 @@ class FrontendController extends Controller
                     ? $jobPost->employer->companyLogoUrl()
                     : null,
                 'initials' => $this->initials($jobPost->employer?->company_name ?: $jobPost->employer?->name),
-                'location' => $jobPost->location,
-                'type' => $jobPost->employment_type,
-                'category' => $jobPost->category,
+                'location' => JobListingQuery::displayLabel(JobTaxonomyType::DutyStation, $jobPost->location),
+                'type' => JobListingQuery::displayLabel(JobTaxonomyType::EmploymentType, $jobPost->employment_type),
+                'category' => JobListingQuery::displayLabel(JobTaxonomyType::PositionArea, $jobPost->category),
+                'country' => JobListingQuery::displayLabel(JobTaxonomyType::Country, $jobPost->country),
                 'experience' => $jobPost->experience_level,
                 'salary' => $this->publicSalary($jobPost->employer, $jobPost->salary_range),
                 'posted' => $jobPost->created_at?->diffForHumans(),
@@ -161,7 +168,10 @@ class FrontendController extends Controller
 
     public function training(): Response
     {
-        return Inertia::render('frontend/training');
+        return Inertia::render('frontend/training', [
+            'heroVideoUrl' => TrainingMedia::heroVideoUrl(),
+            'documents' => TrainingMedia::documents(),
+        ]);
     }
 
     public function about(): Response
@@ -187,8 +197,9 @@ class FrontendController extends Controller
             'logo_url' => $this->jobListingLogoUrl($job),
             'title' => $job->title,
             'company' => $company ?: 'Employer',
-            'type' => $job->employment_type ?: 'Full-time',
-            'location' => $job->location ?: '—',
+            'type' => JobListingQuery::displayLabel(JobTaxonomyType::EmploymentType, $job->employment_type) ?: 'Full-time',
+            'location' => JobListingQuery::displayLabel(JobTaxonomyType::DutyStation, $job->location) ?: '—',
+            'country' => JobListingQuery::displayLabel(JobTaxonomyType::Country, $job->country) ?: null,
             'experience' => $job->experience_level ?: '—',
             'posted' => $job->created_at?->diffForHumans() ?: '—',
             'salary' => $this->publicSalary($job->employer, $job->salary_range) ?: '—',

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureCanAccessAdminPanel;
+use App\Http\Middleware\EnsureEmployerAccountIsApproved;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'admin.panel' => EnsureCanAccessAdminPanel::class,
+            'employer.approved' => EnsureEmployerAccountIsApproved::class,
         ]);
 
         $middleware->redirectGuestsTo(fn (Request $request) => route('login'));

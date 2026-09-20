@@ -7,14 +7,28 @@ import PricingPackageCards, {
 } from '@/components/frontend/pricing-package-cards';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
-import { sudanLocationKeys } from '@/lib/sudan-locations';
 import { jobs, pricing } from '@/routes';
 import { show as jobShow } from '@/routes/jobs';
 import { role as registerRole } from '@/routes/register';
 
+type TaxonomyOption = { value: string; label: string };
+
+type FilterOptions = {
+    countries: TaxonomyOption[];
+    dutyStations: TaxonomyOption[];
+    positionAreas: TaxonomyOption[];
+    employmentTypes: TaxonomyOption[];
+};
+
 export default function Home({
     packages = [],
     recommendedJobs = [],
+    filterOptions = {
+        countries: [],
+        dutyStations: [],
+        positionAreas: [],
+        employmentTypes: [],
+    },
 }: {
     packages?: PricingPackage[];
     recommendedJobs?: Array<{
@@ -29,6 +43,7 @@ export default function Home({
         posted: string;
         salary: string;
     }>;
+    filterOptions?: FilterOptions;
 }) {
     const { t } = useLocale();
     const [keyword, setKeyword] = useState('');
@@ -38,12 +53,9 @@ export default function Home({
     const locationOptions = useMemo(
         () => [
             { value: '', label: t('search.all_locations') },
-            ...sudanLocationKeys.map((key) => ({
-                value: key,
-                label: t(`location.${key}`),
-            })),
+            ...filterOptions.dutyStations,
         ],
-        [t],
+        [filterOptions.dutyStations, t],
     );
 
     const features = useMemo(
@@ -119,18 +131,9 @@ export default function Home({
     const handleSearch = (event: FormEvent) => {
         event.preventDefault();
 
-        const selected = locationOptions.find(
-            (option) => option.value === location,
-        );
-        const locationFilter = selected
-            ? selected.value !== ''
-                ? selected.label
-                : undefined
-            : location.trim() || undefined;
-
         router.get(jobs.url(), {
             search: keyword || undefined,
-            location: locationFilter,
+            location: location || undefined,
         });
     };
 
@@ -388,16 +391,16 @@ export default function Home({
                                     key={job.slug}
                                     className="flex h-full flex-col rounded-2xl border border-[rgba(57,119,166,0.52)] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:shadow-md"
                                 >
-                                    <div className="flex items-start gap-3">
+                                    <div className="flex items-start gap-4">
                                         {job.logo_url ? (
                                             <img
                                                 src={job.logo_url}
                                                 alt={job.company || job.title}
-                                                className="size-12 shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1"
+                                                className="size-[72px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5 sm:size-[88px]"
                                             />
                                         ) : (
                                             <div
-                                                className="flex size-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+                                                className="flex size-[72px] shrink-0 items-center justify-center rounded-xl text-base font-bold text-white sm:size-[88px] sm:text-lg"
                                                 style={{
                                                     backgroundImage:
                                                         'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
@@ -651,7 +654,10 @@ export default function Home({
             </section>
 
             {/* Newsletter */}
-            <section className="bg-linear-to-b from-[#f8faff] to-[#eff6ff] px-4 py-24 sm:px-6 lg:px-8">
+            <section
+                id="newsletter"
+                className="bg-linear-to-b from-[#f8faff] to-[#eff6ff] px-4 py-24 sm:px-6 lg:px-8"
+            >
                 <div className="mx-auto max-w-2xl text-center">
                     <h2 className="text-3xl font-bold tracking-[-0.2px] text-[#050315]">
                         {t('newsletter.title')}

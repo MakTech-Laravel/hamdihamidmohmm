@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Backend\User;
 
+use App\Enums\JobTaxonomyType;
 use App\Support\SafeHtml;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreEmployerJobRequest extends FormRequest
 {
@@ -29,6 +31,10 @@ class StoreEmployerJobRequest extends FormRequest
         $this->merge([
             'publish' => $this->boolean('publish', true),
             'description' => SafeHtml::clean($this->input('description')),
+            'country' => $this->nullableSlug('country'),
+            'location' => $this->nullableSlug('location'),
+            'category' => $this->nullableSlug('category'),
+            'employment_type' => trim((string) $this->input('employment_type')),
         ]);
     }
 
@@ -40,9 +46,38 @@ class StoreEmployerJobRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'subtitle' => ['nullable', 'string', 'max:255'],
-            'category' => ['nullable', 'string', 'max:255'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'employment_type' => ['required', 'string', 'max:50'],
+            'country' => [
+                'nullable',
+                'string',
+                'max:100',
+                Rule::exists('job_taxonomies', 'slug')->where(
+                    fn ($query) => $query->where('type', JobTaxonomyType::Country->value)->where('is_active', true)
+                ),
+            ],
+            'category' => [
+                'nullable',
+                'string',
+                'max:100',
+                Rule::exists('job_taxonomies', 'slug')->where(
+                    fn ($query) => $query->where('type', JobTaxonomyType::PositionArea->value)->where('is_active', true)
+                ),
+            ],
+            'location' => [
+                'nullable',
+                'string',
+                'max:100',
+                Rule::exists('job_taxonomies', 'slug')->where(
+                    fn ($query) => $query->where('type', JobTaxonomyType::DutyStation->value)->where('is_active', true)
+                ),
+            ],
+            'employment_type' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::exists('job_taxonomies', 'slug')->where(
+                    fn ($query) => $query->where('type', JobTaxonomyType::EmploymentType->value)->where('is_active', true)
+                ),
+            ],
             'experience_level' => ['nullable', 'string', 'max:50'],
             'salary_range' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:20000'],
@@ -63,9 +98,20 @@ class StoreEmployerJobRequest extends FormRequest
         return [
             'title.required' => 'Please enter a job title.',
             'employment_type.required' => 'Please choose a job type.',
+            'employment_type.exists' => 'Please choose a valid job type.',
+            'country.exists' => 'Please choose a valid country.',
+            'location.exists' => 'Please choose a valid duty station.',
+            'category.exists' => 'Please choose a valid position area.',
             'logo.image' => 'The job logo must be an image.',
             'logo.mimes' => 'The job logo must be a JPG, PNG, or WEBP file.',
             'logo.max' => 'The job logo may not be greater than 5MB.',
         ];
+    }
+
+    private function nullableSlug(string $key): ?string
+    {
+        $value = trim((string) $this->input($key));
+
+        return $value !== '' ? $value : null;
     }
 }

@@ -27,6 +27,21 @@ it('strips scripts and unsafe attributes', function () {
         ->and($clean)->not->toContain('<a');
 });
 
+it('keeps safe http links with new-tab attributes', function () {
+    $clean = SafeHtml::clean('<p><a href="https://example.com/jobs">Apply</a></p>');
+
+    expect($clean)->toContain('href="https://example.com/jobs"')
+        ->and($clean)->toContain('target="_blank"')
+        ->and($clean)->toContain('rel="noopener noreferrer"');
+});
+
+it('keeps youtube embed iframes only', function () {
+    $clean = SafeHtml::clean('<iframe src="https://www.youtube.com/embed/abc123"></iframe><iframe src="https://example.com/x"></iframe>');
+
+    expect($clean)->toContain('youtube.com/embed/abc123')
+        ->and($clean)->not->toContain('example.com/x');
+});
+
 it('treats empty editor markup as null', function () {
     expect(SafeHtml::clean('<p></p>'))->toBeNull()
         ->and(SafeHtml::clean('<p><br></p>'))->toBeNull()

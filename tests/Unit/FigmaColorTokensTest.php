@@ -61,7 +61,13 @@ test('the public footer uses Figma LinkedIn social icons', function () use ($res
         ->toContain("src: '/images/home/linkedin.svg'")
         ->toContain("src: '/images/home/x.svg'")
         ->toContain("src: '/images/home/facebook.svg'")
-        ->not->toContain('instagram.svg');
+        ->toContain("src: '/images/home/instagram.svg'")
+        ->toContain('bg-[#1e3a8a]')
+        ->toContain('text-[#d1f6ff]')
+        ->toContain("t('footer.terms')")
+        ->toContain("t('footer.privacy')")
+        ->toContain("t('footer.stay_up_to_date')")
+        ->toContain("t('footer.subscribe_newsletter')");
 });
 
 test('the public pricing page includes the Figma three-package layout', function () use ($resources) {
@@ -207,6 +213,8 @@ test('the employer my jobs page uses the Figma table layout', function () use ($
         ->toContain("t('employer.jobs.post_new')")
         ->toContain("t('employer.jobs.col.location_type')")
         ->toContain("'employer.jobs.view_applicants'")
+        ->toContain("t('common.view')")
+        ->toContain('size-16')
         ->toContain('/images/jobs/search.svg')
         ->toContain('bg-[#e57124]')
         ->toContain("id: 'closed'")
