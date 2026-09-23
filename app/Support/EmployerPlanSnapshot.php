@@ -27,7 +27,6 @@ class EmployerPlanSnapshot
      *     expires_on: string|null,
      *     days_remaining: int|null,
      *     subscription_status: string|null,
-     *     can_manage_billing: bool,
      *     pending_change: array{slug: string, label: string|null, at: string|null}|null,
      *     is_verified: bool,
      *     verified_on: string|null,
@@ -58,7 +57,6 @@ class EmployerPlanSnapshot
                 ? (int) max(0, now()->startOfDay()->diffInDays($expiresAt->copy()->startOfDay(), false))
                 : null,
             'subscription_status' => $employer->subscription_status?->value,
-            'can_manage_billing' => filled($employer->stripe_customer_id),
             'pending_change' => $employer->pending_package instanceof EmployerPackage
                 ? [
                     'slug' => $employer->pending_package->value,

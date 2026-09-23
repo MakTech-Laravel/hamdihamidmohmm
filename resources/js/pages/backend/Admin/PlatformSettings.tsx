@@ -1,5 +1,14 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Globe, Mail, RotateCcw, Save, Settings, Shield } from 'lucide-react';
+import {
+    Building2,
+    Globe,
+    Mail,
+    RotateCcw,
+    Save,
+    Settings,
+    Share2,
+    Shield,
+} from 'lucide-react';
 import { useState } from 'react';
 
 import {
@@ -32,6 +41,16 @@ export default function PlatformSettings({
             id: 'email' as const,
             label: t('admin.settings.tabs.email'),
             icon: Mail,
+        },
+        {
+            id: 'social' as const,
+            label: t('admin.settings.tabs.social'),
+            icon: Share2,
+        },
+        {
+            id: 'payments' as const,
+            label: t('admin.settings.tabs.payments'),
+            icon: Building2,
         },
         {
             id: 'security' as const,
@@ -67,6 +86,15 @@ export default function PlatformSettings({
     };
 
     const values = form.data.values as Record<string, string | number | boolean>;
+
+    const fieldLabel = (key: string): string => {
+        const translationKey = `admin.settings.fields.${key}`;
+        const translated = t(translationKey);
+
+        return translated === translationKey
+            ? key.replaceAll('_', ' ')
+            : translated;
+    };
 
     return (
         <AdminPortalLayout>
@@ -115,10 +143,20 @@ export default function PlatformSettings({
                                 form.put('/admin/settings');
                             }}
                         >
+                            {activeTab === 'social' && (
+                                <p className="rounded-xl border border-[#dbeafe] bg-[#eff6ff] px-4 py-3 text-sm text-[#1e3a8a]">
+                                    {t('admin.settings.social_help')}
+                                </p>
+                            )}
+                            {activeTab === 'payments' && (
+                                <p className="rounded-xl border border-[#ffedd5] bg-[#fff7ed] px-4 py-3 text-sm text-[#9a3412]">
+                                    {t('admin.settings.payments_help')}
+                                </p>
+                            )}
                             {Object.entries(values).map(([key, value]) => (
                                 <div key={key}>
                                     <label className="mb-1.5 block text-xs font-semibold text-[#3977a6]">
-                                        {key.replaceAll('_', ' ')}
+                                        {fieldLabel(key)}
                                     </label>
                                     {typeof value === 'boolean' ? (
                                         <input
@@ -130,6 +168,15 @@ export default function PlatformSettings({
                                                     event.target.checked,
                                                 )
                                             }
+                                        />
+                                    ) : key === 'bank_instructions' ? (
+                                        <textarea
+                                            value={String(value ?? '')}
+                                            rows={4}
+                                            onChange={(event) =>
+                                                setValue(key, event.target.value)
+                                            }
+                                            className="w-full rounded-xl border border-[#e2e8f0] bg-[#f8faff] px-3 py-2.5 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
                                         />
                                     ) : (
                                         <input

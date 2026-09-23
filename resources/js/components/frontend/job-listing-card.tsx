@@ -41,16 +41,16 @@ export function JobListingCard({
             )}
         >
             <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-5">
-                <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden sm:size-[88px]">
+                <div className="flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] sm:size-[112px]">
                     {job.logo_url ? (
                         <img
                             src={job.logo_url}
                             alt={job.company || job.title}
-                            className="max-h-full max-w-full object-contain"
+                            className="size-full object-cover"
                         />
                     ) : (
                         <div
-                            className="flex size-full items-center justify-center rounded-sm text-sm font-bold text-white sm:text-base"
+                            className="flex size-full items-center justify-center text-base font-bold text-white sm:text-lg"
                             style={{
                                 backgroundImage:
                                     'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
@@ -93,10 +93,10 @@ export function JobListingCard({
                         </p>
                     ) : null}
 
-                    <div className="mt-3">
+                    <div className="mt-3 flex flex-wrap gap-2">
                         <Link
                             href={jobHref}
-                            className="inline-flex h-8 items-center justify-center rounded-lg bg-[#0057c8] px-3.5 text-sm font-semibold text-white transition hover:bg-[#0046a3]"
+                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[#bfdbfe] bg-white px-3.5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#eff6ff]"
                         >
                             {t('common.view')}
                         </Link>

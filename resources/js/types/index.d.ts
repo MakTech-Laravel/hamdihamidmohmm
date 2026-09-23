@@ -64,6 +64,12 @@ export interface SharedData {
         payments: number;
         notifications: number;
     };
+    platform_social?: {
+        facebook_url?: string;
+        twitter_url?: string;
+        linkedin_url?: string;
+        instagram_url?: string;
+    };
     [key: string]: unknown;
 }
 

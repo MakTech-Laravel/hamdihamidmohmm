@@ -54,6 +54,19 @@ class PlatformSetting extends Model
             'language' => [
                 'default_locale' => 'en',
             ],
+            'social' => [
+                'facebook_url' => '',
+                'twitter_url' => '',
+                'linkedin_url' => '',
+                'instagram_url' => '',
+            ],
+            'payments' => [
+                'bank_name' => '',
+                'bank_account_name' => '',
+                'bank_account_number' => '',
+                'bank_iban' => '',
+                'bank_instructions' => 'Transfer the package fee to the platform bank account, then upload your payment receipt for admin review.',
+            ],
         ];
     }
 

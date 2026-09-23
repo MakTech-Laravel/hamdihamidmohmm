@@ -51,7 +51,7 @@ class YallaPayPackageCheckoutService
 
         if ($package->price < self::MINIMUM_AMOUNT) {
             throw new RuntimeException(
-                'YallaPay requires a minimum of ' . self::MINIMUM_AMOUNT . ' SDG. Update this package price in admin, then try again.'
+                'YallaPay requires a minimum of '.self::MINIMUM_AMOUNT.' SDG. Update this package price in admin, then try again.'
             );
         }
 
@@ -78,7 +78,7 @@ class YallaPayPackageCheckoutService
             $result = $this->yallaPay->createPayment([
                 'amount' => $package->price,
                 'reference' => $reference,
-                'description' => 'Package: ' . ($package->name ?: $package->slug),
+                'description' => 'Package: '.($package->name ?: $package->slug),
                 'success_url' => $successUrl,
                 'failed_url' => $failedUrl,
             ]);
@@ -233,7 +233,6 @@ class YallaPayPackageCheckoutService
             'subscription_ends_at' => now()->addMonth(),
             'pending_package' => null,
             'pending_package_at' => null,
-            'stripe_schedule_id' => null,
         ])->save();
     }
 }

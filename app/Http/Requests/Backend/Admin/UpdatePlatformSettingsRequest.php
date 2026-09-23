@@ -17,8 +17,17 @@ class UpdatePlatformSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'group' => ['required', 'string', 'in:general,email,security,language'],
+            'group' => ['required', 'string', 'in:general,email,security,language,social,payments'],
             'values' => ['required', 'array'],
+            'values.facebook_url' => ['nullable', 'string', 'max:500'],
+            'values.twitter_url' => ['nullable', 'string', 'max:500'],
+            'values.linkedin_url' => ['nullable', 'string', 'max:500'],
+            'values.instagram_url' => ['nullable', 'string', 'max:500'],
+            'values.bank_name' => ['nullable', 'string', 'max:255'],
+            'values.bank_account_name' => ['nullable', 'string', 'max:255'],
+            'values.bank_account_number' => ['nullable', 'string', 'max:255'],
+            'values.bank_iban' => ['nullable', 'string', 'max:255'],
+            'values.bank_instructions' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

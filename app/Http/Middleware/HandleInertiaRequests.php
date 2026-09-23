@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\PlatformSetting;
 use App\Support\AdminNavBadges;
 use App\Support\Locale;
 use Illuminate\Http\Request;
@@ -93,6 +94,7 @@ class HandleInertiaRequests extends Middleware
                 'canVerifyEmail' => false,
                 'canUseTwoFactorAuthentication' => false,
             ],
+            'platform_social' => fn () => PlatformSetting::grouped()['social'] ?? [],
         ];
     }
 

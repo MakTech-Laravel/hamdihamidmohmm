@@ -1,7 +1,17 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Check, Download } from 'lucide-react';
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
@@ -16,7 +26,6 @@ type Plan = {
     expires_on: string | null;
     days_remaining: number | null;
     subscription_status: string | null;
-    can_manage_billing: boolean;
     pending_change: {
         slug: string;
         label: string | null;
@@ -52,14 +61,24 @@ type Invoice = {
     invoice_url: string | null;
 };
 
+type BankDetails = {
+    bank_name: string;
+    bank_account_name: string;
+    bank_account_number: string;
+    bank_iban: string;
+    bank_instructions: string;
+};
+
 type Props = {
     plan: Plan;
     packages: PackageRow[];
     invoices: Invoice[];
     billing: {
         enabled: boolean;
-        can_manage: boolean;
+        provider?: string | null;
+        manual_enabled?: boolean;
     };
+    bankDetails?: BankDetails;
 };
 
 function planButtonLabel(
@@ -86,7 +105,11 @@ function planButtonLabel(
             return t('employer.packages.btn.scheduling');
         }
 
-        return t('employer.packages.btn.redirecting');
+        if (item.price < 1) {
+            return t('employer.packages.btn.redirecting');
+        }
+
+        return t('employer.packages.btn.pay_transfer');
     }
 
     if (item.action === 'upgrade') {
@@ -97,6 +120,10 @@ function planButtonLabel(
         return t('employer.packages.btn.downgrade');
     }
 
+    if (item.price >= 1) {
+        return t('employer.packages.btn.pay_transfer');
+    }
+
     return t('employer.packages.btn.select');
 }
 
@@ -105,13 +132,24 @@ export default function EmployerPackages({
     packages,
     invoices,
     billing,
+    bankDetails = {
+        bank_name: '',
+        bank_account_name: '',
+        bank_account_number: '',
+        bank_iban: '',
+        bank_instructions: '',
+    },
 }: Props) {
     const { t } = useLocale();
     const { flash } = usePage<SharedData>().props;
     const [selectingPackageId, setSelectingPackageId] = useState<number | null>(
         null,
     );
-    const [openingPortal, setOpeningPortal] = useState(false);
+    const [manualPackage, setManualPackage] = useState<PackageRow | null>(null);
+    const manualForm = useForm<{ remarks: string; receipt: File | null }>({
+        remarks: '',
+        receipt: null,
+    });
     const usagePercent =
         plan.job_credits > 0
             ? Math.min(100, Math.round((plan.jobs_posted / plan.job_credits) * 100))
@@ -127,6 +165,50 @@ export default function EmployerPackages({
                 Math.round((plan.credits_remaining / plan.job_credits) * 100),
             )
             : 0;
+
+    const openPackageAction = (item: PackageRow): void => {
+        if (item.price >= 1 && billing.manual_enabled !== false) {
+            setManualPackage(item);
+            manualForm.setData({
+                remarks: t('employer.packages.manual.remarks_default', {
+                    amount: `${item.currency} ${item.price.toLocaleString()}`,
+                    package: item.name,
+                }),
+                receipt: null,
+            });
+            manualForm.clearErrors();
+
+            return;
+        }
+
+        setSelectingPackageId(item.id);
+        router.post(
+            route('employer.packages.select', item.id),
+            {},
+            {
+                onFinish: () => setSelectingPackageId(null),
+            },
+        );
+    };
+
+    const submitManualPayment = (event: FormEvent): void => {
+        event.preventDefault();
+
+        if (!manualPackage) {
+            return;
+        }
+
+        manualForm.post(
+            route('employer.packages.manual-payment', manualPackage.id),
+            {
+                forceFormData: true,
+                onSuccess: () => {
+                    setManualPackage(null);
+                    manualForm.reset();
+                },
+            },
+        );
+    };
 
     return (
         <EmployerLayout title={t('employer.packages.title')}>
@@ -203,32 +285,6 @@ export default function EmployerPackages({
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            {billing.can_manage ? (
-                                <button
-                                    type="button"
-                                    disabled={openingPortal}
-                                    onClick={() => {
-                                        setOpeningPortal(true);
-                                        router.post(
-                                            route(
-                                                'employer.packages.portal',
-                                            ),
-                                            {},
-                                            {
-                                                onFinish: () =>
-                                                    setOpeningPortal(false),
-                                            },
-                                        );
-                                    }}
-                                    className="inline-flex cursor-pointer items-center rounded-xl border border-[#0057c8] px-5 py-2.5 text-sm font-semibold text-[#0057c8] disabled:opacity-60"
-                                >
-                                    {openingPortal
-                                        ? t('employer.packages.opening')
-                                        : t(
-                                              'employer.packages.manage_billing',
-                                          )}
-                                </button>
-                            ) : null}
                             <Link
                                 href="#available-plans"
                                 className="inline-flex cursor-pointer items-center rounded-xl bg-[#0057c8] px-5 py-2.5 text-sm font-semibold text-white"
@@ -352,22 +408,7 @@ export default function EmployerPackages({
                                             item.scheduled ||
                                             selectingPackageId !== null
                                         }
-                                        onClick={() => {
-                                            setSelectingPackageId(item.id);
-                                            router.post(
-                                                route(
-                                                    'employer.packages.select',
-                                                    item.id,
-                                                ),
-                                                {},
-                                                {
-                                                    onFinish: () =>
-                                                        setSelectingPackageId(
-                                                            null,
-                                                        ),
-                                                },
-                                            );
-                                        }}
+                                        onClick={() => openPackageAction(item)}
                                         className={cn(
                                             'w-full cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold disabled:cursor-wait',
                                             item.current || item.scheduled
@@ -381,6 +422,40 @@ export default function EmployerPackages({
                                             t,
                                         )}
                                     </button>
+                                    {billing.enabled &&
+                                        item.price >= 1 &&
+                                        !item.current &&
+                                        !item.scheduled && (
+                                            <button
+                                                type="button"
+                                                disabled={
+                                                    selectingPackageId !== null
+                                                }
+                                                onClick={() => {
+                                                    setSelectingPackageId(
+                                                        item.id,
+                                                    );
+                                                    router.post(
+                                                        route(
+                                                            'employer.packages.select',
+                                                            item.id,
+                                                        ),
+                                                        {},
+                                                        {
+                                                            onFinish: () =>
+                                                                setSelectingPackageId(
+                                                                    null,
+                                                                ),
+                                                        },
+                                                    );
+                                                }}
+                                                className="mt-2 w-full rounded-xl border border-[#bfdbfe] bg-white px-4 py-2 text-sm font-semibold text-[#0057c8] hover:bg-[#eff6ff] disabled:cursor-wait"
+                                            >
+                                                {t(
+                                                    'employer.packages.btn.pay_online',
+                                                )}
+                                            </button>
+                                        )}
                                 </div>
                             </article>
                         ))}
@@ -478,6 +553,175 @@ export default function EmployerPackages({
                     </div>
                 </section>
             </div>
+
+            <Dialog
+                open={manualPackage !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setManualPackage(null);
+                        manualForm.reset();
+                        manualForm.clearErrors();
+                    }
+                }}
+            >
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t('employer.packages.manual.title')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {manualPackage
+                                ? t('employer.packages.manual.subtitle', {
+                                      package: manualPackage.name,
+                                      amount: `${manualPackage.currency} ${manualPackage.price.toLocaleString()}`,
+                                  })
+                                : null}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form className="space-y-4" onSubmit={submitManualPayment}>
+                        <div className="rounded-xl border border-[#e2e8f0] bg-[#f8faff] p-4 text-sm text-[#364153]">
+                            <p className="font-semibold text-[#050315]">
+                                {t('employer.packages.manual.bank_details')}
+                            </p>
+                            {bankDetails.bank_instructions ? (
+                                <p className="mt-2 text-[#64748b]">
+                                    {bankDetails.bank_instructions}
+                                </p>
+                            ) : null}
+                            <dl className="mt-3 space-y-1.5">
+                                {bankDetails.bank_name ? (
+                                    <div className="flex justify-between gap-3">
+                                        <dt className="text-[#64748b]">
+                                            {t(
+                                                'employer.packages.manual.bank_name',
+                                            )}
+                                        </dt>
+                                        <dd className="font-medium text-[#050315]">
+                                            {bankDetails.bank_name}
+                                        </dd>
+                                    </div>
+                                ) : null}
+                                {bankDetails.bank_account_name ? (
+                                    <div className="flex justify-between gap-3">
+                                        <dt className="text-[#64748b]">
+                                            {t(
+                                                'employer.packages.manual.account_name',
+                                            )}
+                                        </dt>
+                                        <dd className="font-medium text-[#050315]">
+                                            {bankDetails.bank_account_name}
+                                        </dd>
+                                    </div>
+                                ) : null}
+                                {bankDetails.bank_account_number ? (
+                                    <div className="flex justify-between gap-3">
+                                        <dt className="text-[#64748b]">
+                                            {t(
+                                                'employer.packages.manual.account_number',
+                                            )}
+                                        </dt>
+                                        <dd className="font-medium text-[#050315]">
+                                            {bankDetails.bank_account_number}
+                                        </dd>
+                                    </div>
+                                ) : null}
+                                {bankDetails.bank_iban ? (
+                                    <div className="flex justify-between gap-3">
+                                        <dt className="text-[#64748b]">
+                                            {t(
+                                                'employer.packages.manual.iban',
+                                            )}
+                                        </dt>
+                                        <dd className="font-medium text-[#050315]">
+                                            {bankDetails.bank_iban}
+                                        </dd>
+                                    </div>
+                                ) : null}
+                                {!bankDetails.bank_name &&
+                                !bankDetails.bank_account_number ? (
+                                    <p className="text-[#b45309]">
+                                        {t(
+                                            'employer.packages.manual.bank_missing',
+                                        )}
+                                    </p>
+                                ) : null}
+                            </dl>
+                        </div>
+
+                        <div>
+                            <Label htmlFor="manual-remarks">
+                                {t('employer.packages.manual.remarks')}
+                            </Label>
+                            <Textarea
+                                id="manual-remarks"
+                                className="mt-1.5"
+                                rows={3}
+                                value={manualForm.data.remarks}
+                                onChange={(event) =>
+                                    manualForm.setData(
+                                        'remarks',
+                                        event.target.value,
+                                    )
+                                }
+                            />
+                            {manualForm.errors.remarks ? (
+                                <p className="mt-1 text-xs text-[#b91c1c]">
+                                    {manualForm.errors.remarks}
+                                </p>
+                            ) : null}
+                        </div>
+
+                        <div>
+                            <Label htmlFor="manual-receipt">
+                                {t('employer.packages.manual.receipt')}
+                            </Label>
+                            <input
+                                id="manual-receipt"
+                                type="file"
+                                accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf"
+                                className="mt-1.5 block w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-sm"
+                                onChange={(event) =>
+                                    manualForm.setData(
+                                        'receipt',
+                                        event.target.files?.[0] ?? null,
+                                    )
+                                }
+                            />
+                            <p className="mt-1 text-xs text-[#64748b]">
+                                {t('employer.packages.manual.receipt_hint')}
+                            </p>
+                            {manualForm.errors.receipt ? (
+                                <p className="mt-1 text-xs text-[#b91c1c]">
+                                    {manualForm.errors.receipt}
+                                </p>
+                            ) : null}
+                        </div>
+
+                        <DialogFooter>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setManualPackage(null);
+                                    manualForm.reset();
+                                }}
+                                className="rounded-xl border border-[#e2e8f0] px-4 py-2 text-sm font-semibold text-[#64748b]"
+                            >
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={manualForm.processing}
+                                className="rounded-xl bg-[#0057c8] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            >
+                                {manualForm.processing
+                                    ? t('employer.packages.manual.submitting')
+                                    : t('employer.packages.manual.submit')}
+                            </button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </EmployerLayout>
     );
 }

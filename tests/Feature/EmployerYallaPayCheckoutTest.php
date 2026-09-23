@@ -16,8 +16,6 @@ beforeEach(function () {
         'services.yallapay.production_url' => 'https://gateway.yallapaysudan.com/api/v1',
         'services.yallapay.token' => 'test_sk_example',
         'services.yallapay.webhook_secret' => 'whsec_test_secret',
-        'services.stripe.secret' => null,
-        'services.stripe.key' => null,
     ]);
 });
 

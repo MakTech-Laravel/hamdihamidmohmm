@@ -222,12 +222,12 @@ export default function JobShow({
 
                             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] sm:p-7">
                                 <div className="flex items-start gap-4">
-                                    <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] text-xl font-bold text-[#0057c8] sm:size-[88px]">
+                                    <div className="flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] text-xl font-bold text-[#0057c8] sm:size-[112px]">
                                         {job.logo_url ? (
                                             <img
                                                 src={job.logo_url}
                                                 alt={job.title}
-                                                className="size-full object-contain p-1.5"
+                                                className="size-full object-cover"
                                             />
                                         ) : (
                                             job.initials || 'JP'
@@ -592,6 +592,34 @@ export default function JobShow({
                             <DialogDescription className="max-w-[320px] text-sm leading-6 text-[#64748b]">
                                 {t('job_detail.apply_confirm_message')}
                             </DialogDescription>
+                            <div className="mt-1 w-full rounded-2xl border border-[#dbeafe] bg-white/90 px-4 py-3 text-start">
+                                <p className="text-sm font-bold text-[#050315]">
+                                    {job.title}
+                                </p>
+                                <p className="mt-1 text-xs font-semibold text-[#e57124]">
+                                    {job.company}
+                                </p>
+                                <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-medium text-[#64748b]">
+                                    {job.type ? (
+                                        <span className="rounded-full bg-[#dcfce7] px-2 py-0.5 text-[#166534]">
+                                            {job.type}
+                                        </span>
+                                    ) : null}
+                                    {job.location ? (
+                                        <span className="rounded-full bg-[#f1f5f9] px-2 py-0.5">
+                                            {job.location}
+                                        </span>
+                                    ) : null}
+                                    {job.category ? (
+                                        <span className="rounded-full bg-[#eef5ff] px-2 py-0.5 text-[#0057c8]">
+                                            {job.category}
+                                        </span>
+                                    ) : null}
+                                </div>
+                                <p className="mt-2 text-xs text-[#64748b]">
+                                    {t('job_detail.apply_review_hint')}
+                                </p>
+                            </div>
                         </DialogHeader>
                     </div>
 

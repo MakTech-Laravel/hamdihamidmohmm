@@ -24,10 +24,8 @@ class Payment extends Model
         'method',
         'status',
         'reference',
-        'stripe_checkout_session_id',
-        'stripe_subscription_id',
-        'stripe_invoice_id',
-        'stripe_payment_intent_id',
+        'remarks',
+        'receipt_path',
         'invoice_url',
         'paid_at',
     ];
@@ -58,5 +56,14 @@ class Payment extends Model
     public function package(): BelongsTo
     {
         return $this->belongsTo(Package::class);
+    }
+
+    public function receiptUrl(): ?string
+    {
+        if (! is_string($this->receipt_path) || $this->receipt_path === '') {
+            return null;
+        }
+
+        return '/storage/'.$this->receipt_path;
     }
 }

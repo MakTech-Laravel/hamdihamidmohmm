@@ -38,6 +38,11 @@ class FrontendController extends Controller
     public function jobs(Request $request): Response
     {
         $search = $request->string('search')->toString();
+
+        if ($search === '' && $request->filled('title')) {
+            $search = $request->string('title')->toString();
+        }
+
         $country = $request->string('country')->toString();
         $location = $request->string('location')->toString();
         $category = $request->string('category')->toString();

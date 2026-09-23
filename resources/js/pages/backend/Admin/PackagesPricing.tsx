@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
@@ -472,16 +473,20 @@ export default function PackagesPricing({ packages, stats }: Props) {
                                         label={t('admin.packages.currency')}
                                         error={form.errors.currency}
                                     >
-                                        <Input
+                                        <NativeSelect
                                             value={form.data.currency}
-                                            maxLength={3}
                                             onChange={(event) =>
                                                 form.setData(
                                                     'currency',
                                                     event.target.value.toUpperCase(),
                                                 )
                                             }
-                                        />
+                                            className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm"
+                                        >
+                                            <option value="SDG">SDG</option>
+                                            <option value="USD">USD</option>
+                                            <option value="EUR">EUR</option>
+                                        </NativeSelect>
                                     </PackageField>
                                     <PackageField
                                         label={t('admin.packages.billing_period')}

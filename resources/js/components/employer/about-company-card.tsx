@@ -54,11 +54,11 @@ export function AboutCompanyCard({
                     <img
                         src={logoUrl}
                         alt={companyName}
-                        className="size-[88px] shrink-0 rounded-2xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
+                        className="size-[112px] shrink-0 rounded-2xl border border-[#e2e8f0] bg-[#f8faff] object-cover"
                     />
                 ) : (
                     <div
-                        className="flex size-[88px] shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white"
+                        className="flex size-[112px] shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white"
                         style={{
                             backgroundImage:
                                 'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',

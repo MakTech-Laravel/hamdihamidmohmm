@@ -37,6 +37,7 @@ class JobTaxonomySeeder extends Seeder
                 'Remote',
             ],
             JobTaxonomyType::PositionArea->value => [
+                'ICT',
                 'Technology',
                 'Engineering',
                 'Design',
@@ -48,7 +49,7 @@ class JobTaxonomySeeder extends Seeder
                 'Construction',
                 'Logistics',
                 'Retail',
-                'Other',
+                'Others',
             ],
             JobTaxonomyType::EmploymentType->value => [
                 ['name' => 'Full Time', 'slug' => 'full_time'],
@@ -77,6 +78,26 @@ class JobTaxonomySeeder extends Seeder
                     ]
                 );
             }
+        }
+
+        $othersExists = JobTaxonomy::query()
+            ->where('type', JobTaxonomyType::PositionArea->value)
+            ->where('slug', 'others')
+            ->exists();
+
+        if ($othersExists) {
+            JobTaxonomy::query()
+                ->where('type', JobTaxonomyType::PositionArea->value)
+                ->where('slug', 'other')
+                ->delete();
+        } else {
+            JobTaxonomy::query()
+                ->where('type', JobTaxonomyType::PositionArea->value)
+                ->where('slug', 'other')
+                ->update([
+                    'name' => 'Others',
+                    'slug' => 'others',
+                ]);
         }
 
         JobTaxonomy::forgetOptionsCache();

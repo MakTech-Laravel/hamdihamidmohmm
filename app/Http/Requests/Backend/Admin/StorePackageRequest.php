@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Backend\Admin;
 
 use App\Models\Package;
+use App\Support\PlatformMoney;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -26,11 +27,9 @@ class StorePackageRequest extends FormRequest
             $slug = Str::slug($slug);
         }
 
-        $currency = strtoupper(trim((string) $this->input('currency', 'SDG')));
-
-        if (strlen($currency) !== 3) {
-            $currency = 'SDG';
-        }
+        $currency = PlatformMoney::normalizePlatformCurrency(
+            (string) $this->input('currency', 'SDG'),
+        );
 
         $description = $this->input('description');
 
@@ -61,7 +60,7 @@ class StorePackageRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
             'price' => ['required', 'integer', 'min:0'],
-            'currency' => ['nullable', 'string', 'size:3'],
+            'currency' => ['nullable', 'string', 'size:3', Rule::in(PlatformMoney::PLATFORM_CURRENCIES)],
             'billing_period' => ['required', 'string', 'max:50'],
             'job_credits' => ['required', 'integer', 'min:0'],
             'featured_credits' => ['required', 'integer', 'min:0'],

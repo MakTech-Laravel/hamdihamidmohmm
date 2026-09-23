@@ -81,9 +81,17 @@ class JobListingQuery
             ->when($types->isNotEmpty(), function (Builder $builder) use ($types): void {
                 $builder->where(function (Builder $inner) use ($types): void {
                     foreach ($types as $type) {
+                        $normalized = self::normalizeToken($type);
+
                         foreach (self::employmentTypeVariants($type) as $variant) {
-                            $inner->orWhere('employment_type', $variant)
-                                ->orWhere('employment_type', 'like', $variant);
+                            $inner->orWhere('employment_type', $variant);
+                        }
+
+                        if ($normalized !== '') {
+                            $inner->orWhereRaw(
+                                "LOWER(REPLACE(REPLACE(REPLACE(COALESCE(employment_type, ''), '-', ''), '_', ''), ' ', '')) = ?",
+                                [$normalized],
+                            );
                         }
                     }
                 });

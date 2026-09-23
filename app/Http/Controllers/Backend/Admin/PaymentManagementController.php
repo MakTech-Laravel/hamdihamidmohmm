@@ -9,6 +9,7 @@ use App\Http\Requests\Backend\Admin\StorePaymentRequest;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\EmployerPlanActivator;
 use App\Support\PortalNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentManagementController extends Controller
 {
+    public function __construct(private EmployerPlanActivator $planActivator) {}
+
     public function index(Request $request): Response
     {
         abort_unless($request->user()?->canManagePayments(), 403);
@@ -68,7 +71,7 @@ class PaymentManagementController extends Controller
             $employer = User::query()->find($request->integer('employer_id'));
 
             if ($package && $employer) {
-                $employer->forceFill(['package' => $package->slug])->save();
+                $this->planActivator->assignPaidPlan($employer, $package);
                 PortalNotifier::billingAlert(
                     $employer,
                     'Payment recorded',
@@ -92,7 +95,7 @@ class PaymentManagementController extends Controller
         $payment->loadMissing(['package', 'employer']);
 
         if ($payment->package && $payment->employer) {
-            $payment->employer->forceFill(['package' => $payment->package->slug])->save();
+            $this->planActivator->assignPaidPlan($payment->employer, $payment->package);
             PortalNotifier::billingAlert(
                 $payment->employer,
                 'Payment approved',
@@ -178,6 +181,8 @@ class PaymentManagementController extends Controller
             'status' => $payment->status?->label() ?? 'Pending',
             'status_value' => $payment->status?->value,
             'date' => $payment->paid_at?->toDateString() ?? $payment->created_at?->toDateString(),
+            'remarks' => $payment->remarks,
+            'receipt_url' => $payment->receiptUrl(),
         ];
     }
 

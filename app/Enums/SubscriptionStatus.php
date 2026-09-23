@@ -31,13 +31,4 @@ enum SubscriptionStatus: string
     {
         return in_array($this, [self::Active, self::Trialing], true);
     }
-
-    public static function fromStripe(?string $status): ?self
-    {
-        if ($status === null || $status === '') {
-            return null;
-        }
-
-        return self::tryFrom($status);
-    }
 }

@@ -147,8 +147,8 @@ export default function Home({
 
             {/* Hero */}
             <section className="relative bg-[#d1f6ff]">
-                <div className="mx-auto max-w-[1344px] px-4 pb-20 pt-14 sm:px-6 sm:pt-16 lg:px-8 lg:pb-24 lg:pt-20">
-                    <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+                <div className="mx-auto max-w-[1344px] px-4 pb-12 pt-10 sm:px-6 sm:pt-12 lg:px-8 lg:pb-14 lg:pt-14">
+                    <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
                         <div className="animate-fadeInUp">
                             <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-sm">
                                 <span className="size-1.5 rounded-full bg-[#05df72]" />
@@ -157,18 +157,18 @@ export default function Home({
                                 </span>
                             </div>
 
-                            <h1 className="mt-5 max-w-xl text-4xl font-bold leading-[1.15] tracking-[-0.8px] text-[#e57124] sm:text-5xl lg:text-[64px] lg:leading-[76px]">
+                            <h1 className="mt-4 max-w-xl text-3xl font-bold leading-[1.15] tracking-[-0.8px] text-[#e57124] sm:text-4xl lg:text-[48px] lg:leading-[56px]">
                                 {t('hero.title')}
                             </h1>
 
-                            <p className="mt-6 max-w-xl text-base font-medium leading-[22px] tracking-[-0.18px] text-[#050315]">
+                            <p className="mt-4 max-w-xl text-base font-medium leading-[22px] tracking-[-0.18px] text-[#050315]">
                                 {t('hero.subtitle')}
                             </p>
 
-                            <div className="mt-8 flex flex-wrap gap-3">
+                            <div className="mt-6 flex flex-wrap gap-3">
                                 <Link
                                     href={jobs()}
-                                    className="inline-flex h-[60px] items-center gap-[7px] rounded-xl bg-[#0057c8] px-8 text-base font-medium tracking-[-0.18px] text-white shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] transition hover:brightness-110"
+                                    className="inline-flex h-12 items-center gap-[7px] rounded-xl bg-[#0057c8] px-6 text-sm font-medium tracking-[-0.18px] text-white shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] transition hover:brightness-110"
                                 >
                                     {t('hero.find_jobs')}
                                     <img
@@ -181,7 +181,7 @@ export default function Home({
                                 </Link>
                                 <Link
                                     href={registerRole.url('employer')}
-                                    className="inline-flex h-[60px] items-center justify-center rounded-xl border-2 border-[#e57124] px-8 text-base font-medium tracking-[-0.18px] text-[#e57124] transition hover:bg-[#e57124]/10"
+                                    className="inline-flex h-12 items-center justify-center rounded-xl border-2 border-[#e57124] px-6 text-sm font-medium tracking-[-0.18px] text-[#e57124] transition hover:bg-[#e57124]/10"
                                 >
                                     {t('hero.post_job')}
                                 </Link>
@@ -283,73 +283,8 @@ export default function Home({
                 />
             </section>
 
-            {/* Why Choose Us */}
-            <section id="about" className="scroll-mt-28 bg-white pt-16 pb-20 sm:pt-20">
-                <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
-                    <div className="text-center">
-                        <h2 className="text-3xl font-bold tracking-[-0.3px] text-[#050315] sm:text-[40px] sm:leading-[48px]">
-                            {t('why.title')}
-                        </h2>
-                        <p className="mx-auto mt-4 max-w-xl text-base text-[#6a7282]">
-                            {t('why.subtitle')}
-                        </p>
-                    </div>
-
-                    <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                        {features.map((feature) => (
-                            <div
-                                key={feature.title}
-                                className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:shadow-md"
-                            >
-                                <div
-                                    className={`mx-auto flex size-14 items-center justify-center rounded-2xl ${feature.iconBg}`}
-                                >
-                                    <img
-                                        src={feature.icon}
-                                        alt=""
-                                        className="size-6"
-                                        width={24}
-                                        height={24}
-                                    />
-                                </div>
-                                <h3 className="mt-4 text-center text-sm font-bold text-[#0f172a]">
-                                    {feature.title}
-                                </h3>
-                                <p className="mt-2 text-center text-xs leading-[19.5px] text-[#6a7282]">
-                                    {feature.description}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Stats */}
-            <section className="bg-[#d1f6ff] py-20">
-                <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
-                    <h2 className="text-center text-3xl font-bold tracking-[-0.3px] text-[#0057c8] sm:text-[40px] sm:leading-[48px]">
-                        {t('stats.title')}
-                    </h2>
-                    <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-                        {stats.map((stat) => (
-                            <div key={stat.label} className="text-center">
-                                <p
-                                    dir="ltr"
-                                    className="text-4xl font-extrabold leading-[48px] text-[#050315] sm:text-[48px]"
-                                >
-                                    {stat.value}
-                                </p>
-                                <p className="mt-2 text-sm font-medium text-[#3977a6]">
-                                    {stat.label}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
             {/* Recommended Jobs */}
-            <section id="jobs" className="scroll-mt-28 bg-white py-20">
+            <section id="jobs" className="scroll-mt-28 bg-white py-12">
                 <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                         <div>
@@ -396,11 +331,11 @@ export default function Home({
                                             <img
                                                 src={job.logo_url}
                                                 alt={job.company || job.title}
-                                                className="size-[72px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5 sm:size-[88px]"
+                                                className="size-[96px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-cover sm:size-[112px]"
                                             />
                                         ) : (
                                             <div
-                                                className="flex size-[72px] shrink-0 items-center justify-center rounded-xl text-base font-bold text-white sm:size-[88px] sm:text-lg"
+                                                className="flex size-[96px] shrink-0 items-center justify-center rounded-xl text-base font-bold text-white sm:size-[112px] sm:text-lg"
                                                 style={{
                                                     backgroundImage:
                                                         'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
@@ -456,8 +391,73 @@ export default function Home({
                 </div>
             </section>
 
+            {/* Why Choose Us */}
+            <section id="about" className="scroll-mt-28 bg-white pt-10 pb-12 sm:pt-12">
+                <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
+                    <div className="text-center">
+                        <h2 className="text-3xl font-bold tracking-[-0.3px] text-[#050315] sm:text-[40px] sm:leading-[48px]">
+                            {t('why.title')}
+                        </h2>
+                        <p className="mx-auto mt-4 max-w-xl text-base text-[#6a7282]">
+                            {t('why.subtitle')}
+                        </p>
+                    </div>
+
+                    <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                        {features.map((feature) => (
+                            <div
+                                key={feature.title}
+                                className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:shadow-md"
+                            >
+                                <div
+                                    className={`mx-auto flex size-14 items-center justify-center rounded-2xl ${feature.iconBg}`}
+                                >
+                                    <img
+                                        src={feature.icon}
+                                        alt=""
+                                        className="size-6"
+                                        width={24}
+                                        height={24}
+                                    />
+                                </div>
+                                <h3 className="mt-4 text-center text-sm font-bold text-[#0f172a]">
+                                    {feature.title}
+                                </h3>
+                                <p className="mt-2 text-center text-xs leading-[19.5px] text-[#6a7282]">
+                                    {feature.description}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Stats */}
+            <section className="bg-[#d1f6ff] py-12">
+                <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
+                    <h2 className="text-center text-3xl font-bold tracking-[-0.3px] text-[#0057c8] sm:text-[40px] sm:leading-[48px]">
+                        {t('stats.title')}
+                    </h2>
+                    <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                        {stats.map((stat) => (
+                            <div key={stat.label} className="text-center">
+                                <p
+                                    dir="ltr"
+                                    className="text-4xl font-extrabold leading-[48px] text-[#050315] sm:text-[48px]"
+                                >
+                                    {stat.value}
+                                </p>
+                                <p className="mt-2 text-sm font-medium text-[#3977a6]">
+                                    {stat.label}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
             {/* Job Seeker CTA */}
-            <section className="bg-linear-to-b from-[#f8faff] to-[#eff6ff] px-4 py-20 sm:px-6 lg:px-8">
+            <section className="bg-linear-to-b from-[#f8faff] to-[#eff6ff] px-4 py-12 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1344px] overflow-hidden rounded-3xl bg-white shadow-[0px_8px_40px_0px_rgba(30,58,138,0.1)]">
                     <div className="grid lg:grid-cols-2">
                         <div className="p-8 sm:p-12 lg:p-14">
@@ -505,10 +505,10 @@ export default function Home({
                             </div>
                         </div>
 
-                        <div className="relative flex min-h-[280px] items-center justify-center bg-[rgba(0,87,200,0.08)] p-12">
+                        <div className="relative flex min-h-[200px] items-center justify-center bg-[rgba(0,87,200,0.08)] p-8">
                             <div className="relative">
                                 <div
-                                    className="flex size-48 items-center justify-center rounded-full"
+                                    className="flex size-36 items-center justify-center rounded-full"
                                     style={{
                                         backgroundImage:
                                             'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
@@ -542,7 +542,7 @@ export default function Home({
 
             {/* Pricing */}
             {packages.length > 0 && (
-                <section id="pricing" className="scroll-mt-28 bg-white py-20">
+                <section id="pricing" className="scroll-mt-28 bg-white py-12">
                     <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
                         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
                             <div>
@@ -576,12 +576,12 @@ export default function Home({
             )}
 
             {/* Employer CTA */}
-            <section id="employers" className="scroll-mt-28 px-4 py-20 sm:px-6 lg:px-8">
+            <section id="employers" className="scroll-mt-28 px-4 py-12 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1344px] overflow-hidden rounded-3xl bg-[#d1f6ff] shadow-[0px_8px_6px_0px_rgba(15,23,42,0.12)]">
                     <div className="grid lg:grid-cols-2">
-                        <div className="relative order-2 flex min-h-[280px] items-center justify-center p-12 lg:order-1">
+                        <div className="relative order-2 flex min-h-[200px] items-center justify-center p-8 lg:order-1">
                             <div className="relative">
-                                <div className="flex size-48 items-center justify-center rounded-full bg-[#f97316]">
+                                <div className="flex size-36 items-center justify-center rounded-full bg-[#f97316]">
                                     <img
                                         src="/images/home/building-large.svg"
                                         alt=""

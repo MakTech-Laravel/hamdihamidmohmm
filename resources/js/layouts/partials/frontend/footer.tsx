@@ -1,17 +1,41 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 
 import { useLocale } from '@/hooks/use-locale';
 import { discover, pricing } from '@/routes';
+import type { SharedData } from '@/types';
 
-const socialLinks = [
-    { label: 'Facebook', src: '/images/home/facebook.svg', href: '#' },
-    { label: 'X', src: '/images/home/x.svg', href: '#' },
-    { label: 'LinkedIn', src: '/images/home/linkedin.svg', href: '#' },
-    { label: 'Instagram', src: '/images/home/instagram.svg', href: '#' },
-];
+const socialMeta = [
+    { key: 'facebook_url', label: 'Facebook', src: '/images/home/facebook.svg' },
+    { key: 'twitter_url', label: 'X', src: '/images/home/x.svg' },
+    { key: 'linkedin_url', label: 'LinkedIn', src: '/images/home/linkedin.svg' },
+    {
+        key: 'instagram_url',
+        label: 'Instagram',
+        src: '/images/home/instagram.svg',
+    },
+] as const;
+
+function normalizeSocialHref(value: unknown): string | null {
+    if (typeof value !== 'string') {
+        return null;
+    }
+
+    const trimmed = value.trim();
+
+    if (trimmed === '' || trimmed === '#') {
+        return null;
+    }
+
+    if (/^https?:\/\//i.test(trimmed)) {
+        return trimmed;
+    }
+
+    return `https://${trimmed}`;
+}
 
 export function FrontendFooter() {
     const { t } = useLocale();
+    const { platform_social } = usePage<SharedData>().props;
 
     const links = [
         { label: t('footer.terms'), href: '#terms' },
@@ -23,6 +47,13 @@ export function FrontendFooter() {
         },
         { label: t('nav.faq'), href: `${pricing.url()}#faq` },
     ];
+
+    const socialLinks = socialMeta
+        .map((item) => ({
+            ...item,
+            href: normalizeSocialHref(platform_social?.[item.key]),
+        }))
+        .filter((item): item is typeof item & { href: string } => item.href !== null);
 
     return (
         <footer className="border-t border-[#0057c8] bg-[#1e3a8a] font-['Plus_Jakarta_Sans','Noto_Sans_Arabic',sans-serif] text-[#d1f6ff]">
@@ -53,24 +84,28 @@ export function FrontendFooter() {
                     ))}
                 </nav>
 
-                <div className="flex items-center gap-3 ps-1">
-                    {socialLinks.map((social) => (
-                        <a
-                            key={social.label}
-                            href={social.href}
-                            aria-label={social.label}
-                            className="inline-flex size-5 items-center justify-center transition hover:opacity-80"
-                        >
-                            <img
-                                src={social.src}
-                                alt=""
-                                className="size-4 brightness-0 invert"
-                                width={16}
-                                height={16}
-                            />
-                        </a>
-                    ))}
-                </div>
+                {socialLinks.length > 0 ? (
+                    <div className="flex items-center gap-3 ps-1">
+                        {socialLinks.map((social) => (
+                            <a
+                                key={social.label}
+                                href={social.href}
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label={social.label}
+                                className="inline-flex size-5 items-center justify-center transition hover:opacity-80"
+                            >
+                                <img
+                                    src={social.src}
+                                    alt=""
+                                    className="size-4 brightness-0 invert"
+                                    width={16}
+                                    height={16}
+                                />
+                            </a>
+                        ))}
+                    </div>
+                ) : null}
             </div>
         </footer>
     );

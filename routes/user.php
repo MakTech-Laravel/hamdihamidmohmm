@@ -71,8 +71,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/profile/verification-document', [EmployerProfileController::class, 'destroyVerificationDocument'])->name('profile.verification-document.destroy');
         Route::get('/packages', [EmployerPackageController::class, 'index'])->name('packages');
         Route::post('/packages/{package}/select', [EmployerPackageController::class, 'select'])->name('packages.select');
+        Route::post('/packages/{package}/manual-payment', [EmployerPackageController::class, 'submitManualPayment'])->name('packages.manual-payment');
         Route::get('/packages/checkout/success', [EmployerPackageController::class, 'checkoutSuccess'])->name('packages.checkout.success');
-        Route::post('/packages/billing-portal', [EmployerPackageController::class, 'portal'])->name('packages.portal');
         Route::get('/jobs', [EmployerJobController::class, 'index'])->name('jobs');
         Route::get('/jobs/create', [EmployerJobController::class, 'create'])->name('jobs.create');
         Route::post('/jobs/description-attachments', [EmployerJobController::class, 'uploadDescriptionAttachment'])->name('jobs.description-attachments.store');

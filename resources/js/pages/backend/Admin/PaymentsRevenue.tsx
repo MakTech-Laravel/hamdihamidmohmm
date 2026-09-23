@@ -40,6 +40,8 @@ type PaymentRow = {
     status: string;
     status_value: string | null;
     date: string | null;
+    remarks?: string | null;
+    receipt_url?: string | null;
 };
 
 type Props = {
@@ -220,12 +222,14 @@ export default function PaymentsRevenue({
 
                     <AdminTableShell
                         headers={[
+                            t('admin.payments.cols.reference'),
                             t('admin.payments.cols.employer'),
                             t('admin.payments.cols.package'),
                             t('admin.payments.cols.amount'),
                             t('admin.payments.cols.method'),
                             t('common.status'),
                             t('admin.payments.cols.date'),
+                            t('admin.payments.cols.receipt'),
                             t('common.actions'),
                         ]}
                     >
@@ -235,7 +239,12 @@ export default function PaymentsRevenue({
                                 className="border-b border-[#e2e8f0] last:border-0 hover:bg-[#f8faff]"
                             >
                                 <td className="px-3 py-3 font-semibold text-[#050315]">
-                                    {row.reference}
+                                    <div>{row.reference}</div>
+                                    {row.remarks ? (
+                                        <p className="mt-1 max-w-[220px] text-xs font-normal text-[#64748b]">
+                                            {row.remarks}
+                                        </p>
+                                    ) : null}
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
                                     {row.employer}
@@ -257,6 +266,22 @@ export default function PaymentsRevenue({
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
                                     {row.date ?? '—'}
+                                </td>
+                                <td className="px-3 py-3">
+                                    {row.receipt_url ? (
+                                        <a
+                                            href={row.receipt_url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-xs font-semibold text-[#0057c8] hover:underline"
+                                        >
+                                            {t('admin.payments.view_receipt')}
+                                        </a>
+                                    ) : (
+                                        <span className="text-xs text-[#94a3b8]">
+                                            —
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="px-3 py-3">
                                     <div className="flex gap-1">

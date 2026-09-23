@@ -12,23 +12,23 @@ test('admins can view seeded Figma packages', function () {
     $this->actingAs($admin)
         ->get(route('admin.packages.index'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/PackagesPricing')
             ->has('packages', 3)
             ->where('stats.most_popular', 'Business Package')
             ->where('packages.0.currency', 'SDG')
             ->where('packages.1.currency', 'SDG')
             ->where('packages.2.currency', 'SDG')
-            ->where('packages', fn($packages) => collect($packages)->pluck('name')->doesntContain('Starter')
+            ->where('packages', fn ($packages) => collect($packages)->pluck('name')->doesntContain('Starter')
                 && collect($packages)->contains('name', 'Single Posting')
                 && collect($packages)->contains('name', 'Business Package')
                 && collect($packages)->contains('name', 'Enterprise')
                 && collect($packages)->contains('price', 1500)
                 && collect($packages)->contains('price', 2500)
                 && collect($packages)->contains('price', 5000)
-                && collect($packages)->contains(fn($package) => $package['name'] === 'Single Posting'
+                && collect($packages)->contains(fn ($package) => $package['name'] === 'Single Posting'
                     && $package['description'] === 'Perfect for businesses with occasional hiring needs.')
-                && collect($packages)->contains(fn($package) => $package['name'] === 'Business Package'
+                && collect($packages)->contains(fn ($package) => $package['name'] === 'Business Package'
                     && $package['description'] === 'Ideal for growing companies with regular recruitment.')));
 });
 
@@ -61,7 +61,7 @@ test('admins can update a package and the public pricing page reflects it', func
 
     $this->get(route('pricing'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('frontend/pricing')
             ->where('packages.0.name', 'Single Posting Plus')
             ->where('packages.0.price', 350)
@@ -173,4 +173,32 @@ test('admins can permanently delete an archived package', function () {
         ->assertRedirect();
 
     expect(Package::query()->whereKey($starter->id)->exists())->toBeFalse();
+});
+
+test('admins can save packages priced in SDG', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)
+        ->from(route('admin.packages.index'))
+        ->post(route('admin.packages.store'), [
+            'name' => 'Starter Plus+',
+            'slug' => 'starter-plus-sdg',
+            'description' => 'Local currency package.',
+            'price' => 1500,
+            'currency' => 'SDG',
+            'billing_period' => 'month',
+            'job_credits' => 3,
+            'featured_credits' => 0,
+            'features' => 'One Job Posting',
+            'excluded_features' => '',
+            'sort_order' => 8,
+            'is_active' => true,
+            'is_featured' => false,
+            'is_public' => true,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success');
+
+    expect(Package::query()->where('slug', 'starter-plus-sdg')->first()?->currency)->toBe('SDG');
 });

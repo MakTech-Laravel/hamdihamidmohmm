@@ -149,3 +149,44 @@ test('jobs page can filter by category and employment type', function () {
             ->has('jobs.data', 1)
             ->where('jobs.data.0.slug', 'remote-design-role'));
 });
+
+test('jobs page can search by job title and keep part-time listings when filtered', function () {
+    $employer = User::factory()->employer()->create();
+
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Part Time Nurse',
+        'slug' => 'part-time-nurse',
+        'employment_type' => 'part_time',
+        'status' => JobPostStatus::Active,
+    ]);
+
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Full Time Engineer',
+        'slug' => 'full-time-engineer',
+        'employment_type' => 'Full-time',
+        'status' => JobPostStatus::Active,
+    ]);
+
+    $this->get(route('jobs', ['search' => 'Nurse']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('frontend/jobs')
+            ->has('jobs.data', 1)
+            ->where('jobs.data.0.slug', 'part-time-nurse'));
+
+    $this->get(route('jobs', ['title' => 'Engineer']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('frontend/jobs')
+            ->has('jobs.data', 1)
+            ->where('jobs.data.0.slug', 'full-time-engineer'));
+
+    $this->get(route('jobs', ['types' => ['part_time']]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('frontend/jobs')
+            ->has('jobs.data', 1)
+            ->where('jobs.data.0.slug', 'part-time-nurse'));
+});

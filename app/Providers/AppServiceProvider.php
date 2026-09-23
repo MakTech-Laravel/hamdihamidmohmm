@@ -4,9 +4,6 @@ namespace App\Providers;
 
 use App\Listeners\LogUserLogin;
 use App\Models\JobPost;
-use App\Services\Stripe\FakeStripeGateway;
-use App\Services\Stripe\StripeGateway;
-use App\Services\Stripe\StripeSdkGateway;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Date;
@@ -23,13 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(StripeGateway::class, function ($app): StripeGateway {
-            if ($app->environment('testing')) {
-                return $app->make(FakeStripeGateway::class);
-            }
-
-            return $app->make(StripeSdkGateway::class);
-        });
+        //
     }
 
     /**

@@ -3,6 +3,7 @@
 use App\Enums\EmployerPackage;
 use App\Enums\JobPostStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\SubscriptionStatus;
 use App\Models\JobPost;
 use App\Models\Package;
 use App\Models\Payment;
@@ -30,7 +31,7 @@ test('employer dashboard includes the live plan snapshot', function () {
     $this->actingAs($employer)
         ->get(route('employer.dashboard'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerDashboard')
             ->where('plan.slug', EmployerPackage::Professional->value)
             ->where('plan.jobs_posted', 1)
@@ -50,14 +51,14 @@ test('employers can open the post job wizard and edit an existing job', function
     $this->actingAs($employer)
         ->get(route('employer.jobs.create'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerJobEditor')
             ->where('job', null)
             ->where('company.name', 'Horizon Hiring Ltd')
             ->has('company.logo_url')
             ->has('options.positionAreas')
-            ->where('options.positionAreas', fn ($areas) => collect($areas)->contains(
-                fn ($item) => ($item['value'] ?? null) === 'other' || ($item['label'] ?? null) === 'Other'
+            ->where('options.positionAreas', fn($areas) => collect($areas)->contains(
+                fn($item) => ($item['value'] ?? null) === 'others' || ($item['label'] ?? null) === 'Others'
             ))
             ->has('options.employmentTypes')
             ->has('options.countries')
@@ -66,7 +67,7 @@ test('employers can open the post job wizard and edit an existing job', function
     $this->actingAs($employer)
         ->get(route('employer.jobs.edit', $job))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerJobEditor')
             ->where('job.title', 'Backend Engineer')
             ->where('job.id', $job->id)
@@ -88,6 +89,30 @@ test('employers cannot save a job with a free-text category', function () {
             'publish' => false,
         ])
         ->assertSessionHasErrors(['category', 'location', 'employment_type']);
+});
+
+test('employers cannot save a job without location category or job type', function () {
+    $employer = User::factory()->employer()->create();
+
+    $this->actingAs($employer)
+        ->from(route('employer.jobs.create'))
+        ->post(route('employer.jobs.store'), [
+            'title' => 'Hospital Administrator',
+            'category' => '',
+            'location' => '',
+            'employment_type' => '',
+            'experience_level' => '',
+            'publish' => false,
+        ])
+        ->assertRedirect(route('employer.jobs.create'))
+        ->assertSessionHasErrors([
+            'category',
+            'location',
+            'employment_type',
+            'experience_level',
+        ]);
+
+    expect(JobPost::query()->count())->toBe(0);
 });
 
 test('employers can save a job with taxonomy selects', function () {
@@ -215,7 +240,7 @@ test('employers can view the designed my jobs table with live stats', function (
     $this->actingAs($employer)
         ->get(route('employer.jobs'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerJobs')
             ->where('stats.total', 2)
             ->where('stats.active', 1)
@@ -254,7 +279,7 @@ test('employers can duplicate pause and republish jobs they own', function () {
     expect($job->fresh()->status)->toBe(JobPostStatus::Pending);
 });
 
-test('employers can select a public plan and see it as current', function () {
+test('employers can select a public plan via manual payment approval', function () {
     $employer = User::factory()->employer()->create([
         'package' => EmployerPackage::Professional,
     ]);
@@ -270,24 +295,29 @@ test('employers can select a public plan and see it as current', function () {
         'is_featured' => true,
     ]);
 
-    $this->actingAs($employer)
-        ->post(route('employer.packages.select', $business))
-        ->assertRedirectContains('https://checkout.stripe.test/');
+    $payment = Payment::query()->create([
+        'employer_id' => $employer->id,
+        'package_id' => $business->id,
+        'amount' => $business->price,
+        'currency' => 'SDG',
+        'method' => 'bank_transfer',
+        'status' => PaymentStatus::Pending,
+        'reference' => 'BANK-TEST1234',
+    ]);
 
-    $payment = Payment::query()->where('employer_id', $employer->id)->firstOrFail();
+    $admin = User::factory()->admin()->create();
 
-    $this->actingAs($employer)
-        ->get(route('employer.packages.checkout.success', [
-            'session_id' => $payment->stripe_checkout_session_id,
-        ]))
-        ->assertRedirect(route('employer.packages'));
+    $this->actingAs($admin)
+        ->post(route('admin.payments.approve', $payment))
+        ->assertRedirect();
 
-    expect($employer->fresh()->package)->toBe(EmployerPackage::Premium);
+    expect($employer->fresh()->package)->toBe(EmployerPackage::Premium)
+        ->and($employer->fresh()->subscription_status)->toBe(SubscriptionStatus::Active);
 
     $this->actingAs($employer)
         ->get(route('employer.packages'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerPackages')
             ->where('plan.slug', EmployerPackage::Premium->value)
             ->where('plan.job_credits', 15)
@@ -327,7 +357,7 @@ test('employers can update company profile sections used by the dashboard', func
     $this->actingAs($employer)
         ->get(route('employer.profile'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('profile.company_name', 'TechCorp Solutions')
             ->where('completion.sections.social', true)
             ->has('completion.percent'));

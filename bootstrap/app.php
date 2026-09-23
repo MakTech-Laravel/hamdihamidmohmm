@@ -23,7 +23,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO);
 
         $middleware->preventRequestForgery(except: [
-            'stripe/webhook',
             'api/webhooks/yallapay',
         ]);
 

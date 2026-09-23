@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Backend\Admin;
 
 use App\Models\Package;
+use App\Support\PlatformMoney;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,11 +17,9 @@ class UpdatePackageRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $description = $this->input('description');
-        $currency = strtoupper(trim((string) $this->input('currency', 'SDG')));
-
-        if (strlen($currency) !== 3) {
-            $currency = 'SDG';
-        }
+        $currency = PlatformMoney::normalizePlatformCurrency(
+            (string) $this->input('currency', 'SDG'),
+        );
 
         $this->merge([
             'description' => is_string($description) && $description !== ''
@@ -45,7 +44,7 @@ class UpdatePackageRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
             'price' => ['required', 'integer', 'min:0'],
-            'currency' => ['nullable', 'string', 'size:3'],
+            'currency' => ['nullable', 'string', 'size:3', Rule::in(PlatformMoney::PLATFORM_CURRENCIES)],
             'billing_period' => ['required', 'string', 'max:50'],
             'job_credits' => ['required', 'integer', 'min:0'],
             'featured_credits' => ['required', 'integer', 'min:0'],

@@ -132,7 +132,7 @@ export default function EmployerJobEditor({
         category: job?.category ?? '',
         country: job?.country ?? '',
         location: job?.location ?? '',
-        employment_type: job?.employment_type ?? options.employmentTypes[0]?.value ?? 'full_time',
+        employment_type: job?.employment_type ?? '',
         experience_level: job?.experience_level ?? '',
         salary_range: job?.salary_range ?? '',
         description: job?.description ?? '',
@@ -162,6 +162,123 @@ export default function EmployerJobEditor({
         { id: 3, label: t('employer.job_editor.step.requirements') },
         { id: 4, label: t('employer.job_editor.step.preview') },
     ];
+
+    const stepFields: Record<number, Array<keyof typeof form.data>> = {
+        1: [
+            'title',
+            'category',
+            'employment_type',
+            'location',
+            'experience_level',
+        ],
+        2: [],
+        3: [],
+        4: [],
+    };
+
+    const fieldErrorMessage = (
+        field: keyof typeof form.data,
+    ): string | null => {
+        const value = String(form.data[field] ?? '').trim();
+
+        if (value !== '') {
+            return null;
+        }
+
+        switch (field) {
+            case 'title':
+                return t('employer.job_editor.validation.title');
+            case 'category':
+                return t('employer.job_editor.validation.category');
+            case 'employment_type':
+                return t('employer.job_editor.validation.employment_type');
+            case 'location':
+                return t('employer.job_editor.validation.location');
+            case 'experience_level':
+                return t('employer.job_editor.validation.experience_level');
+            default:
+                return null;
+        }
+    };
+
+    const validateStep = (stepId: number): boolean => {
+        const fields = stepFields[stepId] ?? [];
+        const nextErrors: Partial<Record<keyof typeof form.data, string>> = {};
+
+        for (const field of fields) {
+            const message = fieldErrorMessage(field);
+
+            if (message !== null) {
+                nextErrors[field] = message;
+            }
+        }
+
+        if (fields.length > 0) {
+            form.clearErrors(...fields);
+        }
+
+        if (Object.keys(nextErrors).length > 0) {
+            form.setError(nextErrors as Record<string, string>);
+
+            return false;
+        }
+
+        return true;
+    };
+
+    const stepForField = (field: string): number => {
+        for (const [stepId, fields] of Object.entries(stepFields)) {
+            if (fields.includes(field as keyof typeof form.data)) {
+                return Number(stepId);
+            }
+        }
+
+        return 1;
+    };
+
+    const goToStep = (target: number): void => {
+        if (target === step) {
+            return;
+        }
+
+        if (target < step) {
+            setStep(target);
+
+            return;
+        }
+
+        for (let current = step; current < target; current++) {
+            if (!validateStep(current)) {
+                setStep(current);
+
+                return;
+            }
+        }
+
+        setStep(target);
+    };
+
+    useEffect(() => {
+        const errorFields = Object.keys(form.errors);
+
+        if (errorFields.length === 0) {
+            return;
+        }
+
+        const firstErrorStep = Math.min(
+            ...errorFields.map((field) => stepForField(field)),
+        );
+
+        if (
+            firstErrorStep !== step &&
+            firstErrorStep >= 1 &&
+            firstErrorStep <= 4
+        ) {
+            setStep(firstErrorStep);
+        }
+        // Only react when validation errors change.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [form.errors]);
 
     const pageTitle = isEdit
         ? t('employer.job_editor.title_edit')
@@ -439,7 +556,7 @@ export default function EmployerJobEditor({
                         <div key={item.id} className="flex items-center gap-3">
                             <button
                                 type="button"
-                                onClick={() => setStep(item.id)}
+                                onClick={() => goToStep(item.id)}
                                 className="flex cursor-pointer items-center gap-2"
                             >
                                 <span
@@ -499,8 +616,17 @@ export default function EmployerJobEditor({
                     onSubmit={(event) => {
                         event.preventDefault();
                         if (step < 4) {
+                            if (!validateStep(step)) {
+                                return;
+                            }
                             setStep(step + 1);
                             return;
+                        }
+                        for (let current = 1; current <= 3; current++) {
+                            if (!validateStep(current)) {
+                                setStep(current);
+                                return;
+                            }
                         }
                         submit(true);
                     }}
@@ -592,6 +718,11 @@ export default function EmployerJobEditor({
                                         }
                                         className={selectClass}
                                     >
+                                        <option value="">
+                                            {t(
+                                                'employer.job_editor.field.select_job_type',
+                                            )}
+                                        </option>
                                         {options.employmentTypes.map((item) => (
                                             <option
                                                 key={item.value}
@@ -660,6 +791,7 @@ export default function EmployerJobEditor({
                                     label={t(
                                         'employer.job_editor.field.experience',
                                     )}
+                                    error={form.errors.experience_level}
                                 >
                                     <NativeSelect
                                         value={form.data.experience_level}
@@ -1336,7 +1468,20 @@ export default function EmployerJobEditor({
                                     <button
                                         type="button"
                                         disabled={form.processing}
-                                        onClick={() => submit(false)}
+                                        onClick={() => {
+                                            for (
+                                                let current = 1;
+                                                current <= 3;
+                                                current++
+                                            ) {
+                                                if (!validateStep(current)) {
+                                                    setStep(current);
+
+                                                    return;
+                                                }
+                                            }
+                                            submit(false);
+                                        }}
                                         className="cursor-pointer rounded-xl border border-[#e2e8f0] px-4 py-2.5 text-sm font-semibold text-[#364153]"
                                     >
                                         {t('employer.job_editor.save_draft')}

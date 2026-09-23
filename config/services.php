@@ -41,15 +41,7 @@ return [
         'base_url' => env('WHEN_I_WORK_BASE_URL', 'https://api.wheniwork.com/2/'),
     ],
 
-    'stripe' => [
-        'key' => env('STRIPE_KEY'),
-        'secret' => env('STRIPE_SECRET'),
-        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
-        'api_version' => env('STRIPE_API_VERSION', '2026-07-29.dahlia'),
-    ],
-
     'yallapay' => [
-        // Set false to force Stripe while YallaPay credentials are fixed with their support.
         'enabled' => env('YALLAPAY_ENABLED', true),
         'env' => env('YALLAPAY_ENV', 'sandbox'),
         'sandbox_url' => env('YALLAPAY_SANDBOX_URL', 'https://gateway-dev.yallapaysudan.com/api/v1'),

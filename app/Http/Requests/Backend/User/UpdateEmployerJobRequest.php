@@ -65,7 +65,7 @@ class UpdateEmployerJobRequest extends FormRequest
                 ),
             ],
             'category' => [
-                'nullable',
+                'required',
                 'string',
                 'max:100',
                 Rule::exists('job_taxonomies', 'slug')->where(
@@ -73,7 +73,7 @@ class UpdateEmployerJobRequest extends FormRequest
                 ),
             ],
             'location' => [
-                'nullable',
+                'required',
                 'string',
                 'max:100',
                 Rule::exists('job_taxonomies', 'slug')->where(
@@ -88,7 +88,7 @@ class UpdateEmployerJobRequest extends FormRequest
                     fn ($query) => $query->where('type', JobTaxonomyType::EmploymentType->value)->where('is_active', true)
                 ),
             ],
-            'experience_level' => ['nullable', 'string', 'max:50'],
+            'experience_level' => ['required', 'string', 'max:50'],
             'salary_range' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:20000'],
             'requirements' => ['nullable', 'string'],
@@ -107,11 +107,14 @@ class UpdateEmployerJobRequest extends FormRequest
     {
         return [
             'title.required' => 'Please enter a job title.',
+            'category.required' => 'Please choose a position area.',
+            'category.exists' => 'Please choose a valid position area.',
+            'location.required' => 'Please choose a duty station.',
+            'location.exists' => 'Please choose a valid duty station.',
             'employment_type.required' => 'Please choose a job type.',
             'employment_type.exists' => 'Please choose a valid job type.',
+            'experience_level.required' => 'Please choose an experience level.',
             'country.exists' => 'Please choose a valid country.',
-            'location.exists' => 'Please choose a valid duty station.',
-            'category.exists' => 'Please choose a valid position area.',
             'logo.image' => 'The job logo must be an image.',
             'logo.mimes' => 'The job logo must be a JPG, PNG, or WEBP file.',
             'logo.max' => 'The job logo may not be greater than 5MB.',

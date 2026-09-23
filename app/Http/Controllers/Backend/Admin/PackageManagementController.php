@@ -10,7 +10,6 @@ use App\Http\Requests\Backend\Admin\UpdatePackageRequest;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\User;
-use App\Services\Stripe\StripeSubscriptionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,8 +17,6 @@ use Inertia\Response;
 
 class PackageManagementController extends Controller
 {
-    public function __construct(private StripeSubscriptionService $subscriptions) {}
-
     public function index(Request $request): Response
     {
         abort_unless($request->user()?->canManagePackages(), 403);
@@ -83,15 +80,13 @@ class PackageManagementController extends Controller
 
     public function store(StorePackageRequest $request): RedirectResponse
     {
-        $package = Package::query()->create([
+        Package::query()->create([
             ...$request->safe()->except(['is_active', 'is_featured', 'is_public']),
             'currency' => $request->string('currency')->toString() ?: 'SDG',
             'is_active' => $request->boolean('is_active', true),
             'is_featured' => $request->boolean('is_featured'),
             'is_public' => $request->boolean('is_public', true),
         ]);
-
-        $this->subscriptions->syncPackagePrice($package);
 
         return back()->with('success', 'Package created successfully.');
     }
@@ -104,8 +99,6 @@ class PackageManagementController extends Controller
             'is_featured' => $request->boolean('is_featured', $package->is_featured),
             'is_public' => $request->boolean('is_public', $package->is_public),
         ]);
-
-        $this->subscriptions->syncPackagePrice($package->fresh() ?? $package);
 
         return back()->with('success', 'Package updated successfully.');
     }
