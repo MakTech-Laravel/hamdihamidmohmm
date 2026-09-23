@@ -4,6 +4,9 @@ namespace Database\Seeders;
 
 use App\Enums\EmployerAccountStatus;
 use App\Enums\EmployerVerificationStatus;
+use App\Enums\EmployerPackage;
+use App\Enums\JobSeekerAccountStatus;
+use App\Enums\JobSeekerResumeStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\RoleAssigner;
@@ -25,6 +28,9 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('seeker@dev.com'),
                 'email_verified_at' => now(),
                 'role' => UserRole::JobSeeker,
+                'account_status' => JobSeekerAccountStatus::Active,
+                'resume_status' => JobSeekerResumeStatus::Active,
+                'verification_status' => null,
             ],
         );
 
@@ -41,6 +47,8 @@ class UserSeeder extends Seeder
                 'verification_status' => EmployerVerificationStatus::Approved,
                 'account_status' => EmployerAccountStatus::Active,
                 'verified_at' => now(),
+                'package' => EmployerPackage::Professional,
+                'resume_status' => null,
             ],
         );
 
