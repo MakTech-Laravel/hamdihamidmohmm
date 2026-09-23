@@ -13,6 +13,7 @@ enum ActivityAction: string
     case EmployerRejected = 'employer_rejected';
     case JobSeekerSuspended = 'job_seeker_suspended';
     case JobSeekerReactivated = 'job_seeker_reactivated';
+    case AccountDeleted = 'account_deleted';
 
     public function label(): string
     {
@@ -26,6 +27,7 @@ enum ActivityAction: string
             self::EmployerRejected => 'Employer rejected',
             self::JobSeekerSuspended => 'Job seeker suspended',
             self::JobSeekerReactivated => 'Job seeker reactivated',
+            self::AccountDeleted => 'Account deleted',
         };
     }
 }

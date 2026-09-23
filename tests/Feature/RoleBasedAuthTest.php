@@ -10,7 +10,7 @@ test('registration role selector can be rendered', function () {
 test('job seeker registration screen can be rendered', function () {
     $this->get(route('register.role', ['role' => 'job-seeker']))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('auth/register-form')
             ->where('role', UserRole::JobSeeker->value)
             ->where('isEmployer', false));
@@ -19,7 +19,7 @@ test('job seeker registration screen can be rendered', function () {
 test('employer registration screen can be rendered', function () {
     $this->get(route('register.role', ['role' => 'employer']))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('auth/register-form')
             ->where('role', UserRole::Employer->value)
             ->where('isEmployer', true));
@@ -29,6 +29,7 @@ test('job seekers can register and land on the job seeker profile', function () 
     $response = $this->post(route('register.store'), [
         'name' => 'Amina Seeker',
         'email' => 'seeker@example.com',
+        'phone' => '+249900000011',
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::JobSeeker->value,
@@ -50,6 +51,7 @@ test('employers can register and must wait for admin approval', function () {
     $response = $this->post(route('register.store'), [
         'company_name' => 'Horizon Hiring Ltd',
         'email' => 'employer@example.com',
+        'phone' => '+249900000012',
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::Employer->value,
@@ -72,6 +74,7 @@ test('registration requires an accepted terms agreement', function () {
     $this->post(route('register.store'), [
         'name' => 'No Terms User',
         'email' => 'noterms@example.com',
+        'phone' => '+249900000013',
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::JobSeeker->value,

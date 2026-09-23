@@ -87,6 +87,18 @@ export default function EmployerCreate({ options }: Props) {
                                     <InputError message={errors.email} />
                                 </div>
                                 <div className="space-y-1.5">
+                                    <Label htmlFor="phone">
+                                        {t('admin.employers.fields.phone')}
+                                    </Label>
+                                    <Input
+                                        id="phone"
+                                        name="phone"
+                                        type="tel"
+                                        className="rounded-xl"
+                                    />
+                                    <InputError message={errors.phone} />
+                                </div>
+                                <div className="space-y-1.5">
                                     <Label htmlFor="industry">
                                         {t('admin.employers.fields.industry')}
                                     </Label>

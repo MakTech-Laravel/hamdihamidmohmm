@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import {
     approve,
+    edit,
     index,
     reject,
 } from '@/actions/App/Http/Controllers/Backend/Admin/JobManagementController';
@@ -36,6 +37,7 @@ type Job = {
     subtitle?: string | null;
     employer: string;
     employer_email?: string | null;
+    employer_phone?: string | null;
     category: string;
     location: string;
     applications: number;
@@ -103,6 +105,11 @@ export default function JobShow({ job }: { job: Job }) {
                                 <AdminSecondaryButton>
                                     {t('common.back')}
                                 </AdminSecondaryButton>
+                            </Link>
+                            <Link href={edit.url(job.id)}>
+                                <AdminPrimaryButton>
+                                    {t('common.edit')}
+                                </AdminPrimaryButton>
                             </Link>
                             {job.can_review && (
                                 <>
@@ -217,6 +224,10 @@ export default function JobShow({ job }: { job: Job }) {
                             <p className="text-sm text-[#64748b]">
                                 {t('admin.jobs.fields.email')}:{' '}
                                 {job.employer_email || '—'}
+                            </p>
+                            <p className="text-sm text-[#64748b]">
+                                {t('common.phone')}:{' '}
+                                {job.employer_phone || '—'}
                             </p>
                             <p className="text-sm text-[#64748b]">
                                 {t('admin.jobs.fields.industry')}:{' '}

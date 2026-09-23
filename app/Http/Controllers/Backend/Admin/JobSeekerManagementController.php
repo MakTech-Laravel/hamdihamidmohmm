@@ -8,11 +8,13 @@ use App\Enums\JobSeekerResumeStatus;
 use App\Enums\RoleName;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Backend\Admin\ResetUserPasswordRequest;
 use App\Http\Requests\Backend\Admin\StoreJobSeekerRequest;
 use App\Http\Requests\Backend\Admin\UpdateJobSeekerRequest;
 use App\Models\User;
 use App\Support\ActivityLogger;
 use App\Support\RoleAssigner;
+use App\Support\UserAccountLifecycle;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -125,6 +127,7 @@ class JobSeekerManagementController extends Controller
         $user->forceFill([
             'name' => $request->string('name')->toString(),
             'email' => $request->string('email')->toString(),
+            'original_email' => null,
             'phone' => $request->filled('phone') ? $request->string('phone')->toString() : null,
             'location' => $request->filled('location') ? $request->string('location')->toString() : null,
             'resume_status' => JobSeekerResumeStatus::from($request->string('resume_status')->toString()),
@@ -146,6 +149,42 @@ class JobSeekerManagementController extends Controller
 
         return to_route('admin.job-seekers.show', $user)
             ->with('success', 'Job seeker updated successfully.');
+    }
+
+    public function resetPassword(ResetUserPasswordRequest $request, User $user): RedirectResponse
+    {
+        $this->ensureJobSeeker($user);
+
+        $user->forceFill([
+            'password' => $request->string('password')->toString(),
+        ])->save();
+
+        ActivityLogger::log(
+            $user,
+            ActivityAction::PasswordUpdated,
+            'Job seeker password was reset by an administrator.',
+            $request->user(),
+        );
+
+        return back()->with('success', 'Password reset successfully.');
+    }
+
+    public function destroy(Request $request, User $user): RedirectResponse
+    {
+        $this->authorizeAccess($request);
+        $this->ensureJobSeeker($user);
+
+        ActivityLogger::log(
+            $user,
+            ActivityAction::AccountDeleted,
+            'Job seeker account was deleted by an administrator.',
+            $request->user(),
+        );
+
+        UserAccountLifecycle::deleteAccount($user);
+
+        return to_route('admin.job-seekers.index')
+            ->with('success', 'Job seeker account deleted successfully.');
     }
 
     public function suspend(Request $request, User $user): RedirectResponse
@@ -221,7 +260,7 @@ class JobSeekerManagementController extends Controller
             $seekersQuery->each(function (User $seeker) use ($handle): void {
                 fputcsv($handle, [
                     $seeker->name,
-                    $seeker->email,
+                    UserAccountLifecycle::displayEmail($seeker),
                     $seeker->phone,
                     $seeker->location,
                     0,
@@ -274,6 +313,7 @@ class JobSeekerManagementController extends Controller
             $seekersQuery->where(function ($query) use ($search): void {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('original_email', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%")
                     ->orWhere('location', 'like', "%{$search}%");
             });
@@ -294,7 +334,7 @@ class JobSeekerManagementController extends Controller
         return [
             'id' => $seeker->id,
             'name' => $seeker->name,
-            'email' => $seeker->email,
+            'email' => UserAccountLifecycle::displayEmail($seeker),
             'phone' => $seeker->phone ?: '—',
             'location' => $seeker->location ?: '—',
             'applications' => 0,
