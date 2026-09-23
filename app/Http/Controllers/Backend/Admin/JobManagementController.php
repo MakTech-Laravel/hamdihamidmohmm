@@ -73,7 +73,7 @@ class JobManagementController extends Controller
         $jobs = $jobsQuery
             ->paginate(12)
             ->withQueryString()
-            ->through(fn (JobPost $job) => $this->row($job));
+            ->through(fn(JobPost $job) => $this->row($job));
 
         return Inertia::render('backend/Admin/JobManagement', [
             'jobs' => $jobs,
@@ -97,7 +97,7 @@ class JobManagementController extends Controller
                 'requirements' => $jobPost->requirements,
                 'skills' => array_values(array_filter(
                     is_array($jobPost->skills) ? $jobPost->skills : [],
-                    fn (mixed $skill): bool => filled($skill),
+                    fn(mixed $skill): bool => filled($skill),
                 )),
                 'experience_level' => $jobPost->experience_level,
                 'employment_type' => $jobPost->employment_type,
@@ -138,19 +138,12 @@ class JobManagementController extends Controller
                 'requirements' => $jobPost->requirements,
                 'skills' => array_values(array_filter(
                     is_array($jobPost->skills) ? $jobPost->skills : [],
-                    fn (mixed $skill): bool => filled($skill),
+                    fn(mixed $skill): bool => filled($skill),
                 )),
                 'expires_at' => $jobPost->expires_at?->toDateString(),
                 'status' => $jobPost->status?->value ?? JobPostStatus::Pending->value,
             ],
-            'options' => [
-                ...JobTaxonomy::filterOptions(),
-                'experience_levels' => ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'],
-                'statuses' => collect(JobPostStatus::cases())->map(fn (JobPostStatus $status) => [
-                    'value' => $status->value,
-                    'label' => $status->label(),
-                ])->values()->all(),
-            ],
+            'options' => $this->editOptions($jobPost),
         ]);
     }
 
@@ -239,7 +232,7 @@ class JobManagementController extends Controller
     {
         abort_unless($request->user()?->canManageJobs(), 403);
 
-        $filename = 'jobs-'.now()->format('Y-m-d-His').'.csv';
+        $filename = 'jobs-' . now()->format('Y-m-d-His') . '.csv';
 
         return response()->streamDownload(function (): void {
             $handle = fopen('php://output', 'w');
@@ -487,6 +480,64 @@ class JobManagementController extends Controller
                         });
                 })
                 ->count(),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     countries: list<array{value: string, label: string}>,
+     *     dutyStations: list<array{value: string, label: string}>,
+     *     positionAreas: list<array{value: string, label: string}>,
+     *     employmentTypes: list<array{value: string, label: string}>,
+     *     experience_levels: list<string>,
+     *     statuses: list<array{value: string, label: string}>
+     * }
+     */
+    private function editOptions(JobPost $jobPost): array
+    {
+        $options = JobTaxonomy::filterOptions();
+
+        $options['positionAreas'] = $this->withCurrentOption($options['positionAreas'], $jobPost->category);
+        $options['dutyStations'] = $this->withCurrentOption($options['dutyStations'], $jobPost->location);
+        $options['countries'] = $this->withCurrentOption($options['countries'], $jobPost->country);
+        $options['employmentTypes'] = $this->withCurrentOption($options['employmentTypes'], $jobPost->employment_type);
+
+        $experienceLevels = ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'];
+        if (filled($jobPost->experience_level) && ! in_array($jobPost->experience_level, $experienceLevels, true)) {
+            array_unshift($experienceLevels, (string) $jobPost->experience_level);
+        }
+
+        return [
+            ...$options,
+            'experience_levels' => $experienceLevels,
+            'statuses' => collect(JobPostStatus::cases())->map(fn(JobPostStatus $status) => [
+                'value' => $status->value,
+                'label' => $status->label(),
+            ])->values()->all(),
+        ];
+    }
+
+    /**
+     * @param  list<array{value: string, label: string}>  $options
+     * @return list<array{value: string, label: string}>
+     */
+    private function withCurrentOption(array $options, ?string $current): array
+    {
+        if ($current === null || trim($current) === '') {
+            return $options;
+        }
+
+        $exists = collect($options)->contains(
+            fn(array $option): bool => $option['value'] === $current,
+        );
+
+        if ($exists) {
+            return $options;
+        }
+
+        return [
+            ['value' => $current, 'label' => $current . ' (current)'],
+            ...$options,
         ];
     }
 }

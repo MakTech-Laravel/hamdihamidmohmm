@@ -5,6 +5,7 @@ import {
     Pencil,
     Plus,
     Search,
+    Trash2,
     UserRound,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -19,6 +20,15 @@ import {
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
@@ -97,6 +107,7 @@ export default function JobSeekerManagement({
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
     const [search, setSearch] = useState(filters.search ?? '');
+    const [deleting, setDeleting] = useState<JobSeekerRow | null>(null);
 
     const query = useMemo(() => {
         const params = new URLSearchParams();
@@ -326,6 +337,16 @@ export default function JobSeekerManagement({
                                         >
                                             <Pencil className="size-4" />
                                         </Link>
+                                        <button
+                                            type="button"
+                                            className="flex size-8 items-center justify-center rounded-lg border border-[#fee2e2] bg-[#fef2f2] text-[#b91c1c] hover:bg-[#fecaca]"
+                                            aria-label={t(
+                                                'admin.job_seekers.delete_account',
+                                            )}
+                                            onClick={() => setDeleting(row)}
+                                        >
+                                            <Trash2 className="size-4" />
+                                        </button>
                                         {row.can_reactivate ? (
                                             <button
                                                 type="button"
@@ -379,6 +400,53 @@ export default function JobSeekerManagement({
                     />
                 </AdminPanel>
             </div>
+
+            <Dialog
+                open={deleting !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeleting(null);
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t('admin.job_seekers.delete_title')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('admin.job_seekers.delete_confirm')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setDeleting(null)}
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            type="button"
+                            className="bg-[#b91c1c] text-white hover:bg-[#991b1b]"
+                            onClick={() => {
+                                if (deleting === null) {
+                                    return;
+                                }
+
+                                router.delete(
+                                    `/admin/job-seekers/${deleting.id}`,
+                                    {
+                                        onSuccess: () => setDeleting(null),
+                                    },
+                                );
+                            }}
+                        >
+                            {t('admin.job_seekers.delete_account')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AdminPortalLayout>
     );
 }
