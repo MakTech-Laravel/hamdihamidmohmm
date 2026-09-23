@@ -206,7 +206,11 @@ test('publishing is blocked when the current public plan has no remaining credit
     $this->actingAs($employer)
         ->post(route('employer.jobs.store'), [
             'title' => 'Second Role',
+            'category' => 'technology',
+            'location' => 'khartoum',
+            'country' => 'sudan',
             'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
             'publish' => true,
         ])
         ->assertSessionHasErrors('title');
@@ -214,7 +218,11 @@ test('publishing is blocked when the current public plan has no remaining credit
     $this->actingAs($employer)
         ->post(route('employer.jobs.store'), [
             'title' => 'Draft Role',
+            'category' => 'technology',
+            'location' => 'khartoum',
+            'country' => 'sudan',
             'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
             'publish' => false,
         ])
         ->assertRedirect(route('employer.jobs'));

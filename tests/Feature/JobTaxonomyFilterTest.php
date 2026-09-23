@@ -12,14 +12,14 @@ test('jobs page exposes admin managed filter options', function () {
 
     $this->get(route('jobs'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/jobs')
             ->has('filterOptions.countries')
             ->has('filterOptions.dutyStations')
             ->has('filterOptions.positionAreas')
             ->has('filterOptions.employmentTypes')
-            ->where('filterOptions.dutyStations', fn ($items) => collect($items)->contains(
-                fn ($item) => ($item['value'] ?? null) === 'khartoum'
+            ->where('filterOptions.dutyStations', fn($items) => collect($items)->contains(
+                fn($item) => ($item['value'] ?? null) === 'khartoum'
             )));
 });
 
@@ -56,7 +56,7 @@ test('jobs page can filter by country duty station and position area slugs', fun
         'types' => ['full_time'],
     ]))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/jobs')
             ->where('filters.country', 'sudan')
             ->where('filters.location', 'khartoum')
@@ -98,6 +98,7 @@ test('employer job create accepts active taxonomy slugs', function () {
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
             'publish' => false,
         ])
         ->assertRedirect(route('employer.jobs'));

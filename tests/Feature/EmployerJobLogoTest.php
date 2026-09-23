@@ -40,7 +40,11 @@ test('employers can attach a job logo while creating a job', function () {
         ->post(route('employer.jobs.store'), [
             'title' => 'Frontend Engineer',
             'subtitle' => 'Build the portal',
+            'category' => 'technology',
+            'location' => 'khartoum',
+            'country' => 'sudan',
             'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
             'publish' => false,
             'logo' => $logo,
         ])
