@@ -42,6 +42,7 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             'name' => $isEmployer ? ['nullable', 'string', 'max:255'] : $this->nameRules(),
             'email' => $this->emailRules(),
+            'phone' => ['required', 'string', 'max:30'],
             'password' => $this->passwordRules(),
             'password_confirmation' => $this->profilePasswordConfirmationRules(),
             'role' => ['required', 'integer', Rule::in(UserRole::registrableValues())],
@@ -51,6 +52,7 @@ class CreateNewUser implements CreatesNewUsers
             'role.required' => 'Please select whether you are a job seeker or an employer.',
             'role.in' => 'Please select a valid account type.',
             'company_name.required' => 'Please enter your company or organization name.',
+            'phone.required' => 'Please enter your phone number.',
             'terms.accepted' => 'You must agree to the Terms & Conditions and Privacy Policy.',
         ])->validate();
 
@@ -63,6 +65,7 @@ class CreateNewUser implements CreatesNewUsers
             'company_name' => $isEmployer ? $displayName : null,
             'contact_name' => $isEmployer ? $displayName : null,
             'email' => $input['email'],
+            'phone' => $input['phone'],
             'password' => $input['password'],
             'role' => UserRole::from($role),
             'verification_status' => $isEmployer ? EmployerVerificationStatus::Pending : null,

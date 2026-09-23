@@ -22,6 +22,7 @@ type Employer = {
     company_name: string;
     contact_name: string;
     email: string;
+    phone: string;
     industry: string;
     package_value: string;
     status_value: string | null;
@@ -115,6 +116,23 @@ export default function EmployerEdit({ employer, options }: Props) {
                                         className="rounded-xl"
                                     />
                                     <InputError message={errors.email} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="phone">
+                                        {t('admin.employers.fields.phone')}
+                                    </Label>
+                                    <Input
+                                        id="phone"
+                                        name="phone"
+                                        type="tel"
+                                        defaultValue={
+                                            employer.phone === '—'
+                                                ? ''
+                                                : employer.phone
+                                        }
+                                        className="rounded-xl"
+                                    />
+                                    <InputError message={errors.phone} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="industry">

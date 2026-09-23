@@ -50,6 +50,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/employers/{user}', [EmployerManagementController::class, 'update'])->name('employers.update');
         Route::post('/employers/{user}/approve', [EmployerManagementController::class, 'approve'])->name('employers.approve');
         Route::post('/employers/{user}/reject', [EmployerManagementController::class, 'reject'])->name('employers.reject');
+        Route::post('/employers/{user}/reset-password', [EmployerManagementController::class, 'resetPassword'])->name('employers.reset-password');
+        Route::delete('/employers/{user}', [EmployerManagementController::class, 'destroy'])->name('employers.destroy');
 
         Route::get('/job-seekers/export', [JobSeekerManagementController::class, 'export'])->name('job-seekers.export');
         Route::get('/job-seekers/create', [JobSeekerManagementController::class, 'create'])->name('job-seekers.create');
@@ -60,9 +62,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/job-seekers/{user}', [JobSeekerManagementController::class, 'update'])->name('job-seekers.update');
         Route::post('/job-seekers/{user}/suspend', [JobSeekerManagementController::class, 'suspend'])->name('job-seekers.suspend');
         Route::post('/job-seekers/{user}/reactivate', [JobSeekerManagementController::class, 'reactivate'])->name('job-seekers.reactivate');
+        Route::post('/job-seekers/{user}/reset-password', [JobSeekerManagementController::class, 'resetPassword'])->name('job-seekers.reset-password');
+        Route::delete('/job-seekers/{user}', [JobSeekerManagementController::class, 'destroy'])->name('job-seekers.destroy');
         Route::get('/jobs/export', [JobManagementController::class, 'export'])->name('jobs.export');
         Route::get('/jobs', [JobManagementController::class, 'index'])->name('jobs.index');
         Route::get('/jobs/{jobPost}/applicants/{user}/resume', [JobManagementController::class, 'downloadApplicantResume'])->name('jobs.applicant-resume');
+        Route::get('/jobs/{jobPost}/edit', [JobManagementController::class, 'edit'])->name('jobs.edit');
+        Route::put('/jobs/{jobPost}', [JobManagementController::class, 'update'])->name('jobs.update');
         Route::get('/jobs/{jobPost}', [JobManagementController::class, 'show'])->name('jobs.show');
         Route::post('/jobs/{jobPost}/approve', [JobManagementController::class, 'approve'])->name('jobs.approve');
         Route::post('/jobs/{jobPost}/reject', [JobManagementController::class, 'reject'])->name('jobs.reject');

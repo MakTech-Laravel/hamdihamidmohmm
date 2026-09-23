@@ -15,7 +15,7 @@ test('admins can view the employer management page', function () {
     $this->actingAs($admin)
         ->get(route('admin.employers.index'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/EmployerManagement')
             ->has('employers')
             ->has('stats')
@@ -55,7 +55,7 @@ test('admins can view and edit an employer', function () {
     $this->actingAs($admin)
         ->get(route('admin.employers.show', $employer))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/EmployerShow')
             ->where('employer.company_name', 'Desert Finance Group'));
 
@@ -92,7 +92,9 @@ test('admins can approve a pending employer', function () {
 
 test('admins can reject a pending employer with a reason', function () {
     $admin = User::factory()->admin()->create();
-    $employer = User::factory()->pendingEmployer()->create();
+    $employer = User::factory()->pendingEmployer()->create([
+        'email' => 'reject-me@example.com',
+    ]);
 
     $this->actingAs($admin)
         ->post(route('admin.employers.reject', $employer), [
@@ -100,9 +102,13 @@ test('admins can reject a pending employer with a reason', function () {
         ])
         ->assertRedirect();
 
-    expect($employer->fresh()->verification_status)->toBe(EmployerVerificationStatus::Rejected)
-        ->and($employer->fresh()->account_status)->toBe(EmployerAccountStatus::Rejected)
-        ->and($employer->fresh()->rejection_reason)->toBe('Incomplete trade license.');
+    $employer->refresh();
+
+    expect($employer->verification_status)->toBe(EmployerVerificationStatus::Rejected)
+        ->and($employer->account_status)->toBe(EmployerAccountStatus::Rejected)
+        ->and($employer->rejection_reason)->toBe('Incomplete trade license.')
+        ->and($employer->original_email)->toBe('reject-me@example.com')
+        ->and($employer->email)->not->toBe('reject-me@example.com');
 });
 
 test('admins cannot approve an already active employer', function () {

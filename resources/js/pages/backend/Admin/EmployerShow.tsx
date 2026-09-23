@@ -18,6 +18,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
@@ -30,6 +31,7 @@ type Employer = {
     contact: string;
     contact_name: string;
     email: string;
+    phone: string;
     verification: string;
     package: string;
     jobs: number;
@@ -87,11 +89,16 @@ export default function EmployerShow({ employer, activities }: Props) {
     const { t } = useLocale();
     const [rejectOpen, setRejectOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
+    const [resetOpen, setResetOpen] = useState(false);
+    const [password, setPassword] = useState('');
+    const [passwordConfirmation, setPasswordConfirmation] = useState('');
+    const [deleteOpen, setDeleteOpen] = useState(false);
 
     const facts = [
         [t('common.company'), employer.company_name],
         [t('admin.employers.cols.contact'), employer.contact_name],
         [t('common.email'), employer.email],
+        [t('common.phone'), employer.phone],
         [t('admin.employers.fields.industry'), employer.industry],
         [t('admin.employers.cols.package'), employer.package],
         [t('admin.dashboard.active_jobs'), String(employer.jobs)],
@@ -124,6 +131,21 @@ export default function EmployerShow({ employer, activities }: Props) {
                                     {t('common.edit')}
                                 </AdminPrimaryButton>
                             </Link>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="rounded-xl"
+                                onClick={() => setResetOpen(true)}
+                            >
+                                {t('admin.employers.reset_password')}
+                            </Button>
+                            <Button
+                                type="button"
+                                className="rounded-xl bg-[#b91c1c] text-white hover:bg-[#991b1b]"
+                                onClick={() => setDeleteOpen(true)}
+                            >
+                                {t('admin.employers.delete_account')}
+                            </Button>
                         </div>
                     }
                 />
@@ -277,6 +299,115 @@ export default function EmployerShow({ employer, activities }: Props) {
                             }
                         >
                             {t('common.reject')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t('admin.employers.reset_password_title')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('admin.employers.reset_password_prompt')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="reset_password">
+                                {t('admin.employers.fields.new_password')}
+                            </Label>
+                            <PasswordInput
+                                id="reset_password"
+                                value={password}
+                                onChange={(event) =>
+                                    setPassword(event.target.value)
+                                }
+                                className="rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="reset_password_confirmation">
+                                {t('admin.employers.fields.confirm_password')}
+                            </Label>
+                            <PasswordInput
+                                id="reset_password_confirmation"
+                                value={passwordConfirmation}
+                                onChange={(event) =>
+                                    setPasswordConfirmation(event.target.value)
+                                }
+                                className="rounded-xl"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setResetOpen(false)}
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            type="button"
+                            disabled={
+                                password.trim() === '' ||
+                                password !== passwordConfirmation
+                            }
+                            onClick={() =>
+                                router.post(
+                                    `/admin/employers/${employer.id}/reset-password`,
+                                    {
+                                        password,
+                                        password_confirmation:
+                                            passwordConfirmation,
+                                    },
+                                    {
+                                        onSuccess: () => {
+                                            setResetOpen(false);
+                                            setPassword('');
+                                            setPasswordConfirmation('');
+                                        },
+                                    },
+                                )
+                            }
+                        >
+                            {t('admin.employers.reset_password')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t('admin.employers.delete_title')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('admin.employers.delete_confirm')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setDeleteOpen(false)}
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            type="button"
+                            className="bg-[#b91c1c] text-white hover:bg-[#991b1b]"
+                            onClick={() =>
+                                router.delete(
+                                    `/admin/employers/${employer.id}`,
+                                )
+                            }
+                        >
+                            {t('admin.employers.delete_account')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
