@@ -26,6 +26,7 @@ class StoreEmployerRequest extends FormRequest
             'company_name' => ['required', 'string', 'max:255'],
             'contact_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
+            'phone' => ['nullable', 'string', 'max:30'],
             'industry' => ['nullable', 'string', 'max:255'],
             'package' => ['required', 'string', Rule::in(collect(EmployerPackage::cases())->map->value->all())],
             'account_status' => ['required', 'string', Rule::in(collect(EmployerAccountStatus::cases())->map->value->all())],

@@ -1,8 +1,9 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { Check, Download, Eye, Search, X } from 'lucide-react';
+import { Check, Download, Eye, Pencil, Search, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
+    edit,
     exportMethod,
     index,
     show,
@@ -309,6 +310,19 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                                             }
                                         >
                                             <Eye
+                                                className="size-[13px]"
+                                                strokeWidth={2}
+                                            />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="flex h-[23px] items-center rounded-[6px] px-2.5 py-[5px] text-[#64748b] hover:bg-[#f8fafc]"
+                                            aria-label={t('admin.jobs.edit')}
+                                            onClick={() =>
+                                                router.visit(edit.url(row.id))
+                                            }
+                                        >
+                                            <Pencil
                                                 className="size-[13px]"
                                                 strokeWidth={2}
                                             />

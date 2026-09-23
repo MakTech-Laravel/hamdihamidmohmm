@@ -1,4 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 
 import {
     AdminPageHeader,
@@ -8,6 +9,16 @@ import {
     AdminStatusBadge,
 } from '@/components/admin-portal/ui';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
@@ -58,6 +69,10 @@ function tone(
 export default function JobSeekerShow({ jobSeeker, activities }: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const [resetOpen, setResetOpen] = useState(false);
+    const [password, setPassword] = useState('');
+    const [passwordConfirmation, setPasswordConfirmation] = useState('');
+    const [deleteOpen, setDeleteOpen] = useState(false);
 
     const facts = [
         [t('admin.job_seekers.fields.name'), jobSeeker.name],
@@ -99,6 +114,21 @@ export default function JobSeekerShow({ jobSeeker, activities }: Props) {
                                     {t('common.edit')}
                                 </AdminPrimaryButton>
                             </Link>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="rounded-xl"
+                                onClick={() => setResetOpen(true)}
+                            >
+                                {t('admin.job_seekers.reset_password')}
+                            </Button>
+                            <Button
+                                type="button"
+                                className="rounded-xl bg-[#b91c1c] text-white hover:bg-[#991b1b]"
+                                onClick={() => setDeleteOpen(true)}
+                            >
+                                {t('admin.job_seekers.delete_account')}
+                            </Button>
                         </div>
                     }
                 />
@@ -197,6 +227,115 @@ export default function JobSeekerShow({ jobSeeker, activities }: Props) {
                     )}
                 </AdminPanel>
             </div>
+
+            <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t('admin.job_seekers.reset_password_title')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('admin.job_seekers.reset_password_prompt')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="reset_password">
+                                {t('admin.employers.fields.new_password')}
+                            </Label>
+                            <PasswordInput
+                                id="reset_password"
+                                value={password}
+                                onChange={(event) =>
+                                    setPassword(event.target.value)
+                                }
+                                className="rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="reset_password_confirmation">
+                                {t('admin.employers.fields.confirm_password')}
+                            </Label>
+                            <PasswordInput
+                                id="reset_password_confirmation"
+                                value={passwordConfirmation}
+                                onChange={(event) =>
+                                    setPasswordConfirmation(event.target.value)
+                                }
+                                className="rounded-xl"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setResetOpen(false)}
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            type="button"
+                            disabled={
+                                password.trim() === '' ||
+                                password !== passwordConfirmation
+                            }
+                            onClick={() =>
+                                router.post(
+                                    `/admin/job-seekers/${jobSeeker.id}/reset-password`,
+                                    {
+                                        password,
+                                        password_confirmation:
+                                            passwordConfirmation,
+                                    },
+                                    {
+                                        onSuccess: () => {
+                                            setResetOpen(false);
+                                            setPassword('');
+                                            setPasswordConfirmation('');
+                                        },
+                                    },
+                                )
+                            }
+                        >
+                            {t('admin.job_seekers.reset_password')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t('admin.job_seekers.delete_title')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('admin.job_seekers.delete_confirm')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setDeleteOpen(false)}
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            type="button"
+                            className="bg-[#b91c1c] text-white hover:bg-[#991b1b]"
+                            onClick={() =>
+                                router.delete(
+                                    `/admin/job-seekers/${jobSeeker.id}`,
+                                )
+                            }
+                        >
+                            {t('admin.job_seekers.delete_account')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AdminPortalLayout>
     );
 }

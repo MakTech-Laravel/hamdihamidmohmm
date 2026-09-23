@@ -126,6 +126,25 @@ export default function RegisterForm({
 
                         <div className="space-y-1.5">
                             <Label
+                                htmlFor="phone"
+                                className="text-sm font-semibold text-[#364153]"
+                            >
+                                {t('auth.phone')}
+                            </Label>
+                            <Input
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                required
+                                autoComplete="tel"
+                                placeholder={t('auth.phone_placeholder')}
+                                className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#0057c8] focus-visible:ring-[#0057c8]/30"
+                            />
+                            <InputError message={errors.phone} />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label
                                 htmlFor="password"
                                 className="text-sm font-semibold text-[#364153]"
                             >

@@ -48,6 +48,7 @@ class UpdateEmployerRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($targetId),
             ],
+            'phone' => ['nullable', 'string', 'max:30'],
             'industry' => ['nullable', 'string', 'max:255'],
             'package' => ['required', 'string', Rule::in(collect(EmployerPackage::cases())->map->value->all())],
             'account_status' => ['required', 'string', Rule::in(collect(EmployerAccountStatus::cases())->map->value->all())],

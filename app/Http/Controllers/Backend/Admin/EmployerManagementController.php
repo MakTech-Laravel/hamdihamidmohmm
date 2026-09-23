@@ -10,12 +10,14 @@ use App\Enums\RoleName;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\RejectEmployerRequest;
+use App\Http\Requests\Backend\Admin\ResetUserPasswordRequest;
 use App\Http\Requests\Backend\Admin\StoreEmployerRequest;
 use App\Http\Requests\Backend\Admin\UpdateEmployerRequest;
 use App\Models\User;
 use App\Support\ActivityLogger;
 use App\Support\PortalNotifier;
 use App\Support\RoleAssigner;
+use App\Support\UserAccountLifecycle;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -47,6 +49,8 @@ class EmployerManagementController extends Controller
                     ->orWhere('name', 'like', "%{$search}%")
                     ->orWhere('contact_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('original_email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
                     ->orWhere('industry', 'like', "%{$search}%");
             });
         }
@@ -85,6 +89,7 @@ class EmployerManagementController extends Controller
             'contact_name' => $request->string('contact_name')->toString(),
             'company_name' => $request->string('company_name')->toString(),
             'email' => $request->string('email')->toString(),
+            'phone' => $request->filled('phone') ? $request->string('phone')->toString() : null,
             'password' => $request->string('password')->toString(),
             'email_verified_at' => now(),
             'role' => UserRole::Employer,
@@ -152,6 +157,8 @@ class EmployerManagementController extends Controller
             'contact_name' => $request->string('contact_name')->toString(),
             'company_name' => $request->string('company_name')->toString(),
             'email' => $request->string('email')->toString(),
+            'original_email' => null,
+            'phone' => $request->filled('phone') ? $request->string('phone')->toString() : null,
             'industry' => $request->filled('industry') ? $request->string('industry')->toString() : null,
             'package' => EmployerPackage::from($request->string('package')->toString()),
             'account_status' => $accountStatus,
@@ -211,23 +218,61 @@ class EmployerManagementController extends Controller
 
         $reason = $request->string('rejection_reason')->toString();
 
+        PortalNotifier::verificationRejected($user, $reason);
+
         $user->forceFill([
             'verification_status' => EmployerVerificationStatus::Rejected,
             'account_status' => EmployerAccountStatus::Rejected,
             'rejection_reason' => $reason,
         ])->save();
 
+        UserAccountLifecycle::releaseEmail($user);
+
         ActivityLogger::log(
             $user,
             ActivityAction::EmployerRejected,
             'Employer verification was rejected.',
             $request->user(),
-            ['reason' => $user->rejection_reason],
+            ['reason' => $reason],
         );
 
-        PortalNotifier::verificationRejected($user, $reason);
-
         return back()->with('success', 'Employer rejected successfully.');
+    }
+
+    public function resetPassword(ResetUserPasswordRequest $request, User $user): RedirectResponse
+    {
+        $this->ensureEmployer($user);
+
+        $user->forceFill([
+            'password' => $request->string('password')->toString(),
+        ])->save();
+
+        ActivityLogger::log(
+            $user,
+            ActivityAction::PasswordUpdated,
+            'Employer password was reset by an administrator.',
+            $request->user(),
+        );
+
+        return back()->with('success', 'Password reset successfully.');
+    }
+
+    public function destroy(Request $request, User $user): RedirectResponse
+    {
+        $this->authorizeAccess($request);
+        $this->ensureEmployer($user);
+
+        ActivityLogger::log(
+            $user,
+            ActivityAction::AccountDeleted,
+            'Employer account was deleted by an administrator.',
+            $request->user(),
+        );
+
+        UserAccountLifecycle::deleteAccount($user);
+
+        return to_route('admin.employers.index')
+            ->with('success', 'Employer account deleted successfully.');
     }
 
     public function export(Request $request): StreamedResponse
@@ -253,6 +298,8 @@ class EmployerManagementController extends Controller
                     ->orWhere('name', 'like', "%{$search}%")
                     ->orWhere('contact_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('original_email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
                     ->orWhere('industry', 'like', "%{$search}%");
             });
         }
@@ -271,6 +318,7 @@ class EmployerManagementController extends Controller
                 'Industry',
                 'Contact',
                 'Email',
+                'Phone',
                 'Verification',
                 'Package',
                 'Status',
@@ -282,7 +330,8 @@ class EmployerManagementController extends Controller
                     $employer->company_name,
                     $employer->industry,
                     $employer->contact_name ?: $employer->name,
-                    $employer->email,
+                    UserAccountLifecycle::displayEmail($employer),
+                    $employer->phone,
                     $employer->verification_status?->label(),
                     $employer->package?->label(),
                     $employer->account_status?->label(),
@@ -326,7 +375,8 @@ class EmployerManagementController extends Controller
             'company_name' => $employer->company_name ?: $employer->name,
             'industry' => $employer->industry ?: '—',
             'contact' => $employer->contact_name ?: $employer->name,
-            'email' => $employer->email,
+            'email' => UserAccountLifecycle::displayEmail($employer),
+            'phone' => $employer->phone ?: '—',
             'verification' => $employer->verification_status?->label() ?? 'Pending',
             'verification_value' => $employer->verification_status?->value,
             'package' => $employer->package?->label() ?? 'Starter',

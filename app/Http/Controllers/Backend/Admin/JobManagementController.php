@@ -6,12 +6,15 @@ use App\Enums\JobApplicationStatus;
 use App\Enums\JobPostStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\RejectJobPostRequest;
+use App\Http\Requests\Backend\Admin\UpdateAdminJobRequest;
 use App\Models\JobApplication;
 use App\Models\JobPost;
+use App\Models\JobTaxonomy;
 use App\Models\User;
 use App\Support\ApplicantProfilePreview;
 use App\Support\JobSeekerResume;
 use App\Support\PortalNotifier;
+use App\Support\UserAccountLifecycle;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -101,7 +104,10 @@ class JobManagementController extends Controller
                 'salary_range' => $jobPost->salary_range,
                 'rejection_reason' => $jobPost->rejection_reason,
                 'expires_at' => $jobPost->expires_at?->toDateString(),
-                'employer_email' => $jobPost->employer?->email,
+                'employer_email' => $jobPost->employer
+                    ? UserAccountLifecycle::displayEmail($jobPost->employer)
+                    : null,
+                'employer_phone' => $jobPost->employer?->phone,
                 'logo_url' => $jobPost->hasLogo() ? $jobPost->logoUrl() : null,
                 'company_logo_url' => $jobPost->employer?->hasCompanyLogo()
                     ? $jobPost->employer->companyLogoUrl()
@@ -111,6 +117,57 @@ class JobManagementController extends Controller
                 'company_website' => $jobPost->employer?->website,
             ],
         ]);
+    }
+
+    public function edit(Request $request, JobPost $jobPost): Response
+    {
+        abort_unless($request->user()?->canManageJobs(), 403);
+
+        return Inertia::render('backend/Admin/JobEdit', [
+            'job' => [
+                'id' => $jobPost->id,
+                'title' => $jobPost->title,
+                'subtitle' => $jobPost->subtitle,
+                'category' => $jobPost->category,
+                'country' => $jobPost->country,
+                'location' => $jobPost->location,
+                'employment_type' => $jobPost->employment_type,
+                'experience_level' => $jobPost->experience_level,
+                'salary_range' => $jobPost->salary_range,
+                'description' => $jobPost->description,
+                'requirements' => $jobPost->requirements,
+                'skills' => array_values(array_filter(
+                    is_array($jobPost->skills) ? $jobPost->skills : [],
+                    fn (mixed $skill): bool => filled($skill),
+                )),
+                'expires_at' => $jobPost->expires_at?->toDateString(),
+                'status' => $jobPost->status?->value ?? JobPostStatus::Pending->value,
+            ],
+            'options' => [
+                ...JobTaxonomy::filterOptions(),
+                'experience_levels' => ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'],
+                'statuses' => collect(JobPostStatus::cases())->map(fn (JobPostStatus $status) => [
+                    'value' => $status->value,
+                    'label' => $status->label(),
+                ])->values()->all(),
+            ],
+        ]);
+    }
+
+    public function update(UpdateAdminJobRequest $request, JobPost $jobPost): RedirectResponse
+    {
+        $status = JobPostStatus::from($request->string('status')->toString());
+
+        $jobPost->forceFill([
+            ...$request->safe()->except(['status']),
+            'status' => $status,
+            'rejection_reason' => $status === JobPostStatus::Rejected
+                ? $jobPost->rejection_reason
+                : null,
+        ])->save();
+
+        return to_route('admin.jobs.show', $jobPost)
+            ->with('success', 'Job updated successfully.');
     }
 
     public function approve(Request $request, JobPost $jobPost): RedirectResponse
@@ -321,7 +378,9 @@ class JobManagementController extends Controller
             'current_title' => null,
             'experience_years' => '—',
             'status' => $job->effectiveStatus()->label(),
-            'email' => $job->employer?->email ?: '—',
+            'email' => $job->employer
+                ? UserAccountLifecycle::displayEmail($job->employer)
+                : '—',
             'phone' => $job->employer?->phone ?: '—',
             'location' => $job->location ?: '—',
             'preview_location' => $job->location ?: '—',

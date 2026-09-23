@@ -15,6 +15,7 @@ test('employer registration stays pending, logs out, and notifies admins', funct
     $this->post(route('register.store'), [
         'company_name' => 'Pending Co Ltd',
         'email' => 'pending-employer@example.com',
+        'phone' => '+249900000014',
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::Employer->value,
@@ -74,6 +75,7 @@ test('job seeker registration is unaffected by employer approval flow', function
     $this->post(route('register.store'), [
         'name' => 'Free Seeker',
         'email' => 'free-seeker@example.com',
+        'phone' => '+249900000015',
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::JobSeeker->value,

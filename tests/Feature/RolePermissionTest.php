@@ -18,6 +18,7 @@ test('registration assigns spatie roles for job seekers and employers', function
     $this->post(route('register.store'), [
         'name' => 'Amina Seeker',
         'email' => 'seeker-role@example.com',
+        'phone' => '+249900000016',
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::JobSeeker->value,
@@ -34,6 +35,7 @@ test('registration assigns spatie roles for job seekers and employers', function
     $this->post(route('register.store'), [
         'company_name' => 'Acme Hiring',
         'email' => 'employer-role@example.com',
+        'phone' => '+249900000017',
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::Employer->value,
