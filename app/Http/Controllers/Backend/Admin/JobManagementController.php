@@ -7,6 +7,8 @@ use App\Enums\JobPostStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\RejectJobPostRequest;
 use App\Http\Requests\Backend\Admin\UpdateAdminJobRequest;
+use App\Http\Requests\Backend\Admin\UploadAdminJobDescriptionAttachmentRequest;
+use App\Http\Requests\Backend\Admin\UploadAdminJobLogoRequest;
 use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\JobTaxonomy;
@@ -15,8 +17,10 @@ use App\Support\ApplicantProfilePreview;
 use App\Support\JobSeekerResume;
 use App\Support\PortalNotifier;
 use App\Support\UserAccountLifecycle;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -73,7 +77,7 @@ class JobManagementController extends Controller
         $jobs = $jobsQuery
             ->paginate(12)
             ->withQueryString()
-            ->through(fn(JobPost $job) => $this->row($job));
+            ->through(fn (JobPost $job) => $this->row($job));
 
         return Inertia::render('backend/Admin/JobManagement', [
             'jobs' => $jobs,
@@ -97,7 +101,7 @@ class JobManagementController extends Controller
                 'requirements' => $jobPost->requirements,
                 'skills' => array_values(array_filter(
                     is_array($jobPost->skills) ? $jobPost->skills : [],
-                    fn(mixed $skill): bool => filled($skill),
+                    fn (mixed $skill): bool => filled($skill),
                 )),
                 'experience_level' => $jobPost->experience_level,
                 'employment_type' => $jobPost->employment_type,
@@ -128,6 +132,7 @@ class JobManagementController extends Controller
                 'id' => $jobPost->id,
                 'title' => $jobPost->title,
                 'subtitle' => $jobPost->subtitle,
+                'logo_url' => $jobPost->hasLogo() ? $jobPost->logoUrl() : null,
                 'category' => $jobPost->category,
                 'country' => $jobPost->country,
                 'location' => $jobPost->location,
@@ -138,7 +143,7 @@ class JobManagementController extends Controller
                 'requirements' => $jobPost->requirements,
                 'skills' => array_values(array_filter(
                     is_array($jobPost->skills) ? $jobPost->skills : [],
-                    fn(mixed $skill): bool => filled($skill),
+                    fn (mixed $skill): bool => filled($skill),
                 )),
                 'expires_at' => $jobPost->expires_at?->toDateString(),
                 'status' => $jobPost->status?->value ?? JobPostStatus::Pending->value,
@@ -161,6 +166,38 @@ class JobManagementController extends Controller
 
         return to_route('admin.jobs.show', $jobPost)
             ->with('success', 'Job updated successfully.');
+    }
+
+    public function uploadLogo(UploadAdminJobLogoRequest $request, JobPost $jobPost): RedirectResponse
+    {
+        $this->storeJobLogo($jobPost, $request->file('logo'));
+
+        return back()->with('success', 'Job logo updated.');
+    }
+
+    public function destroyLogo(Request $request, JobPost $jobPost): RedirectResponse
+    {
+        abort_unless($request->user()?->canManageJobs(), 403);
+
+        $jobPost->deleteLogoFile();
+        $jobPost->forceFill(['logo_path' => null])->save();
+
+        return back()->with('success', 'Job logo removed.');
+    }
+
+    public function uploadDescriptionAttachment(UploadAdminJobDescriptionAttachmentRequest $request): JsonResponse
+    {
+        $admin = $request->user();
+        $file = $request->file('file');
+
+        abort_unless($admin !== null && $file !== null, 422);
+
+        $path = $file->store('job-description-attachments/admin/'.$admin->id, 'public');
+
+        return response()->json([
+            'url' => '/storage/'.$path,
+            'name' => $file->getClientOriginalName(),
+        ]);
     }
 
     public function approve(Request $request, JobPost $jobPost): RedirectResponse
@@ -232,7 +269,7 @@ class JobManagementController extends Controller
     {
         abort_unless($request->user()?->canManageJobs(), 403);
 
-        $filename = 'jobs-' . now()->format('Y-m-d-His') . '.csv';
+        $filename = 'jobs-'.now()->format('Y-m-d-His').'.csv';
 
         return response()->streamDownload(function (): void {
             $handle = fopen('php://output', 'w');
@@ -510,7 +547,7 @@ class JobManagementController extends Controller
         return [
             ...$options,
             'experience_levels' => $experienceLevels,
-            'statuses' => collect(JobPostStatus::cases())->map(fn(JobPostStatus $status) => [
+            'statuses' => collect(JobPostStatus::cases())->map(fn (JobPostStatus $status) => [
                 'value' => $status->value,
                 'label' => $status->label(),
             ])->values()->all(),
@@ -528,7 +565,7 @@ class JobManagementController extends Controller
         }
 
         $exists = collect($options)->contains(
-            fn(array $option): bool => $option['value'] === $current,
+            fn (array $option): bool => $option['value'] === $current,
         );
 
         if ($exists) {
@@ -536,8 +573,23 @@ class JobManagementController extends Controller
         }
 
         return [
-            ['value' => $current, 'label' => $current . ' (current)'],
+            ['value' => $current, 'label' => $current.' (current)'],
             ...$options,
         ];
+    }
+
+    private function storeJobLogo(JobPost $job, ?UploadedFile $logo): void
+    {
+        if ($logo === null) {
+            return;
+        }
+
+        $job->deleteLogoFile();
+
+        $path = $logo->store('job-logos/'.$job->employer_id, 'public');
+
+        $job->forceFill([
+            'logo_path' => $path,
+        ])->save();
     }
 }

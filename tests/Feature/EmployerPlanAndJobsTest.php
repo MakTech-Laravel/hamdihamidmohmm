@@ -4,6 +4,7 @@ use App\Enums\EmployerPackage;
 use App\Enums\JobPostStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionStatus;
+use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\Package;
 use App\Models\Payment;
@@ -285,6 +286,39 @@ test('employers can duplicate pause and republish jobs they own', function () {
         ->assertRedirect();
 
     expect($job->fresh()->status)->toBe(JobPostStatus::Pending);
+});
+
+test('employers can delete jobs they own', function () {
+    $employer = User::factory()->employer()->create();
+    $job = JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Temporary Role',
+        'status' => JobPostStatus::Active,
+    ]);
+    $application = JobApplication::factory()->create([
+        'job_post_id' => $job->id,
+    ]);
+
+    $this->actingAs($employer)
+        ->from(route('employer.jobs'))
+        ->delete(route('employer.jobs.destroy', $job))
+        ->assertRedirect(route('employer.jobs'));
+
+    expect(JobPost::query()->find($job->id))->toBeNull()
+        ->and(JobApplication::query()->find($application->id))->toBeNull();
+});
+
+test('employers cannot delete jobs they do not own', function () {
+    $employer = User::factory()->employer()->create();
+    $otherJob = JobPost::factory()->create([
+        'title' => 'Someone Else Role',
+    ]);
+
+    $this->actingAs($employer)
+        ->delete(route('employer.jobs.destroy', $otherJob))
+        ->assertForbidden();
+
+    expect(JobPost::query()->find($otherJob->id))->not->toBeNull();
 });
 
 test('employers can select a public plan via manual payment approval', function () {

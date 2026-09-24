@@ -371,6 +371,30 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                                         'employer.jobs.duplicate',
                                                     )}
                                                 </button>
+                                                <button
+                                                    type="button"
+                                                    className={cn(
+                                                        actionClass,
+                                                        'bg-[#fef2f2] text-[#b91c1c]',
+                                                    )}
+                                                    onClick={() => {
+                                                        if (
+                                                            !confirm(
+                                                                t(
+                                                                    'employer.jobs.delete_confirm',
+                                                                ),
+                                                            )
+                                                        ) {
+                                                            return;
+                                                        }
+
+                                                        router.delete(
+                                                            `/employer/jobs/${job.id}`,
+                                                        );
+                                                    }}
+                                                >
+                                                    {t('employer.jobs.delete')}
+                                                </button>
                                                 {job.status_value ===
                                                     'active' && (
                                                     <button

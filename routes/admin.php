@@ -66,9 +66,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/job-seekers/{user}', [JobSeekerManagementController::class, 'destroy'])->name('job-seekers.destroy');
         Route::get('/jobs/export', [JobManagementController::class, 'export'])->name('jobs.export');
         Route::get('/jobs', [JobManagementController::class, 'index'])->name('jobs.index');
+        Route::post('/jobs/description-attachments', [JobManagementController::class, 'uploadDescriptionAttachment'])->name('jobs.description-attachments.store');
         Route::get('/jobs/{jobPost}/applicants/{user}/resume', [JobManagementController::class, 'downloadApplicantResume'])->name('jobs.applicant-resume');
         Route::get('/jobs/{jobPost}/edit', [JobManagementController::class, 'edit'])->name('jobs.edit');
         Route::put('/jobs/{jobPost}', [JobManagementController::class, 'update'])->name('jobs.update');
+        Route::post('/jobs/{jobPost}/logo', [JobManagementController::class, 'uploadLogo'])->name('jobs.logo.upload');
+        Route::delete('/jobs/{jobPost}/logo', [JobManagementController::class, 'destroyLogo'])->name('jobs.logo.destroy');
         Route::get('/jobs/{jobPost}', [JobManagementController::class, 'show'])->name('jobs.show');
         Route::post('/jobs/{jobPost}/approve', [JobManagementController::class, 'approve'])->name('jobs.approve');
         Route::post('/jobs/{jobPost}/reject', [JobManagementController::class, 'reject'])->name('jobs.reject');

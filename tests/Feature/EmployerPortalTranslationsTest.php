@@ -9,10 +9,10 @@ test('employer dashboard shares employer portal translation keys', function () {
     $this->actingAs($employer)
         ->get(route('employer.dashboard'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerDashboard')
             ->has('translations')
-            ->where('translations', fn ($translations) => ($translations['employer.portal'] ?? null) === 'Employer Portal'
+            ->where('translations', fn($translations) => ($translations['employer.portal'] ?? null) === 'Employer Portal'
                 && ($translations['employer.nav.dashboard'] ?? null) === 'Dashboard'
                 && ($translations['employer.dashboard.title'] ?? null) === 'Dashboard'
                 && ($translations['employer.settings.title'] ?? null) === 'Settings'
@@ -58,6 +58,8 @@ test('employer portal translation keys exist in english and arabic', function ()
         'employer.jobs.title',
         'employer.jobs.subtitle',
         'employer.jobs.post_new',
+        'employer.jobs.delete',
+        'employer.jobs.delete_confirm',
         'employer.job_editor.title_create',
         'employer.job_editor.step.basics',
         'employer.job_editor.logo.upload',
@@ -105,10 +107,10 @@ test('arabic locale shares arabic employer portal translations on dashboard', fu
         ->withSession([Locale::COOKIE => Locale::ARABIC])
         ->get(route('employer.dashboard'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->where('locale', Locale::ARABIC)
             ->where('dir', 'rtl')
-            ->where('translations', fn ($translations) => ($translations['employer.portal'] ?? null) === 'بوابة أصحاب العمل'
+            ->where('translations', fn($translations) => ($translations['employer.portal'] ?? null) === 'بوابة أصحاب العمل'
                 && ($translations['employer.dashboard.title'] ?? null) === 'لوحة التحكم'
                 && ($translations['employer.nav.dashboard'] ?? null) === 'لوحة التحكم'));
 });
