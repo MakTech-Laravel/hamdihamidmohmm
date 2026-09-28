@@ -114,6 +114,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/training', [TrainingMediaController::class, 'index'])->name('training.index');
         Route::post('/training/video', [TrainingMediaController::class, 'store'])->name('training.video.store');
         Route::delete('/training/video', [TrainingMediaController::class, 'destroy'])->name('training.video.destroy');
+        Route::delete('/training/videos/{video}', [TrainingMediaController::class, 'destroyVideo'])->name('training.videos.destroy');
         Route::post('/training/documents', [TrainingMediaController::class, 'storeDocument'])->name('training.documents.store');
         Route::delete('/training/documents/{document}', [TrainingMediaController::class, 'destroyDocument'])->name('training.documents.destroy');
 
@@ -126,7 +127,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/settings', [PlatformSettingController::class, 'update'])->name('settings.update');
         Route::post('/settings/reset', [PlatformSettingController::class, 'reset'])->name('settings.reset');
 
-        Route::middleware('role:'.RoleName::SuperAdmin->value)->group(function () {
+        Route::middleware('role:' . RoleName::SuperAdmin->value)->group(function () {
             Route::get('/admins', [AdminManagementController::class, 'index'])->name('admins.index');
             Route::post('/admins', [AdminManagementController::class, 'store'])->name('admins.store');
 

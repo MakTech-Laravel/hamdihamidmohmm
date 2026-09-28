@@ -31,7 +31,7 @@ class FrontendController extends Controller
                 ->latest()
                 ->limit(6)
                 ->get()
-                ->map(fn (JobPost $job) => $this->homeJobCard($job))
+                ->map(fn(JobPost $job) => $this->homeJobCard($job))
                 ->values(),
         ]);
     }
@@ -48,7 +48,7 @@ class FrontendController extends Controller
         $location = $request->string('location')->toString();
         $category = $request->string('category')->toString();
         $types = collect($request->input('types', []))
-            ->map(fn (mixed $type): string => trim((string) $type))
+            ->map(fn(mixed $type): string => trim((string) $type))
             ->filter()
             ->values()
             ->all();
@@ -71,7 +71,7 @@ class FrontendController extends Controller
             ->latest()
             ->paginate(30)
             ->withQueryString()
-            ->through(fn (JobPost $job) => [
+            ->through(fn(JobPost $job) => [
                 'id' => $job->id,
                 'slug' => $job->slug,
                 'title' => $job->title,
@@ -118,9 +118,9 @@ class FrontendController extends Controller
 
         $applied = $request->user()?->isJobSeeker()
             ? JobApplication::query()
-                ->where('job_post_id', $jobPost->id)
-                ->where('job_seeker_id', $request->user()->id)
-                ->exists()
+            ->where('job_post_id', $jobPost->id)
+            ->where('job_seeker_id', $request->user()->id)
+            ->exists()
             : false;
 
         return Inertia::render('frontend/job-show', [
@@ -146,7 +146,7 @@ class FrontendController extends Controller
                 'requirements' => $this->lines($jobPost->requirements),
                 'skills' => array_values(array_filter(
                     is_array($jobPost->skills) ? $jobPost->skills : [],
-                    fn (mixed $skill): bool => filled($skill),
+                    fn(mixed $skill): bool => filled($skill),
                 )),
                 'about' => $jobPost->employer?->about,
                 'industry' => $jobPost->employer?->industry,
@@ -160,7 +160,7 @@ class FrontendController extends Controller
                     ->latest()
                     ->limit(3)
                     ->get()
-                    ->map(fn (JobPost $similar) => [
+                    ->map(fn(JobPost $similar) => [
                         'slug' => $similar->slug,
                         'title' => $similar->title,
                         'company' => $similar->employer?->company_name ?: $similar->employer?->name,
@@ -184,6 +184,7 @@ class FrontendController extends Controller
     public function training(): Response
     {
         return Inertia::render('frontend/training', [
+            'videos' => TrainingMedia::videos(),
             'heroVideoUrl' => TrainingMedia::heroVideoUrl(),
             'documents' => TrainingMedia::documents(),
         ]);
@@ -254,7 +255,7 @@ class FrontendController extends Controller
         }
 
         return collect(preg_split('/\r\n|\r|\n/', $value) ?: [])
-            ->map(fn (string $line): string => trim($line))
+            ->map(fn(string $line): string => trim($line))
             ->filter()
             ->values()
             ->all();

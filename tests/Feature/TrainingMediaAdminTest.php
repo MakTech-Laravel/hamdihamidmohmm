@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Support\TrainingMedia;
 use Illuminate\Http\UploadedFile;
@@ -14,7 +15,60 @@ test('admins can view the training media page', function () {
         ->assertInertia(fn($page) => $page
             ->component('backend/Admin/TrainingMedia')
             ->where('heroVideoUrl', null)
-            ->where('documents', []));
+            ->where('videos', [])
+            ->where('documents', [])
+            ->where('maxVideos', 12));
+});
+
+test('admins can upload multiple training videos for the public slider', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->admin()->create();
+    $first = UploadedFile::fake()->create('intro.mp4', 1024, 'video/mp4');
+    $second = UploadedFile::fake()->create('payments.webm', 800, 'video/webm');
+
+    $this->actingAs($admin)
+        ->post(route('admin.training.video.store'), [
+            'video' => $first,
+            'name' => 'Getting started',
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin)
+        ->post(route('admin.training.video.store'), [
+            'videos' => [$second],
+        ])
+        ->assertRedirect();
+
+    $videos = TrainingMedia::videos();
+
+    expect($videos)->toHaveCount(2)
+        ->and($videos[0]['name'])->toBe('Getting started')
+        ->and($videos[1]['file_name'])->toBe('payments.webm')
+        ->and(TrainingMedia::heroVideoUrl())->toBe($videos[0]['url']);
+
+    $this->get(route('training'))
+        ->assertOk()
+        ->assertInertia(fn($page) => $page
+            ->component('frontend/training')
+            ->has('videos', 2)
+            ->where('videos.0.name', 'Getting started')
+            ->where('videos.1.file_name', 'payments.webm')
+            ->where('heroVideoUrl', TrainingMedia::heroVideoUrl()));
+
+    $this->actingAs($admin)
+        ->get(route('admin.training.index'))
+        ->assertOk()
+        ->assertInertia(fn($page) => $page
+            ->has('videos', 2)
+            ->where('videos.0.name', 'Getting started'));
+
+    $this->actingAs($admin)
+        ->delete(route('admin.training.videos.destroy', $videos[0]['id']))
+        ->assertRedirect();
+
+    expect(TrainingMedia::videos())->toHaveCount(1)
+        ->and(TrainingMedia::videos()[0]['file_name'])->toBe('payments.webm');
 });
 
 test('admins can upload and remove the training hero video', function () {
@@ -40,6 +94,7 @@ test('admins can upload and remove the training hero video', function () {
         ->assertInertia(fn($page) => $page
             ->component('frontend/training')
             ->where('heroVideoUrl', TrainingMedia::heroVideoUrl())
+            ->has('videos', 1)
             ->where('documents', []));
 
     $this->actingAs($admin)
@@ -47,7 +102,8 @@ test('admins can upload and remove the training hero video', function () {
         ->assertRedirect();
 
     expect(TrainingMedia::heroVideoPath())->toBeNull()
-        ->and(TrainingMedia::heroVideoUrl())->toBeNull();
+        ->and(TrainingMedia::heroVideoUrl())->toBeNull()
+        ->and(TrainingMedia::videos())->toBe([]);
 });
 
 test('admins can upload and remove training documents without clearing the video', function () {
@@ -78,13 +134,15 @@ test('admins can upload and remove training documents without clearing the video
         ->and($documents[0]['name'])->toBe('Application Guide')
         ->and($documents[0]['file_name'])->toBe('guide.pdf')
         ->and($documents[0]['url'])->toStartWith('/storage/')
-        ->and(TrainingMedia::heroVideoPath())->toBe($videoPath);
+        ->and(TrainingMedia::heroVideoPath())->toBe($videoPath)
+        ->and(TrainingMedia::videos())->toHaveCount(1);
 
     $this->get(route('training'))
         ->assertOk()
         ->assertInertia(fn($page) => $page
             ->component('frontend/training')
             ->where('heroVideoUrl', TrainingMedia::heroVideoUrl())
+            ->has('videos', 1)
             ->has('documents', 1)
             ->where('documents.0.name', 'Application Guide'));
 
@@ -104,6 +162,28 @@ test('admins can upload and remove training documents without clearing the video
         ->and(TrainingMedia::heroVideoPath())->toBe($videoPath);
 });
 
+test('legacy single hero video still appears in the training slider', function () {
+    Storage::fake('public');
+
+    $path = 'training/legacy.mp4';
+    Storage::disk('public')->put($path, 'video');
+
+    PlatformSetting::query()->updateOrCreate(
+        ['key' => TrainingMedia::SETTING_KEY],
+        ['value' => ['hero_video_path' => $path, 'documents' => []]],
+    );
+
+    expect(TrainingMedia::videos())->toHaveCount(1)
+        ->and(TrainingMedia::videos()[0]['url'])->toBe('/storage/' . $path)
+        ->and(TrainingMedia::heroVideoUrl())->toBe('/storage/' . $path);
+
+    $this->get(route('training'))
+        ->assertOk()
+        ->assertInertia(fn($page) => $page
+            ->has('videos', 1)
+            ->where('videos.0.url', '/storage/' . $path));
+});
+
 test('job seekers cannot manage training media', function () {
     $seeker = User::factory()->jobSeeker()->create();
 
@@ -118,5 +198,6 @@ test('training page includes hero video url prop when empty', function () {
         ->assertInertia(fn($page) => $page
             ->component('frontend/training')
             ->where('heroVideoUrl', null)
+            ->where('videos', [])
             ->where('documents', []));
 });
