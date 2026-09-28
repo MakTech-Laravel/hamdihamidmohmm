@@ -85,7 +85,37 @@ class TrainingMedia
      */
     public static function videos(): array
     {
-        return self::publicMedia(self::settings()['videos']);
+        return self::publicMedia(self::settings()['videos'], 'video');
+    }
+
+    /**
+     * @return array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}|null
+     */
+    public static function storedVideo(string $id): ?array
+    {
+        foreach (self::settings()['videos'] as $video) {
+            if ($video['id'] === $id) {
+                return $video;
+            }
+        }
+
+        return null;
+    }
+
+    public static function streamUrl(string $id): string
+    {
+        return route('training.videos.show', $id, false);
+    }
+
+    public static function absolutePath(string $id): ?string
+    {
+        $video = self::storedVideo($id);
+
+        if ($video === null || ! Storage::disk(self::DISK)->exists($video['path'])) {
+            return null;
+        }
+
+        return Storage::disk(self::DISK)->path($video['path']);
     }
 
     /**
@@ -289,7 +319,7 @@ class TrainingMedia
      * @param  list<array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}>  $items
      * @return list<array{id: string, name: string, file_name: string, url: string, mime: string|null, size: int|null}>
      */
-    private static function publicMedia(array $items): array
+    private static function publicMedia(array $items, string $kind = 'file'): array
     {
         $public = [];
 
@@ -302,7 +332,9 @@ class TrainingMedia
                 'id' => $item['id'],
                 'name' => $item['name'],
                 'file_name' => $item['file_name'],
-                'url' => '/storage/' . $item['path'],
+                'url' => $kind === 'video'
+                    ? self::streamUrl($item['id'])
+                    : '/storage/' . $item['path'],
                 'mime' => $item['mime'],
                 'size' => $item['size'],
             ];

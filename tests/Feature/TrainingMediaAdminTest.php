@@ -85,9 +85,12 @@ test('admins can upload and remove the training hero video', function () {
 
     $path = TrainingMedia::heroVideoPath();
 
+    $videos = TrainingMedia::videos();
+
     expect($path)->not->toBeNull()
         ->and(Storage::disk('public')->exists((string) $path))->toBeTrue()
-        ->and(TrainingMedia::heroVideoUrl())->toBe('/storage/' . $path);
+        ->and($videos)->toHaveCount(1)
+        ->and(TrainingMedia::heroVideoUrl())->toBe(TrainingMedia::streamUrl($videos[0]['id']));
 
     $this->get(route('training'))
         ->assertOk()
@@ -173,15 +176,52 @@ test('legacy single hero video still appears in the training slider', function (
         ['value' => ['hero_video_path' => $path, 'documents' => []]],
     );
 
+    $url = TrainingMedia::streamUrl(TrainingMedia::videos()[0]['id']);
+
     expect(TrainingMedia::videos())->toHaveCount(1)
-        ->and(TrainingMedia::videos()[0]['url'])->toBe('/storage/' . $path)
-        ->and(TrainingMedia::heroVideoUrl())->toBe('/storage/' . $path);
+        ->and(TrainingMedia::videos()[0]['url'])->toBe($url)
+        ->and(TrainingMedia::heroVideoUrl())->toBe($url);
 
     $this->get(route('training'))
         ->assertOk()
         ->assertInertia(fn($page) => $page
             ->has('videos', 1)
-            ->where('videos.0.url', '/storage/' . $path));
+            ->where('videos.0.url', $url));
+});
+
+test('training videos can be seeked with http range requests', function () {
+    Storage::fake('public');
+
+    $path = 'training/videos/intro.mp4';
+    Storage::disk('public')->put($path, str_repeat('a', 2048));
+
+    PlatformSetting::query()->updateOrCreate(
+        ['key' => TrainingMedia::SETTING_KEY],
+        ['value' => [
+            'hero_video_path' => $path,
+            'videos' => [[
+                'id' => 'video-1',
+                'name' => 'Intro',
+                'file_name' => 'intro.mp4',
+                'path' => $path,
+                'mime' => 'video/mp4',
+                'size' => 2048,
+            ]],
+            'documents' => [],
+        ]],
+    );
+
+    $this->get(route('training.videos.show', 'video-1'))
+        ->assertOk()
+        ->assertHeader('Accept-Ranges', 'bytes');
+
+    $this->withHeaders(['Range' => 'bytes=0-10'])
+        ->get(route('training.videos.show', 'video-1'))
+        ->assertStatus(206)
+        ->assertHeader('Accept-Ranges', 'bytes');
+
+    $this->get(route('training.videos.show', 'missing-video'))
+        ->assertNotFound();
 });
 
 test('job seekers cannot manage training media', function () {

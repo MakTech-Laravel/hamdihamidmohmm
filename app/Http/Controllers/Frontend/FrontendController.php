@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FrontendController extends Controller
 {
@@ -187,6 +188,23 @@ class FrontendController extends Controller
             'videos' => TrainingMedia::videos(),
             'heroVideoUrl' => TrainingMedia::heroVideoUrl(),
             'documents' => TrainingMedia::documents(),
+        ]);
+    }
+
+    public function trainingVideo(string $video): BinaryFileResponse
+    {
+        $path = TrainingMedia::absolutePath($video);
+
+        abort_if($path === null, 404);
+
+        $stored = TrainingMedia::storedVideo($video);
+        $mime = $stored['mime'] ?? null;
+
+        return response()->file($path, [
+            'Content-Type' => filled($mime) ? $mime : 'video/mp4',
+            'Accept-Ranges' => 'bytes',
+            'Cache-Control' => 'public, max-age=86400',
+            'Content-Encoding' => 'identity',
         ]);
     }
 

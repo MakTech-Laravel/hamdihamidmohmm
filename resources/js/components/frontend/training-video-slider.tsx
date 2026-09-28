@@ -70,18 +70,18 @@ export function TrainingVideoSlider({ videos }: TrainingVideoSliderProps) {
                     src={current.url}
                     controls
                     playsInline
-                    preload="metadata"
+                    preload="auto"
                     className="aspect-video w-full bg-black"
                 >
                     {t('training.video_unsupported')}
                 </video>
 
                 {hasMultiple ? (
-                    <>
+                    <div className="pointer-events-none absolute inset-x-0 top-0 bottom-16 flex items-center justify-between px-3">
                         <button
                             type="button"
                             onClick={() => goTo(index - 1)}
-                            className="absolute top-1/2 left-3 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition hover:bg-black/75"
+                            className="pointer-events-auto flex size-10 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition hover:bg-black/75"
                             aria-label={t('training.video_previous')}
                         >
                             <ChevronLeft className="size-5 rtl:rotate-180" />
@@ -89,12 +89,12 @@ export function TrainingVideoSlider({ videos }: TrainingVideoSliderProps) {
                         <button
                             type="button"
                             onClick={() => goTo(index + 1)}
-                            className="absolute top-1/2 right-3 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition hover:bg-black/75"
+                            className="pointer-events-auto flex size-10 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition hover:bg-black/75"
                             aria-label={t('training.video_next')}
                         >
                             <ChevronRight className="size-5 rtl:rotate-180" />
                         </button>
-                    </>
+                    </div>
                 ) : null}
             </div>
 
@@ -156,7 +156,7 @@ export function TrainingVideoSlider({ videos }: TrainingVideoSliderProps) {
                                 src={video.url}
                                 muted
                                 preload="metadata"
-                                className="aspect-video w-full bg-black object-cover"
+                                className="pointer-events-none aspect-video w-full bg-black object-cover"
                             />
                             <span className="absolute inset-x-0 bottom-0 truncate bg-black/65 px-1.5 py-1 text-[10px] font-medium text-white">
                                 {video.name || t('training.video_untitled')}
