@@ -28,7 +28,7 @@ class EmployerApplicationController extends Controller
         $jobId = $request->integer('job_id');
 
         $appsQuery = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id))
+            ->whereHas('jobPost', fn($query) => $query->where('employer_id', $request->user()?->id))
             ->with([
                 'jobSeeker',
                 'jobSeeker.jobSeekerProfile',
@@ -51,10 +51,10 @@ class EmployerApplicationController extends Controller
             });
         }
 
-        $applications = $appsQuery->get()->map(fn (JobApplication $application) => $this->row($application));
+        $applications = $appsQuery->get()->map(fn(JobApplication $application) => $this->row($application));
 
         $allForStats = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id));
+            ->whereHas('jobPost', fn($query) => $query->where('employer_id', $request->user()?->id));
 
         if ($jobId > 0) {
             $allForStats->where('job_post_id', $jobId);
@@ -84,8 +84,8 @@ class EmployerApplicationController extends Controller
                 'interview' => (clone $allForStats)->where('status', JobApplicationStatus::Interview)->count(),
             ],
             'statuses' => collect(JobApplicationStatus::cases())
-                ->reject(fn (JobApplicationStatus $item) => $item === JobApplicationStatus::Withdrawn)
-                ->map(fn (JobApplicationStatus $item) => [
+                ->reject(fn(JobApplicationStatus $item) => $item === JobApplicationStatus::Withdrawn)
+                ->map(fn(JobApplicationStatus $item) => [
                     'value' => $item->value,
                     'label' => $item->label(),
                 ])
@@ -101,13 +101,18 @@ class EmployerApplicationController extends Controller
             'status' => $status,
         ])->save();
 
-        $application->loadMissing(['jobSeeker', 'jobPost']);
+        $application->loadMissing(['jobSeeker', 'jobPost.employer']);
 
         if ($application->jobSeeker instanceof User) {
+            $company = $application->jobPost?->employer?->company_name
+                ?: $application->jobPost?->employer?->name
+                ?: 'the employer';
+
             PortalNotifier::applicationStatusChanged(
                 $application->jobSeeker,
                 (string) ($application->jobPost?->title ?? 'your application'),
                 $status,
+                $company,
             );
         }
 

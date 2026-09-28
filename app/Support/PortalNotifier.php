@@ -5,8 +5,11 @@ namespace App\Support;
 use App\Enums\JobApplicationStatus;
 use App\Enums\RoleName;
 use App\Models\User;
+use App\Notifications\ApplicationRejectedNotification;
 use App\Notifications\ApplicationSubmittedNotification;
+use App\Notifications\JobRejectedNotification;
 use App\Notifications\PortalNotification;
+use App\Notifications\VerificationRejectedNotification;
 
 class PortalNotifier
 {
@@ -55,8 +58,21 @@ class PortalNotifier
         $seeker->notify(new ApplicationSubmittedNotification($jobTitle, $companyName));
     }
 
-    public static function applicationStatusChanged(User $seeker, string $jobTitle, JobApplicationStatus $status): void
-    {
+    public static function applicationStatusChanged(
+        User $seeker,
+        string $jobTitle,
+        JobApplicationStatus $status,
+        ?string $companyName = null,
+    ): void {
+        if ($status === JobApplicationStatus::Rejected) {
+            $seeker->notify(new ApplicationRejectedNotification(
+                $jobTitle,
+                filled($companyName) ? $companyName : 'the employer',
+            ));
+
+            return;
+        }
+
         $preferenceKey = $status === JobApplicationStatus::Interview
             ? 'interview_invitations'
             : 'application_status';
@@ -82,18 +98,7 @@ class PortalNotifier
 
     public static function verificationRejected(User $employer, ?string $reason = null): void
     {
-        $message = 'Your company verification was rejected.';
-
-        if (filled($reason)) {
-            $message .= ' Reason: '.$reason;
-        }
-
-        self::send(
-            $employer,
-            'Company verification rejected',
-            $message,
-            'Verification',
-        );
+        $employer->notify(new VerificationRejectedNotification($reason));
     }
 
     public static function jobApproved(User $employer, string $jobTitle): void
@@ -109,19 +114,7 @@ class PortalNotifier
 
     public static function jobRejected(User $employer, string $jobTitle, ?string $reason = null): void
     {
-        $message = "Your job \"{$jobTitle}\" was rejected.";
-
-        if (filled($reason)) {
-            $message .= ' Reason: '.$reason;
-        }
-
-        self::send(
-            $employer,
-            'Job listing rejected',
-            $message,
-            'Job',
-            'system_updates',
-        );
+        $employer->notify(new JobRejectedNotification($jobTitle, $reason));
     }
 
     public static function billingAlert(User $employer, string $title, string $message): void
@@ -150,6 +143,6 @@ class PortalNotifier
     {
         User::query()
             ->role(RoleName::adminPanelValues())
-            ->each(fn (User $admin) => self::send($admin, $title, $message, $category));
+            ->each(fn(User $admin) => self::send($admin, $title, $message, $category));
     }
 }
