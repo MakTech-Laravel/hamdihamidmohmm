@@ -24,7 +24,7 @@ class JobSeekerApplicationsController extends Controller
             ->with(['jobPost:id,title,location,employment_type,salary_range,slug,employer_id', 'jobPost.employer:id,name,company_name'])
             ->latest()
             ->get()
-            ->map(fn(JobApplication $application) => $this->row($application));
+            ->map(fn (JobApplication $application) => $this->row($application));
 
         return Inertia::render('backend/User/JobSeekerApplications', [
             'applications' => $applications,
@@ -47,7 +47,7 @@ class JobSeekerApplicationsController extends Controller
                 JobApplicationStatus::Hired,
                 JobApplicationStatus::Rejected,
                 JobApplicationStatus::Withdrawn,
-            ])->map(fn(JobApplicationStatus $status) => [
+            ])->map(fn (JobApplicationStatus $status) => [
                 'value' => $status->value,
                 'label' => $status->label(),
                 'count' => $applications->where('status_value', $status->value)->count(),
@@ -67,7 +67,7 @@ class JobSeekerApplicationsController extends Controller
         if ($request->hasFile('resume')) {
             $resume = $request->file('resume');
             $userId = $request->user()?->id ?? 0;
-            $payload['resume_path'] = $resume->store('resumes/' . $userId, 'local');
+            $payload['resume_path'] = $resume->store('resumes/'.$userId, 'local');
             $payload['resume_original_name'] = $resume->getClientOriginalName();
         } elseif (
             filled($request->user()?->resume_path)
@@ -76,7 +76,7 @@ class JobSeekerApplicationsController extends Controller
             $user = $request->user();
             $source = (string) $user->resume_path;
             $extension = pathinfo($source, PATHINFO_EXTENSION) ?: 'pdf';
-            $copyPath = 'resumes/' . $user->id . '/application-' . uniqid('', true) . '.' . $extension;
+            $copyPath = 'resumes/'.$user->id.'/application-'.uniqid('', true).'.'.$extension;
 
             Storage::disk('local')->copy($source, $copyPath);
 
@@ -102,6 +102,18 @@ class JobSeekerApplicationsController extends Controller
                     $employer,
                     $seeker->name,
                     (string) $jobPost->title,
+                );
+            }
+
+            if ($seeker !== null) {
+                $company = $jobPost->employer?->company_name
+                    ?: $jobPost->employer?->name
+                    ?: 'the employer';
+
+                PortalNotifier::applicationSubmitted(
+                    $seeker,
+                    (string) $jobPost->title,
+                    (string) $company,
                 );
             }
         }

@@ -147,7 +147,7 @@ export default function Home({
 
             {/* Hero */}
             <section className="relative bg-[#d1f6ff]">
-                <div className="mx-auto max-w-[1344px] px-4 pb-12 pt-10 sm:px-6 sm:pt-12 lg:px-8 lg:pb-14 lg:pt-14">
+                <div className="mx-auto max-w-[1344px] px-4 pb-8 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pb-10 lg:pt-8">
                     <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
                         <div className="animate-fadeInUp">
                             <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-sm">
@@ -284,7 +284,7 @@ export default function Home({
             </section>
 
             {/* Recommended Jobs */}
-            <section id="jobs" className="scroll-mt-28 bg-white py-12">
+            <section id="jobs" className="scroll-mt-28 bg-white py-8 sm:py-10">
                 <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                         <div>
@@ -311,7 +311,7 @@ export default function Home({
                     </div>
 
                     {recommendedJobs.length === 0 ? (
-                        <div className="mt-10 rounded-2xl border border-dashed border-[#e2e8f0] bg-[#f8faff] px-6 py-16 text-center">
+                        <div className="mt-6 rounded-2xl border border-dashed border-[#e2e8f0] bg-[#f8faff] px-6 py-10 text-center">
                             <p className="text-base font-semibold text-[#050315]">
                                 {t('home.recommended_empty_title')}
                             </p>
@@ -320,7 +320,7 @@ export default function Home({
                             </p>
                         </div>
                     ) : (
-                        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {recommendedJobs.map((job) => (
                                 <article
                                     key={job.slug}
@@ -331,11 +331,11 @@ export default function Home({
                                             <img
                                                 src={job.logo_url}
                                                 alt={job.company || job.title}
-                                                className="size-[96px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-cover sm:size-[112px]"
+                                                className="size-[56px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1 sm:size-[64px]"
                                             />
                                         ) : (
                                             <div
-                                                className="flex size-[96px] shrink-0 items-center justify-center rounded-xl text-base font-bold text-white sm:size-[112px] sm:text-lg"
+                                                className="flex size-[56px] shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white sm:size-[64px] sm:text-base"
                                                 style={{
                                                     backgroundImage:
                                                         'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
@@ -392,7 +392,7 @@ export default function Home({
             </section>
 
             {/* Why Choose Us */}
-            <section id="about" className="scroll-mt-28 bg-white pt-10 pb-12 sm:pt-12">
+            <section id="about" className="scroll-mt-28 bg-white pt-8 pb-10 sm:pt-10">
                 <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
                     <div className="text-center">
                         <h2 className="text-3xl font-bold tracking-[-0.3px] text-[#050315] sm:text-[40px] sm:leading-[48px]">

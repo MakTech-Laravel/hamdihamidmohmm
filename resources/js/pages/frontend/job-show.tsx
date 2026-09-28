@@ -15,7 +15,7 @@ import { RichTextContent } from '@/components/ui/rich-text-editor';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
 import { jobs as jobsRoute, login } from '@/routes';
-import { show as jobShow } from '@/routes/jobs';
+import { apply as applyToJob, show as jobShow } from '@/routes/jobs';
 import type { SharedData } from '@/types';
 
 type SimilarJob = {
@@ -27,6 +27,7 @@ type SimilarJob = {
 };
 
 type JobDetail = {
+    id?: number;
     slug: string;
     initials?: string;
     title: string;
@@ -59,10 +60,12 @@ export default function JobShow({
     job,
     applied = false,
     can_apply = false,
+    is_preview = false,
 }: {
     job: JobDetail;
     applied?: boolean;
     can_apply?: boolean;
+    is_preview?: boolean;
 }) {
     const { t } = useLocale();
     const { auth } = usePage<SharedData>().props;
@@ -110,7 +113,7 @@ export default function JobShow({
 
         setApplying(true);
         router.post(
-            `/jobs/${job.slug}/apply`,
+            job.id ? applyToJob.url(job.id) : `/jobs/${job.slug}/apply`,
             {},
             {
                 onFinish: () => setApplying(false),
@@ -181,7 +184,7 @@ export default function JobShow({
         <FrontendLayout>
             <Head title={`${job.title} - ${t('app.name')}`} />
 
-            <section className="bg-[#d1f6ff] px-4 py-8 sm:px-6 lg:px-8">
+            <section className="bg-[#d1f6ff] px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
                 <div className="mx-auto max-w-[1280px]">
                     <nav className="flex flex-wrap items-center gap-2 text-sm">
                         <Link
@@ -202,13 +205,13 @@ export default function JobShow({
                 </div>
             </section>
 
-            <section className="bg-white px-4 py-8 sm:px-6 lg:px-8">
+            <section className="bg-white px-4 py-5 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-[1280px]">
                     <div className="grid gap-6 lg:grid-cols-[1fr_390px]">
                         <div>
                             <Link
                                 href={jobsRoute()}
-                                className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[#0057c8] transition hover:underline"
+                                className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-[#0057c8] transition hover:underline"
                             >
                                 <img
                                     src="/images/job-detail/back-arrow.svg"
@@ -222,12 +225,12 @@ export default function JobShow({
 
                             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] sm:p-7">
                                 <div className="flex items-start gap-4">
-                                    <div className="flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] text-xl font-bold text-[#0057c8] sm:size-[112px]">
+                                    <div className="flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] p-1.5 text-lg font-bold text-[#0057c8] sm:size-[112px]">
                                         {job.logo_url ? (
                                             <img
                                                 src={job.logo_url}
                                                 alt={job.title}
-                                                className="size-full object-cover"
+                                                className="size-full object-contain"
                                             />
                                         ) : (
                                             job.initials || 'JP'
@@ -239,6 +242,11 @@ export default function JobShow({
                                                 <h1 className="text-2xl font-bold text-[#050315]">
                                                     {job.title}
                                                 </h1>
+                                                {is_preview ? (
+                                                    <p className="mt-2 inline-flex rounded-full bg-[#fff7ed] px-2.5 py-0.5 text-xs font-semibold text-[#c2410c]">
+                                                        {t('job_detail.preview_notice')}
+                                                    </p>
+                                                ) : null}
                                                 <p className="mt-1.5 text-base font-normal text-[#64748b]">
                                                     {job.subtitle || job.company}
                                                 </p>
@@ -399,7 +407,11 @@ export default function JobShow({
                                 ) : null}
 
                                 <div className="relative mt-8 flex items-center gap-3 border-t border-[#e5e7eb] pt-5">
-                                    {can_apply ? (
+                                    {is_preview ? (
+                                        <span className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#fff7ed] px-6 text-sm font-bold text-[#c2410c]">
+                                            {t('job_detail.preview_notice')}
+                                        </span>
+                                    ) : can_apply ? (
                                         <button
                                             type="button"
                                             onClick={() => setApplyModalOpen(true)}

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Enums\JobPostStatus;
 use App\Enums\JobTaxonomyType;
 use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
@@ -100,9 +101,19 @@ class FrontendController extends Controller
 
     public function jobShow(Request $request, JobPost $jobPost): Response
     {
-        abort_unless($jobPost->effectiveStatus()->value === 'active', 404);
+        $isLive = $jobPost->effectiveStatus() === JobPostStatus::Active;
+        $viewer = $request->user();
+        $canPreview = $viewer !== null && (
+            $viewer->isAdmin()
+            || ($viewer->isEmployer() && $viewer->id === $jobPost->employer_id)
+        );
 
-        $jobPost->incrementViews();
+        abort_unless($isLive || $canPreview, 404);
+
+        if ($isLive) {
+            $jobPost->incrementViews();
+        }
+
         $jobPost->load('employer:id,name,company_name,company_logo_path,about,industry,website,portal_preferences');
 
         $applied = $request->user()?->isJobSeeker()
@@ -118,11 +129,9 @@ class FrontendController extends Controller
                 'slug' => $jobPost->slug,
                 'title' => $jobPost->title,
                 'subtitle' => $jobPost->subtitle,
-                'logo_url' => $jobPost->hasLogo() ? $jobPost->logoUrl() : null,
+                'logo_url' => $this->jobListingLogoUrl($jobPost),
                 'company' => $jobPost->employer?->company_name ?: $jobPost->employer?->name,
-                'company_logo_url' => $jobPost->employer?->hasCompanyLogo()
-                    ? $jobPost->employer->companyLogoUrl()
-                    : null,
+                'company_logo_url' => $jobPost->employer?->companyLogoUrl(),
                 'initials' => $this->initials($jobPost->employer?->company_name ?: $jobPost->employer?->name),
                 'location' => JobListingQuery::displayLabel(JobTaxonomyType::DutyStation, $jobPost->location),
                 'type' => JobListingQuery::displayLabel(JobTaxonomyType::EmploymentType, $jobPost->employment_type),
@@ -160,7 +169,8 @@ class FrontendController extends Controller
                     ]),
             ],
             'applied' => $applied,
-            'can_apply' => $request->user()?->isJobSeeker() === true && ! $applied,
+            'can_apply' => $isLive && $request->user()?->isJobSeeker() === true && ! $applied,
+            'is_preview' => ! $isLive,
         ]);
     }
 

@@ -149,6 +149,16 @@ export default function EmployerJobEditor({
         website: company?.website ?? '',
     });
 
+    useEffect(() => {
+        if (!job?.logo_url) {
+            return;
+        }
+
+        setJobLogoPreview((current) =>
+            current?.startsWith('blob:') ? current : job.logo_url ?? current,
+        );
+    }, [job?.logo_url]);
+
     const saveCompanyAbout = (): void => {
         companyForm.put('/employer/profile/public-about', {
             preserveScroll: true,
@@ -487,7 +497,7 @@ export default function EmployerJobEditor({
                                     alt={t(
                                         'employer.job_editor.job_logo.badge',
                                     )}
-                                    className="size-full object-cover"
+                                    className="size-full object-contain p-1.5"
                                 />
                             ) : (
                                 <span className="flex flex-col items-center gap-0.5 text-[#64748b]">

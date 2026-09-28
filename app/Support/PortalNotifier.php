@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Enums\JobApplicationStatus;
 use App\Enums\RoleName;
 use App\Models\User;
+use App\Notifications\ApplicationSubmittedNotification;
 use App\Notifications\PortalNotification;
 
 class PortalNotifier
@@ -47,6 +48,11 @@ class PortalNotifier
             'Application',
             'new_applications',
         );
+    }
+
+    public static function applicationSubmitted(User $seeker, string $jobTitle, string $companyName): void
+    {
+        $seeker->notify(new ApplicationSubmittedNotification($jobTitle, $companyName));
     }
 
     public static function applicationStatusChanged(User $seeker, string $jobTitle, JobApplicationStatus $status): void

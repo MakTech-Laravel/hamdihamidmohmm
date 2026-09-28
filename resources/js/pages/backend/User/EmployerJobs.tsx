@@ -1,10 +1,20 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Check } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 import { show as jobShow } from '@/routes/jobs';
+import type { SharedData } from '@/types';
 
 type JobRow = {
     id: number;
@@ -61,8 +71,12 @@ const actionClass =
 
 export default function EmployerJobs({ jobs, stats, plan }: Props) {
     const { t } = useLocale();
+    const { flash } = usePage<SharedData>().props;
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<FilterId>('all');
+    const [submitSuccessOpen, setSubmitSuccessOpen] = useState(
+        () => flash.success === 'job_submitted',
+    );
 
     const filters = [
         { id: 'all' as const, label: t('common.all') },
@@ -336,7 +350,7 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                         <td className="px-5 py-4 align-top">
                                             <div className="flex w-[188px] flex-wrap gap-1.5">
                                                 <Link
-                                                    href="/employer/applications"
+                                                    href={`/employer/applications?job_id=${job.id}`}
                                                     className={cn(
                                                         actionClass,
                                                         'bg-[#e6f0fb] text-[#0057c8]',
@@ -447,6 +461,34 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                     </div>
                 </div>
             </div>
+
+            <Dialog
+                open={submitSuccessOpen}
+                onOpenChange={setSubmitSuccessOpen}
+            >
+                <DialogContent className="max-w-md rounded-2xl border-[#e2e8f0] p-6 sm:p-7">
+                    <DialogHeader className="items-center text-center sm:text-center">
+                        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#dcfce7] text-[#166534]">
+                            <Check className="size-7" strokeWidth={2.5} />
+                        </div>
+                        <DialogTitle className="pt-3 text-xl font-bold text-[#050315]">
+                            {t('employer.jobs.submit_success_title')}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm leading-6 text-[#64748b]">
+                            {t('employer.jobs.submit_success_message')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-2 sm:justify-center">
+                        <button
+                            type="button"
+                            onClick={() => setSubmitSuccessOpen(false)}
+                            className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#0057c8] px-5 text-sm font-semibold text-white transition hover:brightness-110 sm:w-auto sm:min-w-[180px]"
+                        >
+                            {t('employer.jobs.submit_success_ok')}
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </EmployerLayout>
     );
 }

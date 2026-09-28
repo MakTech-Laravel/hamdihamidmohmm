@@ -158,7 +158,7 @@ class User extends Authenticatable
 
     public function companyLogoUrl(): ?string
     {
-        if (! $this->hasCompanyLogo()) {
+        if (blank($this->company_logo_path)) {
             return null;
         }
 
@@ -182,8 +182,7 @@ class User extends Authenticatable
 
     public function hasCompanyLogo(): bool
     {
-        return filled($this->company_logo_path)
-            && Storage::disk('public')->exists((string) $this->company_logo_path);
+        return filled($this->company_logo_path);
     }
 
     public function hasCompanyCover(): bool

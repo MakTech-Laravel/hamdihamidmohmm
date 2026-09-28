@@ -30,6 +30,7 @@ class EmployerJobController extends Controller
 
         $jobs = JobPost::query()
             ->where('employer_id', $employer?->id)
+            ->with('employer:id,name,company_name,company_logo_path')
             ->withCount([
                 'applications',
                 'applications as new_applications_count' => fn ($query) => $query->where('created_at', '>=', now()->subDays(7)),
@@ -87,7 +88,7 @@ class EmployerJobController extends Controller
 
         return redirect()
             ->route('employer.jobs')
-            ->with('success', $publish ? 'Job submitted for review.' : 'Draft saved.');
+            ->with('success', $publish ? 'job_submitted' : 'draft_saved');
     }
 
     public function edit(Request $request, JobPost $job): Response
@@ -102,7 +103,7 @@ class EmployerJobController extends Controller
                 'title' => $job->title,
                 'subtitle' => $job->subtitle,
                 'slug' => $job->slug,
-                'logo_url' => $job->hasLogo() ? $job->logoUrl() : null,
+                'logo_url' => $job->logoUrl(),
                 'category' => $job->category,
                 'country' => $job->country,
                 'location' => $job->location,
@@ -144,17 +145,20 @@ class EmployerJobController extends Controller
 
         $this->storeJobLogo($job, $request->file('logo'));
 
+        $submittedForReview = false;
+
         if ($publish && in_array($job->status, [JobPostStatus::Draft, JobPostStatus::Rejected], true)) {
             $job->forceFill([
                 'status' => JobPostStatus::Pending,
                 'rejection_reason' => null,
                 'expires_at' => $job->expires_at ?? now()->addDays(30),
             ])->save();
+            $submittedForReview = true;
         }
 
         return redirect()
             ->route('employer.jobs')
-            ->with('success', 'Job updated.');
+            ->with('success', $submittedForReview ? 'job_submitted' : 'Job updated.');
     }
 
     public function uploadLogo(UploadEmployerJobLogoRequest $request, JobPost $job): RedirectResponse
@@ -239,7 +243,7 @@ class EmployerJobController extends Controller
             'expires_at' => $job->expires_at ?? now()->addDays(30),
         ])->save();
 
-        return back()->with('success', 'Job submitted for review.');
+        return back()->with('success', 'job_submitted');
     }
 
     public function destroy(Request $request, JobPost $job): RedirectResponse
@@ -276,7 +280,7 @@ class EmployerJobController extends Controller
             'id' => $job->id,
             'slug' => $job->slug,
             'title' => $job->title,
-            'logo_url' => $job->hasLogo() ? $job->logoUrl() : null,
+            'logo_url' => $job->listingLogoUrl(),
             'category' => JobListingQuery::displayLabel(JobTaxonomyType::PositionArea, $job->category),
             'country' => JobListingQuery::displayLabel(JobTaxonomyType::Country, $job->country),
             'location' => JobListingQuery::displayLabel(JobTaxonomyType::DutyStation, $job->location),
@@ -333,7 +337,7 @@ class EmployerJobController extends Controller
                 ->take(2)
                 ->map(fn (string $part): string => Str::upper(Str::substr($part, 0, 1)))
                 ->implode(''),
-            'logo_url' => $employer->hasCompanyLogo() ? $employer->companyLogoUrl() : null,
+            'logo_url' => $employer->companyLogoUrl(),
         ];
     }
 

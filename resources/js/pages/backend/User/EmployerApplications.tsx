@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
     index,
@@ -53,7 +53,12 @@ type ApplicationRow = {
 
 type Props = {
     applications: ApplicationRow[];
-    filters: { status: string; search: string };
+    filters: {
+        status: string;
+        search: string;
+        job_id?: number | null;
+        job_title?: string | null;
+    };
     stats: {
         total: number;
         new: number;
@@ -151,7 +156,18 @@ export default function EmployerApplications({
     const { t } = useLocale();
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
-    const [viewingId, setViewingId] = useState<number | null>(null);
+    const [viewingId, setViewingId] = useState<number | null>(
+        () =>
+            filters.job_id && applications.length === 1
+                ? applications[0].id
+                : null,
+    );
+
+    useEffect(() => {
+        if (filters.job_id && applications.length === 1) {
+            setViewingId(applications[0].id);
+        }
+    }, [applications, filters.job_id]);
 
     const viewing = useMemo(
         () =>
@@ -184,6 +200,7 @@ export default function EmployerApplications({
                 query: {
                     status: value || undefined,
                     search: search || undefined,
+                    job_id: filters.job_id || undefined,
                 },
             }),
             {},
@@ -210,7 +227,11 @@ export default function EmployerApplications({
                             {t('employer.applications.title')}
                         </h1>
                         <p className="pt-1 text-sm leading-[21px] text-[#6b7280]">
-                            {t('employer.applications.subtitle')}
+                            {filters.job_title
+                                ? t('employer.applications.filtered_job', {
+                                      job: filters.job_title,
+                                  })
+                                : t('employer.applications.subtitle')}
                         </p>
                     </div>
                 </div>
@@ -419,7 +440,12 @@ export default function EmployerApplications({
                             </table>
                             {filtered.length === 0 && (
                                 <p className="px-5 py-10 text-center text-sm text-[#99a1af]">
-                                    {t('employer.applications.empty_yet')}
+                                    {filters.job_title
+                                        ? t(
+                                              'employer.applications.empty_for_job',
+                                              { job: filters.job_title },
+                                          )
+                                        : t('employer.applications.empty_yet')}
                                 </p>
                             )}
                         </div>

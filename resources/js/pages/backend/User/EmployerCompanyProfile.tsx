@@ -293,7 +293,7 @@ export default function EmployerCompanyProfile({
                                     <img
                                         src={profile.logo_url}
                                         alt=""
-                                        className="size-[72px] rounded-xl object-cover sm:size-[88px]"
+                                        className="size-[72px] rounded-xl object-contain p-1 sm:size-[88px]"
                                     />
                                 ) : (
                                     <div className="flex size-[72px] items-center justify-center rounded-xl bg-[#0057c8] text-lg font-bold text-white sm:size-[88px]">

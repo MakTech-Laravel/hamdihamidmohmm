@@ -41,12 +41,12 @@ export function JobListingCard({
             )}
         >
             <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-5">
-                <div className="flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] sm:size-[112px]">
+                <div className="flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] p-1.5 sm:size-[112px]">
                     {job.logo_url ? (
                         <img
                             src={job.logo_url}
                             alt={job.company || job.title}
-                            className="size-full object-cover"
+                            className="size-full object-contain"
                         />
                     ) : (
                         <div

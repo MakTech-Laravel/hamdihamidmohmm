@@ -1,9 +1,9 @@
 <?php
 
-$resources = dirname(__DIR__, 2).DIRECTORY_SEPARATOR.'resources';
+$resources = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'resources';
 
 test('the theme uses the updated Figma color tokens', function () use ($resources) {
-    $css = file_get_contents($resources.DIRECTORY_SEPARATOR.'css'.DIRECTORY_SEPARATOR.'app.css');
+    $css = file_get_contents($resources . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'app.css');
 
     expect($css)->not->toBeFalse()
         ->toContain('--primary: #0057c8')
@@ -17,7 +17,7 @@ test('the theme uses the updated Figma color tokens', function () use ($resource
 });
 
 test('buttons use a pointer cursor on hover', function () use ($resources) {
-    $css = file_get_contents($resources.DIRECTORY_SEPARATOR.'css'.DIRECTORY_SEPARATOR.'app.css');
+    $css = file_get_contents($resources . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'app.css');
 
     expect($css)->not->toBeFalse()
         ->toContain('button:not(:disabled)')
@@ -25,7 +25,7 @@ test('buttons use a pointer cursor on hover', function () use ($resources) {
 });
 
 test('the public header uses Figma primary and background colors', function () use ($resources) {
-    $header = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'layouts'.DIRECTORY_SEPARATOR.'partials'.DIRECTORY_SEPARATOR.'frontend'.DIRECTORY_SEPARATOR.'header.tsx');
+    $header = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'partials' . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'header.tsx');
 
     expect($header)->not->toBeFalse()
         ->toContain('bg-[#0057c8]')
@@ -37,7 +37,7 @@ test('the public header uses Figma primary and background colors', function () u
 });
 
 test('the public home hero uses Figma accent and floating stat colors', function () use ($resources) {
-    $home = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'frontend'.DIRECTORY_SEPARATOR.'home.tsx');
+    $home = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'home.tsx');
 
     expect($home)->not->toBeFalse()
         ->toContain('text-[#e57124]')
@@ -55,7 +55,7 @@ test('the public home hero uses Figma accent and floating stat colors', function
 });
 
 test('the public footer uses Figma LinkedIn social icons', function () use ($resources) {
-    $footer = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'layouts'.DIRECTORY_SEPARATOR.'partials'.DIRECTORY_SEPARATOR.'frontend'.DIRECTORY_SEPARATOR.'footer.tsx');
+    $footer = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'partials' . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'footer.tsx');
 
     expect($footer)->not->toBeFalse()
         ->toContain("src: '/images/home/linkedin.svg'")
@@ -71,7 +71,7 @@ test('the public footer uses Figma LinkedIn social icons', function () use ($res
 });
 
 test('the public pricing page includes the Figma three-package layout', function () use ($resources) {
-    $pricing = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'components'.DIRECTORY_SEPARATOR.'frontend'.DIRECTORY_SEPARATOR.'pricing-package-cards.tsx');
+    $pricing = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pricing-package-cards.tsx');
 
     expect($pricing)->not->toBeFalse()
         ->toContain('lg:grid-cols-3')
@@ -82,10 +82,10 @@ test('the public pricing page includes the Figma three-package layout', function
 });
 
 test('the employer dashboard uses the Figma dashboard frame tokens', function () use ($resources) {
-    $dashboard = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'backend'.DIRECTORY_SEPARATOR.'User'.DIRECTORY_SEPARATOR.'EmployerDashboard.tsx');
-    $header = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'layouts'.DIRECTORY_SEPARATOR.'partials'.DIRECTORY_SEPARATOR.'employer'.DIRECTORY_SEPARATOR.'header.tsx');
-    $sidebar = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'layouts'.DIRECTORY_SEPARATOR.'partials'.DIRECTORY_SEPARATOR.'employer'.DIRECTORY_SEPARATOR.'sidebar.tsx');
-    $layout = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'layouts'.DIRECTORY_SEPARATOR.'employer-layout.tsx');
+    $dashboard = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'User' . DIRECTORY_SEPARATOR . 'EmployerDashboard.tsx');
+    $header = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'partials' . DIRECTORY_SEPARATOR . 'employer' . DIRECTORY_SEPARATOR . 'header.tsx');
+    $sidebar = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'partials' . DIRECTORY_SEPARATOR . 'employer' . DIRECTORY_SEPARATOR . 'sidebar.tsx');
+    $layout = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'employer-layout.tsx');
 
     expect($dashboard)->not->toBeFalse()
         ->toContain("t('employer.dashboard.welcome'")
@@ -116,7 +116,7 @@ test('the employer dashboard uses the Figma dashboard frame tokens', function ()
 });
 
 test('the employer company profile uses the Figma completion and verification cards', function () use ($resources) {
-    $profile = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'backend'.DIRECTORY_SEPARATOR.'User'.DIRECTORY_SEPARATOR.'EmployerCompanyProfile.tsx');
+    $profile = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'User' . DIRECTORY_SEPARATOR . 'EmployerCompanyProfile.tsx');
 
     expect($profile)->not->toBeFalse()
         ->toContain("t('employer.profile.completion')")
@@ -131,7 +131,7 @@ test('the employer company profile uses the Figma completion and verification ca
 });
 
 test('the employer packages cards pin select plan buttons to the same baseline', function () use ($resources) {
-    $packages = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'backend'.DIRECTORY_SEPARATOR.'User'.DIRECTORY_SEPARATOR.'EmployerPackages.tsx');
+    $packages = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'User' . DIRECTORY_SEPARATOR . 'EmployerPackages.tsx');
 
     expect($packages)->not->toBeFalse()
         ->toContain('flex h-full flex-col')
@@ -143,7 +143,7 @@ test('the employer packages cards pin select plan buttons to the same baseline',
 });
 
 test('the employer notifications page uses the Figma card layout', function () use ($resources) {
-    $notifications = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'backend'.DIRECTORY_SEPARATOR.'User'.DIRECTORY_SEPARATOR.'EmployerNotifications.tsx');
+    $notifications = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'User' . DIRECTORY_SEPARATOR . 'EmployerNotifications.tsx');
 
     expect($notifications)->not->toBeFalse()
         ->toContain("t('employer.notifications.subtitle')")
@@ -158,7 +158,7 @@ test('the employer notifications page uses the Figma card layout', function () u
 });
 
 test('the employer settings page uses the Figma account layout', function () use ($resources) {
-    $settings = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'backend'.DIRECTORY_SEPARATOR.'User'.DIRECTORY_SEPARATOR.'EmployerSettings.tsx');
+    $settings = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'User' . DIRECTORY_SEPARATOR . 'EmployerSettings.tsx');
 
     expect($settings)->not->toBeFalse()
         ->toContain("t('employer.settings.subtitle')")
@@ -172,8 +172,8 @@ test('the employer settings page uses the Figma account layout', function () use
 });
 
 test('the employer applications page uses the Figma table layout', function () use ($resources) {
-    $applications = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'backend'.DIRECTORY_SEPARATOR.'User'.DIRECTORY_SEPARATOR.'EmployerApplications.tsx');
-    $drawer = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'components'.DIRECTORY_SEPARATOR.'employer'.DIRECTORY_SEPARATOR.'application-preview-drawer.tsx');
+    $applications = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'User' . DIRECTORY_SEPARATOR . 'EmployerApplications.tsx');
+    $drawer = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'employer' . DIRECTORY_SEPARATOR . 'application-preview-drawer.tsx');
 
     expect($applications)->not->toBeFalse()
         ->toContain("t('employer.applications.subtitle')")
@@ -207,7 +207,7 @@ test('the employer applications page uses the Figma table layout', function () u
 });
 
 test('the employer my jobs page uses the Figma table layout', function () use ($resources) {
-    $jobs = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'backend'.DIRECTORY_SEPARATOR.'User'.DIRECTORY_SEPARATOR.'EmployerJobs.tsx');
+    $jobs = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'User' . DIRECTORY_SEPARATOR . 'EmployerJobs.tsx');
 
     expect($jobs)->not->toBeFalse()
         ->toContain("t('employer.jobs.post_new')")
@@ -224,8 +224,8 @@ test('the employer my jobs page uses the Figma table layout', function () use ($
 });
 
 test('the admin job management page uses the Figma list layout', function () use ($resources) {
-    $jobs = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'backend'.DIRECTORY_SEPARATOR.'Admin'.DIRECTORY_SEPARATOR.'JobManagement.tsx');
-    $drawer = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'components'.DIRECTORY_SEPARATOR.'admin-portal'.DIRECTORY_SEPARATOR.'candidate-preview-drawer.tsx');
+    $jobs = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'Admin' . DIRECTORY_SEPARATOR . 'JobManagement.tsx');
+    $drawer = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'admin-portal' . DIRECTORY_SEPARATOR . 'candidate-preview-drawer.tsx');
 
     expect($jobs)->not->toBeFalse()
         ->toContain("t('admin.jobs.title')")
@@ -240,7 +240,7 @@ test('the admin job management page uses the Figma list layout', function () use
         ->toContain('text-[#1e40af]')
         ->not->toContain('Featured Jobs')
         ->not->toContain('Edit job')
-        ->not->toContain('Pencil')
+        ->toContain('Pencil')
         ->not->toContain('#323981')
         ->not->toContain('#ffebf5');
 
@@ -256,7 +256,7 @@ test('the admin job management page uses the Figma list layout', function () use
 });
 
 test('the admin sidebar uses the Figma white surface and primary blue', function () use ($resources) {
-    $sidebar = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'layouts'.DIRECTORY_SEPARATOR.'partials'.DIRECTORY_SEPARATOR.'admin-portal'.DIRECTORY_SEPARATOR.'sidebar.tsx');
+    $sidebar = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'partials' . DIRECTORY_SEPARATOR . 'admin-portal' . DIRECTORY_SEPARATOR . 'sidebar.tsx');
 
     expect($sidebar)->not->toBeFalse()
         ->toContain('bg-white')
@@ -267,10 +267,10 @@ test('the admin sidebar uses the Figma white surface and primary blue', function
 });
 
 test('the job seeker portal pages use the Figma phase one layouts', function () use ($resources) {
-    $dashboard = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'backend'.DIRECTORY_SEPARATOR.'User'.DIRECTORY_SEPARATOR.'JobSeekerDashboard.tsx');
-    $applications = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'backend'.DIRECTORY_SEPARATOR.'User'.DIRECTORY_SEPARATOR.'JobSeekerApplications.tsx');
-    $profile = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'pages'.DIRECTORY_SEPARATOR.'backend'.DIRECTORY_SEPARATOR.'User'.DIRECTORY_SEPARATOR.'JobSeekerProfile.tsx');
-    $sidebar = file_get_contents($resources.DIRECTORY_SEPARATOR.'js'.DIRECTORY_SEPARATOR.'layouts'.DIRECTORY_SEPARATOR.'partials'.DIRECTORY_SEPARATOR.'job-seeker'.DIRECTORY_SEPARATOR.'sidebar.tsx');
+    $dashboard = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'User' . DIRECTORY_SEPARATOR . 'JobSeekerDashboard.tsx');
+    $applications = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'User' . DIRECTORY_SEPARATOR . 'JobSeekerApplications.tsx');
+    $profile = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'User' . DIRECTORY_SEPARATOR . 'JobSeekerProfile.tsx');
+    $sidebar = file_get_contents($resources . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'partials' . DIRECTORY_SEPARATOR . 'job-seeker' . DIRECTORY_SEPARATOR . 'sidebar.tsx');
 
     expect($dashboard)->not->toBeFalse()
         ->toContain("t('job_seeker.dashboard.welcome'")

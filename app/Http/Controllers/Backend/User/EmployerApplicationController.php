@@ -6,6 +6,7 @@ use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\UpdateEmployerApplicationRequest;
 use App\Models\JobApplication;
+use App\Models\JobPost;
 use App\Models\User;
 use App\Support\ApplicantProfilePreview;
 use App\Support\JobSeekerResume;
@@ -24,6 +25,7 @@ class EmployerApplicationController extends Controller
     {
         $status = $request->string('status')->toString();
         $search = $request->string('search')->toString();
+        $jobId = $request->integer('job_id');
 
         $appsQuery = JobApplication::query()
             ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id))
@@ -33,6 +35,10 @@ class EmployerApplicationController extends Controller
                 'jobPost:id,title',
             ])
             ->latest();
+
+        if ($jobId > 0) {
+            $appsQuery->where('job_post_id', $jobId);
+        }
 
         if (JobApplicationStatus::tryFrom($status) instanceof JobApplicationStatus) {
             $appsQuery->where('status', $status);
@@ -50,9 +56,27 @@ class EmployerApplicationController extends Controller
         $allForStats = JobApplication::query()
             ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id));
 
+        if ($jobId > 0) {
+            $allForStats->where('job_post_id', $jobId);
+        }
+
+        $jobTitle = null;
+
+        if ($jobId > 0) {
+            $jobTitle = JobPost::query()
+                ->where('employer_id', $request->user()?->id)
+                ->where('id', $jobId)
+                ->value('title');
+        }
+
         return Inertia::render('backend/User/EmployerApplications', [
             'applications' => $applications,
-            'filters' => ['status' => $status, 'search' => $search],
+            'filters' => [
+                'status' => $status,
+                'search' => $search,
+                'job_id' => $jobId > 0 ? $jobId : null,
+                'job_title' => $jobTitle,
+            ],
             'stats' => [
                 'total' => (clone $allForStats)->count(),
                 'new' => (clone $allForStats)->where('created_at', '>=', now()->startOfWeek())->count(),
