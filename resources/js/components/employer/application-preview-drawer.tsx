@@ -60,10 +60,20 @@ export type ApplicationPreview = {
         name: string;
         issuer: string | null;
         date: string | null;
+        attachments?: Array<{
+            file_name: string;
+            download_url: string | null;
+        }>;
     }>;
     cover_letter: string | null;
     resume_name: string | null;
     resume_url: string | null;
+    highest_degree_name?: string | null;
+    highest_degree_url?: string | null;
+    other_document_name?: string | null;
+    other_document_url?: string | null;
+    cover_letter_file_name?: string | null;
+    cover_letter_file_url?: string | null;
     avatar_url?: string | null;
     timeline: ApplicationPreviewTimelineStep[];
 };
@@ -125,7 +135,6 @@ function DrawerBody({
     const { t } = useLocale();
     const [selectedStatus, setSelectedStatus] = useState(preview.status_value);
     const [avatarFailed, setAvatarFailed] = useState(false);
-    const resumeEnabled = preview.resume_url !== null;
     const mailto = preview.email !== '—' ? `mailto:${preview.email}` : null;
     const showAvatar = Boolean(preview.avatar_url) && !avatarFailed;
 
@@ -294,9 +303,9 @@ function DrawerBody({
                             {t('employer.drawer.no_certifications')}
                         </EmptyText>
                     ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             {preview.certifications.map((item) => (
-                                <div key={item.name}>
+                                <div key={item.name} className="space-y-1.5">
                                     <p className="text-[13.6px] font-semibold text-[#050315]">
                                         {item.name}
                                     </p>
@@ -305,6 +314,22 @@ function DrawerBody({
                                             .filter(Boolean)
                                             .join(' · ') || '—'}
                                     </p>
+                                    {(item.attachments ?? []).map((file) =>
+                                        file.download_url ? (
+                                            <a
+                                                key={`${item.name}-${file.file_name}`}
+                                                href={file.download_url}
+                                                download
+                                                className="inline-flex items-center gap-1.5 text-[12.8px] font-semibold text-[#0057c8]"
+                                            >
+                                                <Download
+                                                    className="size-3.5"
+                                                    strokeWidth={2}
+                                                />
+                                                {file.file_name}
+                                            </a>
+                                        ) : null,
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -319,31 +344,47 @@ function DrawerBody({
                     </Section>
                 ) : null}
 
-                <Section title={t('employer.drawer.resume')}>
-                    {preview.resume_name ? (
-                        <p className="pb-2 text-[12.8px] text-[#3977a6]">
-                            {preview.resume_name}
-                        </p>
-                    ) : null}
-                    {resumeEnabled ? (
-                        <a
-                            href={preview.resume_url ?? '#'}
-                            download
-                            className="inline-flex h-[38px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3.5 text-[13.6px] font-semibold text-white hover:bg-[#0046a3]"
-                        >
-                            <Download className="size-3.5" strokeWidth={2} />
-                            {t('employer.drawer.download_resume')}
-                        </a>
-                    ) : (
-                        <button
-                            type="button"
-                            disabled
-                            className="inline-flex h-[38px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3.5 text-[13.6px] font-semibold text-white opacity-50"
-                        >
-                            <Download className="size-3.5" strokeWidth={2} />
-                            {t('employer.drawer.download_resume')}
-                        </button>
-                    )}
+                <Section title={t('employer.drawer.documents')}>
+                    <div className="flex flex-col gap-2">
+                        <DocumentDownload
+                            label={t('employer.drawer.resume')}
+                            fileName={preview.resume_name}
+                            url={preview.resume_url}
+                            buttonLabel={t('employer.drawer.download_resume')}
+                        />
+                        <DocumentDownload
+                            label={t('employer.drawer.highest_degree')}
+                            fileName={preview.highest_degree_name}
+                            url={preview.highest_degree_url}
+                            buttonLabel={t(
+                                'employer.drawer.download_highest_degree',
+                            )}
+                        />
+                        <DocumentDownload
+                            label={t('employer.drawer.other_document')}
+                            fileName={preview.other_document_name}
+                            url={preview.other_document_url}
+                            buttonLabel={t(
+                                'employer.drawer.download_other_document',
+                            )}
+                        />
+                        <DocumentDownload
+                            label={t('employer.drawer.cover_letter_file')}
+                            fileName={preview.cover_letter_file_name}
+                            url={preview.cover_letter_file_url}
+                            buttonLabel={t(
+                                'employer.drawer.download_cover_letter',
+                            )}
+                        />
+                        {!preview.resume_url &&
+                        !preview.highest_degree_url &&
+                        !preview.other_document_url &&
+                        !preview.cover_letter_file_url ? (
+                            <EmptyText>
+                                {t('employer.drawer.no_documents')}
+                            </EmptyText>
+                        ) : null}
+                    </div>
                 </Section>
 
                 <Section title={t('employer.drawer.status_timeline')}>
@@ -427,6 +468,41 @@ function DrawerBody({
                     </button>
                 )}
             </div>
+        </div>
+    );
+}
+
+function DocumentDownload({
+    label,
+    fileName,
+    url,
+    buttonLabel,
+}: {
+    label: string;
+    fileName?: string | null;
+    url?: string | null;
+    buttonLabel: string;
+}) {
+    if (!url) {
+        return null;
+    }
+
+    return (
+        <div className="rounded-lg border border-[#e2e8f0] px-3 py-2.5">
+            <p className="text-[11px] font-semibold text-[#64748b]">{label}</p>
+            {fileName ? (
+                <p className="truncate pt-0.5 text-[12.8px] text-[#3977a6]">
+                    {fileName}
+                </p>
+            ) : null}
+            <a
+                href={url}
+                download
+                className="mt-2 inline-flex h-[34px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3 text-[12.8px] font-semibold text-white hover:bg-[#0046a3]"
+            >
+                <Download className="size-3.5" strokeWidth={2} />
+                {buttonLabel}
+            </a>
         </div>
     );
 }

@@ -67,6 +67,14 @@ class PlatformSetting extends Model
                 'bank_iban' => '',
                 'bank_instructions' => 'Transfer the package fee to the platform bank account, then upload your payment receipt for admin review.',
             ],
+            'experience_filters' => [
+                'ranges' => [
+                    ['key' => '0-2', 'label' => '0-2 years', 'min' => 0, 'max' => 2, 'enabled' => true],
+                    ['key' => '3-5', 'label' => '3-5 years', 'min' => 3, 'max' => 5, 'enabled' => true],
+                    ['key' => '6-10', 'label' => '6-10 years', 'min' => 6, 'max' => 10, 'enabled' => true],
+                    ['key' => '10+', 'label' => '10+ years', 'min' => 10, 'max' => null, 'enabled' => true],
+                ],
+            ],
         ];
     }
 

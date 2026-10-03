@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
 
-    Route::middleware('role:'.RoleName::JobSeeker->value)->prefix('job-seeker')->name('job-seeker.')->group(function () {
+    Route::middleware('role:' . RoleName::JobSeeker->value)->prefix('job-seeker')->name('job-seeker.')->group(function () {
         Route::get('/dashboard', JobSeekerDashboardController::class)->name('dashboard');
         Route::get('/jobs', JobSeekerJobsController::class)->name('jobs');
         Route::get('/profile', [JobSeekerProfileController::class, 'edit'])->name('profile');
@@ -53,9 +53,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/settings/sessions', [JobSeekerSettingsController::class, 'destroyOtherSessions'])->name('settings.sessions.destroy');
     });
 
-    Route::middleware('role:'.RoleName::JobSeeker->value)->post('/jobs/{jobPost}/apply', [JobSeekerApplicationsController::class, 'store'])->name('jobs.apply');
+    Route::middleware('role:' . RoleName::JobSeeker->value)->post('/jobs/{jobPost}/apply', [JobSeekerApplicationsController::class, 'store'])->name('jobs.apply');
 
-    Route::middleware(['role:'.RoleName::Employer->value, 'employer.approved'])->prefix('employer')->name('employer.')->group(function () {
+    Route::middleware(['role:' . RoleName::Employer->value, 'employer.approved'])->prefix('employer')->name('employer.')->group(function () {
         Route::get('/dashboard', EmployerDashboardController::class)->name('dashboard');
         Route::get('/profile', [EmployerProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [EmployerProfileController::class, 'update'])->name('profile.update');
@@ -87,6 +87,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/jobs/{job}', [EmployerJobController::class, 'destroy'])->name('jobs.destroy');
         Route::get('/applications', [EmployerApplicationController::class, 'index'])->name('applications');
         Route::get('/applications/{application}/resume', [EmployerApplicationController::class, 'downloadResume'])->name('applications.resume');
+        Route::get('/applications/{application}/highest-degree', [EmployerApplicationController::class, 'downloadHighestDegree'])->name('applications.highest-degree');
+        Route::get('/applications/{application}/other-document', [EmployerApplicationController::class, 'downloadOtherDocument'])->name('applications.other-document');
+        Route::get('/applications/{application}/cover-letter', [EmployerApplicationController::class, 'downloadCoverLetter'])->name('applications.cover-letter');
+        Route::get('/applications/{application}/certifications/{index}/{attachment?}', [EmployerApplicationController::class, 'downloadCertification'])->name('applications.certifications');
         Route::put('/applications/{application}', [EmployerApplicationController::class, 'update'])->name('applications.update');
         Route::get('/notifications', [EmployerPortalPageController::class, 'notifications'])->name('notifications');
         Route::post('/notifications/read-all', [EmployerPortalPageController::class, 'markAllRead'])->name('notifications.read-all');

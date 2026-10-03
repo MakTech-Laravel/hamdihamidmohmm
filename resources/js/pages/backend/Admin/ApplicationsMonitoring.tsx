@@ -41,7 +41,17 @@ type Props = {
         to: number | null;
         total: number;
     };
-    filters: { status: string };
+    filters: {
+        status: string;
+        experience?: string;
+        experience_sort?: string;
+    };
+    experience_options?: Array<{
+        key: string;
+        label: string;
+        min: number | null;
+        max: number | null;
+    }>;
     stats: { total: number; today: number; interviews: number; hired: number };
     trend: Array<{ label: string; count: number }>;
 };
@@ -78,6 +88,7 @@ function statusTone(
 export default function ApplicationsMonitoring({
     applications,
     filters,
+    experience_options = [],
     stats,
     trend,
 }: Props) {
@@ -85,6 +96,31 @@ export default function ApplicationsMonitoring({
     const { t } = useLocale();
     const maxTrend = Math.max(...trend.map((item) => item.count), 1);
     const [viewing, setViewing] = useState<ApplicationRow | null>(null);
+
+    const visitApplications = (query: Record<string, string>): void => {
+        router.get('/admin/applications', query, {
+            preserveState: true,
+            replace: true,
+        });
+    };
+
+    const currentQuery = (): Record<string, string> => {
+        const query: Record<string, string> = {};
+
+        if (filters.status) {
+            query.status = filters.status;
+        }
+
+        if (filters.experience) {
+            query.experience = filters.experience;
+        }
+
+        if (filters.experience_sort) {
+            query.experience_sort = filters.experience_sort;
+        }
+
+        return query;
+    };
 
     return (
         <AdminPortalLayout>
@@ -170,15 +206,73 @@ export default function ApplicationsMonitoring({
                                 key={key}
                                 label={t(labelKey)}
                                 active={(filters.status || 'all') === key}
-                                onClick={() =>
-                                    router.get(
-                                        '/admin/applications',
-                                        key === 'all' ? {} : { status: key },
-                                        { preserveState: true, replace: true },
-                                    )
-                                }
+                                onClick={() => {
+                                    const query = currentQuery();
+                                    delete query.status;
+
+                                    if (key !== 'all') {
+                                        query.status = key;
+                                    }
+
+                                    visitApplications(query);
+                                }}
                             />
                         ))}
+                    </div>
+                    <div className="mb-4 flex flex-wrap gap-3">
+                        <select
+                            value={filters.experience ?? ''}
+                            onChange={(event) => {
+                                const query = currentQuery();
+
+                                if (event.target.value) {
+                                    query.experience = event.target.value;
+                                } else {
+                                    delete query.experience;
+                                }
+
+                                visitApplications(query);
+                            }}
+                            aria-label={t(
+                                'admin.applications.experience_filter',
+                            )}
+                            className="h-9 rounded-lg border border-[#e2e8f0] bg-white px-3 text-sm text-[#050315]"
+                        >
+                            <option value="">
+                                {t('admin.applications.experience_all')}
+                            </option>
+                            {experience_options.map((option) => (
+                                <option key={option.key} value={option.key}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            value={filters.experience_sort ?? ''}
+                            onChange={(event) => {
+                                const query = currentQuery();
+
+                                if (event.target.value) {
+                                    query.experience_sort = event.target.value;
+                                } else {
+                                    delete query.experience_sort;
+                                }
+
+                                visitApplications(query);
+                            }}
+                            aria-label={t('admin.applications.experience_sort')}
+                            className="h-9 rounded-lg border border-[#e2e8f0] bg-white px-3 text-sm text-[#050315]"
+                        >
+                            <option value="">
+                                {t('admin.applications.sort_newest')}
+                            </option>
+                            <option value="asc">
+                                {t('admin.applications.sort_exp_asc')}
+                            </option>
+                            <option value="desc">
+                                {t('admin.applications.sort_exp_desc')}
+                            </option>
+                        </select>
                     </div>
 
                     <AdminTableShell

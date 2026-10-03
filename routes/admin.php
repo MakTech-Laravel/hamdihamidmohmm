@@ -83,6 +83,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/applications/export', [ApplicationMonitoringController::class, 'export'])->name('applications.export');
         Route::get('/applications/{application}/resume', [ApplicationMonitoringController::class, 'downloadResume'])->name('applications.resume');
+        Route::get('/applications/{application}/highest-degree', [ApplicationMonitoringController::class, 'downloadHighestDegree'])->name('applications.highest-degree');
+        Route::get('/applications/{application}/other-document', [ApplicationMonitoringController::class, 'downloadOtherDocument'])->name('applications.other-document');
+        Route::get('/applications/{application}/cover-letter', [ApplicationMonitoringController::class, 'downloadCoverLetter'])->name('applications.cover-letter');
+        Route::get('/applications/{application}/certifications/{index}/{attachment?}', [ApplicationMonitoringController::class, 'downloadCertification'])->name('applications.certifications');
         Route::get('/applications', [ApplicationMonitoringController::class, 'index'])->name('applications.index');
 
         Route::get('/packages', [PackageManagementController::class, 'index'])->name('packages.index');

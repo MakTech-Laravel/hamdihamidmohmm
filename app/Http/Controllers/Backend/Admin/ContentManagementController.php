@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Backend\Admin;
 
 use App\Enums\ContentPageStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\StoreContentPageRequest;
 use App\Http\Requests\Backend\Admin\UpdateContentPageRequest;
 use App\Models\ContentPage;
+use App\Models\User;
+use App\Notifications\PolicyUpdatedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,7 +22,7 @@ class ContentManagementController extends Controller
     {
         abort_unless($request->user()?->canManageCms(), 403);
 
-        $pages = ContentPage::query()->latest()->get()->map(fn (ContentPage $page) => [
+        $pages = ContentPage::query()->latest()->get()->map(fn(ContentPage $page) => [
             'id' => $page->id,
             'title' => $page->title,
             'slug' => $page->slug,
@@ -37,7 +41,9 @@ class ContentManagementController extends Controller
 
     public function store(StoreContentPageRequest $request): RedirectResponse
     {
-        ContentPage::query()->create($request->validated());
+        $page = ContentPage::query()->create($request->validated());
+
+        $this->notifySeekersIfPublished($page);
 
         return back()->with('success', 'Content created.');
     }
@@ -46,6 +52,8 @@ class ContentManagementController extends Controller
     {
         $contentPage->update($request->validated());
 
+        $this->notifySeekersIfPublished($contentPage->fresh());
+
         return back()->with('success', 'Content updated.');
     }
 
@@ -53,11 +61,17 @@ class ContentManagementController extends Controller
     {
         abort_unless($request->user()?->canManageCms(), 403);
 
+        $wasPublished = $contentPage->status === ContentPageStatus::Published;
+
         $contentPage->forceFill([
-            'status' => $contentPage->status === ContentPageStatus::Published
+            'status' => $wasPublished
                 ? ContentPageStatus::Draft
                 : ContentPageStatus::Published,
         ])->save();
+
+        if (! $wasPublished && $contentPage->status === ContentPageStatus::Published) {
+            $this->notifySeekersIfPublished($contentPage);
+        }
 
         return back()->with('success', 'Content status updated.');
     }
@@ -69,5 +83,31 @@ class ContentManagementController extends Controller
         $contentPage->delete();
 
         return back()->with('success', 'Content deleted.');
+    }
+
+    private function notifySeekersIfPublished(?ContentPage $page): void
+    {
+        if ($page === null || $page->status !== ContentPageStatus::Published) {
+            return;
+        }
+
+        $seekers = User::query()
+            ->where(function ($query): void {
+                $query->where('role', UserRole::JobSeeker)
+                    ->orWhereHas('roles', fn($roleQuery) => $roleQuery->where('name', 'job-seeker'));
+            })
+            ->get();
+
+        if ($seekers->isEmpty()) {
+            return;
+        }
+
+        Notification::send(
+            $seekers,
+            new PolicyUpdatedNotification(
+                (string) $page->title,
+                url('/' . $page->slug),
+            ),
+        );
     }
 }

@@ -139,8 +139,8 @@ test('admin portal ships the figma company logo', function () {
     expect($path)->toBeFile()
         ->and($brand)->toBeFile()
         ->and(md5_file($path))->toBe(md5_file($brand))
-        ->and($info[0])->toBe(250)
-        ->and($info[1])->toBe(166)
+        ->and($info[0])->toBe(1024)
+        ->and($info[1])->toBe(576)
         ->and($info['mime'])->toBe('image/png');
 });
 
