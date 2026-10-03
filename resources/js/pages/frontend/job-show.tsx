@@ -239,12 +239,12 @@ export default function JobShow({
 
                             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] sm:p-7">
                                 <div className="flex items-start gap-4">
-                                    <div className="flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e5e7eb] bg-white text-lg font-bold text-[#0057c8] sm:size-[112px]">
+                                    <div className="flex size-[80px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white text-base font-bold text-[#0057c8] sm:size-[88px]">
                                         {job.logo_url ? (
                                             <img
                                                 src={job.logo_url}
                                                 alt={job.title}
-                                                className="size-full object-cover object-center"
+                                                className="size-full object-contain object-center p-0.5"
                                             />
                                         ) : (
                                             job.initials || 'JP'
@@ -561,11 +561,11 @@ export default function JobShow({
                                             className="flex items-center gap-3 rounded-xl border border-[#f1f5f9] p-3 transition hover:border-[#dbeafe] hover:bg-[#f8faff]"
                                         >
                                             {item.logo_url ? (
-                                                <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e5e7eb] bg-white">
+                                                <div className="flex size-[64px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
                                                     <img
                                                         src={item.logo_url}
                                                         alt={item.company || item.title}
-                                                        className="size-full object-contain object-center p-1"
+                                                        className="size-full object-contain object-center p-0.5"
                                                     />
                                                 </div>
                                             ) : (

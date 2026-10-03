@@ -242,7 +242,7 @@ export default function JobSeekerDashboard({
                                     >
                                         <div className="flex min-w-0 flex-1 items-start gap-3">
                                             {job.logo_url ? (
-                                                <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e5e7eb] bg-white">
+                                                <div className="flex size-[64px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
                                                     <img
                                                         src={
                                                             job.logo_url
@@ -251,7 +251,7 @@ export default function JobSeekerDashboard({
                                                             job.company ||
                                                             job.title
                                                         }
-                                                        className="size-full object-contain object-center p-1"
+                                                        className="size-full object-contain object-center p-0.5"
                                                     />
                                                 </div>
                                             ) : (

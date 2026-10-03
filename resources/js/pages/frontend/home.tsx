@@ -349,11 +349,11 @@ export default function Home({
                                 >
                                     <div className="flex items-start gap-4">
                                         {job.logo_url ? (
-                                            <div className="flex size-[56px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e5e7eb] bg-white sm:size-[64px]">
+                                            <div className="flex size-[56px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white sm:size-[64px]">
                                                 <img
                                                     src={job.logo_url}
                                                     alt={job.company || job.title}
-                                                    className="size-full object-cover object-center"
+                                                    className="size-full object-contain object-center p-0.5"
                                                 />
                                             </div>
                                         ) : (
