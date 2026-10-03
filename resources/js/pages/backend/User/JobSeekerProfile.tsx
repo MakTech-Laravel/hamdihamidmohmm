@@ -18,14 +18,12 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode 
 
 import {
     destroyCertificationDocument,
-    destroyCoverLetter,
     destroyHighestDegree,
     destroyOtherDocument,
     destroyPhoto,
     destroyResume,
     update as updateProfile,
     uploadCertificationDocument,
-    uploadCoverLetter,
     uploadHighestDegree,
     uploadOtherDocument,
     uploadPhoto,
@@ -109,8 +107,8 @@ type Profile = {
     resume_status: string | null;
     resume_name: string | null;
     resume_url: string | null;
-    cover_letter_name: string | null;
-    cover_letter_url: string | null;
+    cover_letter_name?: string | null;
+    cover_letter_url?: string | null;
     highest_degree_name: string | null;
     highest_degree_url: string | null;
     other_document_name: string | null;
@@ -606,9 +604,11 @@ function cleanCertifications(
 }
 
 export default function JobSeekerProfile({ profile }: { profile: Profile }) {
-    const { flash } = usePage<SharedData>().props;
+    const { flash, auth } = usePage<SharedData>().props;
     const { t } = useLocale();
     const [editing, setEditing] = useState<SectionId | null>(null);
+    const [autosaveNote, setAutosaveNote] = useState<string | null>(null);
+    const draftKey = `job-seeker-profile-draft:${auth.user?.id ?? 'guest'}`;
 
     const form = useForm(profileToFormData(profile));
 
@@ -629,6 +629,58 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps -- sync when server profile refreshes
     }, [profile, editing]);
 
+    useEffect(() => {
+        if (typeof window === 'undefined' || editing === null) {
+            return;
+        }
+
+        try {
+            const raw = window.localStorage.getItem(draftKey);
+
+            if (!raw) {
+                return;
+            }
+
+            const draft = JSON.parse(raw) as ReturnType<typeof profileToFormData> & {
+                section?: SectionId;
+            };
+
+            if (draft.section && draft.section !== editing) {
+                return;
+            }
+
+            const { section: _section, ...data } = draft;
+            form.setData({ ...profileToFormData(profile), ...data });
+            setAutosaveNote(t('job_seeker.profile.restore_draft'));
+            window.setTimeout(() => setAutosaveNote(null), 3000);
+        } catch {
+            // Ignore corrupt drafts.
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once when entering edit mode
+    }, [editing, draftKey]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || editing === null) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            try {
+                window.localStorage.setItem(
+                    draftKey,
+                    JSON.stringify({ ...form.data, section: editing }),
+                );
+                setAutosaveNote(t('job_seeker.profile.autosaved'));
+                window.setTimeout(() => setAutosaveNote(null), 2000);
+            } catch {
+                // Quota / private mode.
+            }
+        }, 1200);
+
+        return () => window.clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce on form data while editing
+    }, [form.data, editing, draftKey]);
+
     const completeMap = useMemo(() => {
         return Object.fromEntries(
             profile.checklist.map((item) => [item.id, item.complete]),
@@ -645,6 +697,11 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
         form.setData(profileToFormData(profile));
         form.clearErrors();
         setEditing(null);
+        try {
+            window.localStorage.removeItem(draftKey);
+        } catch {
+            // ignore
+        }
     };
 
     const save = (): void => {
@@ -674,7 +731,14 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
 
         form.put(updateProfile.url(), {
             preserveScroll: true,
-            onSuccess: () => setEditing(null),
+            onSuccess: () => {
+                setEditing(null);
+                try {
+                    window.localStorage.removeItem(draftKey);
+                } catch {
+                    // ignore
+                }
+            },
         });
     };
 
@@ -690,6 +754,12 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                             : t('job_seeker.profile.saved')}
                     </div>
                 )}
+
+                {autosaveNote ? (
+                    <div className="rounded-xl border border-[#dbeafe] bg-[#eff6ff] px-4 py-3 text-sm text-[#1e3a8a]">
+                        {autosaveNote}
+                    </div>
+                ) : null}
 
                 {Object.keys(form.errors).length > 0 && (
                     <div className="rounded-xl border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c]">
@@ -1820,8 +1890,6 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                         resumeName={profile.resume_name}
                         resumeStatus={profile.resume_status}
                         resumeUrl={profile.resume_url}
-                        coverLetterName={profile.cover_letter_name}
-                        coverLetterUrl={profile.cover_letter_url}
                         highestDegreeName={profile.highest_degree_name}
                         highestDegreeUrl={profile.highest_degree_url}
                         otherDocumentName={profile.other_document_name}
@@ -1854,7 +1922,7 @@ function ProfileAvatar({
                 alt={name}
                 onError={() => setFailed(true)}
                 className={cn(
-                    'shrink-0 rounded-full object-cover',
+                    'shrink-0 rounded-full object-cover object-top',
                     sizeClassName,
                 )}
             />
@@ -2080,8 +2148,6 @@ function ResumeDocumentsUploader({
     resumeName,
     resumeStatus,
     resumeUrl,
-    coverLetterName,
-    coverLetterUrl,
     highestDegreeName,
     highestDegreeUrl,
     otherDocumentName,
@@ -2090,15 +2156,18 @@ function ResumeDocumentsUploader({
     resumeName: string | null;
     resumeStatus: string | null;
     resumeUrl: string | null;
-    coverLetterName: string | null;
-    coverLetterUrl: string | null;
     highestDegreeName: string | null;
     highestDegreeUrl: string | null;
     otherDocumentName: string | null;
     otherDocumentUrl: string | null;
 }) {
+    const { t } = useLocale();
+
     return (
         <div className="max-w-xl space-y-8">
+            <p className="rounded-xl border border-[#dbeafe] bg-[#eff6ff] px-3 py-2.5 text-xs leading-5 text-[#1e3a8a]">
+                {t('job_seeker.profile.cover_letter_apply_hint')}
+            </p>
             <ProfileDocumentField
                 id="job-seeker-cv-upload"
                 labelKey="job_seeker.profile.resume_label_cv"
@@ -2110,16 +2179,6 @@ function ResumeDocumentsUploader({
                 extractProfile
                 uploadUrl={uploadResume.url()}
                 destroyUrl={destroyResume.url()}
-            />
-            <ProfileDocumentField
-                id="job-seeker-cover-letter-upload"
-                labelKey="job_seeker.profile.resume_label_cover_letter"
-                useExistingKey="job_seeker.profile.cover_letter_use_existing"
-                fieldName="cover_letter"
-                fileName={coverLetterName}
-                fileUrl={coverLetterUrl}
-                uploadUrl={uploadCoverLetter.url()}
-                destroyUrl={destroyCoverLetter.url()}
             />
             <ProfileDocumentField
                 id="job-seeker-highest-degree-upload"

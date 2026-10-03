@@ -29,7 +29,7 @@ test('employers can preview draft and pending jobs while guests cannot', functio
     $this->actingAs($employer)
         ->get(route('jobs.show', $job->slug))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('frontend/job-show')
             ->where('job.title', 'Draft Officer')
             ->where('is_preview', true)
@@ -40,7 +40,7 @@ test('employers can preview draft and pending jobs while guests cannot', functio
     $this->actingAs($employer)
         ->get(route('jobs.show', $job->slug))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->where('is_preview', true)
             ->where('job.slug', 'draft-officer'));
 });
@@ -83,7 +83,7 @@ test('view applicants can be filtered to a single job', function () {
     $this->actingAs($employer)
         ->get(route('employer.applications', ['job_id' => $role->id]))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerApplications')
             ->has('applications', 1)
             ->where('applications.0.name', 'Sara Applicant')
@@ -134,7 +134,7 @@ test('job seekers receive a confirmation email after applying', function () {
 
     $this->actingAs($seeker)
         ->post(route('jobs.apply', $job), [
-            'cover_letter' => 'I would like to join.',
+            'cover_letter' => 'I would like to join your team for this opportunity.',
         ])
         ->assertRedirect(route('job-seeker.dashboard'))
         ->assertSessionHas('success', 'application_submitted');
@@ -160,7 +160,7 @@ test('job detail falls back to the company logo when the job has no logo', funct
     $employer = User::factory()->employer()->create([
         'company_name' => 'Action Against Hunger',
     ]);
-    $companyLogoPath = 'company-logos/' . $employer->id . '/brand.png';
+    $companyLogoPath = 'company-logos/'.$employer->id.'/brand.png';
     Storage::disk('public')->put($companyLogoPath, 'logo');
     $employer->forceFill(['company_logo_path' => $companyLogoPath])->save();
 
@@ -173,9 +173,9 @@ test('job detail falls back to the company logo when the job has no logo', funct
 
     $this->get(route('jobs.show', $job->slug))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('frontend/job-show')
-            ->where('job.logo_url', '/storage/' . $companyLogoPath)
-            ->where('job.company_logo_url', '/storage/' . $companyLogoPath)
+            ->where('job.logo_url', '/storage/'.$companyLogoPath)
+            ->where('job.company_logo_url', '/storage/'.$companyLogoPath)
             ->where('is_preview', false));
 });

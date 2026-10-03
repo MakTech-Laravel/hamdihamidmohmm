@@ -1726,5 +1726,17 @@
     "admin.settings.experience.remove": "حذف",
     "admin.settings.email_template.subject": "الموضوع",
     "admin.settings.email_template.body": "المحتوى",
-    "admin.settings.email_template.placeholders": "العناصر النائبة: {{name}}, {{policy_title}}, {{policy_url}}, {{platform_name}}"
+    "admin.settings.email_template.placeholders": "العناصر النائبة: {{name}}, {{policy_title}}, {{policy_url}}, {{platform_name}}",
+    "common.share": "مشاركة",
+    "jobs_page.share_copied": "تم نسخ الرابط",
+    "jobs_page.share_failed": "تعذر المشاركة",
+    "job_detail.cover_letter_label": "خطاب التغطية",
+    "job_detail.cover_letter_placeholder": "اكتب خطاب تغطية قصيرًا لهذه الوظيفة...",
+    "job_detail.cover_letter_required": "يرجى إضافة خطاب تغطية قبل الإرسال.",
+    "job_detail.apply_final_step": "الخطوة الأخيرة — أضف خطاب تغطية اختياريًا لهذه الوظيفة ثم أرسل.",
+    "job_seeker.profile.autosaved": "تم حفظ المسودة تلقائيًا",
+    "job_seeker.profile.restore_draft": "تمت استعادة المسودة غير المحفوظة",
+    "common.optional": "اختياري",
+    "job_detail.cover_letter_hint": "يُفضل إضافته لهذه الوظيفة. يمكنك الإرسال بدونه.",
+    "job_seeker.profile.cover_letter_apply_hint": "يتم كتابة خطاب التغطية عند التقديم على وظيفة محددة — ولا يُحفظ بشكل دائم في ملفك."
 }

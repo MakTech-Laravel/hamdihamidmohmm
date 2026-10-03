@@ -73,6 +73,10 @@ export default function JobShow({
     const [copied, setCopied] = useState(false);
     const [applyModalOpen, setApplyModalOpen] = useState(false);
     const [applying, setApplying] = useState(false);
+    const [coverLetter, setCoverLetter] = useState('');
+    const [coverLetterError, setCoverLetterError] = useState<string | null>(
+        null,
+    );
     const shareRef = useRef<HTMLDivElement>(null);
 
     const pageUrl =
@@ -111,13 +115,23 @@ export default function JobShow({
             return;
         }
 
+        setCoverLetterError(null);
         setApplying(true);
         router.post(
             job.id ? applyToJob.url(job.id) : `/jobs/${job.slug}/apply`,
-            {},
+            { cover_letter: coverLetter.trim() || null },
             {
                 onFinish: () => setApplying(false),
-                onError: () => setApplying(false),
+                onError: (errors) => {
+                    setApplying(false);
+                    if (errors.cover_letter) {
+                        setCoverLetterError(errors.cover_letter);
+                    }
+                },
+                onSuccess: () => {
+                    setCoverLetter('');
+                    setApplyModalOpen(false);
+                },
             },
         );
     };
@@ -225,12 +239,12 @@ export default function JobShow({
 
                             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)] sm:p-7">
                                 <div className="flex items-start gap-4">
-                                    <div className="flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] p-1.5 text-lg font-bold text-[#0057c8] sm:size-[112px]">
+                                    <div className="flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e5e7eb] bg-white text-lg font-bold text-[#0057c8] sm:size-[112px]">
                                         {job.logo_url ? (
                                             <img
                                                 src={job.logo_url}
                                                 alt={job.title}
-                                                className="size-full object-contain"
+                                                className="size-full object-cover object-center"
                                             />
                                         ) : (
                                             job.initials || 'JP'
@@ -547,11 +561,13 @@ export default function JobShow({
                                             className="flex items-center gap-3 rounded-xl border border-[#f1f5f9] p-3 transition hover:border-[#dbeafe] hover:bg-[#f8faff]"
                                         >
                                             {item.logo_url ? (
-                                                <img
-                                                    src={item.logo_url}
-                                                    alt={item.company || item.title}
-                                                    className="size-[72px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
-                                                />
+                                                <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e5e7eb] bg-white">
+                                                    <img
+                                                        src={item.logo_url}
+                                                        alt={item.company || item.title}
+                                                        className="size-full object-contain object-center p-1"
+                                                    />
+                                                </div>
                                             ) : (
                                                 <div
                                                     className="flex size-[72px] shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
@@ -580,7 +596,15 @@ export default function JobShow({
                 </div>
             </section>
 
-            <Dialog open={applyModalOpen} onOpenChange={setApplyModalOpen}>
+            <Dialog
+                open={applyModalOpen}
+                onOpenChange={(open) => {
+                    setApplyModalOpen(open);
+                    if (!open) {
+                        setCoverLetterError(null);
+                    }
+                }}
+            >
                 <DialogContent className="max-w-[440px] overflow-hidden rounded-3xl border-[#dbeafe] bg-white p-0 shadow-[0_24px_60px_rgba(5,3,21,0.18)] sm:max-w-[440px]">
                     <div className="relative overflow-hidden bg-gradient-to-br from-[#eef5ff] via-white to-[#f8fbff] px-6 pb-5 pt-8 sm:px-7">
                         <div
@@ -602,7 +626,7 @@ export default function JobShow({
                                 {t('job_detail.apply_confirm_title')}
                             </DialogTitle>
                             <DialogDescription className="max-w-[320px] text-sm leading-6 text-[#64748b]">
-                                {t('job_detail.apply_confirm_message')}
+                                {t('job_detail.apply_final_step')}
                             </DialogDescription>
                             <div className="mt-1 w-full rounded-2xl border border-[#dbeafe] bg-white/90 px-4 py-3 text-start">
                                 <p className="text-sm font-bold text-[#050315]">
@@ -628,9 +652,41 @@ export default function JobShow({
                                         </span>
                                     ) : null}
                                 </div>
-                                <p className="mt-2 text-xs text-[#64748b]">
-                                    {t('job_detail.apply_review_hint')}
-                                </p>
+                            </div>
+                            <div className="mt-3 w-full text-start">
+                                <label
+                                    htmlFor="apply-cover-letter"
+                                    className="mb-1.5 block text-xs font-semibold text-[#3977a6]"
+                                >
+                                    {t('job_detail.cover_letter_label')}{' '}
+                                    <span className="font-normal text-[#94a3b8]">
+                                        ({t('common.optional')})
+                                    </span>
+                                </label>
+                                <textarea
+                                    id="apply-cover-letter"
+                                    value={coverLetter}
+                                    onChange={(event) => {
+                                        setCoverLetter(event.target.value);
+                                        if (coverLetterError) {
+                                            setCoverLetterError(null);
+                                        }
+                                    }}
+                                    rows={5}
+                                    placeholder={t(
+                                        'job_detail.cover_letter_placeholder',
+                                    )}
+                                    className="w-full rounded-xl border border-[#dbeafe] bg-white px-3 py-2.5 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
+                                />
+                                {coverLetterError ? (
+                                    <p className="mt-1.5 text-xs font-medium text-[#b91c1c]">
+                                        {coverLetterError}
+                                    </p>
+                                ) : (
+                                    <p className="mt-1.5 text-xs text-[#64748b]">
+                                        {t('job_detail.cover_letter_hint')}
+                                    </p>
+                                )}
                             </div>
                         </DialogHeader>
                     </div>

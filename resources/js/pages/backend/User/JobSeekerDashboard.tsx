@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     Briefcase,
     Check,
@@ -28,7 +28,6 @@ import {
 import { useLocale } from '@/hooks/use-locale';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { cn } from '@/lib/utils';
-import { apply as applyToJob } from '@/routes/jobs';
 import type { SharedData } from '@/types';
 
 type ChecklistItem = {
@@ -88,7 +87,6 @@ export default function JobSeekerDashboard({
 }: Props) {
     const { auth, flash } = usePage<SharedData>().props;
     const { t } = useLocale();
-    const [applyingJobId, setApplyingJobId] = useState<number | null>(null);
     const [applySuccessOpen, setApplySuccessOpen] = useState(
         () =>
             flash.success === 'application_submitted' ||
@@ -100,18 +98,6 @@ export default function JobSeekerDashboard({
         month: 'long',
         day: 'numeric',
     }).format(new Date());
-
-    const handleApply = (jobId: number) => {
-        setApplyingJobId(jobId);
-        router.post(
-            applyToJob.url(jobId),
-            {},
-            {
-                preserveScroll: true,
-                onFinish: () => setApplyingJobId(null),
-            },
-        );
-    };
 
     const statCards = [
         {
@@ -256,13 +242,18 @@ export default function JobSeekerDashboard({
                                     >
                                         <div className="flex min-w-0 flex-1 items-start gap-3">
                                             {job.logo_url ? (
-                                                <img
-                                                    src={job.logo_url}
-                                                    alt={
-                                                        job.company || job.title
-                                                    }
-                                                    className="size-[72px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
-                                                />
+                                                <div className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e5e7eb] bg-white">
+                                                    <img
+                                                        src={
+                                                            job.logo_url
+                                                        }
+                                                        alt={
+                                                            job.company ||
+                                                            job.title
+                                                        }
+                                                        className="size-full object-contain object-center p-1"
+                                                    />
+                                                </div>
                                             ) : (
                                                 <div className="flex size-[72px] shrink-0 items-center justify-center rounded-xl bg-[#0057c8] text-sm font-bold text-white">
                                                     {getInitials(
@@ -314,31 +305,11 @@ export default function JobSeekerDashboard({
                                             {job.job_url && (
                                                 <Link
                                                     href={job.job_url}
-                                                    className="inline-flex items-center justify-center rounded-xl border border-[#e2e8f0] px-3 py-2 text-xs font-bold text-[#0057c8] hover:bg-[#f8faff]"
+                                                    className="inline-flex items-center justify-center rounded-xl bg-[#0057c8] px-3 py-2 text-xs font-bold text-white hover:brightness-110"
                                                 >
-                                                    {t(
-                                                        'job_seeker.dashboard.view_job',
-                                                    )}
+                                                    {t('common.view')}
                                                 </Link>
                                             )}
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    handleApply(job.id)
-                                                }
-                                                disabled={
-                                                    applyingJobId === job.id
-                                                }
-                                                className="inline-flex items-center justify-center rounded-xl bg-[#0057c8] px-3 py-2 text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
-                                            >
-                                                {applyingJobId === job.id
-                                                    ? t(
-                                                        'job_seeker.dashboard.applying',
-                                                    )
-                                                    : t(
-                                                        'job_seeker.dashboard.apply',
-                                                    )}
-                                            </button>
                                         </div>
                                     </div>
                                 ))}

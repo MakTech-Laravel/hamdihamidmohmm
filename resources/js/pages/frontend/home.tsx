@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { Share2 } from 'lucide-react';
 import { FormEvent, useMemo, useState } from 'react';
 
 import { JobSearchForm } from '@/components/frontend/job-search-form';
@@ -10,6 +11,26 @@ import FrontendLayout from '@/layouts/frontend-layout';
 import { jobs, pricing } from '@/routes';
 import { show as jobShow } from '@/routes/jobs';
 import { role as registerRole } from '@/routes/register';
+
+async function shareJobLink(url: string, title: string): Promise<boolean> {
+    try {
+        if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+            await navigator.share({ title, url, text: title });
+
+            return true;
+        }
+    } catch {
+        // clipboard fallback
+    }
+
+    try {
+        await navigator.clipboard.writeText(url);
+
+        return true;
+    } catch {
+        return false;
+    }
+}
 
 type TaxonomyOption = { value: string; label: string };
 
@@ -328,11 +349,13 @@ export default function Home({
                                 >
                                     <div className="flex items-start gap-4">
                                         {job.logo_url ? (
-                                            <img
-                                                src={job.logo_url}
-                                                alt={job.company || job.title}
-                                                className="size-[56px] shrink-0 rounded-xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1 sm:size-[64px]"
-                                            />
+                                            <div className="flex size-[56px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e5e7eb] bg-white sm:size-[64px]">
+                                                <img
+                                                    src={job.logo_url}
+                                                    alt={job.company || job.title}
+                                                    className="size-full object-cover object-center"
+                                                />
+                                            </div>
                                         ) : (
                                             <div
                                                 className="flex size-[56px] shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white sm:size-[64px] sm:text-base"
@@ -377,12 +400,32 @@ export default function Home({
                                                 {job.salary}
                                             </p>
                                         </div>
-                                        <Link
-                                            href={jobShow.url(job.slug)}
-                                            className="shrink-0 rounded-xl bg-[#0057c8] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110"
-                                        >
-                                            {t('jobs.apply_now')}
-                                        </Link>
+                                        <div className="flex shrink-0 items-center gap-2">
+                                            <Link
+                                                href={jobShow.url(job.slug)}
+                                                className="rounded-xl border border-[#bfdbfe] bg-white px-3.5 py-2 text-xs font-semibold text-[#0057c8] transition hover:bg-[#eff6ff]"
+                                            >
+                                                {t('common.view')}
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const url = new URL(
+                                                        jobShow.url(job.slug),
+                                                        window.location.origin,
+                                                    ).toString();
+                                                    void shareJobLink(
+                                                        url,
+                                                        job.title,
+                                                    );
+                                                }}
+                                                className="inline-flex items-center gap-1 rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-xs font-semibold text-[#475569] transition hover:bg-[#f8fafc]"
+                                                aria-label={t('common.share')}
+                                            >
+                                                <Share2 className="size-3.5" />
+                                                {t('common.share')}
+                                            </button>
+                                        </div>
                                     </div>
                                 </article>
                             ))}

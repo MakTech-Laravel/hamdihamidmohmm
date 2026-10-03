@@ -1726,5 +1726,17 @@
     "admin.settings.experience.remove": "Remove",
     "admin.settings.email_template.subject": "Subject",
     "admin.settings.email_template.body": "Body",
-    "admin.settings.email_template.placeholders": "Placeholders: {{name}}, {{policy_title}}, {{policy_url}}, {{platform_name}}"
+    "admin.settings.email_template.placeholders": "Placeholders: {{name}}, {{policy_title}}, {{policy_url}}, {{platform_name}}",
+    "common.share": "Share",
+    "jobs_page.share_copied": "Link copied",
+    "jobs_page.share_failed": "Unable to share",
+    "job_detail.cover_letter_label": "Cover letter",
+    "job_detail.cover_letter_placeholder": "Write a short cover letter for this position...",
+    "job_detail.cover_letter_required": "Please add a cover letter before submitting.",
+    "job_detail.apply_final_step": "Final step — add an optional cover letter for this role, then submit.",
+    "job_seeker.profile.autosaved": "Draft autosaved",
+    "job_seeker.profile.restore_draft": "Unsaved draft restored",
+    "common.optional": "optional",
+    "job_detail.cover_letter_hint": "Recommended for this role. You can submit without one.",
+    "job_seeker.profile.cover_letter_apply_hint": "Cover letters are written when you apply for a specific job — not stored permanently on your profile."
 }

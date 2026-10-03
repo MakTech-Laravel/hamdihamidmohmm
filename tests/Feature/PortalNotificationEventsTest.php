@@ -28,7 +28,7 @@ test('applying to a job notifies the employer when preference is enabled', funct
 
     $this->actingAs($seeker)
         ->post(route('jobs.apply', $job), [
-            'cover_letter' => 'I am interested.',
+            'cover_letter' => 'I am interested in this Frontend Engineer role and would love to join.',
         ])
         ->assertRedirect();
 
@@ -60,7 +60,7 @@ test('applying to a job skips employer notification when preference is disabled'
 
     $this->actingAs($seeker)
         ->post(route('jobs.apply', $job), [
-            'cover_letter' => 'Hello',
+            'cover_letter' => 'Hello, I would like to apply for this role with my experience.',
         ])
         ->assertRedirect();
 
@@ -221,7 +221,7 @@ test('public job salary respects employer privacy preference', function () {
 
     $this->get(route('jobs.show', $job->slug))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('frontend/job-show')
             ->where('job.salary', null));
 });

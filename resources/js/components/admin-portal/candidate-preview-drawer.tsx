@@ -117,7 +117,7 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                         src={preview.avatar_url ?? undefined}
                         alt={preview.name}
                         onError={() => setAvatarFailed(true)}
-                        className="size-[52px] shrink-0 rounded-full border border-white object-cover shadow-sm"
+                        className="size-[52px] shrink-0 rounded-full border border-white object-cover object-top shadow-sm"
                     />
                 ) : (
                     <div className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-base font-extrabold text-white">
