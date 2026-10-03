@@ -25,7 +25,7 @@ type JobListingCardProps = {
     appliedLabel?: string;
 };
 
-/** Square company mark: fills the frame without empty padding bands. */
+/** Square company mark: natural logo size, no visible frame border. */
 export function CompanyLogoMark({
     logoUrl,
     alt,
@@ -42,8 +42,8 @@ export function CompanyLogoMark({
     return (
         <div
             className={cn(
-                'flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e5e7eb] bg-white',
-                className ?? 'size-[96px] sm:size-[112px]',
+                'flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white',
+                className ?? 'size-[80px] sm:size-[88px]',
             )}
         >
             {logoUrl && !failed ? (
@@ -51,7 +51,7 @@ export function CompanyLogoMark({
                     src={logoUrl}
                     alt={alt}
                     onError={() => setFailed(true)}
-                    className="size-full object-cover object-center"
+                    className="size-full object-contain object-center p-0.5"
                 />
             ) : (
                 <div
