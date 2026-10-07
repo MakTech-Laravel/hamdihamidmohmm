@@ -425,6 +425,7 @@ class JobManagementController extends Controller
             'experience' => [],
             'languages' => [],
             'certifications' => [],
+            'references' => [],
             'cover_letter' => null,
             'resume_name' => null,
             'has_resume_file' => false,

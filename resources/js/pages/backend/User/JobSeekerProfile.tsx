@@ -12,6 +12,7 @@ import {
     Plus,
     Sparkles,
     UserRound,
+    Users,
     X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
@@ -83,6 +84,12 @@ type CertificationEntry = {
     file_url: string | null;
 };
 
+type ReferenceEntry = {
+    name: string;
+    address: string;
+    relationship: string;
+};
+
 type Profile = {
     name: string | null;
     email: string | null;
@@ -104,6 +111,7 @@ type Profile = {
     experience: unknown[];
     languages: unknown[];
     certifications: unknown[];
+    references: unknown[];
     resume_status: string | null;
     resume_name: string | null;
     resume_url: string | null;
@@ -125,6 +133,7 @@ type SectionId =
     | 'skills'
     | 'languages'
     | 'certifications'
+    | 'references'
     | 'resume';
 
 const availabilityOptions = [
@@ -212,6 +221,13 @@ const sectionMeta: Array<{
             icon: Award,
             emoji: '🏅',
             tone: 'bg-[#fee2e2] text-[#b91c1c]',
+        },
+        {
+            id: 'references',
+            labelKey: 'job_seeker.profile.references',
+            icon: Users,
+            emoji: '🤝',
+            tone: 'bg-[#e0e7ff] text-[#3730a3]',
         },
         {
             id: 'resume',
@@ -366,6 +382,16 @@ function normalizeLanguages(items: unknown[]): LanguageEntry[] {
     }));
 }
 
+function normalizeReferences(items: unknown[]): ReferenceEntry[] {
+    return items.map((item) => ({
+        name:
+            fieldString(item, 'name') ||
+            (typeof item === 'string' ? item : ''),
+        address: fieldString(item, 'address'),
+        relationship: fieldString(item, 'relationship', 'relation'),
+    }));
+}
+
 function normalizeCertifications(items: unknown[]): CertificationEntry[] {
     return items.map((item) => {
         const record = asRecord(item);
@@ -472,6 +498,14 @@ function emptyCertification(): CertificationEntry {
     };
 }
 
+function emptyReference(): ReferenceEntry {
+    return {
+        name: '',
+        address: '',
+        relationship: '',
+    };
+}
+
 function profileToFormData(profile: Profile) {
     return {
         name: profile.name ?? '',
@@ -491,6 +525,7 @@ function profileToFormData(profile: Profile) {
         experience: normalizeExperience(profile.experience ?? []),
         languages: normalizeLanguages(profile.languages ?? []),
         certifications: normalizeCertifications(profile.certifications ?? []),
+        references: normalizeReferences(profile.references ?? []),
     };
 }
 
@@ -603,19 +638,177 @@ function cleanCertifications(
         );
 }
 
+function cleanReferences(entries: ReferenceEntry[]): ReferenceEntry[] {
+    return entries
+        .map((entry) => ({
+            name: entry.name.trim(),
+            address: entry.address.trim(),
+            relationship: entry.relationship.trim(),
+        }))
+        .filter(
+            (entry) => entry.name || entry.address || entry.relationship,
+        );
+}
+
+type ProfileFormData = ReturnType<typeof profileToFormData>;
+
+type ProfileDraft = ProfileFormData & {
+    section: SectionId;
+    savedAt: string;
+};
+
+const editableSections: SectionId[] = [
+    'personal',
+    'professional',
+    'education',
+    'experience',
+    'skills',
+    'languages',
+    'certifications',
+    'references',
+];
+
+function isEditableSection(value: unknown): value is SectionId {
+    return (
+        typeof value === 'string' &&
+        (editableSections as string[]).includes(value)
+    );
+}
+
+function emptyProfileFormData(): ProfileFormData {
+    return {
+        name: '',
+        phone: '',
+        location: '',
+        headline: '',
+        current_title: '',
+        experience_years: '',
+        bio: '',
+        linkedin_url: '',
+        github_url: '',
+        industry: '',
+        expected_salary: '',
+        availability: [],
+        skills: [],
+        education: [],
+        experience: [],
+        languages: [],
+        certifications: [],
+        references: [],
+    };
+}
+
+function readProfileDraft(key: string): ProfileDraft | null {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+
+    try {
+        const raw = window.localStorage.getItem(key);
+
+        if (!raw) {
+            return null;
+        }
+
+        const parsed = JSON.parse(raw) as Partial<ProfileDraft>;
+
+        if (!isEditableSection(parsed.section)) {
+            return null;
+        }
+
+        return {
+            ...emptyProfileFormData(),
+            ...parsed,
+            section: parsed.section,
+            savedAt:
+                typeof parsed.savedAt === 'string'
+                    ? parsed.savedAt
+                    : new Date().toISOString(),
+        };
+    } catch {
+        return null;
+    }
+}
+
+function writeProfileDraft(key: string, draft: ProfileDraft): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    window.localStorage.setItem(key, JSON.stringify(draft));
+}
+
+function clearProfileDraft(key: string): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    try {
+        window.localStorage.removeItem(key);
+    } catch {
+        // ignore
+    }
+}
+
+function buildProfilePayload(data: ProfileFormData) {
+    return {
+        name: data.name,
+        phone: data.phone,
+        location: data.location,
+        headline: data.headline,
+        current_title: data.current_title,
+        experience_years: data.experience_years,
+        bio: data.bio,
+        linkedin_url: data.linkedin_url,
+        github_url: data.github_url,
+        industry: data.industry,
+        expected_salary: data.expected_salary,
+        availability: data.availability
+            .map((item) => item.trim())
+            .filter(Boolean),
+        skills: data.skills.map((skill) => skill.trim()).filter(Boolean),
+        education: cleanEducation(data.education),
+        experience: cleanExperience(data.experience),
+        languages: cleanLanguages(data.languages),
+        certifications: cleanCertifications(data.certifications),
+        references: cleanReferences(data.references),
+    };
+}
+
+function draftFormData(draft: ProfileDraft): ProfileFormData {
+    const { section: _section, savedAt: _savedAt, ...data } = draft;
+
+    return data;
+}
+
 export default function JobSeekerProfile({ profile }: { profile: Profile }) {
     const { flash, auth } = usePage<SharedData>().props;
     const { t } = useLocale();
     const [editing, setEditing] = useState<SectionId | null>(null);
     const [autosaveNote, setAutosaveNote] = useState<string | null>(null);
+    const [pendingDraft, setPendingDraft] = useState<ProfileDraft | null>(null);
     const draftKey = `job-seeker-profile-draft:${auth.user?.id ?? 'guest'}`;
+    const skipNextLocalAutosave = useRef(false);
+    const lastServerPayload = useRef(
+        JSON.stringify(buildProfilePayload(profileToFormData(profile))),
+    );
+    const lastAttemptedServerPayload = useRef<string | null>(null);
+    const restoredForEdit = useRef<SectionId | null>(null);
 
     const form = useForm(profileToFormData(profile));
+
+    useEffect(() => {
+        const draft = readProfileDraft(draftKey);
+        setPendingDraft(draft);
+    }, [draftKey]);
 
     useEffect(() => {
         if (editing === null) {
             form.setData(profileToFormData(profile));
             form.clearErrors();
+            lastServerPayload.current = JSON.stringify(
+                buildProfilePayload(profileToFormData(profile)),
+            );
 
             return;
         }
@@ -630,32 +823,27 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
     }, [profile, editing]);
 
     useEffect(() => {
-        if (typeof window === 'undefined' || editing === null) {
+        if (editing === null || restoredForEdit.current === editing) {
             return;
         }
 
-        try {
-            const raw = window.localStorage.getItem(draftKey);
+        const draft = readProfileDraft(draftKey);
 
-            if (!raw) {
-                return;
-            }
+        if (!draft) {
+            restoredForEdit.current = editing;
 
-            const draft = JSON.parse(raw) as ReturnType<typeof profileToFormData> & {
-                section?: SectionId;
-            };
-
-            if (draft.section && draft.section !== editing) {
-                return;
-            }
-
-            const { section: _section, ...data } = draft;
-            form.setData({ ...profileToFormData(profile), ...data });
-            setAutosaveNote(t('job_seeker.profile.restore_draft'));
-            window.setTimeout(() => setAutosaveNote(null), 3000);
-        } catch {
-            // Ignore corrupt drafts.
+            return;
         }
+
+        skipNextLocalAutosave.current = true;
+        form.setData({
+            ...profileToFormData(profile),
+            ...draftFormData(draft),
+        });
+        restoredForEdit.current = editing;
+        setPendingDraft(null);
+        setAutosaveNote(t('job_seeker.profile.restore_draft'));
+        window.setTimeout(() => setAutosaveNote(null), 3000);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once when entering edit mode
     }, [editing, draftKey]);
 
@@ -664,22 +852,87 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
             return;
         }
 
+        if (skipNextLocalAutosave.current) {
+            skipNextLocalAutosave.current = false;
+
+            return;
+        }
+
         const timer = window.setTimeout(() => {
             try {
-                window.localStorage.setItem(
-                    draftKey,
-                    JSON.stringify({ ...form.data, section: editing }),
-                );
+                const draft: ProfileDraft = {
+                    ...form.data,
+                    section: editing,
+                    savedAt: new Date().toISOString(),
+                };
+                writeProfileDraft(draftKey, draft);
+                setPendingDraft(draft);
                 setAutosaveNote(t('job_seeker.profile.autosaved'));
                 window.setTimeout(() => setAutosaveNote(null), 2000);
             } catch {
                 // Quota / private mode.
             }
-        }, 1200);
+        }, 800);
 
         return () => window.clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce on form data while editing
     }, [form.data, editing, draftKey]);
+
+    useEffect(() => {
+        // Certifications keep a separate upload flow; avoid clobbering in-progress edits.
+        if (
+            editing === null ||
+            editing === 'certifications' ||
+            form.processing
+        ) {
+            return;
+        }
+
+        const payload = buildProfilePayload(form.data);
+        const payloadJson = JSON.stringify(payload);
+
+        if (
+            payloadJson === lastServerPayload.current ||
+            payloadJson === lastAttemptedServerPayload.current
+        ) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            lastAttemptedServerPayload.current = payloadJson;
+            form.transform(() => payload);
+            form.put(updateProfile.url(), {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    lastServerPayload.current = payloadJson;
+                    lastAttemptedServerPayload.current = null;
+                    clearProfileDraft(draftKey);
+                    setPendingDraft(null);
+                    setAutosaveNote(t('job_seeker.profile.autosaved_server'));
+                    window.setTimeout(() => setAutosaveNote(null), 2500);
+                },
+            });
+        }, 2500);
+
+        return () => window.clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- silent server autosave while editing
+    }, [form.data, editing, form.processing, draftKey]);
+
+    useEffect(() => {
+        if (editing === null || typeof window === 'undefined') {
+            return;
+        }
+
+        const onBeforeUnload = (event: BeforeUnloadEvent): void => {
+            event.preventDefault();
+            event.returnValue = '';
+        };
+
+        window.addEventListener('beforeunload', onBeforeUnload);
+
+        return () => window.removeEventListener('beforeunload', onBeforeUnload);
+    }, [editing]);
 
     const completeMap = useMemo(() => {
         return Object.fromEntries(
@@ -688,56 +941,60 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
     }, [profile.checklist]);
 
     const startEditing = (section: SectionId): void => {
+        restoredForEdit.current = null;
         form.setData(profileToFormData(profile));
         form.clearErrors();
         setEditing(section);
+    };
+
+    const resumeDraft = (): void => {
+        const draft = pendingDraft ?? readProfileDraft(draftKey);
+
+        if (!draft) {
+            return;
+        }
+
+        restoredForEdit.current = draft.section;
+        skipNextLocalAutosave.current = true;
+        form.setData({
+            ...profileToFormData(profile),
+            ...draftFormData(draft),
+        });
+        form.clearErrors();
+        setEditing(draft.section);
+        setPendingDraft(null);
+        setAutosaveNote(t('job_seeker.profile.restore_draft'));
+        window.setTimeout(() => setAutosaveNote(null), 3000);
+    };
+
+    const discardDraft = (): void => {
+        clearProfileDraft(draftKey);
+        setPendingDraft(null);
+        setAutosaveNote(t('job_seeker.profile.draft_discarded'));
+        window.setTimeout(() => setAutosaveNote(null), 2000);
     };
 
     const cancelEditing = (): void => {
         form.setData(profileToFormData(profile));
         form.clearErrors();
         setEditing(null);
-        try {
-            window.localStorage.removeItem(draftKey);
-        } catch {
-            // ignore
-        }
+        restoredForEdit.current = null;
+        clearProfileDraft(draftKey);
+        setPendingDraft(null);
     };
 
     const save = (): void => {
-        form.transform((data) => ({
-            name: data.name,
-            phone: data.phone,
-            location: data.location,
-            headline: data.headline,
-            current_title: data.current_title,
-            experience_years: data.experience_years,
-            bio: data.bio,
-            linkedin_url: data.linkedin_url,
-            github_url: data.github_url,
-            industry: data.industry,
-            expected_salary: data.expected_salary,
-            availability: data.availability
-                .map((item) => item.trim())
-                .filter(Boolean),
-            skills: data.skills
-                .map((skill) => skill.trim())
-                .filter(Boolean),
-            education: cleanEducation(data.education),
-            experience: cleanExperience(data.experience),
-            languages: cleanLanguages(data.languages),
-            certifications: cleanCertifications(data.certifications),
-        }));
+        const payload = buildProfilePayload(form.data);
+        form.transform(() => payload);
 
         form.put(updateProfile.url(), {
             preserveScroll: true,
             onSuccess: () => {
+                lastServerPayload.current = JSON.stringify(payload);
                 setEditing(null);
-                try {
-                    window.localStorage.removeItem(draftKey);
-                } catch {
-                    // ignore
-                }
+                restoredForEdit.current = null;
+                clearProfileDraft(draftKey);
+                setPendingDraft(null);
             },
         });
     };
@@ -754,6 +1011,28 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                             : t('job_seeker.profile.saved')}
                     </div>
                 )}
+
+                {pendingDraft && editing === null ? (
+                    <div className="flex flex-col gap-3 rounded-xl border border-[#fde68a] bg-[#fffbeb] px-4 py-3 text-sm text-[#92400e] sm:flex-row sm:items-center sm:justify-between">
+                        <p>{t('job_seeker.profile.draft_found')}</p>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                onClick={resumeDraft}
+                                className="rounded-lg bg-[#0057c8] px-3 py-1.5 text-sm font-semibold text-white"
+                            >
+                                {t('job_seeker.profile.resume_draft')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={discardDraft}
+                                className="rounded-lg border border-[#d97706] px-3 py-1.5 text-sm font-semibold text-[#92400e]"
+                            >
+                                {t('job_seeker.profile.discard_draft')}
+                            </button>
+                        </div>
+                    </div>
+                ) : null}
 
                 {autosaveNote ? (
                     <div className="rounded-xl border border-[#dbeafe] bg-[#eff6ff] px-4 py-3 text-sm text-[#1e3a8a]">
@@ -1875,6 +2154,148 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                 </SectionCard>
 
                 <SectionCard
+                    id="references"
+                    title={t('job_seeker.profile.references')}
+                    emoji="🤝"
+                    complete={completeMap.references ?? true}
+                    editing={editing === 'references'}
+                    onEdit={() => startEditing('references')}
+                    onCancel={cancelEditing}
+                    onSave={save}
+                    processing={form.processing}
+                >
+                    {editing === 'references' ? (
+                        <div className="space-y-3">
+                            <p className="text-sm text-[#64748b]">
+                                {t('job_seeker.profile.references_optional_help')}
+                            </p>
+                            <EntryEditor
+                                entries={form.data.references}
+                                emptyLabel={t('job_seeker.profile.no_references')}
+                                addLabel={t('job_seeker.profile.add_reference')}
+                                onAdd={() =>
+                                    form.setData('references', [
+                                        ...form.data.references,
+                                        emptyReference(),
+                                    ])
+                                }
+                                onRemove={(index) =>
+                                    form.setData(
+                                        'references',
+                                        form.data.references.filter(
+                                            (_, itemIndex) => itemIndex !== index,
+                                        ),
+                                    )
+                                }
+                                renderFields={(entry, index) => (
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        <Field
+                                            label={t(
+                                                'job_seeker.profile.reference_name',
+                                            )}
+                                            value={entry.name}
+                                            onChange={(value) => {
+                                                const next = [
+                                                    ...form.data.references,
+                                                ];
+                                                next[index] = {
+                                                    ...entry,
+                                                    name: value,
+                                                };
+                                                form.setData('references', next);
+                                            }}
+                                        />
+                                        <Field
+                                            label={t(
+                                                'job_seeker.profile.reference_relationship',
+                                            )}
+                                            value={entry.relationship}
+                                            onChange={(value) => {
+                                                const next = [
+                                                    ...form.data.references,
+                                                ];
+                                                next[index] = {
+                                                    ...entry,
+                                                    relationship: value,
+                                                };
+                                                form.setData('references', next);
+                                            }}
+                                            placeholder={t(
+                                                'job_seeker.profile.reference_relationship_placeholder',
+                                            )}
+                                        />
+                                        <div className="md:col-span-2">
+                                            <Field
+                                                label={t(
+                                                    'job_seeker.profile.reference_address',
+                                                )}
+                                                value={entry.address}
+                                                onChange={(value) => {
+                                                    const next = [
+                                                        ...form.data.references,
+                                                    ];
+                                                    next[index] = {
+                                                        ...entry,
+                                                        address: value,
+                                                    };
+                                                    form.setData(
+                                                        'references',
+                                                        next,
+                                                    );
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            />
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {(profile.references ?? []).length === 0 ? (
+                                <p className="text-sm text-[#99a1af]">
+                                    {t('job_seeker.profile.no_references')}
+                                </p>
+                            ) : (
+                                profile.references.map((item, index) => {
+                                    const name =
+                                        fieldString(item, 'name') ||
+                                        (typeof item === 'string'
+                                            ? item
+                                            : '—');
+                                    const address = fieldString(item, 'address');
+                                    const relationship = fieldString(
+                                        item,
+                                        'relationship',
+                                        'relation',
+                                    );
+
+                                    return (
+                                        <div
+                                            key={`${name}-${index}`}
+                                            className="flex items-start gap-3"
+                                        >
+                                            <div className="flex size-9 items-center justify-center rounded-lg bg-[#eef2ff] text-[#3730a3]">
+                                                <Users className="size-4" />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-semibold text-[#050315]">
+                                                    {name}
+                                                </p>
+                                                <p className="text-xs text-[#64748b]">
+                                                    {[relationship, address]
+                                                        .filter(Boolean)
+                                                        .join(' · ') || '—'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                    )}
+                </SectionCard>
+
+                <SectionCard
                     id="resume"
                     title={t('job_seeker.profile.resume')}
                     emoji="📄"
@@ -2430,39 +2851,39 @@ function SectionCard({
                         {complete ? '✓' : '!'}
                     </span>
                 </div>
-                {!hideEdit &&
-                    (editing ? (
-                        <div className="flex gap-2">
-                            <button
-                                type="button"
-                                disabled={processing}
-                                className="rounded-lg bg-[#0057c8] px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
-                                onClick={onSave}
-                            >
-                                {processing
-                                    ? t('job_seeker.profile.saving')
-                                    : t('job_seeker.profile.save')}
-                            </button>
-                            <button
-                                type="button"
-                                className="rounded-lg border border-[#0057c8] px-4 py-1.5 text-sm font-normal text-[#0057c8]"
-                                onClick={onCancel}
-                            >
-                                {t('job_seeker.profile.cancel')}
-                            </button>
-                        </div>
-                    ) : (
-                        <button
-                            type="button"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#bfdbfe] px-3 py-1.5 text-sm font-semibold text-[#0057c8]"
-                            onClick={onEdit}
-                        >
-                            <Pencil className="size-3.5" />
-                            {t('job_seeker.profile.edit')}
-                        </button>
-                    ))}
+                {!hideEdit && !editing ? (
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#bfdbfe] px-3 py-1.5 text-sm font-semibold text-[#0057c8]"
+                        onClick={onEdit}
+                    >
+                        <Pencil className="size-3.5" />
+                        {t('job_seeker.profile.edit')}
+                    </button>
+                ) : null}
             </div>
             <div className="p-5">{children}</div>
+            {!hideEdit && editing ? (
+                <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[#f1f5f9] px-5 py-4">
+                    <button
+                        type="button"
+                        className="rounded-lg border border-[#0057c8] px-4 py-1.5 text-sm font-normal text-[#0057c8]"
+                        onClick={onCancel}
+                    >
+                        {t('job_seeker.profile.cancel')}
+                    </button>
+                    <button
+                        type="button"
+                        disabled={processing}
+                        className="rounded-lg bg-[#0057c8] px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+                        onClick={onSave}
+                    >
+                        {processing
+                            ? t('job_seeker.profile.saving')
+                            : t('job_seeker.profile.save')}
+                    </button>
+                </div>
+            ) : null}
         </section>
     );
 }

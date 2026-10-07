@@ -65,6 +65,11 @@ export type ApplicationPreview = {
             download_url: string | null;
         }>;
     }>;
+    references?: Array<{
+        name: string;
+        address: string | null;
+        relationship: string | null;
+    }>;
     cover_letter: string | null;
     resume_name: string | null;
     resume_url: string | null;
@@ -330,6 +335,29 @@ function DrawerBody({
                                             </a>
                                         ) : null,
                                     )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </Section>
+
+                <Section title={t('employer.drawer.references')}>
+                    {(preview.references ?? []).length === 0 ? (
+                        <EmptyText>
+                            {t('employer.drawer.no_references')}
+                        </EmptyText>
+                    ) : (
+                        <div className="space-y-3">
+                            {(preview.references ?? []).map((item) => (
+                                <div key={item.name} className="space-y-1">
+                                    <p className="text-[13.6px] font-semibold text-[#050315]">
+                                        {item.name}
+                                    </p>
+                                    <p className="text-[12px] text-[#3977a6]">
+                                        {[item.relationship, item.address]
+                                            .filter(Boolean)
+                                            .join(' · ') || '—'}
+                                    </p>
                                 </div>
                             ))}
                         </div>

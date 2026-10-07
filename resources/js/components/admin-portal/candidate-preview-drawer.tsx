@@ -54,6 +54,11 @@ export type CandidatePreview = {
             download_url: string | null;
         }>;
     }>;
+    references?: Array<{
+        name: string;
+        address: string | null;
+        relationship: string | null;
+    }>;
     cover_letter?: string | null;
     resume_name?: string | null;
     resume_url: string | null;
@@ -106,6 +111,7 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
     const experience = preview.experience ?? [];
     const languages = preview.languages ?? [];
     const certifications = preview.certifications ?? [];
+    const references = preview.references ?? [];
     const availability = preview.availability ?? [];
     const showAvatar = Boolean(preview.avatar_url) && !avatarFailed;
 
@@ -316,6 +322,35 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                                                         </a>
                                                     ) : null,
                                             )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </Section>
+
+                        <Section title={t('admin.candidate.references')}>
+                            {references.length === 0 ? (
+                                <EmptyText>
+                                    {t('admin.candidate.no_references')}
+                                </EmptyText>
+                            ) : (
+                                <div className="space-y-3">
+                                    {references.map((item) => (
+                                        <div
+                                            key={item.name}
+                                            className="space-y-1"
+                                        >
+                                            <p className="text-[13.6px] font-semibold text-[#050315]">
+                                                {item.name}
+                                            </p>
+                                            <p className="text-[12px] text-[#3977a6]">
+                                                {[
+                                                    item.relationship,
+                                                    item.address,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(' · ') || '—'}
+                                            </p>
                                         </div>
                                     ))}
                                 </div>

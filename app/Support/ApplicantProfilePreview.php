@@ -32,6 +32,7 @@ class ApplicantProfilePreview
      *     experience: list<array{title: string, subtitle: string|null, meta: string|null, body: string|null}>,
      *     languages: list<array{name: string, level: string|null}>,
      *     certifications: list<array{name: string, issuer: string|null, date: string|null, attachments: list<array{file_name: string, available: bool}>}>,
+     *     references: list<array{name: string, address: string|null, relationship: string|null}>,
      *     cover_letter: string|null,
      *     resume_name: string|null,
      *     has_resume_file: bool,
@@ -74,6 +75,7 @@ class ApplicantProfilePreview
             'experience' => self::entries($profile?->experience, ['title', 'role'], ['company'], ['dates', 'years'], ['description']),
             'languages' => self::languages($profile?->languages),
             'certifications' => self::certifications($profile?->certifications),
+            'references' => self::references($profile?->references),
             'cover_letter' => self::nullableString($application?->cover_letter),
             'resume_name' => self::resumeName($seeker, $application),
             'has_resume_file' => self::hasResumeFile($seeker, $application),
@@ -166,7 +168,7 @@ class ApplicantProfilePreview
             return $experience;
         }
 
-        return $location . ' · ' . $experience;
+        return $location.' · '.$experience;
     }
 
     private static function nullableString(mixed $value): ?string
@@ -191,7 +193,7 @@ class ApplicantProfilePreview
 
         return array_values(array_filter(
             $items,
-            fn(mixed $item): bool => is_string($item) && trim($item) !== '',
+            fn (mixed $item): bool => is_string($item) && trim($item) !== '',
         ));
     }
 
@@ -319,7 +321,7 @@ class ApplicantProfilePreview
             }
 
             $attachments = collect(ApplicantDocumentDownloader::normalizeAttachments($item))
-                ->map(fn(array $file): array => [
+                ->map(fn (array $file): array => [
                     'file_name' => $file['file_name'],
                     'available' => Storage::disk('local')->exists($file['file_path']),
                 ])
@@ -335,6 +337,48 @@ class ApplicantProfilePreview
         }
 
         return $certifications;
+    }
+
+    /**
+     * @return list<array{name: string, address: string|null, relationship: string|null}>
+     */
+    private static function references(mixed $items): array
+    {
+        if (! is_array($items)) {
+            return [];
+        }
+
+        $references = [];
+
+        foreach ($items as $item) {
+            if (is_string($item) && trim($item) !== '') {
+                $references[] = [
+                    'name' => trim($item),
+                    'address' => null,
+                    'relationship' => null,
+                ];
+
+                continue;
+            }
+
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $name = self::field($item, ['name']);
+
+            if ($name === null) {
+                continue;
+            }
+
+            $references[] = [
+                'name' => $name,
+                'address' => self::field($item, ['address']),
+                'relationship' => self::field($item, ['relationship', 'relation']),
+            ];
+        }
+
+        return $references;
     }
 
     private static function documentExists(mixed $path): bool

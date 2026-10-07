@@ -80,6 +80,18 @@ class JobSeekerProfileController extends Controller
                 'experience' => $profile->experience ?? [],
                 'languages' => $profile->languages ?? [],
                 'certifications' => $certifications,
+                'references' => collect($profile->references ?? [])
+                    ->values()
+                    ->map(function (mixed $item): array {
+                        $record = is_array($item) ? $item : ['name' => (string) $item];
+
+                        return [
+                            'name' => $record['name'] ?? '',
+                            'address' => $record['address'] ?? '',
+                            'relationship' => $record['relationship'] ?? $record['relation'] ?? '',
+                        ];
+                    })
+                    ->all(),
                 'resume_status' => $hasResume
                     ? ($user?->resume_status?->label() ?? 'Uploaded')
                     : null,
@@ -116,6 +128,7 @@ class JobSeekerProfileController extends Controller
             'experience',
             'languages',
             'certifications',
+            'references',
         ]);
 
         $existingProfile = $user?->jobSeekerProfile;
@@ -128,6 +141,8 @@ class JobSeekerProfileController extends Controller
             $previousCertifications,
         );
 
+        $references = $this->normalizeReferencesForStorage($profileData['references'] ?? []);
+
         JobSeekerProfile::query()->updateOrCreate(
             ['user_id' => $user?->id],
             [
@@ -138,6 +153,7 @@ class JobSeekerProfileController extends Controller
                 'experience' => $profileData['experience'] ?? [],
                 'languages' => $profileData['languages'] ?? [],
                 'certifications' => $certifications,
+                'references' => $references,
             ],
         );
 
@@ -159,7 +175,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('public')->delete((string) $user->avatar);
         }
 
-        $path = $photo->store('avatars/' . $user->id, 'public');
+        $path = $photo->store('avatars/'.$user->id, 'public');
 
         $user->forceFill([
             'avatar' => $path,
@@ -217,7 +233,7 @@ class JobSeekerProfileController extends Controller
             return back()->withErrors(['document' => __('job_seeker.profile.certification_attachments_max')]);
         }
 
-        $path = $document->store('certifications/' . $user->id, 'local');
+        $path = $document->store('certifications/'.$user->id, 'local');
 
         $attachments[] = [
             'file_path' => $path,
@@ -318,7 +334,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('local')->delete($user->resume_path);
         }
 
-        $path = $resume->store('resumes/' . $user->id, 'local');
+        $path = $resume->store('resumes/'.$user->id, 'local');
 
         $user->forceFill([
             'resume_path' => $path,
@@ -388,7 +404,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('local')->delete($user->cover_letter_path);
         }
 
-        $path = $file->store('cover-letters/' . $user->id, 'local');
+        $path = $file->store('cover-letters/'.$user->id, 'local');
 
         $user->forceFill([
             'cover_letter_path' => $path,
@@ -445,7 +461,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('local')->delete($user->highest_degree_path);
         }
 
-        $path = $file->store('highest-degrees/' . $user->id, 'local');
+        $path = $file->store('highest-degrees/'.$user->id, 'local');
 
         $user->forceFill([
             'highest_degree_path' => $path,
@@ -502,7 +518,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('local')->delete($user->other_document_path);
         }
 
-        $path = $file->store('other-documents/' . $user->id, 'local');
+        $path = $file->store('other-documents/'.$user->id, 'local');
 
         $user->forceFill([
             'other_document_path' => $path,
@@ -548,6 +564,28 @@ class JobSeekerProfileController extends Controller
 
     /**
      * @param  array<int, mixed>  $incoming
+     * @return list<array{name: string, address: string, relationship: string}>
+     */
+    private function normalizeReferencesForStorage(array $incoming): array
+    {
+        return collect($incoming)
+            ->values()
+            ->map(function (mixed $item): array {
+                $record = is_array($item) ? $item : ['name' => (string) $item];
+
+                return [
+                    'name' => trim((string) ($record['name'] ?? '')),
+                    'address' => trim((string) ($record['address'] ?? '')),
+                    'relationship' => trim((string) ($record['relationship'] ?? $record['relation'] ?? '')),
+                ];
+            })
+            ->filter(fn (array $entry): bool => $entry['name'] !== '' || $entry['address'] !== '' || $entry['relationship'] !== '')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, mixed>  $incoming
      * @param  array<int, mixed>  $previous
      * @return list<array{name: string, issuer: string, date: string, attachments?: list<array{file_path: string, file_name: string}>}>
      */
@@ -567,9 +605,9 @@ class JobSeekerProfileController extends Controller
                 ];
 
                 $attachments = collect($this->normalizeAttachmentList($record))
-                    ->filter(fn(array $file): bool => filled($file['file_path'] ?? null)
+                    ->filter(fn (array $file): bool => filled($file['file_path'] ?? null)
                         && Storage::disk('local')->exists((string) $file['file_path']))
-                    ->map(fn(array $file): array => [
+                    ->map(fn (array $file): array => [
                         'file_path' => (string) $file['file_path'],
                         'file_name' => filled($file['file_name'] ?? null)
                             ? (string) $file['file_name']
@@ -584,7 +622,7 @@ class JobSeekerProfileController extends Controller
 
                 return $normalized;
             })
-            ->filter(fn(array $entry): bool => $entry['name'] !== ''
+            ->filter(fn (array $entry): bool => $entry['name'] !== ''
                 || $entry['issuer'] !== ''
                 || $entry['date'] !== ''
                 || isset($entry['attachments']))
@@ -599,8 +637,8 @@ class JobSeekerProfileController extends Controller
     private function deleteOrphanedCertificationFiles(array $previous, array $current): void
     {
         $keep = collect($current)
-            ->flatMap(fn(mixed $item): array => is_array($item) ? $this->normalizeAttachmentList($item) : [])
-            ->map(fn(array $file): ?string => $file['file_path'] ?? null)
+            ->flatMap(fn (mixed $item): array => is_array($item) ? $this->normalizeAttachmentList($item) : [])
+            ->map(fn (array $file): ?string => $file['file_path'] ?? null)
             ->filter()
             ->values()
             ->all();

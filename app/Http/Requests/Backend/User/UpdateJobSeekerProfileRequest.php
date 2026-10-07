@@ -19,7 +19,7 @@ class UpdateJobSeekerProfileRequest extends FormRequest
             if (is_string($value)) {
                 $this->merge([
                     $field => collect(preg_split('/[\n,]+/', $value) ?: [])
-                        ->map(fn(string $item): string => trim($item))
+                        ->map(fn (string $item): string => trim($item))
                         ->filter()
                         ->values()
                         ->all(),
@@ -27,7 +27,7 @@ class UpdateJobSeekerProfileRequest extends FormRequest
             }
         }
 
-        foreach (['education', 'experience', 'languages', 'certifications'] as $field) {
+        foreach (['education', 'experience', 'languages', 'certifications', 'references'] as $field) {
             $value = $this->input($field);
 
             if (is_string($value)) {
@@ -64,6 +64,10 @@ class UpdateJobSeekerProfileRequest extends FormRequest
             'experience' => ['nullable', 'array'],
             'languages' => ['nullable', 'array'],
             'certifications' => ['nullable', 'array'],
+            'references' => ['nullable', 'array'],
+            'references.*.name' => ['nullable', 'string', 'max:255'],
+            'references.*.address' => ['nullable', 'string', 'max:500'],
+            'references.*.relationship' => ['nullable', 'string', 'max:255'],
         ];
     }
 
