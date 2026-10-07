@@ -32,7 +32,7 @@ test('employer dashboard includes the live plan snapshot', function () {
     $this->actingAs($employer)
         ->get(route('employer.dashboard'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerDashboard')
             ->where('plan.slug', EmployerPackage::Professional->value)
             ->where('plan.jobs_posted', 1)
@@ -52,14 +52,14 @@ test('employers can open the post job wizard and edit an existing job', function
     $this->actingAs($employer)
         ->get(route('employer.jobs.create'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerJobEditor')
             ->where('job', null)
             ->where('company.name', 'Horizon Hiring Ltd')
             ->has('company.logo_url')
             ->has('options.positionAreas')
-            ->where('options.positionAreas', fn($areas) => collect($areas)->contains(
-                fn($item) => ($item['value'] ?? null) === 'others' || ($item['label'] ?? null) === 'Others'
+            ->where('options.positionAreas', fn ($areas) => collect($areas)->contains(
+                fn ($item) => ($item['value'] ?? null) === 'others' || ($item['label'] ?? null) === 'Others'
             ))
             ->has('options.employmentTypes')
             ->has('options.countries')
@@ -68,7 +68,7 @@ test('employers can open the post job wizard and edit an existing job', function
     $this->actingAs($employer)
         ->get(route('employer.jobs.edit', $job))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerJobEditor')
             ->where('job.title', 'Backend Engineer')
             ->where('job.id', $job->id)
@@ -249,7 +249,7 @@ test('employers can view the designed my jobs table with live stats', function (
     $this->actingAs($employer)
         ->get(route('employer.jobs'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerJobs')
             ->where('stats.total', 2)
             ->where('stats.active', 1)
@@ -359,7 +359,7 @@ test('employers can select a public plan via manual payment approval', function 
     $this->actingAs($employer)
         ->get(route('employer.packages'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerPackages')
             ->where('plan.slug', EmployerPackage::Premium->value)
             ->where('plan.job_credits', 15)
@@ -377,6 +377,7 @@ test('employers can update company profile sections used by the dashboard', func
     $this->actingAs($employer)
         ->put(route('employer.profile.update'), [
             'company_name' => 'TechCorp Solutions',
+            'organization_type' => 'private_company',
             'contact_name' => 'Fatima Al-Zahrani',
             'industry' => 'Technology',
             'company_size' => '51-200',
@@ -399,7 +400,7 @@ test('employers can update company profile sections used by the dashboard', func
     $this->actingAs($employer)
         ->get(route('employer.profile'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->where('profile.company_name', 'TechCorp Solutions')
             ->where('completion.sections.social', true)
             ->has('completion.percent'));

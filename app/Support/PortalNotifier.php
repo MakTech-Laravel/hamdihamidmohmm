@@ -139,6 +139,17 @@ class PortalNotifier
         );
     }
 
+    public static function contactMessageReceived(string $name, string $email, string $messagePreview): void
+    {
+        $preview = str($messagePreview)->limit(120)->toString();
+
+        self::notifyAdmins(
+            'New contact message',
+            "{$name} ({$email}): {$preview}",
+            'Contact',
+        );
+    }
+
     public static function notifyAdmins(string $title, string $message, string $category = 'System'): void
     {
         User::query()

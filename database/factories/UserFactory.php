@@ -7,6 +7,7 @@ use App\Enums\EmployerPackage;
 use App\Enums\EmployerVerificationStatus;
 use App\Enums\JobSeekerAccountStatus;
 use App\Enums\JobSeekerResumeStatus;
+use App\Enums\OrganizationType;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\RoleAssigner;
@@ -71,6 +72,7 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'role' => UserRole::Employer,
             'company_name' => fake()->company(),
+            'organization_type' => fake()->randomElement(OrganizationType::cases()),
             'name' => fake()->name(),
             'contact_name' => fake()->name(),
             'industry' => fake()->randomElement([
@@ -81,6 +83,9 @@ class UserFactory extends Factory
                 'Logistics',
                 'Healthcare',
                 'Media',
+                'Education',
+                'Humanitarian Aid',
+                'Public Administration',
             ]),
             'verification_status' => EmployerVerificationStatus::Approved,
             'account_status' => EmployerAccountStatus::Active,

@@ -66,24 +66,72 @@ export default function RegisterForm({
                         <input type="hidden" name="role" value={role} />
 
                         {isEmployer ? (
-                            <div className="space-y-1.5">
-                                <Label
-                                    htmlFor="company_name"
-                                    className="text-sm font-semibold text-[#364153]"
-                                >
-                                    {t('auth.company_name')}
-                                </Label>
-                                <Input
-                                    id="company_name"
-                                    name="company_name"
-                                    type="text"
-                                    required
-                                    autoFocus
-                                    placeholder={t('auth.company_name_placeholder')}
-                                    className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#e57124] focus-visible:ring-[#e57124]/30"
-                                />
-                                <InputError message={errors.company_name} />
-                            </div>
+                            <>
+                                <div className="space-y-1.5">
+                                    <Label
+                                        htmlFor="company_name"
+                                        className="text-sm font-semibold text-[#364153]"
+                                    >
+                                        {t('auth.company_name')}
+                                    </Label>
+                                    <Input
+                                        id="company_name"
+                                        name="company_name"
+                                        type="text"
+                                        required
+                                        autoFocus
+                                        placeholder={t(
+                                            'auth.company_name_placeholder',
+                                        )}
+                                        className="h-[46px] rounded-xl border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] placeholder:text-[rgba(55,65,81,0.5)] focus-visible:border-[#e57124] focus-visible:ring-[#e57124]/30"
+                                    />
+                                    <InputError message={errors.company_name} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label
+                                        htmlFor="organization_type"
+                                        className="text-sm font-semibold text-[#364153]"
+                                    >
+                                        {t('auth.organization_type')}
+                                    </Label>
+                                    <select
+                                        id="organization_type"
+                                        name="organization_type"
+                                        defaultValue="private_company"
+                                        required
+                                        className="h-[46px] w-full rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] outline-none focus:border-[#e57124] focus:ring-[#e57124]/30"
+                                    >
+                                        <option value="private_company">
+                                            {t(
+                                                'employer.profile.organization_type.private_company',
+                                            )}
+                                        </option>
+                                        <option value="non_profit">
+                                            {t(
+                                                'employer.profile.organization_type.non_profit',
+                                            )}
+                                        </option>
+                                        <option value="ngo">
+                                            {t(
+                                                'employer.profile.organization_type.ngo',
+                                            )}
+                                        </option>
+                                        <option value="institute">
+                                            {t(
+                                                'employer.profile.organization_type.institute',
+                                            )}
+                                        </option>
+                                        <option value="public_sector">
+                                            {t(
+                                                'employer.profile.organization_type.public_sector',
+                                            )}
+                                        </option>
+                                    </select>
+                                    <InputError
+                                        message={errors.organization_type}
+                                    />
+                                </div>
+                            </>
                         ) : (
                             <div className="space-y-1.5">
                                 <Label

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend\User;
 
 use App\Enums\JobPostStatus;
 use App\Enums\JobTaxonomyType;
+use App\Enums\OrganizationType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\StoreEmployerJobRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerJobRequest;
@@ -59,6 +60,7 @@ class EmployerJobController extends Controller
             'job' => null,
             'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
             'company' => $employer ? $this->companySummary($employer) : null,
+            'organizationTypes' => OrganizationType::options(),
             'options' => $this->formOptions(),
         ]);
     }
@@ -118,6 +120,7 @@ class EmployerJobController extends Controller
             ],
             'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
             'company' => $employer ? $this->companySummary($employer) : null,
+            'organizationTypes' => OrganizationType::options(),
             'options' => $this->formOptions(),
         ]);
     }
@@ -325,10 +328,12 @@ class EmployerJobController extends Controller
      */
     private function companySummary(User $employer): array
     {
-        $name = (string) ($employer->company_name ?: $employer->name ?: 'Company');
+        $name = (string) ($employer->company_name ?: $employer->name ?: 'Organization');
+        $organizationType = $employer->organization_type ?? OrganizationType::PrivateCompany;
 
         return [
             'name' => $name,
+            'organization_type' => $organizationType->value,
             'industry' => $employer->industry,
             'about' => $employer->about,
             'website' => $employer->website,
