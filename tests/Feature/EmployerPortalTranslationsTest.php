@@ -9,15 +9,15 @@ test('employer dashboard shares employer portal translation keys', function () {
     $this->actingAs($employer)
         ->get(route('employer.dashboard'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerDashboard')
             ->has('translations')
-            ->where('translations', fn($translations) => ($translations['employer.portal'] ?? null) === 'Employer Portal'
+            ->where('translations', fn ($translations) => ($translations['employer.portal'] ?? null) === 'Employer Portal'
                 && ($translations['employer.nav.dashboard'] ?? null) === 'Dashboard'
                 && ($translations['employer.dashboard.title'] ?? null) === 'Dashboard'
                 && ($translations['employer.settings.title'] ?? null) === 'Settings'
                 && ($translations['employer.notifications.title'] ?? null) === 'Notifications'
-                && ($translations['employer.profile.title'] ?? null) === 'Company Profile'
+                && ($translations['employer.profile.title'] ?? null) === 'Organization Profile'
                 && ($translations['common.logout'] ?? null) === 'Logout'
                 && ($translations['common.public_website'] ?? null) === 'Public Website'
                 && ($translations['common.notifications'] ?? null) === 'Notifications'));
@@ -53,8 +53,16 @@ test('employer portal translation keys exist in english and arabic', function ()
         'employer.notifications.filter.all',
         'employer.profile.title',
         'employer.profile.company_information',
+        'employer.profile.organization_information',
+        'employer.profile.organization_type',
+        'employer.profile.organization_type.private_company',
+        'employer.profile.organization_type.non_profit',
+        'employer.profile.organization_type.ngo',
+        'employer.profile.organization_type.institute',
+        'employer.profile.organization_type.public_sector',
         'employer.profile.public_about',
         'employer.profile.completion',
+        'auth.organization_type',
         'employer.jobs.title',
         'employer.jobs.subtitle',
         'employer.jobs.post_new',
@@ -107,10 +115,10 @@ test('arabic locale shares arabic employer portal translations on dashboard', fu
         ->withSession([Locale::COOKIE => Locale::ARABIC])
         ->get(route('employer.dashboard'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->where('locale', Locale::ARABIC)
             ->where('dir', 'rtl')
-            ->where('translations', fn($translations) => ($translations['employer.portal'] ?? null) === 'بوابة أصحاب العمل'
+            ->where('translations', fn ($translations) => ($translations['employer.portal'] ?? null) === 'بوابة أصحاب العمل'
                 && ($translations['employer.dashboard.title'] ?? null) === 'لوحة التحكم'
                 && ($translations['employer.nav.dashboard'] ?? null) === 'لوحة التحكم'));
 });

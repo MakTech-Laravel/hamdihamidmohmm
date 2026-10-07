@@ -10,6 +10,7 @@ use App\Enums\EmployerPackage;
 use App\Enums\EmployerVerificationStatus;
 use App\Enums\JobSeekerAccountStatus;
 use App\Enums\JobSeekerResumeStatus;
+use App\Enums\OrganizationType;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\ActivityLogger;
@@ -47,11 +48,13 @@ class CreateNewUser implements CreatesNewUsers
             'password_confirmation' => $this->profilePasswordConfirmationRules(),
             'role' => ['required', 'integer', Rule::in(UserRole::registrableValues())],
             'company_name' => [$isEmployer ? 'required' : 'nullable', 'string', 'max:255'],
+            'organization_type' => ['nullable', Rule::enum(OrganizationType::class)],
             'terms' => ['accepted'],
         ], [
             'role.required' => 'Please select whether you are a job seeker or an employer.',
             'role.in' => 'Please select a valid account type.',
             'company_name.required' => 'Please enter your company or organization name.',
+            'organization_type.enum' => 'Please select a valid organization type.',
             'phone.required' => 'Please enter your phone number.',
             'terms.accepted' => 'You must agree to the Terms & Conditions and Privacy Policy.',
         ])->validate();
@@ -60,9 +63,18 @@ class CreateNewUser implements CreatesNewUsers
             ? (string) $input['company_name']
             : (string) $input['name'];
 
+        $organizationType = null;
+
+        if ($isEmployer) {
+            $organizationType = filled($input['organization_type'] ?? null)
+                ? OrganizationType::from((string) $input['organization_type'])
+                : OrganizationType::PrivateCompany;
+        }
+
         $user = User::create([
             'name' => $displayName,
             'company_name' => $isEmployer ? $displayName : null,
+            'organization_type' => $organizationType,
             'contact_name' => $isEmployer ? $displayName : null,
             'email' => $input['email'],
             'phone' => $input['phone'],

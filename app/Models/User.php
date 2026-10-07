@@ -7,6 +7,7 @@ use App\Enums\EmployerAccountStatus;
 use App\Enums\EmployerPackage;
 use App\Enums\EmployerVerificationStatus;
 use App\Enums\JobSeekerResumeStatus;
+use App\Enums\OrganizationType;
 use App\Enums\PermissionName;
 use App\Enums\RoleName;
 use App\Enums\SubscriptionStatus;
@@ -38,6 +39,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'company_name',
+        'organization_type',
         'industry',
         'company_size',
         'founded_year',
@@ -115,6 +117,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'role' => UserRole::class,
+            'organization_type' => OrganizationType::class,
             'verification_status' => EmployerVerificationStatus::class,
             'account_status' => AccountStatusCast::class,
             'resume_status' => JobSeekerResumeStatus::class,
@@ -162,7 +165,7 @@ class User extends Authenticatable
             return null;
         }
 
-        return '/storage/' . $this->company_logo_path;
+        return '/storage/'.$this->company_logo_path;
     }
 
     public function companyCoverUrl(): ?string
@@ -171,7 +174,7 @@ class User extends Authenticatable
             return null;
         }
 
-        return '/storage/' . $this->company_cover_path;
+        return '/storage/'.$this->company_cover_path;
     }
 
     public function hasVerificationDocument(): bool
@@ -201,7 +204,7 @@ class User extends Authenticatable
                     return $storedName;
                 }
 
-                $composed = trim(($attributes['first_name'] ?? '') . ' ' . ($attributes['last_name'] ?? ''));
+                $composed = trim(($attributes['first_name'] ?? '').' '.($attributes['last_name'] ?? ''));
 
                 return $composed !== '' ? $composed : ($attributes['email'] ?? '');
             },
@@ -484,6 +487,6 @@ class User extends Authenticatable
         }
 
         // Relative URL avoids APP_URL host mismatches (localhost vs 127.0.0.1).
-        return '/storage/' . $this->avatar;
+        return '/storage/'.$this->avatar;
     }
 }

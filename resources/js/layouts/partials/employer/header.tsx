@@ -26,7 +26,8 @@ export function EmployerHeader({
     const personName = user.name || user.contact_name || 'Employer';
     const initials = getInitials(personName);
     const shortName = firstName(personName);
-    const companyName = user.company_name || 'Company';
+    const companyName =
+        user.company_name || t('employer.profile.organization_fallback');
     const switchLocale = locale === 'ar' ? 'en' : 'ar';
     const localeLabel =
         switchLocale === 'ar'

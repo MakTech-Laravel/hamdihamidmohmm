@@ -19,6 +19,13 @@ class UpdatePlatformSettingsRequest extends FormRequest
         return [
             'group' => ['required', 'string', 'in:general,email,security,language,social,payments,experience_filters,email_templates'],
             'values' => ['required', 'array'],
+            'values.platform_name' => ['nullable', 'string', 'max:255'],
+            'values.support_phone' => ['nullable', 'string', 'max:50'],
+            'values.support_phone_secondary' => ['nullable', 'string', 'max:50'],
+            'values.support_email' => ['nullable', 'email', 'max:255'],
+            'values.contact_email' => ['nullable', 'email', 'max:255'],
+            'values.company_address' => ['nullable', 'string', 'max:500'],
+            'values.website_url' => ['nullable', 'string', 'max:500'],
             'values.facebook_url' => ['nullable', 'string', 'max:500'],
             'values.twitter_url' => ['nullable', 'string', 'max:500'],
             'values.linkedin_url' => ['nullable', 'string', 'max:500'],

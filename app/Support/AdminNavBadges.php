@@ -6,6 +6,7 @@ use App\Enums\EmployerAccountStatus;
 use App\Enums\JobPostStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
+use App\Models\ContactMessage;
 use App\Models\JobPost;
 use App\Models\Payment;
 use App\Models\User;
@@ -18,7 +19,8 @@ class AdminNavBadges
      *     verifications: int,
      *     jobs: int,
      *     payments: int,
-     *     notifications: int
+     *     notifications: int,
+     *     contact_messages: int
      * }
      */
     public static function for(?User $user): array
@@ -38,6 +40,7 @@ class AdminNavBadges
             'jobs' => JobPost::query()->where('status', JobPostStatus::Pending)->count(),
             'payments' => Payment::query()->where('status', PaymentStatus::Pending)->count(),
             'notifications' => $user->unreadNotifications()->count(),
+            'contact_messages' => ContactMessage::query()->whereNull('read_at')->count(),
         ];
     }
 
@@ -47,7 +50,8 @@ class AdminNavBadges
      *     verifications: int,
      *     jobs: int,
      *     payments: int,
-     *     notifications: int
+     *     notifications: int,
+     *     contact_messages: int
      * }
      */
     public static function empty(): array
@@ -58,6 +62,7 @@ class AdminNavBadges
             'jobs' => 0,
             'payments' => 0,
             'notifications' => 0,
+            'contact_messages' => 0,
         ];
     }
 }

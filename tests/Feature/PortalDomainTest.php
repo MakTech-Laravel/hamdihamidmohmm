@@ -211,6 +211,7 @@ test('employer can save a company profile and job seeker can save a profile', fu
     $this->actingAs($employer)
         ->put(route('employer.profile.update'), [
             'company_name' => 'Acme Gulf',
+            'organization_type' => 'private_company',
             'contact_name' => 'Sara',
             'industry' => 'Technology',
             'website' => 'https://acme.test',

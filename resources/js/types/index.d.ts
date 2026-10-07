@@ -63,12 +63,20 @@ export interface SharedData {
         jobs: number;
         payments: number;
         notifications: number;
+        contact_messages: number;
     };
     platform_social?: {
         facebook_url?: string;
         twitter_url?: string;
         linkedin_url?: string;
         instagram_url?: string;
+    };
+    platform_contact?: {
+        support_phone?: string | null;
+        support_phone_secondary?: string | null;
+        support_email?: string | null;
+        contact_email?: string | null;
+        company_address?: string | null;
     };
     [key: string]: unknown;
 }

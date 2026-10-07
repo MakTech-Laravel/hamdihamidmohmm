@@ -11,7 +11,8 @@ type NavBadgeKey =
     | 'verifications'
     | 'jobs'
     | 'payments'
-    | 'notifications';
+    | 'notifications'
+    | 'contact_messages';
 
 type NavItem = {
     titleKey: string;
@@ -117,6 +118,13 @@ const navItems: NavItem[] = [
         icon: '/images/admin/nav-notifications.svg',
         match: '/admin/notifications',
         badgeKey: 'notifications',
+    },
+    {
+        titleKey: 'admin.nav.contact_messages',
+        href: '/admin/contact-messages',
+        icon: '/images/admin/nav-notifications.svg',
+        match: '/admin/contact-messages',
+        badgeKey: 'contact_messages',
     },
     {
         titleKey: 'admin.nav.settings',

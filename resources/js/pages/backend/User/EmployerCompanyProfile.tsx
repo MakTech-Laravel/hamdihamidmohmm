@@ -10,8 +10,16 @@ import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
+type OrganizationTypeOption = {
+    value: string;
+    label: string;
+    translation_key: string;
+};
+
 type Profile = {
     company_name: string | null;
+    organization_type: string | null;
+    organization_type_label: string | null;
     contact_name: string | null;
     industry: string | null;
     company_size: string | null;
@@ -48,9 +56,11 @@ const inputClass =
 export default function EmployerCompanyProfile({
     profile,
     completion,
+    organizationTypes,
 }: {
     profile: Profile;
     completion: Completion;
+    organizationTypes: OrganizationTypeOption[];
 }) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
@@ -61,6 +71,7 @@ export default function EmployerCompanyProfile({
     const documentInputRef = useRef<HTMLInputElement>(null);
     const form = useForm({
         company_name: profile.company_name ?? '',
+        organization_type: profile.organization_type ?? 'private_company',
         contact_name: profile.contact_name ?? '',
         industry: profile.industry ?? '',
         company_size: profile.company_size ?? '',
@@ -74,6 +85,16 @@ export default function EmployerCompanyProfile({
         phone: profile.phone ?? '',
         email: profile.email ?? '',
     });
+
+    const organizationTypeLabel = (value: string | null | undefined): string => {
+        const option = organizationTypes.find((item) => item.value === value);
+
+        if (!option) {
+            return profile.organization_type_label || '—';
+        }
+
+        return t(option.translation_key);
+    };
 
     const save = () => {
         form.put('/employer/profile', {
@@ -135,8 +156,8 @@ export default function EmployerCompanyProfile({
     };
 
     const sectionTitleKey: Record<string, string> = {
-        company: 'employer.profile.company_information',
-        logo: 'employer.profile.company_logo',
+        company: 'employer.profile.organization_information',
+        logo: 'employer.profile.organization_logo',
         about: 'employer.profile.public_about',
         contact: 'employer.profile.contact_information',
         social: 'employer.profile.social_links',
@@ -266,10 +287,18 @@ export default function EmployerCompanyProfile({
                             companyName={
                                 form.data.company_name ||
                                 profile.company_name ||
-                                t('employer.profile.company_fallback')
+                                t('employer.profile.organization_fallback')
                             }
                             industry={
-                                form.data.industry || profile.industry
+                                [
+                                    organizationTypeLabel(
+                                        form.data.organization_type ||
+                                            profile.organization_type,
+                                    ),
+                                    form.data.industry || profile.industry,
+                                ]
+                                    .filter(Boolean)
+                                    .join(' · ') || null
                             }
                             about={form.data.about || profile.about}
                             website={form.data.website || profile.website}
@@ -322,7 +351,7 @@ export default function EmployerCompanyProfile({
                             </div>
                             <div>
                                 <label className="text-xs font-semibold text-[#64748b]">
-                                    {t('employer.profile.company_name')}
+                                    {t('employer.profile.organization_name')}
                                 </label>
                                 <input
                                     className={inputClass}
@@ -334,9 +363,33 @@ export default function EmployerCompanyProfile({
                                         )
                                     }
                                     placeholder={t(
-                                        'employer.profile.company_name',
+                                        'employer.profile.organization_name_placeholder',
                                     )}
                                 />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-[#64748b]">
+                                    {t('employer.profile.organization_type')}
+                                </label>
+                                <select
+                                    className={inputClass}
+                                    value={form.data.organization_type}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'organization_type',
+                                            event.target.value,
+                                        )
+                                    }
+                                >
+                                    {organizationTypes.map((option) => (
+                                        <option
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {t(option.translation_key)}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <div>
                                 <label className="text-xs font-semibold text-[#64748b]">
@@ -406,61 +459,124 @@ export default function EmployerCompanyProfile({
                 </Section>
 
                 <Section
-                    title={t('employer.profile.company_information')}
+                    title={t('employer.profile.organization_information')}
                     complete={completion.sections.company}
                     onEdit={() => setEditing('company')}
                 >
                     {editing === 'company' ? (
                         <div className="grid gap-3 sm:grid-cols-2">
-                            <input
-                                className={inputClass}
-                                value={form.data.company_name}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'company_name',
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder={t('employer.profile.company_name')}
-                            />
-                            <input
-                                className={inputClass}
-                                value={form.data.industry}
-                                onChange={(event) =>
-                                    form.setData('industry', event.target.value)
-                                }
-                                placeholder={t('employer.profile.industry')}
-                            />
-                            <input
-                                className={inputClass}
-                                value={form.data.company_size}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'company_size',
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder={t('employer.profile.company_size')}
-                            />
-                            <input
-                                className={inputClass}
-                                value={form.data.founded_year}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'founded_year',
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder={t('employer.profile.founded')}
-                            />
-                            <input
-                                className={cn(inputClass, 'sm:col-span-2')}
-                                value={form.data.website}
-                                onChange={(event) =>
-                                    form.setData('website', event.target.value)
-                                }
-                                placeholder={t('employer.profile.website')}
-                            />
+                            <div>
+                                <label className="text-xs font-semibold text-[#64748b]">
+                                    {t('employer.profile.organization_name')}
+                                </label>
+                                <input
+                                    className={inputClass}
+                                    value={form.data.company_name}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'company_name',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder={t(
+                                        'employer.profile.organization_name_placeholder',
+                                    )}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-[#64748b]">
+                                    {t('employer.profile.organization_type')}
+                                </label>
+                                <select
+                                    className={inputClass}
+                                    value={form.data.organization_type}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'organization_type',
+                                            event.target.value,
+                                        )
+                                    }
+                                >
+                                    {organizationTypes.map((option) => (
+                                        <option
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {t(option.translation_key)}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-[#64748b]">
+                                    {t('employer.profile.industry')}
+                                </label>
+                                <input
+                                    className={inputClass}
+                                    value={form.data.industry}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'industry',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder={t(
+                                        'employer.profile.industry_placeholder',
+                                    )}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-[#64748b]">
+                                    {t('employer.profile.organization_size')}
+                                </label>
+                                <input
+                                    className={inputClass}
+                                    value={form.data.company_size}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'company_size',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder={t(
+                                        'employer.profile.organization_size_placeholder',
+                                    )}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-[#64748b]">
+                                    {t('employer.profile.founded')}
+                                </label>
+                                <input
+                                    className={inputClass}
+                                    value={form.data.founded_year}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'founded_year',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder={t('employer.profile.founded')}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-[#64748b]">
+                                    {t('employer.profile.website')}
+                                </label>
+                                <input
+                                    className={inputClass}
+                                    value={form.data.website}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'website',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder={t(
+                                        'employer.profile.website_placeholder',
+                                    )}
+                                />
+                            </div>
                             <SaveRow
                                 processing={form.processing}
                                 onSave={save}
@@ -469,20 +585,38 @@ export default function EmployerCompanyProfile({
                         </div>
                     ) : (
                         <dl className="grid gap-3 sm:grid-cols-2">
-                            <Info label={t('employer.profile.company_name')} value={profile.company_name} />
-                            <Info label={t('employer.profile.industry')} value={profile.industry} />
-                            <Info label={t('employer.profile.company_size')} value={profile.company_size} />
+                            <Info
+                                label={t('employer.profile.organization_name')}
+                                value={profile.company_name}
+                            />
+                            <Info
+                                label={t('employer.profile.organization_type')}
+                                value={organizationTypeLabel(
+                                    profile.organization_type,
+                                )}
+                            />
+                            <Info
+                                label={t('employer.profile.industry')}
+                                value={profile.industry}
+                            />
+                            <Info
+                                label={t('employer.profile.organization_size')}
+                                value={profile.company_size}
+                            />
                             <Info
                                 label={t('employer.profile.founded')}
                                 value={profile.founded_year?.toString() ?? null}
                             />
-                            <Info label={t('employer.profile.website')} value={profile.website} />
+                            <Info
+                                label={t('employer.profile.website')}
+                                value={profile.website}
+                            />
                         </dl>
                     )}
                 </Section>
 
                 <Section
-                    title={t('employer.profile.company_logo')}
+                    title={t('employer.profile.organization_logo')}
                     complete={completion.sections.logo}
                     onEdit={() => logoInputRef.current?.click()}
                 >
@@ -490,7 +624,7 @@ export default function EmployerCompanyProfile({
                         {profile.logo_url ? (
                             <img
                                 src={profile.logo_url}
-                                alt={`${profile.company_name || t('employer.profile.company_fallback')} logo`}
+                                alt={`${profile.company_name || t('employer.profile.organization_fallback')} logo`}
                                 className="size-[88px] rounded-2xl border border-[#e2e8f0] bg-[#f8faff] object-contain p-1.5"
                             />
                         ) : (

@@ -5,6 +5,7 @@ use App\Http\Controllers\Backend\Admin\AdminDashboardController;
 use App\Http\Controllers\Backend\Admin\AdminManagementController;
 use App\Http\Controllers\Backend\Admin\AdminNotificationController;
 use App\Http\Controllers\Backend\Admin\ApplicationMonitoringController;
+use App\Http\Controllers\Backend\Admin\ContactMessageController;
 use App\Http\Controllers\Backend\Admin\ContentManagementController;
 use App\Http\Controllers\Backend\Admin\EmployerManagementController;
 use App\Http\Controllers\Backend\Admin\JobManagementController;
@@ -126,6 +127,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
         Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllRead'])->name('notifications.read-all');
         Route::post('/notifications/{notification}/read', [AdminNotificationController::class, 'markRead'])->name('notifications.read');
+
+        Route::get('/contact-messages', [ContactMessageController::class, 'index'])->name('contact-messages.index');
+        Route::post('/contact-messages/read-all', [ContactMessageController::class, 'markAllRead'])->name('contact-messages.read-all');
+        Route::post('/contact-messages/{contactMessage}/read', [ContactMessageController::class, 'markRead'])->name('contact-messages.read');
+        Route::delete('/contact-messages/{contactMessage}', [ContactMessageController::class, 'destroy'])->name('contact-messages.destroy');
 
         Route::get('/settings', [PlatformSettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [PlatformSettingController::class, 'update'])->name('settings.update');

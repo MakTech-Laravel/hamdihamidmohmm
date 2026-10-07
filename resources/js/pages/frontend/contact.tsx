@@ -1,4 +1,5 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { Mail, MapPin, Phone } from 'lucide-react';
 import { useState } from 'react';
 
 import InputError from '@/components/input-error';
@@ -16,10 +17,25 @@ const fieldClassName =
 const labelClassName =
     'text-sm font-semibold tracking-[-0.16px] text-[#050315]';
 
+function telHref(phone: string): string {
+    return `tel:${phone.replace(/[^\d+]/g, '')}`;
+}
+
 export default function Contact() {
     const { t } = useLocale();
-    const { flash } = usePage<SharedData>().props;
+    const { flash, platform_contact } = usePage<SharedData>().props;
     const [messageLength, setMessageLength] = useState(0);
+
+    const supportPhones = [
+        platform_contact?.support_phone,
+        platform_contact?.support_phone_secondary,
+    ].filter((phone): phone is string => Boolean(phone));
+
+    const supportEmail =
+        platform_contact?.support_email || platform_contact?.contact_email || null;
+    const companyAddress = platform_contact?.company_address || null;
+    const hasContactDetails =
+        supportPhones.length > 0 || Boolean(supportEmail) || Boolean(companyAddress);
 
     return (
         <FrontendLayout>
@@ -54,7 +70,64 @@ export default function Contact() {
             </section>
 
             <section className="bg-white px-8 py-16">
-                <div className="mx-auto w-full max-w-[672px]">
+                <div className="mx-auto grid w-full max-w-[1024px] gap-8 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+                    {hasContactDetails ? (
+                        <aside className="h-fit rounded-2xl border border-[#d1f6ff] bg-[#f8faff] p-6 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
+                            <h2 className="text-lg font-bold text-[#050315]">
+                                {t('contact.support_details')}
+                            </h2>
+                            <p className="mt-2 text-sm leading-5 text-[#64748b]">
+                                {t('contact.support_details_hint')}
+                            </p>
+
+                            <ul className="mt-6 space-y-4">
+                                {supportPhones.map((phone, index) => (
+                                    <li key={phone}>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-[#3977a6]">
+                                            {index === 0
+                                                ? t('contact.support_phone')
+                                                : t('contact.support_phone_secondary')}
+                                        </p>
+                                        <a
+                                            href={telHref(phone)}
+                                            className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-[#050315] transition hover:text-[#0057c8]"
+                                        >
+                                            <Phone className="size-4 shrink-0 text-[#0057c8]" />
+                                            {phone}
+                                        </a>
+                                    </li>
+                                ))}
+
+                                {supportEmail ? (
+                                    <li>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-[#3977a6]">
+                                            {t('contact.support_email')}
+                                        </p>
+                                        <a
+                                            href={`mailto:${supportEmail}`}
+                                            className="mt-1 inline-flex items-center gap-2 text-sm font-semibold text-[#050315] transition hover:text-[#0057c8]"
+                                        >
+                                            <Mail className="size-4 shrink-0 text-[#0057c8]" />
+                                            {supportEmail}
+                                        </a>
+                                    </li>
+                                ) : null}
+
+                                {companyAddress ? (
+                                    <li>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-[#3977a6]">
+                                            {t('contact.address')}
+                                        </p>
+                                        <p className="mt-1 inline-flex items-start gap-2 text-sm font-semibold text-[#050315]">
+                                            <MapPin className="mt-0.5 size-4 shrink-0 text-[#0057c8]" />
+                                            <span>{companyAddress}</span>
+                                        </p>
+                                    </li>
+                                ) : null}
+                            </ul>
+                        </aside>
+                    ) : null}
+
                     <div className="rounded-2xl border border-[#d1f6ff] bg-white p-8 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">
                         <h2 className="text-xl font-bold leading-6 text-[#050315]">
                             {t('contact.form_title')}

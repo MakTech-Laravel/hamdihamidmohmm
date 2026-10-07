@@ -14,6 +14,6 @@ export function firstName(name: string): string {
 export const EMPLOYER_QUICK_ACTIONS = [
     { icon: '📝', label: 'Post Job', href: '/employer/jobs' },
     { icon: '📋', label: 'Review Applications', href: '/employer/applications' },
-    { icon: '🏢', label: 'Company Profile', href: '/employer/profile' },
+    { icon: '🏢', label: 'Organization Profile', href: '/employer/profile' },
     { icon: '💳', label: 'Manage Billing', href: '/employer/packages' },
 ] as const;

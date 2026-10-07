@@ -240,6 +240,11 @@ export default function PlatformSettings({
                                 form.put('/admin/settings');
                             }}
                         >
+                            {activeTab === 'general' && (
+                                <p className="rounded-xl border border-[#dbeafe] bg-[#eff6ff] px-4 py-3 text-sm text-[#1e3a8a]">
+                                    {t('admin.settings.contact_help')}
+                                </p>
+                            )}
                             {activeTab === 'social' && (
                                 <p className="rounded-xl border border-[#dbeafe] bg-[#eff6ff] px-4 py-3 text-sm text-[#1e3a8a]">
                                     {t('admin.settings.social_help')}

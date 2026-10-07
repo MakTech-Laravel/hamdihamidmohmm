@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\OrganizationType;
 use App\Models\User;
 
 test('employers can update the public about company fields', function () {
@@ -13,6 +14,7 @@ test('employers can update the public about company fields', function () {
     $this->actingAs($employer)
         ->put(route('employer.profile.public-about.update'), [
             'company_name' => 'Gulf Tech Solutions',
+            'organization_type' => OrganizationType::PrivateCompany->value,
             'industry' => 'Technology',
             'about' => '<p><strong>Cloud</strong> and product engineering studio based in Dubai.</p><script>alert(1)</script>',
             'website' => 'https://gulftech.example',
@@ -22,6 +24,7 @@ test('employers can update the public about company fields', function () {
     $employer->refresh();
 
     expect($employer->company_name)->toBe('Gulf Tech Solutions')
+        ->and($employer->organization_type)->toBe(OrganizationType::PrivateCompany)
         ->and($employer->industry)->toBe('Technology')
         ->and($employer->about)->toContain('<strong>Cloud</strong>')
         ->and($employer->about)->not->toContain('<script>')
@@ -39,7 +42,7 @@ test('employer job editor receives company about fields', function () {
     $this->actingAs($employer)
         ->get(route('employer.jobs.create'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerJobEditor')
             ->where('company.name', 'Gulf Tech Solutions')
             ->where('company.industry', 'Technology')
