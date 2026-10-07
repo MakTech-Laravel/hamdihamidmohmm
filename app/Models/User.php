@@ -162,7 +162,7 @@ class User extends Authenticatable
             return null;
         }
 
-        return '/storage/'.$this->company_logo_path;
+        return '/storage/' . $this->company_logo_path;
     }
 
     public function companyCoverUrl(): ?string
@@ -171,7 +171,7 @@ class User extends Authenticatable
             return null;
         }
 
-        return '/storage/'.$this->company_cover_path;
+        return '/storage/' . $this->company_cover_path;
     }
 
     public function hasVerificationDocument(): bool
@@ -201,7 +201,7 @@ class User extends Authenticatable
                     return $storedName;
                 }
 
-                $composed = trim(($attributes['first_name'] ?? '').' '.($attributes['last_name'] ?? ''));
+                $composed = trim(($attributes['first_name'] ?? '') . ' ' . ($attributes['last_name'] ?? ''));
 
                 return $composed !== '' ? $composed : ($attributes['email'] ?? '');
             },
@@ -420,6 +420,43 @@ class User extends Authenticatable
         return $this->hasOne(JobSeekerProfile::class);
     }
 
+    /**
+     * @return HasMany<JobSeekerCv, $this>
+     */
+    public function jobSeekerCvs(): HasMany
+    {
+        return $this->hasMany(JobSeekerCv::class);
+    }
+
+    public function syncDefaultResumeFromCvs(): void
+    {
+        $default = $this->jobSeekerCvs()
+            ->where('is_default', true)
+            ->first()
+            ?? $this->jobSeekerCvs()->latest('id')->first();
+
+        if ($default instanceof JobSeekerCv) {
+            if (! $default->is_default) {
+                $this->jobSeekerCvs()->update(['is_default' => false]);
+                $default->forceFill(['is_default' => true])->save();
+            }
+
+            $this->forceFill([
+                'resume_path' => $default->file_path,
+                'resume_original_name' => $default->original_name,
+                'resume_status' => JobSeekerResumeStatus::Active,
+            ])->save();
+
+            return;
+        }
+
+        $this->forceFill([
+            'resume_path' => null,
+            'resume_original_name' => null,
+            'resume_status' => null,
+        ])->save();
+    }
+
     public function canAccessPayroll(): bool
     {
         return $this->isAdmin();
@@ -447,6 +484,6 @@ class User extends Authenticatable
         }
 
         // Relative URL avoids APP_URL host mismatches (localhost vs 127.0.0.1).
-        return '/storage/'.$this->avatar;
+        return '/storage/' . $this->avatar;
     }
 }

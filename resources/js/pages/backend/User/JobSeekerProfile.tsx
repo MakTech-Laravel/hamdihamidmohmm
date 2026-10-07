@@ -19,16 +19,17 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode 
 
 import {
     destroyCertificationDocument,
+    destroyCv,
     destroyHighestDegree,
     destroyOtherDocument,
     destroyPhoto,
-    destroyResume,
+    storeCv,
     update as updateProfile,
+    updateCv,
     uploadCertificationDocument,
     uploadHighestDegree,
     uploadOtherDocument,
     uploadPhoto,
-    uploadResume,
 } from '@/actions/App/Http/Controllers/Backend/User/JobSeekerProfileController';
 import { getInitials } from '@/components/job-seeker/demo-data';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -115,6 +116,13 @@ type Profile = {
     resume_status: string | null;
     resume_name: string | null;
     resume_url: string | null;
+    cvs: Array<{
+        id: number;
+        label: string;
+        file_name: string | null;
+        is_default: boolean;
+        download_url: string;
+    }>;
     cover_letter_name?: string | null;
     cover_letter_url?: string | null;
     highest_degree_name: string | null;
@@ -2308,9 +2316,7 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                     hideEdit
                 >
                     <ResumeDocumentsUploader
-                        resumeName={profile.resume_name}
-                        resumeStatus={profile.resume_status}
-                        resumeUrl={profile.resume_url}
+                        cvs={profile.cvs ?? []}
                         highestDegreeName={profile.highest_degree_name}
                         highestDegreeUrl={profile.highest_degree_url}
                         otherDocumentName={profile.other_document_name}
@@ -2566,17 +2572,19 @@ function CertificationFileUploader({
 }
 
 function ResumeDocumentsUploader({
-    resumeName,
-    resumeStatus,
-    resumeUrl,
+    cvs,
     highestDegreeName,
     highestDegreeUrl,
     otherDocumentName,
     otherDocumentUrl,
 }: {
-    resumeName: string | null;
-    resumeStatus: string | null;
-    resumeUrl: string | null;
+    cvs: Array<{
+        id: number;
+        label: string;
+        file_name: string | null;
+        is_default: boolean;
+        download_url: string;
+    }>;
     highestDegreeName: string | null;
     highestDegreeUrl: string | null;
     otherDocumentName: string | null;
@@ -2589,18 +2597,7 @@ function ResumeDocumentsUploader({
             <p className="rounded-xl border border-[#dbeafe] bg-[#eff6ff] px-3 py-2.5 text-xs leading-5 text-[#1e3a8a]">
                 {t('job_seeker.profile.cover_letter_apply_hint')}
             </p>
-            <ProfileDocumentField
-                id="job-seeker-cv-upload"
-                labelKey="job_seeker.profile.resume_label_cv"
-                useExistingKey="job_seeker.profile.resume_use_existing"
-                fieldName="resume"
-                fileName={resumeName}
-                fileUrl={resumeUrl}
-                statusLabel={resumeStatus}
-                extractProfile
-                uploadUrl={uploadResume.url()}
-                destroyUrl={destroyResume.url()}
-            />
+            <MultipleCvManager cvs={cvs} />
             <ProfileDocumentField
                 id="job-seeker-highest-degree-upload"
                 labelKey="job_seeker.profile.resume_label_highest_degree"
@@ -2621,6 +2618,242 @@ function ResumeDocumentsUploader({
                 uploadUrl={uploadOtherDocument.url()}
                 destroyUrl={destroyOtherDocument.url()}
             />
+        </div>
+    );
+}
+
+function MultipleCvManager({
+    cvs,
+}: {
+    cvs: Array<{
+        id: number;
+        label: string;
+        file_name: string | null;
+        is_default: boolean;
+        download_url: string;
+    }>;
+}) {
+    const { t } = useLocale();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [label, setLabel] = useState('');
+    const [makeDefault, setMakeDefault] = useState(cvs.length === 0);
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editLabel, setEditLabel] = useState('');
+    const form = useForm<{
+        resume: File | null;
+        label: string;
+        make_default: boolean;
+        extract_profile: boolean;
+    }>({
+        resume: null,
+        label: '',
+        make_default: cvs.length === 0,
+        extract_profile: true,
+    });
+
+    const uploadFile = (file: File): void => {
+        form.setData({
+            resume: file,
+            label: label.trim(),
+            make_default: makeDefault || cvs.length === 0,
+            extract_profile: true,
+        });
+        form.post(storeCv.url(), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setLabel('');
+                setMakeDefault(false);
+                form.reset();
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            },
+        });
+    };
+
+    return (
+        <div className="space-y-4">
+            <div>
+                <h3 className="text-sm font-semibold text-[#101828]">
+                    {t('job_seeker.profile.cvs_title')}
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-[#64748b]">
+                    {t('job_seeker.profile.cvs_help')}
+                </p>
+            </div>
+
+            {cvs.length === 0 ? (
+                <p className="text-sm text-[#99a1af]">
+                    {t('job_seeker.profile.no_cvs')}
+                </p>
+            ) : (
+                <div className="space-y-3">
+                    {cvs.map((cv) => (
+                        <div
+                            key={cv.id}
+                            className="rounded-xl border border-[#e2e8f0] p-4"
+                        >
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <p className="text-sm font-semibold text-[#050315]">
+                                            {cv.label}
+                                        </p>
+                                        {cv.is_default ? (
+                                            <span className="rounded-full bg-[#dcfce7] px-2 py-0.5 text-[11px] font-semibold text-[#15803d]">
+                                                {t(
+                                                    'job_seeker.profile.cv_default_badge',
+                                                )}
+                                            </span>
+                                        ) : null}
+                                    </div>
+                                    <p className="mt-1 truncate text-xs text-[#64748b]">
+                                        {cv.file_name ||
+                                            t('job_seeker.profile.resume_label_cv')}
+                                    </p>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <a
+                                        href={cv.download_url}
+                                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#0057c8]"
+                                    >
+                                        <Download className="size-3.5" />
+                                        {t('job_seeker.profile.download')}
+                                    </a>
+                                    {!cv.is_default ? (
+                                        <button
+                                            type="button"
+                                            className="text-xs font-semibold text-[#0057c8]"
+                                            onClick={() =>
+                                                router.put(
+                                                    updateCv.url(cv.id),
+                                                    { make_default: true },
+                                                    { preserveScroll: true },
+                                                )
+                                            }
+                                        >
+                                            {t(
+                                                'job_seeker.profile.cv_make_default',
+                                            )}
+                                        </button>
+                                    ) : null}
+                                    <button
+                                        type="button"
+                                        className="text-xs font-semibold text-[#475569]"
+                                        onClick={() => {
+                                            setEditingId(cv.id);
+                                            setEditLabel(cv.label);
+                                        }}
+                                    >
+                                        {t('job_seeker.profile.cv_rename')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="text-xs font-semibold text-[#b91c1c]"
+                                        onClick={() =>
+                                            router.delete(destroyCv.url(cv.id), {
+                                                preserveScroll: true,
+                                            })
+                                        }
+                                    >
+                                        {t('job_seeker.profile.remove')}
+                                    </button>
+                                </div>
+                            </div>
+                            {editingId === cv.id ? (
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                    <input
+                                        value={editLabel}
+                                        onChange={(event) =>
+                                            setEditLabel(event.target.value)
+                                        }
+                                        className="h-9 min-w-[180px] flex-1 rounded-lg border border-[#e8d5e8] px-3 text-sm"
+                                        placeholder={t(
+                                            'job_seeker.profile.cv_label_placeholder',
+                                        )}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="rounded-lg bg-[#0057c8] px-3 py-1.5 text-xs font-semibold text-white"
+                                        onClick={() =>
+                                            router.put(
+                                                updateCv.url(cv.id),
+                                                { label: editLabel },
+                                                {
+                                                    preserveScroll: true,
+                                                    onSuccess: () =>
+                                                        setEditingId(null),
+                                                },
+                                            )
+                                        }
+                                    >
+                                        {t('job_seeker.profile.save')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="text-xs font-semibold text-[#64748b]"
+                                        onClick={() => setEditingId(null)}
+                                    >
+                                        {t('job_seeker.profile.cancel')}
+                                    </button>
+                                </div>
+                            ) : null}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <div className="space-y-2 rounded-xl border border-dashed border-[#cbd5e1] bg-[#f8faff] p-4">
+                <p className="text-sm font-semibold text-[#101828]">
+                    {t('job_seeker.profile.cv_add')}
+                </p>
+                <input
+                    value={label}
+                    onChange={(event) => setLabel(event.target.value)}
+                    placeholder={t('job_seeker.profile.cv_label_placeholder')}
+                    className="h-[42px] w-full rounded-lg border border-[#e8d5e8] bg-white px-3 text-sm"
+                />
+                <label className="flex items-center gap-2 text-xs text-[#475569]">
+                    <input
+                        type="checkbox"
+                        checked={makeDefault || cvs.length === 0}
+                        disabled={cvs.length === 0}
+                        onChange={(event) =>
+                            setMakeDefault(event.target.checked)
+                        }
+                        className="size-3.5 accent-[#0057c8]"
+                    />
+                    {t('job_seeker.profile.cv_make_default')}
+                </label>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    disabled={form.processing}
+                    className="block w-full rounded-md border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#364153] file:mr-3 file:rounded file:border-0 file:bg-[#f1f5f9] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#101828] disabled:opacity-60"
+                    onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+
+                        if (!file) {
+                            return;
+                        }
+
+                        uploadFile(file);
+                    }}
+                />
+                <p className="text-xs text-[#64748b]">
+                    {t('job_seeker.profile.resume_hint')}
+                </p>
+                {form.processing ? (
+                    <p className="text-sm text-[#0057c8]">
+                        {t('job_seeker.profile.uploading')}
+                    </p>
+                ) : null}
+                {form.errors.resume ? (
+                    <p className="text-sm text-[#b91c1c]">{form.errors.resume}</p>
+                ) : null}
+            </div>
         </div>
     );
 }

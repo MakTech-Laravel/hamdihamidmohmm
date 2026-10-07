@@ -30,6 +30,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/profile/resume', [JobSeekerProfileController::class, 'uploadResume'])->name('profile.resume.upload');
         Route::get('/profile/resume', [JobSeekerProfileController::class, 'downloadResume'])->name('profile.resume.download');
         Route::delete('/profile/resume', [JobSeekerProfileController::class, 'destroyResume'])->name('profile.resume.destroy');
+        Route::post('/profile/cvs', [JobSeekerProfileController::class, 'storeCv'])->name('profile.cvs.store');
+        Route::put('/profile/cvs/{cv}', [JobSeekerProfileController::class, 'updateCv'])->name('profile.cvs.update');
+        Route::get('/profile/cvs/{cv}/download', [JobSeekerProfileController::class, 'downloadCv'])->name('profile.cvs.download');
+        Route::delete('/profile/cvs/{cv}', [JobSeekerProfileController::class, 'destroyCv'])->name('profile.cvs.destroy');
         Route::post('/profile/cover-letter', [JobSeekerProfileController::class, 'uploadCoverLetter'])->name('profile.cover-letter.upload');
         Route::get('/profile/cover-letter', [JobSeekerProfileController::class, 'downloadCoverLetter'])->name('profile.cover-letter.download');
         Route::delete('/profile/cover-letter', [JobSeekerProfileController::class, 'destroyCoverLetter'])->name('profile.cover-letter.destroy');

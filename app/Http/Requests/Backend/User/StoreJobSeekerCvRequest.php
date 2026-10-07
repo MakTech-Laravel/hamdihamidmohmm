@@ -4,7 +4,7 @@ namespace App\Http\Requests\Backend\User;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UploadJobSeekerResumeRequest extends FormRequest
+class StoreJobSeekerCvRequest extends FormRequest
 {
     public function authorize(): bool
     {

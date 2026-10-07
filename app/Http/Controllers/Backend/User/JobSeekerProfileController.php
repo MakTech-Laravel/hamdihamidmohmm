@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Backend\User;
 
-use App\Enums\JobSeekerResumeStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Backend\User\StoreJobSeekerCvRequest;
+use App\Http\Requests\Backend\User\UpdateJobSeekerCvRequest;
 use App\Http\Requests\Backend\User\UpdateJobSeekerProfileRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerCertificationRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerCoverLetterRequest;
@@ -11,6 +12,7 @@ use App\Http\Requests\Backend\User\UploadJobSeekerHighestDegreeRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerOtherDocumentRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerPhotoRequest;
 use App\Http\Requests\Backend\User\UploadJobSeekerResumeRequest;
+use App\Models\JobSeekerCv;
 use App\Models\JobSeekerProfile;
 use App\Models\User;
 use App\Support\JobSeekerCvExtractor;
@@ -97,6 +99,21 @@ class JobSeekerProfileController extends Controller
                     : null,
                 'resume_name' => $hasResume ? $user?->resume_original_name : null,
                 'resume_url' => $hasResume ? route('job-seeker.profile.resume.download') : null,
+                'cvs' => $user === null
+                    ? []
+                    : $user->jobSeekerCvs()
+                    ->orderByDesc('is_default')
+                    ->orderByDesc('id')
+                    ->get()
+                    ->map(fn(JobSeekerCv $cv): array => [
+                        'id' => $cv->id,
+                        'label' => $cv->label,
+                        'file_name' => $cv->original_name,
+                        'is_default' => $cv->is_default,
+                        'download_url' => route('job-seeker.profile.cvs.download', $cv),
+                    ])
+                    ->values()
+                    ->all(),
                 'highest_degree_name' => $hasHighestDegree ? $user?->highest_degree_original_name : null,
                 'highest_degree_url' => $hasHighestDegree ? route('job-seeker.profile.highest-degree.download') : null,
                 'other_document_name' => $hasOtherDocument ? $user?->other_document_original_name : null,
@@ -175,7 +192,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('public')->delete((string) $user->avatar);
         }
 
-        $path = $photo->store('avatars/'.$user->id, 'public');
+        $path = $photo->store('avatars/' . $user->id, 'public');
 
         $user->forceFill([
             'avatar' => $path,
@@ -233,7 +250,7 @@ class JobSeekerProfileController extends Controller
             return back()->withErrors(['document' => __('job_seeker.profile.certification_attachments_max')]);
         }
 
-        $path = $document->store('certifications/'.$user->id, 'local');
+        $path = $document->store('certifications/' . $user->id, 'local');
 
         $attachments[] = [
             'file_path' => $path,
@@ -323,28 +340,66 @@ class JobSeekerProfileController extends Controller
 
     public function uploadResume(UploadJobSeekerResumeRequest $request): RedirectResponse
     {
-        $user = $request->user();
-        $resume = $request->file('resume');
+        return $this->persistUploadedCv(
+            $request->user(),
+            $request->file('resume'),
+            trim((string) $request->string('label')->toString()),
+            $request->boolean('make_default'),
+            $request->boolean('extract_profile', true),
+            $request->has('make_default'),
+        );
+    }
 
+    public function storeCv(StoreJobSeekerCvRequest $request): RedirectResponse
+    {
+        return $this->persistUploadedCv(
+            $request->user(),
+            $request->file('resume'),
+            trim((string) $request->string('label')->toString()),
+            $request->boolean('make_default'),
+            $request->boolean('extract_profile', true),
+            $request->has('make_default'),
+        );
+    }
+
+    private function persistUploadedCv(
+        ?User $user,
+        ?UploadedFile $resume,
+        string $label,
+        bool $makeDefault,
+        bool $extractProfile,
+        bool $makeDefaultProvided,
+    ): RedirectResponse {
         if ($user === null || $resume === null) {
             return back()->withErrors(['resume' => __('job_seeker.profile.resume_required')]);
         }
 
-        if (filled($user->resume_path)) {
-            Storage::disk('local')->delete($user->resume_path);
+        $existingCount = $user->jobSeekerCvs()->count();
+
+        if ($existingCount >= 10) {
+            return back()->withErrors(['resume' => __('job_seeker.profile.cv_limit')]);
         }
 
-        $path = $resume->store('resumes/'.$user->id, 'local');
+        $path = $resume->store('resumes/' . $user->id, 'local');
+        $shouldDefault = $makeDefaultProvided ? $makeDefault : $existingCount === 0;
 
-        $user->forceFill([
-            'resume_path' => $path,
-            'resume_original_name' => $resume->getClientOriginalName(),
-            'resume_status' => JobSeekerResumeStatus::Active,
-        ])->save();
+        if ($shouldDefault) {
+            $user->jobSeekerCvs()->update(['is_default' => false]);
+        }
+
+        JobSeekerCv::query()->create([
+            'user_id' => $user->id,
+            'label' => $label !== '' ? $label : __('job_seeker.profile.cv_default_label'),
+            'file_path' => $path,
+            'original_name' => $resume->getClientOriginalName(),
+            'is_default' => $shouldDefault,
+        ]);
+
+        $user->syncDefaultResumeFromCvs();
 
         $extracted = false;
 
-        if ($request->boolean('extract_profile', true)) {
+        if ($extractProfile) {
             $extracted = $this->applyExtractedCvData($user->id, $resume);
         }
 
@@ -356,9 +411,68 @@ class JobSeekerProfileController extends Controller
         );
     }
 
+    public function updateCv(UpdateJobSeekerCvRequest $request, JobSeekerCv $cv): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user !== null && (int) $cv->user_id === (int) $user->id, 403);
+
+        $label = trim((string) $request->string('label')->toString());
+
+        if ($label !== '') {
+            $cv->forceFill(['label' => $label])->save();
+        }
+
+        if ($request->boolean('make_default')) {
+            $user->jobSeekerCvs()->where('id', '!=', $cv->id)->update(['is_default' => false]);
+            $cv->forceFill(['is_default' => true])->save();
+        }
+
+        $user->syncDefaultResumeFromCvs();
+
+        return back()->with('success', __('job_seeker.profile.cv_updated'));
+    }
+
+    public function downloadCv(Request $request, JobSeekerCv $cv): StreamedResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user !== null
+                && (int) $cv->user_id === (int) $user->id
+                && $cv->fileExists(),
+            404,
+        );
+
+        $downloadName = $cv->original_name ?: basename((string) $cv->file_path);
+
+        return Storage::disk('local')->download((string) $cv->file_path, $downloadName);
+    }
+
+    public function destroyCv(Request $request, JobSeekerCv $cv): RedirectResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user?->isJobSeeker() === true && (int) $cv->user_id === (int) $user->id, 403);
+
+        if ($cv->fileExists()) {
+            Storage::disk('local')->delete((string) $cv->file_path);
+        }
+
+        $cv->delete();
+        $user->syncDefaultResumeFromCvs();
+
+        return back()->with('success', __('job_seeker.profile.resume_removed'));
+    }
+
     public function downloadResume(Request $request): StreamedResponse
     {
         $user = $request->user();
+        $default = $user?->jobSeekerCvs()->where('is_default', true)->first()
+            ?? $user?->jobSeekerCvs()->latest('id')->first();
+
+        if ($default instanceof JobSeekerCv) {
+            return $this->downloadCv($request, $default);
+        }
 
         abort_unless(
             $user !== null
@@ -377,6 +491,13 @@ class JobSeekerProfileController extends Controller
         $user = $request->user();
 
         abort_unless($user?->isJobSeeker() === true, 403);
+
+        $default = $user->jobSeekerCvs()->where('is_default', true)->first()
+            ?? $user->jobSeekerCvs()->latest('id')->first();
+
+        if ($default instanceof JobSeekerCv) {
+            return $this->destroyCv($request, $default);
+        }
 
         if (filled($user->resume_path)) {
             Storage::disk('local')->delete((string) $user->resume_path);
@@ -404,7 +525,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('local')->delete($user->cover_letter_path);
         }
 
-        $path = $file->store('cover-letters/'.$user->id, 'local');
+        $path = $file->store('cover-letters/' . $user->id, 'local');
 
         $user->forceFill([
             'cover_letter_path' => $path,
@@ -461,7 +582,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('local')->delete($user->highest_degree_path);
         }
 
-        $path = $file->store('highest-degrees/'.$user->id, 'local');
+        $path = $file->store('highest-degrees/' . $user->id, 'local');
 
         $user->forceFill([
             'highest_degree_path' => $path,
@@ -518,7 +639,7 @@ class JobSeekerProfileController extends Controller
             Storage::disk('local')->delete($user->other_document_path);
         }
 
-        $path = $file->store('other-documents/'.$user->id, 'local');
+        $path = $file->store('other-documents/' . $user->id, 'local');
 
         $user->forceFill([
             'other_document_path' => $path,
@@ -579,7 +700,7 @@ class JobSeekerProfileController extends Controller
                     'relationship' => trim((string) ($record['relationship'] ?? $record['relation'] ?? '')),
                 ];
             })
-            ->filter(fn (array $entry): bool => $entry['name'] !== '' || $entry['address'] !== '' || $entry['relationship'] !== '')
+            ->filter(fn(array $entry): bool => $entry['name'] !== '' || $entry['address'] !== '' || $entry['relationship'] !== '')
             ->values()
             ->all();
     }
@@ -605,9 +726,9 @@ class JobSeekerProfileController extends Controller
                 ];
 
                 $attachments = collect($this->normalizeAttachmentList($record))
-                    ->filter(fn (array $file): bool => filled($file['file_path'] ?? null)
+                    ->filter(fn(array $file): bool => filled($file['file_path'] ?? null)
                         && Storage::disk('local')->exists((string) $file['file_path']))
-                    ->map(fn (array $file): array => [
+                    ->map(fn(array $file): array => [
                         'file_path' => (string) $file['file_path'],
                         'file_name' => filled($file['file_name'] ?? null)
                             ? (string) $file['file_name']
@@ -622,7 +743,7 @@ class JobSeekerProfileController extends Controller
 
                 return $normalized;
             })
-            ->filter(fn (array $entry): bool => $entry['name'] !== ''
+            ->filter(fn(array $entry): bool => $entry['name'] !== ''
                 || $entry['issuer'] !== ''
                 || $entry['date'] !== ''
                 || isset($entry['attachments']))
@@ -637,8 +758,8 @@ class JobSeekerProfileController extends Controller
     private function deleteOrphanedCertificationFiles(array $previous, array $current): void
     {
         $keep = collect($current)
-            ->flatMap(fn (mixed $item): array => is_array($item) ? $this->normalizeAttachmentList($item) : [])
-            ->map(fn (array $file): ?string => $file['file_path'] ?? null)
+            ->flatMap(fn(mixed $item): array => is_array($item) ? $this->normalizeAttachmentList($item) : [])
+            ->map(fn(array $file): ?string => $file['file_path'] ?? null)
             ->filter()
             ->values()
             ->all();

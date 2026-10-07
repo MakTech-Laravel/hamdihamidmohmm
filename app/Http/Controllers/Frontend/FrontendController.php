@@ -172,6 +172,20 @@ class FrontendController extends Controller
             'applied' => $applied,
             'can_apply' => $isLive && $request->user()?->isJobSeeker() === true && ! $applied,
             'is_preview' => ! $isLive,
+            'applicant_cvs' => $request->user()?->isJobSeeker() === true
+                ? $request->user()->jobSeekerCvs()
+                ->orderByDesc('is_default')
+                ->orderByDesc('id')
+                ->get(['id', 'label', 'original_name', 'is_default'])
+                ->map(fn($cv) => [
+                    'id' => $cv->id,
+                    'label' => $cv->label,
+                    'file_name' => $cv->original_name,
+                    'is_default' => (bool) $cv->is_default,
+                ])
+                ->values()
+                ->all()
+                : [],
         ]);
     }
 

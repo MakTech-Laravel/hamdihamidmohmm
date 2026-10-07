@@ -56,16 +56,25 @@ type JobDetail = {
     similar?: SimilarJob[];
 };
 
+type ApplicantCv = {
+    id: number;
+    label: string;
+    file_name: string | null;
+    is_default: boolean;
+};
+
 export default function JobShow({
     job,
     applied = false,
     can_apply = false,
     is_preview = false,
+    applicant_cvs = [],
 }: {
     job: JobDetail;
     applied?: boolean;
     can_apply?: boolean;
     is_preview?: boolean;
+    applicant_cvs?: ApplicantCv[];
 }) {
     const { t } = useLocale();
     const { auth } = usePage<SharedData>().props;
@@ -77,6 +86,12 @@ export default function JobShow({
     const [coverLetterError, setCoverLetterError] = useState<string | null>(
         null,
     );
+    const [cvError, setCvError] = useState<string | null>(null);
+    const defaultCvId =
+        applicant_cvs.find((cv) => cv.is_default)?.id ??
+        applicant_cvs[0]?.id ??
+        null;
+    const [selectedCvId, setSelectedCvId] = useState<number | null>(defaultCvId);
     const shareRef = useRef<HTMLDivElement>(null);
 
     const pageUrl =
@@ -110,22 +125,39 @@ export default function JobShow({
     const skills = job.skills ?? [];
     const benefits = job.benefits ?? [];
 
+    useEffect(() => {
+        setSelectedCvId(defaultCvId);
+    }, [defaultCvId]);
+
     const confirmApply = (): void => {
         if (applying) {
             return;
         }
 
+        if (applicant_cvs.length > 1 && !selectedCvId) {
+            setCvError(t('job_detail.cv_required'));
+
+            return;
+        }
+
         setCoverLetterError(null);
+        setCvError(null);
         setApplying(true);
         router.post(
             job.id ? applyToJob.url(job.id) : `/jobs/${job.slug}/apply`,
-            { cover_letter: coverLetter.trim() || null },
+            {
+                cover_letter: coverLetter.trim() || null,
+                ...(selectedCvId ? { cv_id: selectedCvId } : {}),
+            },
             {
                 onFinish: () => setApplying(false),
                 onError: (errors) => {
                     setApplying(false);
                     if (errors.cover_letter) {
                         setCoverLetterError(errors.cover_letter);
+                    }
+                    if (errors.cv_id) {
+                        setCvError(errors.cv_id);
                     }
                 },
                 onSuccess: () => {
@@ -602,6 +634,9 @@ export default function JobShow({
                     setApplyModalOpen(open);
                     if (!open) {
                         setCoverLetterError(null);
+                        setCvError(null);
+                    } else {
+                        setSelectedCvId(defaultCvId);
                     }
                 }}
             >
@@ -653,6 +688,59 @@ export default function JobShow({
                                     ) : null}
                                 </div>
                             </div>
+                            {applicant_cvs.length > 1 ? (
+                                <div className="mt-3 w-full text-start">
+                                    <label
+                                        htmlFor="apply-cv-select"
+                                        className="mb-1.5 block text-xs font-semibold text-[#3977a6]"
+                                    >
+                                        {t('job_detail.cv_label')}
+                                    </label>
+                                    <select
+                                        id="apply-cv-select"
+                                        value={selectedCvId ?? ''}
+                                        onChange={(event) => {
+                                            setSelectedCvId(
+                                                event.target.value
+                                                    ? Number(event.target.value)
+                                                    : null,
+                                            );
+                                            if (cvError) {
+                                                setCvError(null);
+                                            }
+                                        }}
+                                        className="w-full rounded-xl border border-[#dbeafe] bg-white px-3 py-2.5 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
+                                    >
+                                        {applicant_cvs.map((cv) => (
+                                            <option key={cv.id} value={cv.id}>
+                                                {cv.label}
+                                                {cv.file_name
+                                                    ? ` — ${cv.file_name}`
+                                                    : ''}
+                                                {cv.is_default
+                                                    ? ` (${t('job_detail.cv_default')})`
+                                                    : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {cvError ? (
+                                        <p className="mt-1.5 text-xs font-medium text-[#b91c1c]">
+                                            {cvError}
+                                        </p>
+                                    ) : (
+                                        <p className="mt-1.5 text-xs text-[#64748b]">
+                                            {t('job_detail.cv_hint')}
+                                        </p>
+                                    )}
+                                </div>
+                            ) : applicant_cvs.length === 1 ? (
+                                <p className="mt-3 w-full rounded-xl border border-[#e2e8f0] bg-white/80 px-3 py-2 text-start text-xs text-[#64748b]">
+                                    {t('job_detail.cv_using_single', {
+                                        label: applicant_cvs[0].label,
+                                    })}
+                                </p>
+                            ) : null}
+
                             <div className="mt-3 w-full text-start">
                                 <label
                                     htmlFor="apply-cover-letter"
