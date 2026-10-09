@@ -2,6 +2,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { FileText, Trash2, Upload } from 'lucide-react';
 import { type FormEvent, useRef } from 'react';
 
+import { TrainingSectionNav } from '@/components/admin-portal/training-section-nav';
 import {
     AdminPageHeader,
     AdminPanel,
@@ -119,6 +120,7 @@ export default function TrainingMedia({
                     title={t('admin.training.title')}
                     subtitle={t('admin.training.subtitle')}
                 />
+                <TrainingSectionNav />
 
                 {flash.success && (
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">

@@ -151,7 +151,10 @@ export function FrontendHeader() {
                     <nav className="hidden items-center gap-1 lg:flex">
                         {navItems.map((item) => {
                             const isActive =
-                                item.match !== null && currentPath === item.match;
+                                item.match === '/training'
+                                    ? currentPath === '/training' ||
+                                      currentPath.startsWith('/training/')
+                                    : item.match !== null && currentPath === item.match;
 
                             return (
                                 <Link

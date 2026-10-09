@@ -129,6 +129,12 @@ export default function Training({
                             >
                                 {t('training.cta_secondary')}
                             </Link>
+                            <Link
+                                href="/training/courses"
+                                className="inline-flex items-center rounded-lg border border-[#0057c8] px-5 py-2.5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#0057c8]/5"
+                            >
+                                {t('training.courses.link')}
+                            </Link>
                         </div>
                     </div>
 
