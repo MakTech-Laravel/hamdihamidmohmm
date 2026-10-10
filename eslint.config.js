@@ -6,6 +6,9 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import typescript from 'typescript-eslint';
 
+var require = createRequire(import.meta.url);
+var module = { exports: {} };
+
 /** @type {import('eslint').Linter.Config[]} */
 export default [
     js.configs.recommended,

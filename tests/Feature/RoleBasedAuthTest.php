@@ -10,7 +10,7 @@ test('registration role selector can be rendered', function () {
 test('job seeker registration screen can be rendered', function () {
     $this->get(route('register.role', ['role' => 'job-seeker']))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('auth/register-form')
             ->where('role', UserRole::JobSeeker->value)
             ->where('isEmployer', false));
@@ -19,7 +19,7 @@ test('job seeker registration screen can be rendered', function () {
 test('employer registration screen can be rendered', function () {
     $this->get(route('register.role', ['role' => 'employer']))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('auth/register-form')
             ->where('role', UserRole::Employer->value)
             ->where('isEmployer', true));
