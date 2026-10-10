@@ -5,6 +5,7 @@ namespace App\Http\Requests\Frontend;
 use App\Concerns\PasswordValidationRules;
 use App\Enums\TrainingQuestionType;
 use App\Models\TrainingCourse;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -34,12 +35,11 @@ class StoreTrainingRegistrationRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
-            'password' => $this->passwordRules(),
-            'phone' => ['required', 'string', 'max:50'],
-            'country_city' => ['required', 'string', 'max:255'],
+        $user = $this->enrollingUser();
+
+        $rules = [
+            'phone' => $this->contactRules($user?->phone, 50),
+            'country_city' => $this->contactRules($user?->location, 255),
             'organization' => ['required', 'string', 'max:255'],
             'job_title' => ['required', 'string', 'max:255'],
             'experience' => ['required', 'string', 'max:5000'],
@@ -48,6 +48,19 @@ class StoreTrainingRegistrationRequest extends FormRequest
             'answers.*.id' => ['required', 'string', 'max:40'],
             'answers.*.value' => ['nullable', 'string', 'max:5000'],
             'consent' => ['accepted'],
+        ];
+
+        if ($user instanceof User) {
+            return $rules;
+        }
+
+        return [
+            'full_name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
+            'password' => $this->passwordRules(),
+            ...$rules,
+            'phone' => ['required', 'string', 'max:50'],
+            'country_city' => ['required', 'string', 'max:255'],
         ];
     }
 
@@ -58,6 +71,12 @@ class StoreTrainingRegistrationRequest extends FormRequest
 
             if (! $course instanceof TrainingCourse) {
                 return;
+            }
+
+            $user = $this->enrollingUser();
+
+            if ($user instanceof User && $course->registrations()->where('user_id', $user->id)->exists()) {
+                $validator->errors()->add('course', __('training.register.already_enrolled'));
             }
 
             $submitted = collect($this->input('answers', []))
@@ -122,5 +141,24 @@ class StoreTrainingRegistrationRequest extends FormRequest
             })
             ->values()
             ->all();
+    }
+
+    public function enrollingUser(): ?User
+    {
+        $user = $this->user();
+
+        return $user instanceof User ? $user : null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function contactRules(?string $existingValue, int $max): array
+    {
+        if (filled($existingValue)) {
+            return ['nullable', 'string', 'max:'.$max];
+        }
+
+        return ['required', 'string', 'max:'.$max];
     }
 }

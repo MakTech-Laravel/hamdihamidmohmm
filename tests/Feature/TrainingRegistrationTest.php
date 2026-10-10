@@ -117,7 +117,10 @@ test('a visitor can register and receives a confirmation number', function () {
         ->and($seeker->location)->toBe('Doha, Qatar')
         ->and($seeker->account_status)->toBe(JobSeekerAccountStatus::Active)
         ->and($seeker->resume_status)->toBe(JobSeekerResumeStatus::Warning)
+        ->and($registration->user_id)->toBe($seeker->id)
         ->and(Hash::check('password', $seeker->password))->toBeTrue();
+
+    $this->assertGuest();
 
     $this->get(route('training.registrations.confirmation', [
         'trainingRegistration' => $registration->public_token,
@@ -241,6 +244,96 @@ test('registration creates no account when the password does not match or the em
 
     expect(TrainingRegistration::query()->count())->toBe(0)
         ->and(User::query()->where('email', 'layla@example.com')->count())->toBe(1);
+});
+
+test('a signed-in user enrolls once per course with their account', function () {
+    Notification::fake();
+
+    $user = User::factory()->jobSeeker()->create([
+        'name' => 'Layla Hassan',
+        'email' => 'layla@example.com',
+        'phone' => '+974 5555 0101',
+        'location' => 'Doha, Qatar',
+    ]);
+    $course = TrainingCourse::factory()->create(['title' => 'Safety workshop']);
+    $otherCourse = TrainingCourse::factory()->create(['title' => 'Second workshop']);
+    $payload = registrationPayload($course, [
+        'full_name' => 'Someone Else',
+        'email' => 'other@example.com',
+        'password' => 'different-password',
+        'password_confirmation' => 'different-password',
+        'phone' => '+000',
+        'country_city' => 'Other city',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('training.courses.register', $course))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('already_enrolled', false)
+            ->where('account.has_phone', true)
+            ->where('account.has_location', true));
+
+    $this->actingAs($user)
+        ->get(route('training.courses.show', $course))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('course.already_enrolled', false));
+
+    $this->actingAs($user)
+        ->post(route('training.courses.register.store', $course), $payload)
+        ->assertRedirect();
+
+    $registration = TrainingRegistration::query()->where('training_course_id', $course->id)->first();
+
+    expect($registration)->not->toBeNull()
+        ->and($registration->user_id)->toBe($user->id)
+        ->and($registration->full_name)->toBe('Layla Hassan')
+        ->and($registration->email)->toBe('layla@example.com')
+        ->and($registration->phone)->toBe('+974 5555 0101')
+        ->and($registration->country_city)->toBe('Doha, Qatar')
+        ->and(User::query()->count())->toBe(1);
+
+    $this->assertAuthenticatedAs($user);
+
+    $this->actingAs($user)
+        ->post(route('training.courses.register.store', $course), $payload)
+        ->assertSessionHasErrors('course');
+
+    expect(TrainingRegistration::query()->where('training_course_id', $course->id)->count())->toBe(1);
+
+    $this->actingAs($user)
+        ->get(route('training.courses.register', $course))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('already_enrolled', true));
+
+    $this->actingAs($user)
+        ->get(route('training.courses.show', $course))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('course.already_enrolled', true));
+
+    $this->actingAs($user)
+        ->post(route('training.courses.register.store', $otherCourse), registrationPayload($otherCourse))
+        ->assertRedirect();
+
+    expect(TrainingRegistration::query()->where('user_id', $user->id)->count())->toBe(2)
+        ->and(User::query()->count())->toBe(1);
+});
+
+test('a signed-in user must provide a missing phone or location', function () {
+    $user = User::factory()->jobSeeker()->create([
+        'phone' => null,
+        'location' => null,
+    ]);
+    $course = TrainingCourse::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('training.courses.register.store', $course), registrationPayload($course, [
+            'phone' => '',
+            'country_city' => '',
+        ]))
+        ->assertSessionHasErrors(['phone', 'country_city']);
+
+    expect(TrainingRegistration::query()->count())->toBe(0);
 });
 
 test('admins can manage courses, filter registrations, export them, and protect seat capacity', function () {

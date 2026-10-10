@@ -19,6 +19,7 @@ class TrainingRegistrationFactory extends Factory
     {
         return [
             'training_course_id' => TrainingCourse::factory(),
+            'user_id' => null,
             'registration_number' => 'TR-'.now()->format('Y').'-'.fake()->unique()->numerify('#####'),
             'public_token' => TrainingRegistration::newPublicToken(),
             'full_name' => fake()->name(),

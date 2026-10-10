@@ -20,10 +20,23 @@ type Course = {
     questions: Question[];
 };
 
+type Account = {
+    has_phone: boolean;
+    has_location: boolean;
+};
+
 const fieldClassName =
     'w-full rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 py-3 text-sm text-[#050315] outline-none focus:border-[#0057c8]';
 
-export default function TrainingCourseRegister({ course }: { course: Course }) {
+export default function TrainingCourseRegister({
+    course,
+    already_enrolled,
+    account,
+}: {
+    course: Course;
+    already_enrolled: boolean;
+    account: Account | null;
+}) {
     const { t } = useLocale();
     const form = useForm({
         full_name: '',
@@ -73,6 +86,25 @@ export default function TrainingCourseRegister({ course }: { course: Course }) {
         { name: 'reason', label: t('training.register.reason'), multiline: true },
     ];
 
+    const hiddenFields = new Set<string>();
+
+    if (account) {
+        hiddenFields.add('full_name');
+        hiddenFields.add('email');
+        hiddenFields.add('password');
+        hiddenFields.add('password_confirmation');
+
+        if (account.has_phone) {
+            hiddenFields.add('phone');
+        }
+
+        if (account.has_location) {
+            hiddenFields.add('country_city');
+        }
+    }
+
+    const visibleFields = fields.filter((field) => !hiddenFields.has(field.name));
+
     const submit = (event: FormEvent) => {
         event.preventDefault();
         form.post(`/training/courses/${course.slug}/register`);
@@ -95,9 +127,13 @@ export default function TrainingCourseRegister({ course }: { course: Course }) {
                     {t('training.courses.register')}
                 </h1>
 
-                {course.registration_open ? (
+                {already_enrolled ? (
+                    <p className="mt-8 text-sm font-semibold text-[#0057c8]">
+                        {t('training.register.already_enrolled')}
+                    </p>
+                ) : course.registration_open ? (
                     <form onSubmit={submit} className="mt-8 space-y-5">
-                        {fields.map((field) => (
+                        {visibleFields.map((field) => (
                             <label key={field.name} className="block space-y-2">
                                 <span className="text-sm font-semibold text-[#050315]">
                                     {field.label}

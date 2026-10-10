@@ -16,6 +16,7 @@ type Course = {
     available_seats: number;
     registration_deadline: string | null;
     registration_open: boolean;
+    already_enrolled: boolean;
 };
 
 export default function TrainingCourseShow({ course }: { course: Course }) {
@@ -75,7 +76,11 @@ export default function TrainingCourseShow({ course }: { course: Course }) {
                     ))}
                 </dl>
 
-                {course.registration_open ? (
+                {course.already_enrolled ? (
+                    <p className="mt-8 text-sm font-semibold text-[#0057c8]">
+                        {t('training.register.already_enrolled')}
+                    </p>
+                ) : course.registration_open ? (
                     <Link
                         href={`/training/courses/${course.slug}/register`}
                         className="mt-8 inline-flex rounded-lg bg-[#0057c8] px-5 py-2.5 text-sm font-semibold text-white"

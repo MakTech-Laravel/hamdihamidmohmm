@@ -20,6 +20,7 @@ use App\Support\RoleAssigner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -51,7 +52,10 @@ class TrainingRegistrationController extends Controller
         ]);
 
         return Inertia::render('frontend/training-course-show', [
-            'course' => $this->courseDetail($trainingCourse),
+            'course' => [
+                ...$this->courseDetail($trainingCourse),
+                'already_enrolled' => $this->userAlreadyEnrolled($trainingCourse),
+            ],
         ]);
     }
 
@@ -67,6 +71,8 @@ class TrainingRegistrationController extends Controller
 
         return Inertia::render('frontend/training-course-register', [
             'course' => $this->courseDetail($trainingCourse),
+            'already_enrolled' => $this->userAlreadyEnrolled($trainingCourse),
+            'account' => $this->registrationAccount(),
         ]);
     }
 
@@ -82,15 +88,22 @@ class TrainingRegistrationController extends Controller
                 return null;
             }
 
-            $this->createJobSeeker($request);
+            $user = $request->enrollingUser() ?? $this->createJobSeeker($request);
+
+            if ($course->registrations()->where('user_id', $user->id)->exists()) {
+                throw ValidationException::withMessages([
+                    'course' => __('training.register.already_enrolled'),
+                ]);
+            }
 
             return $course->registrations()->create([
+                'user_id' => $user->id,
                 'registration_number' => TrainingRegistration::nextRegistrationNumber(),
                 'public_token' => TrainingRegistration::newPublicToken(),
-                'full_name' => $request->string('full_name')->toString(),
-                'email' => $request->string('email')->toString(),
-                'phone' => $request->string('phone')->toString(),
-                'country_city' => $request->string('country_city')->toString(),
+                'full_name' => $user->name,
+                'email' => $user->email,
+                'phone' => filled($user->phone) ? (string) $user->phone : $request->string('phone')->toString(),
+                'country_city' => filled($user->location) ? (string) $user->location : $request->string('country_city')->toString(),
                 'organization' => $request->string('organization')->toString(),
                 'job_title' => $request->string('job_title')->toString(),
                 'experience' => $request->string('experience')->toString(),
@@ -176,7 +189,35 @@ class TrainingRegistrationController extends Controller
         return $start.' – '.$end;
     }
 
-    private function createJobSeeker(StoreTrainingRegistrationRequest $request): void
+    private function userAlreadyEnrolled(TrainingCourse $course): bool
+    {
+        $userId = auth()->id();
+
+        if ($userId === null) {
+            return false;
+        }
+
+        return $course->registrations()->where('user_id', $userId)->exists();
+    }
+
+    /**
+     * @return array{has_phone: bool, has_location: bool}|null
+     */
+    private function registrationAccount(): ?array
+    {
+        $user = auth()->user();
+
+        if (! $user instanceof User) {
+            return null;
+        }
+
+        return [
+            'has_phone' => filled($user->phone),
+            'has_location' => filled($user->location),
+        ];
+    }
+
+    private function createJobSeeker(StoreTrainingRegistrationRequest $request): User
     {
         $seeker = User::query()->create([
             'name' => $request->string('full_name')->toString(),
@@ -197,6 +238,8 @@ class TrainingRegistrationController extends Controller
             'Account registered.',
             $seeker,
         );
+
+        return $seeker;
     }
 
     private function notifyParticipants(TrainingRegistration $registration): void

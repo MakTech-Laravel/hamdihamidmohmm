@@ -1863,6 +1863,7 @@
     "training.register.yes": "Yes",
     "training.register.no": "No",
     "training.register.consent": "I agree to the training terms and consent to the use of my information for training administration.",
+    "training.register.already_enrolled": "You are already enrolled in this course.",
     "training.register.submit": "Submit registration",
     "training.register.submitting": "Submitting...",
     "training.confirmation.title": "Registration received",

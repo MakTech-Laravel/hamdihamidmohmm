@@ -1862,6 +1862,7 @@
     "training.register.yes": "نعم",
     "training.register.no": "لا",
     "training.register.consent": "أوافق على شروط التدريب وأوافق على استخدام معلوماتي لإدارة التدريب.",
+    "training.register.already_enrolled": "أنت مسجّل بالفعل في هذه الدورة.",
     "training.register.submit": "إرسال التسجيل",
     "training.register.submitting": "جارٍ الإرسال...",
     "training.confirmation.title": "تم استلام التسجيل",

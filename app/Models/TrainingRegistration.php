@@ -19,6 +19,7 @@ class TrainingRegistration extends Model
      */
     protected $fillable = [
         'training_course_id',
+        'user_id',
         'registration_number',
         'public_token',
         'full_name',
@@ -52,6 +53,14 @@ class TrainingRegistration extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(TrainingCourse::class, 'training_course_id');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public static function nextRegistrationNumber(): string
