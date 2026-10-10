@@ -16,7 +16,9 @@ use App\Http\Controllers\Backend\Admin\PaymentManagementController;
 use App\Http\Controllers\Backend\Admin\PlatformSettingController;
 use App\Http\Controllers\Backend\Admin\ReportController;
 use App\Http\Controllers\Backend\Admin\RolePermissionController;
+use App\Http\Controllers\Backend\Admin\TrainingCourseController;
 use App\Http\Controllers\Backend\Admin\TrainingMediaController;
+use App\Http\Controllers\Backend\Admin\TrainingRegistrationController;
 use App\Http\Controllers\Backend\Admin\UserManagementController;
 use App\Http\Controllers\Backend\Admin\VerificationCenterController;
 use App\Http\Controllers\UserSelectionController;
@@ -116,6 +118,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/content/{contentPage}/publish', [ContentManagementController::class, 'publish'])->name('content.publish');
         Route::delete('/content/{contentPage}', [ContentManagementController::class, 'destroy'])->name('content.destroy');
 
+        Route::get('/training/courses/create', [TrainingCourseController::class, 'create'])->name('training.courses.create');
+        Route::get('/training/courses', [TrainingCourseController::class, 'index'])->name('training.courses.index');
+        Route::post('/training/courses', [TrainingCourseController::class, 'store'])->name('training.courses.store');
+        Route::get('/training/courses/{trainingCourse}/edit', [TrainingCourseController::class, 'edit'])->name('training.courses.edit');
+        Route::put('/training/courses/{trainingCourse}', [TrainingCourseController::class, 'update'])->name('training.courses.update');
+
+        Route::get('/training/registrations/export', [TrainingRegistrationController::class, 'export'])->name('training.registrations.export');
+        Route::get('/training/registrations', [TrainingRegistrationController::class, 'index'])->name('training.registrations.index');
+        Route::get('/training/registrations/{trainingRegistration}', [TrainingRegistrationController::class, 'show'])->name('training.registrations.show');
+        Route::patch('/training/registrations/{trainingRegistration}', [TrainingRegistrationController::class, 'update'])->name('training.registrations.update');
+
         Route::get('/training', [TrainingMediaController::class, 'index'])->name('training.index');
         Route::post('/training/video', [TrainingMediaController::class, 'store'])->name('training.video.store');
         Route::delete('/training/video', [TrainingMediaController::class, 'destroy'])->name('training.video.destroy');
@@ -137,7 +150,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/settings', [PlatformSettingController::class, 'update'])->name('settings.update');
         Route::post('/settings/reset', [PlatformSettingController::class, 'reset'])->name('settings.reset');
 
-        Route::middleware('role:' . RoleName::SuperAdmin->value)->group(function () {
+        Route::middleware('role:'.RoleName::SuperAdmin->value)->group(function () {
             Route::get('/admins', [AdminManagementController::class, 'index'])->name('admins.index');
             Route::post('/admins', [AdminManagementController::class, 'store'])->name('admins.store');
 
