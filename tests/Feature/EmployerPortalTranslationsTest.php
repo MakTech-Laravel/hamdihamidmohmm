@@ -17,7 +17,7 @@ test('employer dashboard shares employer portal translation keys', function () {
                 && ($translations['employer.dashboard.title'] ?? null) === 'Dashboard'
                 && ($translations['employer.settings.title'] ?? null) === 'Settings'
                 && ($translations['employer.notifications.title'] ?? null) === 'Notifications'
-                && ($translations['employer.profile.title'] ?? null) === 'Company Profile'
+                && ($translations['employer.profile.title'] ?? null) === 'Organization Profile'
                 && ($translations['common.logout'] ?? null) === 'Logout'
                 && ($translations['common.public_website'] ?? null) === 'Public Website'
                 && ($translations['common.notifications'] ?? null) === 'Notifications'));
@@ -53,11 +53,21 @@ test('employer portal translation keys exist in english and arabic', function ()
         'employer.notifications.filter.all',
         'employer.profile.title',
         'employer.profile.company_information',
+        'employer.profile.organization_information',
+        'employer.profile.organization_type',
+        'employer.profile.organization_type.private_company',
+        'employer.profile.organization_type.non_profit',
+        'employer.profile.organization_type.ngo',
+        'employer.profile.organization_type.institute',
+        'employer.profile.organization_type.public_sector',
         'employer.profile.public_about',
         'employer.profile.completion',
+        'auth.organization_type',
         'employer.jobs.title',
         'employer.jobs.subtitle',
         'employer.jobs.post_new',
+        'employer.jobs.delete',
+        'employer.jobs.delete_confirm',
         'employer.job_editor.title_create',
         'employer.job_editor.step.basics',
         'employer.job_editor.logo.upload',

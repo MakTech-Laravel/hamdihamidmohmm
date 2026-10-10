@@ -6,6 +6,8 @@ use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\JobSeekerProfile;
 use App\Models\User;
+use App\Notifications\ApplicationRejectedNotification;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 test('employers see live application table props matching the Figma page', function () {
@@ -151,10 +153,15 @@ test('employers can move an application to the next hiring stage', function () {
 });
 
 test('employers can reject an application', function () {
-    $employer = User::factory()->employer()->create();
+    Notification::fake();
+
+    $employer = User::factory()->employer()->create([
+        'company_name' => 'Gulf Relief',
+    ]);
     $seeker = User::factory()->jobSeeker()->create();
     $job = JobPost::factory()->create([
         'employer_id' => $employer->id,
+        'title' => 'WASH Officer',
         'status' => JobPostStatus::Active,
     ]);
     $application = JobApplication::factory()->create([
@@ -170,6 +177,20 @@ test('employers can reject an application', function () {
         ->assertRedirect();
 
     expect($application->fresh()->status)->toBe(JobApplicationStatus::Rejected);
+
+    Notification::assertSentTo(
+        $seeker,
+        ApplicationRejectedNotification::class,
+        function (ApplicationRejectedNotification $notification) use ($seeker): bool {
+            expect($notification->jobTitle)->toBe('WASH Officer')
+                ->and($notification->companyName)->toBe('Gulf Relief')
+                ->and($notification->via($seeker))->toContain('mail')
+                ->and($notification->toMail($seeker)->subject)
+                ->toBe('Your application for WASH Officer was not selected');
+
+            return true;
+        },
+    );
 });
 
 test('employers cannot update another company application', function () {

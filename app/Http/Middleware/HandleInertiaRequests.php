@@ -95,6 +95,7 @@ class HandleInertiaRequests extends Middleware
                 'canUseTwoFactorAuthentication' => false,
             ],
             'platform_social' => fn () => PlatformSetting::grouped()['social'] ?? [],
+            'platform_contact' => fn () => PlatformSetting::publicContact(),
         ];
     }
 

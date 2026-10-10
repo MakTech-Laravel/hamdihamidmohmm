@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\StoreJobApplicationRequest;
 use App\Models\JobApplication;
 use App\Models\JobPost;
+use App\Models\JobSeekerCv;
 use App\Support\PortalNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -59,6 +60,7 @@ class JobSeekerApplicationsController extends Controller
     {
         abort_unless($jobPost->effectiveStatus() === JobPostStatus::Active, 403);
 
+        $user = $request->user();
         $payload = [
             'status' => JobApplicationStatus::Applied,
             'cover_letter' => $request->string('cover_letter')->toString() ?: null,
@@ -66,22 +68,48 @@ class JobSeekerApplicationsController extends Controller
 
         if ($request->hasFile('resume')) {
             $resume = $request->file('resume');
-            $userId = $request->user()?->id ?? 0;
+            $userId = $user?->id ?? 0;
             $payload['resume_path'] = $resume->store('resumes/' . $userId, 'local');
             $payload['resume_original_name'] = $resume->getClientOriginalName();
-        } elseif (
-            filled($request->user()?->resume_path)
-            && Storage::disk('local')->exists((string) $request->user()->resume_path)
-        ) {
-            $user = $request->user();
-            $source = (string) $user->resume_path;
-            $extension = pathinfo($source, PATHINFO_EXTENSION) ?: 'pdf';
-            $copyPath = 'resumes/' . $user->id . '/application-' . uniqid('', true) . '.' . $extension;
+        } elseif ($user !== null) {
+            $selectedCv = null;
 
-            Storage::disk('local')->copy($source, $copyPath);
+            if ($request->filled('cv_id')) {
+                $selectedCv = JobSeekerCv::query()
+                    ->where('user_id', $user->id)
+                    ->whereKey($request->integer('cv_id'))
+                    ->first();
+            } else {
+                $selectedCv = JobSeekerCv::query()
+                    ->where('user_id', $user->id)
+                    ->orderByDesc('is_default')
+                    ->orderByDesc('id')
+                    ->first();
+            }
 
-            $payload['resume_path'] = $copyPath;
-            $payload['resume_original_name'] = $user->resume_original_name ?: basename($source);
+            $source = null;
+            $originalName = null;
+
+            if ($selectedCv instanceof JobSeekerCv && $selectedCv->fileExists()) {
+                $source = (string) $selectedCv->file_path;
+                $originalName = $selectedCv->original_name ?: basename($source);
+            } elseif (
+                filled($user->resume_path)
+                && Storage::disk('local')->exists((string) $user->resume_path)
+            ) {
+                $source = (string) $user->resume_path;
+                $originalName = $user->resume_original_name ?: basename($source);
+            }
+
+            if ($source !== null) {
+                $extension = pathinfo($source, PATHINFO_EXTENSION) ?: 'pdf';
+                $copyPath = 'resumes/' . $user->id . '/application-' . uniqid('', true) . '.' . $extension;
+
+                Storage::disk('local')->copy($source, $copyPath);
+
+                $payload['resume_path'] = $copyPath;
+                $payload['resume_original_name'] = $originalName;
+            }
         }
 
         $application = JobApplication::query()->firstOrCreate(
@@ -102,6 +130,18 @@ class JobSeekerApplicationsController extends Controller
                     $employer,
                     $seeker->name,
                     (string) $jobPost->title,
+                );
+            }
+
+            if ($seeker !== null) {
+                $company = $jobPost->employer?->company_name
+                    ?: $jobPost->employer?->name
+                    ?: 'the employer';
+
+                PortalNotifier::applicationSubmitted(
+                    $seeker,
+                    (string) $jobPost->title,
+                    (string) $company,
                 );
             }
         }

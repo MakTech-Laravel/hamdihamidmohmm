@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Backend\User;
 
+use App\Enums\OrganizationType;
 use App\Support\SafeHtml;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -35,6 +36,7 @@ class UpdateEmployerProfileRequest extends FormRequest
     {
         return [
             'company_name' => ['required', 'string', 'max:255'],
+            'organization_type' => ['required', Rule::enum(OrganizationType::class)],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:255'],
             'company_size' => ['nullable', 'string', 'max:50'],
@@ -47,6 +49,19 @@ class UpdateEmployerProfileRequest extends FormRequest
             'address' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->user()?->id)],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'company_name.required' => 'Please enter your organization name.',
+            'organization_type.required' => 'Please select your organization type.',
+            'organization_type.enum' => 'Please select a valid organization type.',
+            'email.required' => 'Please enter a contact email.',
         ];
     }
 }

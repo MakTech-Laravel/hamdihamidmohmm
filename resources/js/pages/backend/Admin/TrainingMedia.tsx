@@ -2,6 +2,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { FileText, Trash2, Upload } from 'lucide-react';
 import { type FormEvent, useRef } from 'react';
 
+import { TrainingSectionNav } from '@/components/admin-portal/training-section-nav';
 import {
     AdminPageHeader,
     AdminPanel,
@@ -15,7 +16,7 @@ import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
-type TrainingDocument = {
+type TrainingMediaItem = {
     id: string;
     name: string;
     file_name: string;
@@ -25,8 +26,10 @@ type TrainingDocument = {
 };
 
 type Props = {
+    videos?: TrainingMediaItem[];
     heroVideoUrl: string | null;
-    documents: TrainingDocument[];
+    documents: TrainingMediaItem[];
+    maxVideos?: number;
 };
 
 function formatBytes(bytes: number | null): string {
@@ -46,15 +49,34 @@ function formatBytes(bytes: number | null): string {
 }
 
 export default function TrainingMedia({
+    videos = [],
     heroVideoUrl,
     documents,
+    maxVideos = 12,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
     const videoInputRef = useRef<HTMLInputElement>(null);
     const documentInputRef = useRef<HTMLInputElement>(null);
-    const videoForm = useForm<{ video: File | null }>({
-        video: null,
+    const slides =
+        videos.length > 0
+            ? videos
+            : heroVideoUrl
+              ? [
+                    {
+                        id: 'hero',
+                        name: t('admin.training.hero_video'),
+                        file_name: '',
+                        url: heroVideoUrl,
+                        mime: null,
+                        size: null,
+                    },
+                ]
+              : [];
+    const remainingSlots = Math.max(0, maxVideos - slides.length);
+    const videoForm = useForm<{ videos: File[]; name: string }>({
+        videos: [],
+        name: '',
     });
     const documentForm = useForm<{ document: File | null; name: string }>({
         document: null,
@@ -98,6 +120,7 @@ export default function TrainingMedia({
                     title={t('admin.training.title')}
                     subtitle={t('admin.training.subtitle')}
                 />
+                <TrainingSectionNav />
 
                 {flash.success && (
                     <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#15803d]">
@@ -117,15 +140,69 @@ export default function TrainingMedia({
                         </p>
                     </div>
 
-                    {heroVideoUrl ? (
-                        <div className="overflow-hidden rounded-2xl border border-[#e2e8f0] bg-[#0f172a]">
-                            <video
-                                key={heroVideoUrl}
-                                src={heroVideoUrl}
-                                controls
-                                className="aspect-video w-full bg-black"
-                            />
-                        </div>
+                    {slides.length > 0 ? (
+                        <ul className="space-y-4">
+                            {slides.map((video, index) => (
+                                <li
+                                    key={video.id}
+                                    className="overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white"
+                                >
+                                    <div className="bg-[#0f172a]">
+                                        <video
+                                            src={video.url}
+                                            controls
+                                            className="aspect-video w-full bg-black"
+                                        />
+                                    </div>
+                                    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-semibold text-[#050315]">
+                                                {index + 1}. {video.name}
+                                            </p>
+                                            <p className="mt-0.5 truncate text-xs text-[#94a3b8]">
+                                                {video.file_name
+                                                    ? `${video.file_name} · `
+                                                    : ''}
+                                                {formatBytes(video.size)}
+                                            </p>
+                                        </div>
+                                        <AdminSecondaryButton
+                                            type="button"
+                                            onClick={() => {
+                                                if (
+                                                    !confirm(
+                                                        t(
+                                                            'admin.training.remove_confirm',
+                                                        ),
+                                                    )
+                                                ) {
+                                                    return;
+                                                }
+
+                                                if (video.id === 'hero') {
+                                                    router.delete(
+                                                        '/admin/training/video',
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    );
+
+                                                    return;
+                                                }
+
+                                                router.delete(
+                                                    `/admin/training/videos/${video.id}`,
+                                                    { preserveScroll: true },
+                                                );
+                                            }}
+                                        >
+                                            <Trash2 className="size-4" />
+                                            {t('admin.training.remove')}
+                                        </AdminSecondaryButton>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
                     ) : (
                         <div className="flex aspect-video items-center justify-center rounded-2xl border border-dashed border-[#cbd5e1] bg-[#f8faff] text-sm font-medium text-[#94a3b8]">
                             {t('admin.training.no_video')}
@@ -134,6 +211,30 @@ export default function TrainingMedia({
 
                     <form onSubmit={onVideoSubmit} className="space-y-4">
                         <div className="space-y-2">
+                            <Label htmlFor="training-video-name">
+                                {t('admin.training.video_name')}
+                            </Label>
+                            <Input
+                                id="training-video-name"
+                                value={videoForm.data.name}
+                                onChange={(event) =>
+                                    videoForm.setData(
+                                        'name',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder={t(
+                                    'admin.training.video_name_placeholder',
+                                )}
+                                disabled={videoForm.data.videos.length !== 1}
+                            />
+                            <p className="text-xs text-[#94a3b8]">
+                                {t('admin.training.video_name_help')}
+                            </p>
+                            <InputError message={videoForm.errors.name} />
+                        </div>
+
+                        <div className="space-y-2">
                             <Label htmlFor="training-video">
                                 {t('admin.training.upload_label')}
                             </Label>
@@ -141,59 +242,39 @@ export default function TrainingMedia({
                                 id="training-video"
                                 ref={videoInputRef}
                                 type="file"
+                                multiple
                                 accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
                                 className="block w-full text-sm text-[#64748b] file:me-3 file:rounded-lg file:border-0 file:bg-[#eff6ff] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#0057c8]"
                                 onChange={(event) => {
-                                    videoForm.setData(
-                                        'video',
-                                        event.target.files?.[0] ?? null,
+                                    const files = Array.from(
+                                        event.target.files ?? [],
                                     );
+                                    videoForm.setData('videos', files);
                                 }}
                             />
                             <p className="text-xs text-[#94a3b8]">
-                                {t('admin.training.upload_hint')}
+                                {t('admin.training.upload_hint', {
+                                    remaining: remainingSlots,
+                                    max: maxVideos,
+                                })}
                             </p>
                             <InputError message={videoForm.errors.video} />
+                            <InputError message={videoForm.errors.videos} />
                         </div>
 
-                        <div className="flex flex-wrap gap-3">
-                            <AdminPrimaryButton
-                                type="submit"
-                                disabled={
-                                    videoForm.processing ||
-                                    !videoForm.data.video
-                                }
-                            >
-                                <Upload className="size-4" />
-                                {videoForm.processing
-                                    ? t('admin.training.uploading')
-                                    : t('admin.training.upload')}
-                            </AdminPrimaryButton>
-
-                            {heroVideoUrl ? (
-                                <AdminSecondaryButton
-                                    type="button"
-                                    onClick={() => {
-                                        if (
-                                            !confirm(
-                                                t(
-                                                    'admin.training.remove_confirm',
-                                                ),
-                                            )
-                                        ) {
-                                            return;
-                                        }
-
-                                        router.delete('/admin/training/video', {
-                                            preserveScroll: true,
-                                        });
-                                    }}
-                                >
-                                    <Trash2 className="size-4" />
-                                    {t('admin.training.remove')}
-                                </AdminSecondaryButton>
-                            ) : null}
-                        </div>
+                        <AdminPrimaryButton
+                            type="submit"
+                            disabled={
+                                videoForm.processing ||
+                                videoForm.data.videos.length === 0 ||
+                                remainingSlots === 0
+                            }
+                        >
+                            <Upload className="size-4" />
+                            {videoForm.processing
+                                ? t('admin.training.uploading')
+                                : t('admin.training.upload')}
+                        </AdminPrimaryButton>
                     </form>
                 </AdminPanel>
 

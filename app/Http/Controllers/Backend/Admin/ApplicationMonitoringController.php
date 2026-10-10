@@ -6,7 +6,9 @@ use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
 use App\Models\User;
+use App\Support\ApplicantDocumentDownloader;
 use App\Support\ApplicantProfilePreview;
+use App\Support\ExperienceFilterOptions;
 use App\Support\JobSeekerResume;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -22,6 +24,8 @@ class ApplicationMonitoringController extends Controller
         abort_unless($request->user()?->canManageJobs(), 403);
 
         $status = $request->string('status')->toString();
+        $experience = $request->string('experience')->toString();
+        $experienceSort = $request->string('experience_sort')->toString();
 
         $appsQuery = JobApplication::query()
             ->with([
@@ -29,17 +33,24 @@ class ApplicationMonitoringController extends Controller
                 'jobPost.employer:id,name,company_name',
                 'jobSeeker',
                 'jobSeeker.jobSeekerProfile',
-            ])
-            ->latest();
+            ]);
 
         if (JobApplicationStatus::tryFrom($status) instanceof JobApplicationStatus) {
             $appsQuery->where('status', $status);
         }
 
+        ExperienceFilterOptions::applyRange($appsQuery, $experience);
+
+        if (in_array($experienceSort, ['asc', 'desc'], true)) {
+            ExperienceFilterOptions::applySort($appsQuery, $experienceSort);
+        } else {
+            $appsQuery->latest();
+        }
+
         $applications = $appsQuery
             ->paginate(12)
             ->withQueryString()
-            ->through(fn(JobApplication $application) => $this->row($application));
+            ->through(fn (JobApplication $application) => $this->row($application));
 
         $trend = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -52,7 +63,12 @@ class ApplicationMonitoringController extends Controller
 
         return Inertia::render('backend/Admin/ApplicationsMonitoring', [
             'applications' => $applications,
-            'filters' => ['status' => $status],
+            'filters' => [
+                'status' => $status,
+                'experience' => $experience,
+                'experience_sort' => in_array($experienceSort, ['asc', 'desc'], true) ? $experienceSort : '',
+            ],
+            'experience_options' => ExperienceFilterOptions::enabled(),
             'stats' => $this->stats(),
             'trend' => $trend,
         ]);
@@ -62,10 +78,7 @@ class ApplicationMonitoringController extends Controller
     {
         abort_unless($request->user()?->canManageJobs(), 403);
 
-        $application->loadMissing(['jobSeeker.jobSeekerProfile']);
-
-        $seeker = $application->jobSeeker;
-        abort_unless($seeker instanceof User && $seeker->isJobSeeker(), 404);
+        $seeker = ApplicantDocumentDownloader::seekerFromApplication($application);
 
         if (filled($application->resume_path) && Storage::disk('local')->exists($application->resume_path)) {
             $downloadName = $application->resume_original_name ?: basename($application->resume_path);
@@ -86,11 +99,53 @@ class ApplicationMonitoringController extends Controller
         ]);
     }
 
+    public function downloadHighestDegree(Request $request, JobApplication $application): StreamedResponse
+    {
+        abort_unless($request->user()?->canManageJobs(), 403);
+
+        return ApplicantDocumentDownloader::highestDegree(
+            ApplicantDocumentDownloader::seekerFromApplication($application),
+        );
+    }
+
+    public function downloadOtherDocument(Request $request, JobApplication $application): StreamedResponse
+    {
+        abort_unless($request->user()?->canManageJobs(), 403);
+
+        return ApplicantDocumentDownloader::otherDocument(
+            ApplicantDocumentDownloader::seekerFromApplication($application),
+        );
+    }
+
+    public function downloadCoverLetter(Request $request, JobApplication $application): StreamedResponse
+    {
+        abort_unless($request->user()?->canManageJobs(), 403);
+
+        return ApplicantDocumentDownloader::coverLetter(
+            ApplicantDocumentDownloader::seekerFromApplication($application),
+        );
+    }
+
+    public function downloadCertification(
+        Request $request,
+        JobApplication $application,
+        int $index,
+        ?int $attachment = null,
+    ): StreamedResponse {
+        abort_unless($request->user()?->canManageJobs(), 403);
+
+        return ApplicantDocumentDownloader::certification(
+            ApplicantDocumentDownloader::seekerFromApplication($application),
+            $index,
+            $attachment ?? 0,
+        );
+    }
+
     public function export(Request $request): StreamedResponse
     {
         abort_unless($request->user()?->canManageJobs(), 403);
 
-        $filename = 'applications-' . now()->format('Y-m-d-His') . '.csv';
+        $filename = 'applications-'.now()->format('Y-m-d-His').'.csv';
 
         return response()->streamDownload(function (): void {
             $handle = fopen('php://output', 'w');
@@ -152,16 +207,27 @@ class ApplicationMonitoringController extends Controller
                     'experience' => [],
                     'languages' => [],
                     'certifications' => [],
+                    'references' => [],
                     'cover_letter' => $application->cover_letter,
                     'resume_name' => null,
                     'resume_url' => $base['resume_url'],
+                    'highest_degree_name' => null,
+                    'highest_degree_url' => null,
+                    'other_document_name' => null,
+                    'other_document_url' => null,
+                    'cover_letter_file_name' => null,
+                    'cover_letter_file_url' => null,
                     'avatar_url' => null,
                     'timeline' => $base['timeline'],
                 ],
             ];
         }
 
-        $preview = ApplicantProfilePreview::from($seeker, $application);
+        $preview = ApplicantDocumentDownloader::withDownloadUrls(
+            ApplicantProfilePreview::from($seeker, $application),
+            $application,
+            'admin',
+        );
 
         return [
             ...$base,

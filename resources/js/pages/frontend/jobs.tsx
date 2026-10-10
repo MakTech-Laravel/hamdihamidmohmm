@@ -158,7 +158,7 @@ export default function Jobs({ jobs, filters, filterOptions }: Props) {
         <FrontendLayout>
             <Head title={`${t('jobs_page.title')} - ${t('app.name')}`} />
 
-            <section className="relative bg-[#d1f6ff] px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
+            <section className="relative bg-[#d1f6ff] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
                 <div
                     aria-hidden
                     className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -169,7 +169,7 @@ export default function Jobs({ jobs, filters, filterOptions }: Props) {
                 </div>
 
                 <div className="relative mx-auto max-w-[1280px] animate-fadeInUp">
-                    <nav className="mb-5 flex flex-wrap items-center gap-2 text-sm text-[#6a7282]">
+                    <nav className="mb-3 flex flex-wrap items-center gap-2 text-sm text-[#6a7282]">
                         <span className="font-medium text-[#0057c8]">
                             {t('nav.jobs')}
                         </span>
@@ -186,7 +186,7 @@ export default function Jobs({ jobs, filters, filterOptions }: Props) {
                                 </span>
                             </div>
 
-                            <h1 className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-[#050315] sm:text-[36px] sm:leading-[1.15] lg:text-[40px]">
+                            <h1 className="mt-2 text-[24px] font-bold tracking-[-0.5px] text-[#050315] sm:text-[32px] sm:leading-[1.15] lg:text-[32px]">
                                 {t('jobs_page.title')}
                             </h1>
                             <p className="mt-2 max-w-md text-sm font-medium leading-6 text-[#475569]">
@@ -220,7 +220,7 @@ export default function Jobs({ jobs, filters, filterOptions }: Props) {
                 </div>
             </section>
 
-            <section className="bg-white px-4 py-8 sm:px-6 lg:px-8">
+            <section className="bg-white px-4 py-5 sm:px-6 lg:px-8">
                 <div className="mx-auto flex max-w-[1280px] flex-col gap-6 lg:flex-row lg:items-start">
                     <aside className="w-full shrink-0 lg:w-64">
                         <div className="rounded-2xl border border-[#d1f6ff] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]">

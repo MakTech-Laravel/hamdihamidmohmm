@@ -49,10 +49,25 @@ export type CandidatePreview = {
         name: string;
         issuer: string | null;
         date: string | null;
+        attachments?: Array<{
+            file_name: string;
+            download_url: string | null;
+        }>;
+    }>;
+    references?: Array<{
+        name: string;
+        address: string | null;
+        relationship: string | null;
     }>;
     cover_letter?: string | null;
     resume_name?: string | null;
     resume_url: string | null;
+    highest_degree_name?: string | null;
+    highest_degree_url?: string | null;
+    other_document_name?: string | null;
+    other_document_url?: string | null;
+    cover_letter_file_name?: string | null;
+    cover_letter_file_url?: string | null;
     avatar_url?: string | null;
     timeline: CandidatePreviewTimelineStep[];
 };
@@ -91,12 +106,12 @@ export function CandidatePreviewDrawer({
 function DrawerBody({ preview }: { preview: CandidatePreview }) {
     const { t } = useLocale();
     const [avatarFailed, setAvatarFailed] = useState(false);
-    const resumeEnabled = preview.resume_url !== null;
     const isApplicant = preview.is_applicant !== false;
     const education = preview.education ?? [];
     const experience = preview.experience ?? [];
     const languages = preview.languages ?? [];
     const certifications = preview.certifications ?? [];
+    const references = preview.references ?? [];
     const availability = preview.availability ?? [];
     const showAvatar = Boolean(preview.avatar_url) && !avatarFailed;
 
@@ -108,7 +123,7 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                         src={preview.avatar_url ?? undefined}
                         alt={preview.name}
                         onError={() => setAvatarFailed(true)}
-                        className="size-[52px] shrink-0 rounded-full border border-white object-cover shadow-sm"
+                        className="size-[52px] shrink-0 rounded-full border border-white object-cover object-top shadow-sm"
                     />
                 ) : (
                     <div className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-base font-extrabold text-white">
@@ -274,14 +289,65 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                                     {t('admin.candidate.no_certifications')}
                                 </EmptyText>
                             ) : (
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {certifications.map((item) => (
-                                        <div key={item.name}>
+                                        <div
+                                            key={item.name}
+                                            className="space-y-1.5"
+                                        >
                                             <p className="text-[13.6px] font-semibold text-[#050315]">
                                                 {item.name}
                                             </p>
                                             <p className="text-[12px] text-[#3977a6]">
                                                 {[item.issuer, item.date]
+                                                    .filter(Boolean)
+                                                    .join(' · ') || '—'}
+                                            </p>
+                                            {(item.attachments ?? []).map(
+                                                (file) =>
+                                                    file.download_url ? (
+                                                        <a
+                                                            key={`${item.name}-${file.file_name}`}
+                                                            href={
+                                                                file.download_url
+                                                            }
+                                                            download
+                                                            className="inline-flex items-center gap-1.5 text-[12.8px] font-semibold text-[#0057c8]"
+                                                        >
+                                                            <Download
+                                                                className="size-3.5"
+                                                                strokeWidth={2}
+                                                            />
+                                                            {file.file_name}
+                                                        </a>
+                                                    ) : null,
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </Section>
+
+                        <Section title={t('admin.candidate.references')}>
+                            {references.length === 0 ? (
+                                <EmptyText>
+                                    {t('admin.candidate.no_references')}
+                                </EmptyText>
+                            ) : (
+                                <div className="space-y-3">
+                                    {references.map((item) => (
+                                        <div
+                                            key={item.name}
+                                            className="space-y-1"
+                                        >
+                                            <p className="text-[13.6px] font-semibold text-[#050315]">
+                                                {item.name}
+                                            </p>
+                                            <p className="text-[12px] text-[#3977a6]">
+                                                {[
+                                                    item.relationship,
+                                                    item.address,
+                                                ]
                                                     .filter(Boolean)
                                                     .join(' · ') || '—'}
                                             </p>
@@ -301,37 +367,47 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                     </>
                 ) : null}
 
-                <Section title={t('admin.candidate.resume')}>
-                    {preview.resume_name ? (
-                        <p className="pb-2 text-[12.8px] text-[#3977a6]">
-                            {preview.resume_name}
-                        </p>
-                    ) : null}
-                    {resumeEnabled ? (
-                        <a
-                            href={preview.resume_url ?? '#'}
-                            download
-                            className="inline-flex h-[38px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3.5 text-[13.6px] font-semibold text-white hover:bg-[#0046a3]"
-                        >
-                            <Download
-                                className="size-3.5"
-                                strokeWidth={2}
-                            />
-                            {t('admin.candidate.download_resume')}
-                        </a>
-                    ) : (
-                        <button
-                            type="button"
-                            disabled
-                            className="inline-flex h-[38px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3.5 text-[13.6px] font-semibold text-white opacity-50"
-                        >
-                            <Download
-                                className="size-3.5"
-                                strokeWidth={2}
-                            />
-                            {t('admin.candidate.download_resume')}
-                        </button>
-                    )}
+                <Section title={t('admin.candidate.documents')}>
+                    <div className="flex flex-col gap-2">
+                        <DocumentDownload
+                            label={t('admin.candidate.resume')}
+                            fileName={preview.resume_name}
+                            url={preview.resume_url}
+                            buttonLabel={t('admin.candidate.download_resume')}
+                        />
+                        <DocumentDownload
+                            label={t('admin.candidate.highest_degree')}
+                            fileName={preview.highest_degree_name}
+                            url={preview.highest_degree_url}
+                            buttonLabel={t(
+                                'admin.candidate.download_highest_degree',
+                            )}
+                        />
+                        <DocumentDownload
+                            label={t('admin.candidate.other_document')}
+                            fileName={preview.other_document_name}
+                            url={preview.other_document_url}
+                            buttonLabel={t(
+                                'admin.candidate.download_other_document',
+                            )}
+                        />
+                        <DocumentDownload
+                            label={t('admin.candidate.cover_letter_file')}
+                            fileName={preview.cover_letter_file_name}
+                            url={preview.cover_letter_file_url}
+                            buttonLabel={t(
+                                'admin.candidate.download_cover_letter',
+                            )}
+                        />
+                        {!preview.resume_url &&
+                        !preview.highest_degree_url &&
+                        !preview.other_document_url &&
+                        !preview.cover_letter_file_url ? (
+                            <EmptyText>
+                                {t('admin.candidate.no_documents')}
+                            </EmptyText>
+                        ) : null}
+                    </div>
                 </Section>
 
                 <Section title={t('admin.candidate.status_timeline')}>
@@ -348,6 +424,41 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
                     </ol>
                 </Section>
             </div>
+        </div>
+    );
+}
+
+function DocumentDownload({
+    label,
+    fileName,
+    url,
+    buttonLabel,
+}: {
+    label: string;
+    fileName?: string | null;
+    url?: string | null;
+    buttonLabel: string;
+}) {
+    if (!url) {
+        return null;
+    }
+
+    return (
+        <div className="rounded-lg border border-[#e2e8f0] px-3 py-2.5">
+            <p className="text-[11px] font-semibold text-[#64748b]">{label}</p>
+            {fileName ? (
+                <p className="truncate pt-0.5 text-[12.8px] text-[#3977a6]">
+                    {fileName}
+                </p>
+            ) : null}
+            <a
+                href={url}
+                download
+                className="mt-2 inline-flex h-[34px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3 text-[12.8px] font-semibold text-white hover:bg-[#0046a3]"
+            >
+                <Download className="size-3.5" strokeWidth={2} />
+                {buttonLabel}
+            </a>
         </div>
     );
 }

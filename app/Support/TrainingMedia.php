@@ -6,6 +6,7 @@ use App\Models\PlatformSetting;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class TrainingMedia
 {
@@ -15,10 +16,18 @@ class TrainingMedia
 
     public const DIRECTORY = 'training';
 
+    public const VIDEOS_DIRECTORY = 'training/videos';
+
     public const DOCUMENTS_DIRECTORY = 'training/documents';
 
+    public const MAX_VIDEOS = 12;
+
     /**
-     * @return array{hero_video_path: string|null, documents: list<array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}>}
+     * @return array{
+     *     hero_video_path: string|null,
+     *     videos: list<array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}>,
+     *     documents: list<array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}>
+     * }
      */
     public static function settings(): array
     {
@@ -26,29 +35,33 @@ class TrainingMedia
             ->where('key', self::SETTING_KEY)
             ->value('value');
 
-        $documents = [];
+        $documents = self::normalizeMediaList(
+            is_array($stored) && isset($stored['documents']) && is_array($stored['documents'])
+                ? $stored['documents']
+                : [],
+        );
 
-        if (is_array($stored) && isset($stored['documents']) && is_array($stored['documents'])) {
-            foreach ($stored['documents'] as $document) {
-                if (! is_array($document) || ! filled($document['path'] ?? null)) {
-                    continue;
-                }
+        $videos = self::normalizeMediaList(
+            is_array($stored) && isset($stored['videos']) && is_array($stored['videos'])
+                ? $stored['videos']
+                : [],
+        );
 
-                $documents[] = [
-                    'id' => (string) ($document['id'] ?? Str::uuid()),
-                    'name' => (string) ($document['name'] ?? $document['file_name'] ?? 'Document'),
-                    'file_name' => (string) ($document['file_name'] ?? basename((string) $document['path'])),
-                    'path' => (string) $document['path'],
-                    'mime' => isset($document['mime']) ? (string) $document['mime'] : null,
-                    'size' => isset($document['size']) ? (int) $document['size'] : null,
-                ];
-            }
+        if ($videos === [] && is_array($stored) && filled($stored['hero_video_path'] ?? null)) {
+            $path = (string) $stored['hero_video_path'];
+            $videos[] = [
+                'id' => 'legacy-hero',
+                'name' => 'Training video',
+                'file_name' => basename($path),
+                'path' => $path,
+                'mime' => null,
+                'size' => null,
+            ];
         }
 
         return [
-            'hero_video_path' => is_array($stored)
-                ? ($stored['hero_video_path'] ?? null)
-                : null,
+            'hero_video_path' => $videos[0]['path'] ?? null,
+            'videos' => $videos,
             'documents' => $documents,
         ];
     }
@@ -62,13 +75,47 @@ class TrainingMedia
 
     public static function heroVideoUrl(): ?string
     {
-        $path = self::heroVideoPath();
+        $videos = self::videos();
 
-        if ($path === null || ! Storage::disk(self::DISK)->exists($path)) {
+        return $videos[0]['url'] ?? null;
+    }
+
+    /**
+     * @return list<array{id: string, name: string, file_name: string, url: string, mime: string|null, size: int|null}>
+     */
+    public static function videos(): array
+    {
+        return self::publicMedia(self::settings()['videos'], 'video');
+    }
+
+    /**
+     * @return array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}|null
+     */
+    public static function storedVideo(string $id): ?array
+    {
+        foreach (self::settings()['videos'] as $video) {
+            if ($video['id'] === $id) {
+                return $video;
+            }
+        }
+
+        return null;
+    }
+
+    public static function streamUrl(string $id): string
+    {
+        return route('training.videos.show', $id, false);
+    }
+
+    public static function absolutePath(string $id): ?string
+    {
+        $video = self::storedVideo($id);
+
+        if ($video === null || ! Storage::disk(self::DISK)->exists($video['path'])) {
             return null;
         }
 
-        return '/storage/'.$path;
+        return Storage::disk(self::DISK)->path($video['path']);
     }
 
     /**
@@ -76,51 +123,94 @@ class TrainingMedia
      */
     public static function documents(): array
     {
-        $items = [];
-
-        foreach (self::settings()['documents'] as $document) {
-            if (! Storage::disk(self::DISK)->exists($document['path'])) {
-                continue;
-            }
-
-            $items[] = [
-                'id' => $document['id'],
-                'name' => $document['name'],
-                'file_name' => $document['file_name'],
-                'url' => '/storage/'.$document['path'],
-                'mime' => $document['mime'],
-                'size' => $document['size'],
-            ];
-        }
-
-        return $items;
+        return self::publicMedia(self::settings()['documents']);
     }
 
-    public static function storeHeroVideo(UploadedFile $video): string
+    /**
+     * @return array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}
+     */
+    public static function storeHeroVideo(UploadedFile $video, ?string $name = null): array
     {
-        self::deleteHeroVideoFile();
+        return self::storeVideo($video, $name);
+    }
 
-        $path = $video->store(self::DIRECTORY, self::DISK);
+    /**
+     * @return array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}
+     */
+    public static function storeVideo(UploadedFile $video, ?string $name = null): array
+    {
         $settings = self::settings();
 
+        if (count($settings['videos']) >= self::MAX_VIDEOS) {
+            throw ValidationException::withMessages([
+                'video' => 'You can upload a maximum of ' . self::MAX_VIDEOS . ' training videos.',
+                'videos' => 'You can upload a maximum of ' . self::MAX_VIDEOS . ' training videos.',
+            ]);
+        }
+
+        $path = $video->store(self::VIDEOS_DIRECTORY, self::DISK);
+
+        $item = [
+            'id' => (string) Str::uuid(),
+            'name' => filled($name)
+                ? trim((string) $name)
+                : pathinfo($video->getClientOriginalName(), PATHINFO_FILENAME),
+            'file_name' => $video->getClientOriginalName(),
+            'path' => $path,
+            'mime' => $video->getClientMimeType(),
+            'size' => $video->getSize() ?: null,
+        ];
+
+        $videos = $settings['videos'];
+        $videos[] = $item;
+
         self::persist([
-            'hero_video_path' => $path,
+            'videos' => $videos,
             'documents' => $settings['documents'],
         ]);
 
-        return $path;
+        return $item;
+    }
+
+    public static function deleteVideo(string $id): bool
+    {
+        $settings = self::settings();
+        $removed = false;
+        $remaining = [];
+
+        foreach ($settings['videos'] as $video) {
+            if ($video['id'] === $id) {
+                Storage::disk(self::DISK)->delete($video['path']);
+                $removed = true;
+
+                continue;
+            }
+
+            $remaining[] = $video;
+        }
+
+        if (! $removed) {
+            return false;
+        }
+
+        self::persist([
+            'videos' => $remaining,
+            'documents' => $settings['documents'],
+        ]);
+
+        return true;
     }
 
     public static function clearHeroVideo(): void
     {
-        self::deleteHeroVideoFile();
-
         $settings = self::settings();
+        $first = $settings['videos'][0] ?? null;
 
-        self::persist([
-            'hero_video_path' => null,
-            'documents' => $settings['documents'],
-        ]);
+        if ($first === null) {
+            return;
+        }
+
+        self::deleteVideo($first['id']);
     }
 
     /**
@@ -144,7 +234,7 @@ class TrainingMedia
         $documents[] = $document;
 
         self::persist([
-            'hero_video_path' => $settings['hero_video_path'],
+            'videos' => $settings['videos'],
             'documents' => $documents,
         ]);
 
@@ -175,7 +265,7 @@ class TrainingMedia
         }
 
         self::persist([
-            'hero_video_path' => $settings['hero_video_path'],
+            'videos' => $settings['videos'],
             'documents' => $remaining,
         ]);
 
@@ -183,22 +273,73 @@ class TrainingMedia
     }
 
     /**
-     * @param  array{hero_video_path: string|null, documents: list<array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}>}  $value
+     * @param  array{videos: list<array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}>, documents: list<array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}>}  $value
      */
     private static function persist(array $value): void
     {
         PlatformSetting::query()->updateOrCreate(
             ['key' => self::SETTING_KEY],
-            ['value' => $value],
+            [
+                'value' => [
+                    'hero_video_path' => $value['videos'][0]['path'] ?? null,
+                    'videos' => $value['videos'],
+                    'documents' => $value['documents'],
+                ],
+            ],
         );
     }
 
-    private static function deleteHeroVideoFile(): void
+    /**
+     * @param  list<mixed>  $items
+     * @return list<array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}>
+     */
+    private static function normalizeMediaList(array $items): array
     {
-        $path = self::heroVideoPath();
+        $normalized = [];
 
-        if ($path !== null) {
-            Storage::disk(self::DISK)->delete($path);
+        foreach ($items as $item) {
+            if (! is_array($item) || ! filled($item['path'] ?? null)) {
+                continue;
+            }
+
+            $normalized[] = [
+                'id' => (string) ($item['id'] ?? Str::uuid()),
+                'name' => (string) ($item['name'] ?? $item['file_name'] ?? 'Media'),
+                'file_name' => (string) ($item['file_name'] ?? basename((string) $item['path'])),
+                'path' => (string) $item['path'],
+                'mime' => isset($item['mime']) ? (string) $item['mime'] : null,
+                'size' => isset($item['size']) ? (int) $item['size'] : null,
+            ];
         }
+
+        return $normalized;
+    }
+
+    /**
+     * @param  list<array{id: string, name: string, file_name: string, path: string, mime: string|null, size: int|null}>  $items
+     * @return list<array{id: string, name: string, file_name: string, url: string, mime: string|null, size: int|null}>
+     */
+    private static function publicMedia(array $items, string $kind = 'file'): array
+    {
+        $public = [];
+
+        foreach ($items as $item) {
+            if (! Storage::disk(self::DISK)->exists($item['path'])) {
+                continue;
+            }
+
+            $public[] = [
+                'id' => $item['id'],
+                'name' => $item['name'],
+                'file_name' => $item['file_name'],
+                'url' => $kind === 'video'
+                    ? self::streamUrl($item['id'])
+                    : '/storage/' . $item['path'],
+                'mime' => $item['mime'],
+                'size' => $item['size'],
+            ];
+        }
+
+        return $public;
     }
 }

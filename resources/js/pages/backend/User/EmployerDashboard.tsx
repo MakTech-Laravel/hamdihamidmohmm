@@ -117,6 +117,7 @@ const quickActionKeys: Record<string, string> = {
     'Post Job': 'employer.dashboard.post_job',
     'Review Applications': 'employer.dashboard.review_applications',
     'Company Profile': 'employer.dashboard.company_profile',
+    'Organization Profile': 'employer.dashboard.company_profile',
     'Manage Billing': 'employer.dashboard.manage_billing',
 };
 

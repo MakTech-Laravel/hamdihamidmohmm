@@ -90,7 +90,7 @@ export function JobSeekerHeader({
                                     src={user.avatar_url}
                                     alt={user.name}
                                     onError={() => setAvatarFailed(true)}
-                                    className="size-8 rounded-full object-cover"
+                                    className="size-8 rounded-full object-cover object-top"
                                 />
                             ) : (
                                 <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-[#0057c8] to-[#3b82f6] text-xs font-bold text-white">

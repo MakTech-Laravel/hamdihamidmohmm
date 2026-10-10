@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 test('jobs page can be rendered', function () {
     $this->get(route('jobs'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('frontend/jobs'));
+        ->assertInertia(fn($page) => $page->component('frontend/jobs'));
 });
 
 test('jobs page paginates thirty jobs per page', function () {
@@ -19,7 +19,7 @@ test('jobs page paginates thirty jobs per page', function () {
 
     $this->get(route('jobs'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/jobs')
             ->has('jobs.data', 30)
             ->where('jobs.per_page', 30)
@@ -29,9 +29,9 @@ test('jobs page paginates thirty jobs per page', function () {
 test('jobs page shares locale translations', function () {
     $this->get(route('jobs'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->has('translations')
-            ->where('translations', fn ($translations) => ($translations['jobs_page.title'] ?? null) === 'Find Your Next Opportunity'));
+            ->where('translations', fn($translations) => ($translations['jobs_page.title'] ?? null) === 'Find Your Next Opportunity'));
 });
 
 test('jobs listing prefers the job logo then falls back to the company logo', function () {
@@ -40,7 +40,7 @@ test('jobs listing prefers the job logo then falls back to the company logo', fu
     $employer = User::factory()->employer()->create([
         'company_name' => 'Action Against Hunger Spain',
     ]);
-    $companyLogoPath = 'company-logos/'.$employer->id.'/company.png';
+    $companyLogoPath = 'company-logos/' . $employer->id . '/company.png';
     Storage::disk('public')->put($companyLogoPath, 'company');
     $employer->forceFill(['company_logo_path' => $companyLogoPath])->save();
 
@@ -49,9 +49,9 @@ test('jobs listing prefers the job logo then falls back to the company logo', fu
         'title' => 'Education Officer',
         'slug' => 'education-officer',
         'status' => JobPostStatus::Active,
-        'expires_at' => Carbon::parse('2026-09-24'),
+        'expires_at' => Carbon::parse('2026-12-24'),
     ]);
-    $jobLogoPath = 'job-logos/'.$employer->id.'/job.png';
+    $jobLogoPath = 'job-logos/' . $employer->id . '/job.png';
     Storage::disk('public')->put($jobLogoPath, 'job');
     $withJobLogo->forceFill(['logo_path' => $jobLogoPath])->save();
 
@@ -65,15 +65,15 @@ test('jobs listing prefers the job logo then falls back to the company logo', fu
 
     $this->get(route('jobs'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/jobs')
-            ->where('jobs.data', fn ($jobs) => collect($jobs)->contains(
-                fn ($job) => $job['slug'] === $withJobLogo->slug
-                    && $job['logo_url'] === '/storage/'.$jobLogoPath
-                    && $job['closing_date'] === '24 Sept 2026'
+            ->where('jobs.data', fn($jobs) => collect($jobs)->contains(
+                fn($job) => $job['slug'] === $withJobLogo->slug
+                    && $job['logo_url'] === '/storage/' . $jobLogoPath
+                    && $job['closing_date'] === '24 Dec 2026'
             ) && collect($jobs)->contains(
-                fn ($job) => $job['slug'] === $companyOnly->slug
-                    && $job['logo_url'] === '/storage/'.$companyLogoPath
+                fn($job) => $job['slug'] === $companyOnly->slug
+                    && $job['logo_url'] === '/storage/' . $companyLogoPath
             )));
 });
 
@@ -98,7 +98,7 @@ test('jobs page can filter by searchable location input', function () {
 
     $this->get(route('jobs', ['location' => 'Khartoum']))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/jobs')
             ->where('filters.location', 'Khartoum')
             ->has('jobs.data', 1)
@@ -133,7 +133,7 @@ test('jobs page can filter by category and employment type', function () {
         'types' => ['full_time'],
     ]))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/jobs')
             ->where('filters.category', 'Technology')
             ->where('filters.types', ['full_time'])
@@ -144,7 +144,7 @@ test('jobs page can filter by category and employment type', function () {
 
     $this->get(route('jobs', ['types' => ['remote']]))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/jobs')
             ->has('jobs.data', 1)
             ->where('jobs.data.0.slug', 'remote-design-role'));
@@ -171,21 +171,21 @@ test('jobs page can search by job title and keep part-time listings when filtere
 
     $this->get(route('jobs', ['search' => 'Nurse']))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/jobs')
             ->has('jobs.data', 1)
             ->where('jobs.data.0.slug', 'part-time-nurse'));
 
     $this->get(route('jobs', ['title' => 'Engineer']))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/jobs')
             ->has('jobs.data', 1)
             ->where('jobs.data.0.slug', 'full-time-engineer'));
 
     $this->get(route('jobs', ['types' => ['part_time']]))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
+        ->assertInertia(fn($page) => $page
             ->component('frontend/jobs')
             ->has('jobs.data', 1)
             ->where('jobs.data.0.slug', 'part-time-nurse'));

@@ -7,6 +7,7 @@ use App\Enums\EmployerAccountStatus;
 use App\Enums\EmployerPackage;
 use App\Enums\EmployerVerificationStatus;
 use App\Enums\JobSeekerResumeStatus;
+use App\Enums\OrganizationType;
 use App\Enums\PermissionName;
 use App\Enums\RoleName;
 use App\Enums\SubscriptionStatus;
@@ -38,6 +39,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'company_name',
+        'organization_type',
         'industry',
         'company_size',
         'founded_year',
@@ -115,6 +117,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'role' => UserRole::class,
+            'organization_type' => OrganizationType::class,
             'verification_status' => EmployerVerificationStatus::class,
             'account_status' => AccountStatusCast::class,
             'resume_status' => JobSeekerResumeStatus::class,
@@ -158,7 +161,7 @@ class User extends Authenticatable
 
     public function companyLogoUrl(): ?string
     {
-        if (! $this->hasCompanyLogo()) {
+        if (blank($this->company_logo_path)) {
             return null;
         }
 
@@ -182,8 +185,7 @@ class User extends Authenticatable
 
     public function hasCompanyLogo(): bool
     {
-        return filled($this->company_logo_path)
-            && Storage::disk('public')->exists((string) $this->company_logo_path);
+        return filled($this->company_logo_path);
     }
 
     public function hasCompanyCover(): bool
@@ -419,6 +421,43 @@ class User extends Authenticatable
     public function jobSeekerProfile(): HasOne
     {
         return $this->hasOne(JobSeekerProfile::class);
+    }
+
+    /**
+     * @return HasMany<JobSeekerCv, $this>
+     */
+    public function jobSeekerCvs(): HasMany
+    {
+        return $this->hasMany(JobSeekerCv::class);
+    }
+
+    public function syncDefaultResumeFromCvs(): void
+    {
+        $default = $this->jobSeekerCvs()
+            ->where('is_default', true)
+            ->first()
+            ?? $this->jobSeekerCvs()->latest('id')->first();
+
+        if ($default instanceof JobSeekerCv) {
+            if (! $default->is_default) {
+                $this->jobSeekerCvs()->update(['is_default' => false]);
+                $default->forceFill(['is_default' => true])->save();
+            }
+
+            $this->forceFill([
+                'resume_path' => $default->file_path,
+                'resume_original_name' => $default->original_name,
+                'resume_status' => JobSeekerResumeStatus::Active,
+            ])->save();
+
+            return;
+        }
+
+        $this->forceFill([
+            'resume_path' => null,
+            'resume_original_name' => null,
+            'resume_status' => null,
+        ])->save();
     }
 
     public function canAccessPayroll(): bool

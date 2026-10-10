@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
     index,
@@ -43,6 +43,12 @@ type ApplicationRow = {
     certifications: ApplicationPreview['certifications'];
     resume_name: string | null;
     resume_url: string | null;
+    highest_degree_name?: string | null;
+    highest_degree_url?: string | null;
+    other_document_name?: string | null;
+    other_document_url?: string | null;
+    cover_letter_file_name?: string | null;
+    cover_letter_file_url?: string | null;
     avatar_url?: string | null;
     timeline: ApplicationPreview['timeline'];
     preview_location: string | null;
@@ -51,9 +57,24 @@ type ApplicationRow = {
     can_reject: boolean;
 };
 
+type ExperienceOption = {
+    key: string;
+    label: string;
+    min: number | null;
+    max: number | null;
+};
+
 type Props = {
     applications: ApplicationRow[];
-    filters: { status: string; search: string };
+    filters: {
+        status: string;
+        search: string;
+        job_id?: number | null;
+        job_title?: string | null;
+        experience?: string;
+        experience_sort?: string;
+    };
+    experience_options?: ExperienceOption[];
     stats: {
         total: number;
         new: number;
@@ -109,6 +130,12 @@ function toPreview(
         cover_letter: row.cover_letter,
         resume_name: row.resume_name,
         resume_url: row.resume_url,
+        highest_degree_name: row.highest_degree_name ?? null,
+        highest_degree_url: row.highest_degree_url ?? null,
+        other_document_name: row.other_document_name ?? null,
+        other_document_url: row.other_document_url ?? null,
+        cover_letter_file_name: row.cover_letter_file_name ?? null,
+        cover_letter_file_url: row.cover_letter_file_url ?? null,
         avatar_url: row.avatar_url ?? null,
         timeline: row.timeline ?? [],
     };
@@ -145,13 +172,29 @@ function CandidateAvatar({
 export default function EmployerApplications({
     applications,
     filters,
+    experience_options = [],
     stats,
     statuses,
 }: Props) {
     const { t } = useLocale();
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
-    const [viewingId, setViewingId] = useState<number | null>(null);
+    const [experience, setExperience] = useState(filters.experience ?? '');
+    const [experienceSort, setExperienceSort] = useState(
+        filters.experience_sort ?? '',
+    );
+    const [viewingId, setViewingId] = useState<number | null>(
+        () =>
+            filters.job_id && applications.length === 1
+                ? applications[0].id
+                : null,
+    );
+
+    useEffect(() => {
+        if (filters.job_id && applications.length === 1) {
+            setViewingId(applications[0].id);
+        }
+    }, [applications, filters.job_id]);
 
     const viewing = useMemo(
         () =>
@@ -177,18 +220,43 @@ export default function EmployerApplications({
         });
     }, [applications, search, status]);
 
-    const setStatusFilter = (value: string): void => {
-        setStatus(value);
+    const applyFilters = (overrides: {
+        status?: string;
+        experience?: string;
+        experience_sort?: string;
+        search?: string;
+    }): void => {
         router.get(
             index.url({
                 query: {
-                    status: value || undefined,
-                    search: search || undefined,
+                    status: (overrides.status ?? status) || undefined,
+                    experience:
+                        (overrides.experience ?? experience) || undefined,
+                    experience_sort:
+                        (overrides.experience_sort ?? experienceSort) ||
+                        undefined,
+                    search: (overrides.search ?? search) || undefined,
+                    job_id: filters.job_id || undefined,
                 },
             }),
             {},
             { preserveState: true, preserveScroll: true },
         );
+    };
+
+    const setStatusFilter = (value: string): void => {
+        setStatus(value);
+        applyFilters({ status: value });
+    };
+
+    const setExperienceFilter = (value: string): void => {
+        setExperience(value);
+        applyFilters({ experience: value });
+    };
+
+    const setExperienceSortFilter = (value: string): void => {
+        setExperienceSort(value);
+        applyFilters({ experience_sort: value });
     };
 
     const updateStatus = (rowId: number, nextStatus: string): void => {
@@ -210,7 +278,11 @@ export default function EmployerApplications({
                             {t('employer.applications.title')}
                         </h1>
                         <p className="pt-1 text-sm leading-[21px] text-[#6b7280]">
-                            {t('employer.applications.subtitle')}
+                            {filters.job_title
+                                ? t('employer.applications.filtered_job', {
+                                      job: filters.job_title,
+                                  })
+                                : t('employer.applications.subtitle')}
                         </p>
                     </div>
                 </div>
@@ -244,7 +316,7 @@ export default function EmployerApplications({
 
                 <div className="pt-5">
                     <div className="overflow-hidden rounded-2xl border border-[#e8d5e8] bg-white shadow-[0px_2px_4px_rgba(5,3,21,0.06)]">
-                        <div className="flex items-center gap-3 border-b border-[#e8d5e8] p-4">
+                        <div className="flex flex-wrap items-center gap-3 border-b border-[#e8d5e8] p-4">
                             <div className="relative min-w-[180px] flex-1">
                                 <img
                                     src="/images/jobs/search.svg"
@@ -266,7 +338,7 @@ export default function EmployerApplications({
                             </div>
                             <NativeSelect
                                 variant="filter"
-                                wrapperClassName="w-[224px] shrink-0"
+                                wrapperClassName="w-[180px] shrink-0"
                                 className="border-[#e8d5e8]"
                                 value={status}
                                 onChange={(event) =>
@@ -282,6 +354,58 @@ export default function EmployerApplications({
                                         {item.label}
                                     </option>
                                 ))}
+                            </NativeSelect>
+                            <NativeSelect
+                                variant="filter"
+                                wrapperClassName="w-[180px] shrink-0"
+                                className="border-[#e8d5e8]"
+                                value={experience}
+                                onChange={(event) =>
+                                    setExperienceFilter(event.target.value)
+                                }
+                                aria-label={t(
+                                    'employer.applications.experience_filter',
+                                )}
+                            >
+                                <option value="">
+                                    {t(
+                                        'employer.applications.experience_all',
+                                    )}
+                                </option>
+                                {experience_options.map((option) => (
+                                    <option
+                                        key={option.key}
+                                        value={option.key}
+                                    >
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </NativeSelect>
+                            <NativeSelect
+                                variant="filter"
+                                wrapperClassName="w-[200px] shrink-0"
+                                className="border-[#e8d5e8]"
+                                value={experienceSort}
+                                onChange={(event) =>
+                                    setExperienceSortFilter(
+                                        event.target.value,
+                                    )
+                                }
+                                aria-label={t(
+                                    'employer.applications.experience_sort',
+                                )}
+                            >
+                                <option value="">
+                                    {t('employer.applications.sort_newest')}
+                                </option>
+                                <option value="asc">
+                                    {t('employer.applications.sort_exp_asc')}
+                                </option>
+                                <option value="desc">
+                                    {t(
+                                        'employer.applications.sort_exp_desc',
+                                    )}
+                                </option>
                             </NativeSelect>
                         </div>
 
@@ -419,7 +543,12 @@ export default function EmployerApplications({
                             </table>
                             {filtered.length === 0 && (
                                 <p className="px-5 py-10 text-center text-sm text-[#99a1af]">
-                                    {t('employer.applications.empty_yet')}
+                                    {filters.job_title
+                                        ? t(
+                                              'employer.applications.empty_for_job',
+                                              { job: filters.job_title },
+                                          )
+                                        : t('employer.applications.empty_yet')}
                                 </p>
                             )}
                         </div>

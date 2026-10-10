@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Enums\JobPostStatus;
 use App\Enums\JobTaxonomyType;
 use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
@@ -16,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FrontendController extends Controller
 {
@@ -30,7 +32,7 @@ class FrontendController extends Controller
                 ->latest()
                 ->limit(6)
                 ->get()
-                ->map(fn (JobPost $job) => $this->homeJobCard($job))
+                ->map(fn(JobPost $job) => $this->homeJobCard($job))
                 ->values(),
         ]);
     }
@@ -47,7 +49,7 @@ class FrontendController extends Controller
         $location = $request->string('location')->toString();
         $category = $request->string('category')->toString();
         $types = collect($request->input('types', []))
-            ->map(fn (mixed $type): string => trim((string) $type))
+            ->map(fn(mixed $type): string => trim((string) $type))
             ->filter()
             ->values()
             ->all();
@@ -70,7 +72,7 @@ class FrontendController extends Controller
             ->latest()
             ->paginate(30)
             ->withQueryString()
-            ->through(fn (JobPost $job) => [
+            ->through(fn(JobPost $job) => [
                 'id' => $job->id,
                 'slug' => $job->slug,
                 'title' => $job->title,
@@ -100,16 +102,26 @@ class FrontendController extends Controller
 
     public function jobShow(Request $request, JobPost $jobPost): Response
     {
-        abort_unless($jobPost->effectiveStatus()->value === 'active', 404);
+        $isLive = $jobPost->effectiveStatus() === JobPostStatus::Active;
+        $viewer = $request->user();
+        $canPreview = $viewer !== null && (
+            $viewer->isAdmin()
+            || ($viewer->isEmployer() && $viewer->id === $jobPost->employer_id)
+        );
 
-        $jobPost->incrementViews();
+        abort_unless($isLive || $canPreview, 404);
+
+        if ($isLive) {
+            $jobPost->incrementViews();
+        }
+
         $jobPost->load('employer:id,name,company_name,company_logo_path,about,industry,website,portal_preferences');
 
         $applied = $request->user()?->isJobSeeker()
             ? JobApplication::query()
-                ->where('job_post_id', $jobPost->id)
-                ->where('job_seeker_id', $request->user()->id)
-                ->exists()
+            ->where('job_post_id', $jobPost->id)
+            ->where('job_seeker_id', $request->user()->id)
+            ->exists()
             : false;
 
         return Inertia::render('frontend/job-show', [
@@ -118,11 +130,9 @@ class FrontendController extends Controller
                 'slug' => $jobPost->slug,
                 'title' => $jobPost->title,
                 'subtitle' => $jobPost->subtitle,
-                'logo_url' => $jobPost->hasLogo() ? $jobPost->logoUrl() : null,
+                'logo_url' => $this->jobListingLogoUrl($jobPost),
                 'company' => $jobPost->employer?->company_name ?: $jobPost->employer?->name,
-                'company_logo_url' => $jobPost->employer?->hasCompanyLogo()
-                    ? $jobPost->employer->companyLogoUrl()
-                    : null,
+                'company_logo_url' => $jobPost->employer?->companyLogoUrl(),
                 'initials' => $this->initials($jobPost->employer?->company_name ?: $jobPost->employer?->name),
                 'location' => JobListingQuery::displayLabel(JobTaxonomyType::DutyStation, $jobPost->location),
                 'type' => JobListingQuery::displayLabel(JobTaxonomyType::EmploymentType, $jobPost->employment_type),
@@ -137,7 +147,7 @@ class FrontendController extends Controller
                 'requirements' => $this->lines($jobPost->requirements),
                 'skills' => array_values(array_filter(
                     is_array($jobPost->skills) ? $jobPost->skills : [],
-                    fn (mixed $skill): bool => filled($skill),
+                    fn(mixed $skill): bool => filled($skill),
                 )),
                 'about' => $jobPost->employer?->about,
                 'industry' => $jobPost->employer?->industry,
@@ -151,7 +161,7 @@ class FrontendController extends Controller
                     ->latest()
                     ->limit(3)
                     ->get()
-                    ->map(fn (JobPost $similar) => [
+                    ->map(fn(JobPost $similar) => [
                         'slug' => $similar->slug,
                         'title' => $similar->title,
                         'company' => $similar->employer?->company_name ?: $similar->employer?->name,
@@ -160,7 +170,22 @@ class FrontendController extends Controller
                     ]),
             ],
             'applied' => $applied,
-            'can_apply' => $request->user()?->isJobSeeker() === true && ! $applied,
+            'can_apply' => $isLive && $request->user()?->isJobSeeker() === true && ! $applied,
+            'is_preview' => ! $isLive,
+            'applicant_cvs' => $request->user()?->isJobSeeker() === true
+                ? $request->user()->jobSeekerCvs()
+                ->orderByDesc('is_default')
+                ->orderByDesc('id')
+                ->get(['id', 'label', 'original_name', 'is_default'])
+                ->map(fn($cv) => [
+                    'id' => $cv->id,
+                    'label' => $cv->label,
+                    'file_name' => $cv->original_name,
+                    'is_default' => (bool) $cv->is_default,
+                ])
+                ->values()
+                ->all()
+                : [],
         ]);
     }
 
@@ -174,8 +199,26 @@ class FrontendController extends Controller
     public function training(): Response
     {
         return Inertia::render('frontend/training', [
+            'videos' => TrainingMedia::videos(),
             'heroVideoUrl' => TrainingMedia::heroVideoUrl(),
             'documents' => TrainingMedia::documents(),
+        ]);
+    }
+
+    public function trainingVideo(string $video): BinaryFileResponse
+    {
+        $path = TrainingMedia::absolutePath($video);
+
+        abort_if($path === null, 404);
+
+        $stored = TrainingMedia::storedVideo($video);
+        $mime = $stored['mime'] ?? null;
+
+        return response()->file($path, [
+            'Content-Type' => filled($mime) ? $mime : 'video/mp4',
+            'Accept-Ranges' => 'bytes',
+            'Cache-Control' => 'public, max-age=86400',
+            'Content-Encoding' => 'identity',
         ]);
     }
 
@@ -244,7 +287,7 @@ class FrontendController extends Controller
         }
 
         return collect(preg_split('/\r\n|\r|\n/', $value) ?: [])
-            ->map(fn (string $line): string => trim($line))
+            ->map(fn(string $line): string => trim($line))
             ->filter()
             ->values()
             ->all();

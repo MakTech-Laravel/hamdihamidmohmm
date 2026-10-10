@@ -18,6 +18,8 @@ class UploadJobSeekerResumeRequest extends FormRequest
     {
         return [
             'resume' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+            'label' => ['nullable', 'string', 'max:120'],
+            'make_default' => ['sometimes', 'boolean'],
             'extract_profile' => ['sometimes', 'boolean'],
         ];
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Backend\User;
 
 use App\Enums\EmployerVerificationStatus;
+use App\Enums\OrganizationType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\UpdateEmployerProfileRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerPublicAboutRequest;
@@ -28,8 +29,12 @@ class EmployerProfileController extends Controller
         $hasCover = $employer->hasCompanyCover();
         $hasDocument = $employer->hasVerificationDocument();
 
+        $organizationType = $employer->organization_type ?? OrganizationType::PrivateCompany;
+
         $profile = [
             'company_name' => $employer->company_name,
+            'organization_type' => $organizationType->value,
+            'organization_type_label' => $organizationType->label(),
             'contact_name' => $employer->contact_name,
             'industry' => $employer->industry,
             'company_size' => $employer->company_size,
@@ -62,7 +67,9 @@ class EmployerProfileController extends Controller
         ];
 
         $sections = [
-            'company' => filled($profile['company_name']) && filled($profile['industry']),
+            'company' => filled($profile['company_name'])
+                && filled($profile['organization_type'])
+                && filled($profile['industry']),
             'logo' => $hasLogo,
             'about' => filled($profile['about']),
             'contact' => filled($profile['contact_name']) && filled($profile['email']) && filled($profile['phone']),
@@ -76,6 +83,7 @@ class EmployerProfileController extends Controller
 
         return Inertia::render('backend/User/EmployerCompanyProfile', [
             'profile' => $profile,
+            'organizationTypes' => OrganizationType::options(),
             'completion' => [
                 'percent' => (int) round(($completed / max(count($sections), 1)) * 100),
                 'completed' => $completed,
@@ -89,14 +97,14 @@ class EmployerProfileController extends Controller
     {
         $request->user()?->forceFill($request->validated())->save();
 
-        return back()->with('success', 'Company profile updated.');
+        return back()->with('success', 'Organization profile updated.');
     }
 
     public function updatePublicAbout(UpdateEmployerPublicAboutRequest $request): RedirectResponse
     {
         $request->user()?->forceFill($request->validated())->save();
 
-        return back()->with('success', 'About company details updated.');
+        return back()->with('success', 'Organization overview updated.');
     }
 
     public function uploadPhoto(UploadEmployerPhotoRequest $request): RedirectResponse
@@ -143,7 +151,7 @@ class EmployerProfileController extends Controller
         $logo = $request->file('logo');
 
         if ($employer === null || $logo === null) {
-            return back()->withErrors(['logo' => 'Please choose a company logo.']);
+            return back()->withErrors(['logo' => 'Please choose an organization logo.']);
         }
 
         if (filled($employer->company_logo_path)) {
@@ -156,7 +164,7 @@ class EmployerProfileController extends Controller
             'company_logo_path' => $path,
         ])->save();
 
-        return back()->with('success', 'Company logo updated.');
+        return back()->with('success', 'Organization logo updated.');
     }
 
     public function destroyLogo(Request $request): RedirectResponse
@@ -172,7 +180,7 @@ class EmployerProfileController extends Controller
             'company_logo_path' => null,
         ])->save();
 
-        return back()->with('success', 'Company logo removed.');
+        return back()->with('success', 'Organization logo removed.');
     }
 
     public function uploadCover(UploadEmployerCoverRequest $request): RedirectResponse

@@ -5,6 +5,10 @@
 
     RewriteEngine On
 
+    # Parked domains → primary (Hostinger Force SSL bypasses panel redirects)
+    RewriteCond %{HTTP_HOST} ^(www\.)?rrjob\.(org|net)$ [NC]
+    RewriteRule ^(.*)$ https://rrjob.info/$1 [L,R=301]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

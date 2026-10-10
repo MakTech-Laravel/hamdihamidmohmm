@@ -7,6 +7,7 @@ import {
     Pencil,
     Plus,
     Search,
+    Trash2,
     X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -132,6 +133,7 @@ export default function EmployerManagement({
     const [search, setSearch] = useState(filters.search ?? '');
     const [rejecting, setRejecting] = useState<EmployerRow | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
+    const [deleting, setDeleting] = useState<EmployerRow | null>(null);
 
     const filterChips = [
         ['all', t('common.all')],
@@ -351,6 +353,16 @@ export default function EmployerManagement({
                                         >
                                             <Pencil className="size-4" />
                                         </Link>
+                                        <button
+                                            type="button"
+                                            className="flex size-8 items-center justify-center rounded-lg border border-[#fee2e2] bg-[#fef2f2] text-[#b91c1c] hover:bg-[#fecaca]"
+                                            aria-label={t(
+                                                'admin.employers.delete_account',
+                                            )}
+                                            onClick={() => setDeleting(row)}
+                                        >
+                                            <Trash2 className="size-4" />
+                                        </button>
                                         {row.can_review && (
                                             <>
                                                 <button
@@ -465,6 +477,53 @@ export default function EmployerManagement({
                             }}
                         >
                             {t('common.reject')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={deleting !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeleting(null);
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t('admin.employers.delete_title')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('admin.employers.delete_confirm')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setDeleting(null)}
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            type="button"
+                            className="bg-[#b91c1c] text-white hover:bg-[#991b1b]"
+                            onClick={() => {
+                                if (deleting === null) {
+                                    return;
+                                }
+
+                                router.delete(
+                                    `/admin/employers/${deleting.id}`,
+                                    {
+                                        onSuccess: () => setDeleting(null),
+                                    },
+                                );
+                            }}
+                        >
+                            {t('admin.employers.delete_account')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

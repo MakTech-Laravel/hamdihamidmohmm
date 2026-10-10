@@ -72,8 +72,7 @@ class JobPost extends Model
 
     public function hasLogo(): bool
     {
-        return filled($this->logo_path)
-            && Storage::disk('public')->exists((string) $this->logo_path);
+        return filled($this->logo_path);
     }
 
     public function logoUrl(): ?string

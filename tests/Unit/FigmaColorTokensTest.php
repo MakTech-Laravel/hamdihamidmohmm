@@ -67,7 +67,8 @@ test('the public footer uses Figma LinkedIn social icons', function () use ($res
         ->toContain("t('footer.terms')")
         ->toContain("t('footer.privacy')")
         ->toContain("t('footer.stay_up_to_date')")
-        ->toContain("t('footer.subscribe_newsletter')");
+        ->toContain("t('footer.subscribe_newsletter')")
+        ->toContain('platform_contact');
 });
 
 test('the public pricing page includes the Figma three-package layout', function () use ($resources) {
@@ -240,7 +241,7 @@ test('the admin job management page uses the Figma list layout', function () use
         ->toContain('text-[#1e40af]')
         ->not->toContain('Featured Jobs')
         ->not->toContain('Edit job')
-        ->not->toContain('Pencil')
+        ->toContain('Pencil')
         ->not->toContain('#323981')
         ->not->toContain('#ffebf5');
 
@@ -296,6 +297,18 @@ test('the job seeker portal pages use the Figma phase one layouts', function () 
         ->toContain("t('job_seeker.profile.expected_salary')")
         ->toContain("t('job_seeker.profile.available_for')")
         ->toContain("t('job_seeker.profile.save')")
+        ->toContain("t('job_seeker.profile.cancel')")
+        ->toContain('border-t border-[#f1f5f9] px-5 py-4')
+        ->toContain('job-seeker-profile-draft:')
+        ->toContain('localStorage')
+        ->toContain("t('job_seeker.profile.autosaved')")
+        ->toContain("t('job_seeker.profile.autosaved_server')")
+        ->toContain("t('job_seeker.profile.draft_found')")
+        ->toContain("t('job_seeker.profile.resume_draft')")
+        ->toContain("t('job_seeker.profile.references')")
+        ->toContain("'job_seeker.profile.reference_name'")
+        ->toContain("'job_seeker.profile.reference_address'")
+        ->toContain("'job_seeker.profile.reference_relationship'")
         ->toContain("t('job_seeker.profile.school')")
         ->toContain("t('job_seeker.profile.field_of_study')")
         ->toContain("t('job_seeker.profile.add_education')")
@@ -303,6 +316,9 @@ test('the job seeker portal pages use the Figma phase one layouts', function () 
         ->toContain("t('job_seeker.profile.add_language')")
         ->toContain('NativeSelect')
         ->toContain("t('job_seeker.profile.resume')")
+        ->toContain("t('job_seeker.profile.cvs_title')")
+        ->toContain("t('job_seeker.profile.cv_add')")
+        ->toContain('storeCv.url()')
         ->toContain("t('job_seeker.profile.resume_upload_new')")
         ->toContain('border-[#e8d5e8]')
         ->toContain('h-[42px]')

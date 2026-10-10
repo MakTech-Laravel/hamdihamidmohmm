@@ -31,6 +31,7 @@ class JobSeekerProfile extends Model
         'experience',
         'languages',
         'certifications',
+        'references',
     ];
 
     /**
@@ -45,6 +46,7 @@ class JobSeekerProfile extends Model
             'experience' => 'array',
             'languages' => 'array',
             'certifications' => 'array',
+            'references' => 'array',
         ];
     }
 
@@ -85,7 +87,7 @@ class JobSeekerProfile extends Model
             if (ctype_digit($value)) {
                 $years = (int) $value;
 
-                return $years === 1 ? '1 year' : $years . ' years';
+                return $years === 1 ? '1 year' : $years.' years';
             }
 
             return $value;
@@ -97,7 +99,7 @@ class JobSeekerProfile extends Model
             return '—';
         }
 
-        return $years === 1 ? '1 year' : $years . ' years';
+        return $years === 1 ? '1 year' : $years.' years';
     }
 
     public function completionPercent(): int
@@ -166,6 +168,11 @@ class JobSeekerProfile extends Model
                 'id' => 'certifications',
                 'label' => 'Certifications',
                 'complete' => is_array($this->certifications) && $this->certifications !== [],
+            ],
+            [
+                'id' => 'references',
+                'label' => 'References',
+                'complete' => true,
             ],
             [
                 'id' => 'resume',

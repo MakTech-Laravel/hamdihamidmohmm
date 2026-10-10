@@ -16,6 +16,7 @@ class ApplicantProfilePreview
      *     headline: string|null,
      *     current_title: string|null,
      *     experience_years: string,
+     *     experience_years_value: int|null,
      *     email: string,
      *     phone: string,
      *     location: string,
@@ -30,10 +31,17 @@ class ApplicantProfilePreview
      *     education: list<array{title: string, subtitle: string|null, meta: string|null, body: string|null}>,
      *     experience: list<array{title: string, subtitle: string|null, meta: string|null, body: string|null}>,
      *     languages: list<array{name: string, level: string|null}>,
-     *     certifications: list<array{name: string, issuer: string|null, date: string|null}>,
+     *     certifications: list<array{name: string, issuer: string|null, date: string|null, attachments: list<array{file_name: string, available: bool}>}>,
+     *     references: list<array{name: string, address: string|null, relationship: string|null}>,
      *     cover_letter: string|null,
      *     resume_name: string|null,
      *     has_resume_file: bool,
+     *     highest_degree_name: string|null,
+     *     has_highest_degree: bool,
+     *     other_document_name: string|null,
+     *     has_other_document: bool,
+     *     cover_letter_file_name: string|null,
+     *     has_cover_letter_file: bool,
      *     avatar_url: string|null
      * }
      */
@@ -51,6 +59,7 @@ class ApplicantProfilePreview
             'headline' => self::nullableString($profile?->headline),
             'current_title' => self::nullableString($profile?->current_title),
             'experience_years' => $experienceYears,
+            'experience_years_value' => self::experienceYearsValue($profile),
             'email' => filled($seeker->email) ? (string) $seeker->email : '—',
             'phone' => filled($seeker->phone) ? (string) $seeker->phone : '—',
             'location' => $location,
@@ -66,9 +75,16 @@ class ApplicantProfilePreview
             'experience' => self::entries($profile?->experience, ['title', 'role'], ['company'], ['dates', 'years'], ['description']),
             'languages' => self::languages($profile?->languages),
             'certifications' => self::certifications($profile?->certifications),
+            'references' => self::references($profile?->references),
             'cover_letter' => self::nullableString($application?->cover_letter),
             'resume_name' => self::resumeName($seeker, $application),
             'has_resume_file' => self::hasResumeFile($seeker, $application),
+            'highest_degree_name' => self::documentName($seeker->highest_degree_path, $seeker->highest_degree_original_name),
+            'has_highest_degree' => self::documentExists($seeker->highest_degree_path),
+            'other_document_name' => self::documentName($seeker->other_document_path, $seeker->other_document_original_name),
+            'has_other_document' => self::documentExists($seeker->other_document_path),
+            'cover_letter_file_name' => self::documentName($seeker->cover_letter_path, $seeker->cover_letter_original_name),
+            'has_cover_letter_file' => self::documentExists($seeker->cover_letter_path),
             'avatar_url' => $seeker->avatar_url,
         ];
     }
@@ -106,6 +122,27 @@ class ApplicantProfilePreview
         }
 
         return null;
+    }
+
+    public static function experienceYearsValue(?JobSeekerProfile $profile): ?int
+    {
+        if ($profile === null) {
+            return null;
+        }
+
+        if (filled($profile->experience_years)) {
+            $value = trim((string) $profile->experience_years);
+
+            if (ctype_digit($value)) {
+                return (int) $value;
+            }
+
+            if (preg_match('/(\d+)/', $value, $matches) === 1) {
+                return (int) $matches[1];
+            }
+        }
+
+        return $profile->experienceYears();
     }
 
     private static function displayTitle(?JobSeekerProfile $profile): string
@@ -251,7 +288,7 @@ class ApplicantProfilePreview
     }
 
     /**
-     * @return list<array{name: string, issuer: string|null, date: string|null}>
+     * @return list<array{name: string, issuer: string|null, date: string|null, attachments: list<array{file_name: string, available: bool}>}>
      */
     private static function certifications(mixed $items): array
     {
@@ -267,6 +304,7 @@ class ApplicantProfilePreview
                     'name' => trim($item),
                     'issuer' => null,
                     'date' => null,
+                    'attachments' => [],
                 ];
 
                 continue;
@@ -282,14 +320,83 @@ class ApplicantProfilePreview
                 continue;
             }
 
+            $attachments = collect(ApplicantDocumentDownloader::normalizeAttachments($item))
+                ->map(fn (array $file): array => [
+                    'file_name' => $file['file_name'],
+                    'available' => Storage::disk('local')->exists($file['file_path']),
+                ])
+                ->values()
+                ->all();
+
             $certifications[] = [
                 'name' => $name,
                 'issuer' => self::field($item, ['issuer', 'org']),
                 'date' => self::field($item, ['date', 'year']),
+                'attachments' => $attachments,
             ];
         }
 
         return $certifications;
+    }
+
+    /**
+     * @return list<array{name: string, address: string|null, relationship: string|null}>
+     */
+    private static function references(mixed $items): array
+    {
+        if (! is_array($items)) {
+            return [];
+        }
+
+        $references = [];
+
+        foreach ($items as $item) {
+            if (is_string($item) && trim($item) !== '') {
+                $references[] = [
+                    'name' => trim($item),
+                    'address' => null,
+                    'relationship' => null,
+                ];
+
+                continue;
+            }
+
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $name = self::field($item, ['name']);
+
+            if ($name === null) {
+                continue;
+            }
+
+            $references[] = [
+                'name' => $name,
+                'address' => self::field($item, ['address']),
+                'relationship' => self::field($item, ['relationship', 'relation']),
+            ];
+        }
+
+        return $references;
+    }
+
+    private static function documentExists(mixed $path): bool
+    {
+        return filled($path) && Storage::disk('local')->exists((string) $path);
+    }
+
+    private static function documentName(mixed $path, mixed $originalName): ?string
+    {
+        if (! self::documentExists($path)) {
+            return null;
+        }
+
+        if (filled($originalName)) {
+            return (string) $originalName;
+        }
+
+        return basename((string) $path);
     }
 
     /**

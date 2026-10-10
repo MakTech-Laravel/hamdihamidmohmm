@@ -1,4 +1,6 @@
 import { Link } from '@inertiajs/react';
+import { Share2 } from 'lucide-react';
+import { useState } from 'react';
 
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
@@ -23,6 +25,69 @@ type JobListingCardProps = {
     appliedLabel?: string;
 };
 
+/** Square company mark: natural logo size, no visible frame border. */
+export function CompanyLogoMark({
+    logoUrl,
+    alt,
+    initials,
+    className,
+}: {
+    logoUrl?: string | null;
+    alt: string;
+    initials: string;
+    className?: string;
+}) {
+    const [failed, setFailed] = useState(false);
+
+    return (
+        <div
+            className={cn(
+                'flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white',
+                className ?? 'size-[80px] sm:size-[88px]',
+            )}
+        >
+            {logoUrl && !failed ? (
+                <img
+                    src={logoUrl}
+                    alt={alt}
+                    onError={() => setFailed(true)}
+                    className="size-full object-contain object-center p-0.5"
+                />
+            ) : (
+                <div
+                    className="flex size-full items-center justify-center text-base font-bold text-white sm:text-lg"
+                    style={{
+                        backgroundImage:
+                            'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                    }}
+                >
+                    {initials}
+                </div>
+            )}
+        </div>
+    );
+}
+
+async function shareJob(url: string, title: string): Promise<boolean> {
+    try {
+        if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+            await navigator.share({ title, url, text: title });
+
+            return true;
+        }
+    } catch {
+        // Fall through to clipboard.
+    }
+
+    try {
+        await navigator.clipboard.writeText(url);
+
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 export function JobListingCard({
     job,
     href,
@@ -32,6 +97,19 @@ export function JobListingCard({
 }: JobListingCardProps) {
     const { t } = useLocale();
     const jobHref = href ?? jobShow.url(job.slug);
+    const absoluteUrl =
+        typeof window !== 'undefined'
+            ? new URL(jobHref, window.location.origin).toString()
+            : jobHref;
+    const [shareNote, setShareNote] = useState<string | null>(null);
+
+    const onShare = async (): Promise<void> => {
+        const ok = await shareJob(absoluteUrl, job.title);
+        setShareNote(
+            ok ? t('jobs_page.share_copied') : t('jobs_page.share_failed'),
+        );
+        window.setTimeout(() => setShareNote(null), 2000);
+    };
 
     return (
         <article
@@ -41,25 +119,11 @@ export function JobListingCard({
             )}
         >
             <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-5">
-                <div className="flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e2e8f0] bg-[#f8faff] sm:size-[112px]">
-                    {job.logo_url ? (
-                        <img
-                            src={job.logo_url}
-                            alt={job.company || job.title}
-                            className="size-full object-cover"
-                        />
-                    ) : (
-                        <div
-                            className="flex size-full items-center justify-center text-base font-bold text-white sm:text-lg"
-                            style={{
-                                backgroundImage:
-                                    'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
-                            }}
-                        >
-                            {job.initials}
-                        </div>
-                    )}
-                </div>
+                <CompanyLogoMark
+                    logoUrl={job.logo_url}
+                    alt={job.company || job.title}
+                    initials={job.initials}
+                />
 
                 <div className="min-w-0 flex-1">
                     <Link
@@ -93,13 +157,26 @@ export function JobListingCard({
                         </p>
                     ) : null}
 
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
                         <Link
                             href={jobHref}
-                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[#bfdbfe] bg-white px-3.5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#eff6ff]"
+                            className="inline-flex h-8 items-center justify-center rounded-lg border border-[#bfdbfe] bg-white px-3.5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#eff6ff]"
                         >
                             {t('common.view')}
                         </Link>
+                        <button
+                            type="button"
+                            onClick={() => void onShare()}
+                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-white px-3.5 text-sm font-semibold text-[#475569] transition hover:bg-[#f8fafc]"
+                        >
+                            <Share2 className="size-3.5" strokeWidth={2} />
+                            {t('common.share')}
+                        </button>
+                        {shareNote ? (
+                            <span className="text-xs font-medium text-[#15803d]">
+                                {shareNote}
+                            </span>
+                        ) : null}
                     </div>
                 </div>
             </div>
@@ -114,7 +191,7 @@ export function JobListingCard({
                         href={jobHref}
                         className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#0057c8] px-5 text-sm font-semibold text-white transition hover:brightness-110 sm:w-auto"
                     >
-                        {t('jobs_page.apply')}
+                        {t('common.view')}
                     </Link>
                 )}
             </div>

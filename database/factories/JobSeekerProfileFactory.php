@@ -49,6 +49,7 @@ class JobSeekerProfileFactory extends Factory
                 'issuer' => 'Amazon Web Services',
                 'date' => '2024-03',
             ]],
+            'references' => [],
         ];
     }
 }

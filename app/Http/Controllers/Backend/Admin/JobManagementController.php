@@ -7,6 +7,8 @@ use App\Enums\JobPostStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\RejectJobPostRequest;
 use App\Http\Requests\Backend\Admin\UpdateAdminJobRequest;
+use App\Http\Requests\Backend\Admin\UploadAdminJobDescriptionAttachmentRequest;
+use App\Http\Requests\Backend\Admin\UploadAdminJobLogoRequest;
 use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\JobTaxonomy;
@@ -15,8 +17,10 @@ use App\Support\ApplicantProfilePreview;
 use App\Support\JobSeekerResume;
 use App\Support\PortalNotifier;
 use App\Support\UserAccountLifecycle;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -128,6 +132,7 @@ class JobManagementController extends Controller
                 'id' => $jobPost->id,
                 'title' => $jobPost->title,
                 'subtitle' => $jobPost->subtitle,
+                'logo_url' => $jobPost->hasLogo() ? $jobPost->logoUrl() : null,
                 'category' => $jobPost->category,
                 'country' => $jobPost->country,
                 'location' => $jobPost->location,
@@ -143,14 +148,7 @@ class JobManagementController extends Controller
                 'expires_at' => $jobPost->expires_at?->toDateString(),
                 'status' => $jobPost->status?->value ?? JobPostStatus::Pending->value,
             ],
-            'options' => [
-                ...JobTaxonomy::filterOptions(),
-                'experience_levels' => ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'],
-                'statuses' => collect(JobPostStatus::cases())->map(fn (JobPostStatus $status) => [
-                    'value' => $status->value,
-                    'label' => $status->label(),
-                ])->values()->all(),
-            ],
+            'options' => $this->editOptions($jobPost),
         ]);
     }
 
@@ -168,6 +166,38 @@ class JobManagementController extends Controller
 
         return to_route('admin.jobs.show', $jobPost)
             ->with('success', 'Job updated successfully.');
+    }
+
+    public function uploadLogo(UploadAdminJobLogoRequest $request, JobPost $jobPost): RedirectResponse
+    {
+        $this->storeJobLogo($jobPost, $request->file('logo'));
+
+        return back()->with('success', 'Job logo updated.');
+    }
+
+    public function destroyLogo(Request $request, JobPost $jobPost): RedirectResponse
+    {
+        abort_unless($request->user()?->canManageJobs(), 403);
+
+        $jobPost->deleteLogoFile();
+        $jobPost->forceFill(['logo_path' => null])->save();
+
+        return back()->with('success', 'Job logo removed.');
+    }
+
+    public function uploadDescriptionAttachment(UploadAdminJobDescriptionAttachmentRequest $request): JsonResponse
+    {
+        $admin = $request->user();
+        $file = $request->file('file');
+
+        abort_unless($admin !== null && $file !== null, 422);
+
+        $path = $file->store('job-description-attachments/admin/'.$admin->id, 'public');
+
+        return response()->json([
+            'url' => '/storage/'.$path,
+            'name' => $file->getClientOriginalName(),
+        ]);
     }
 
     public function approve(Request $request, JobPost $jobPost): RedirectResponse
@@ -395,6 +425,7 @@ class JobManagementController extends Controller
             'experience' => [],
             'languages' => [],
             'certifications' => [],
+            'references' => [],
             'cover_letter' => null,
             'resume_name' => null,
             'has_resume_file' => false,
@@ -488,5 +519,78 @@ class JobManagementController extends Controller
                 })
                 ->count(),
         ];
+    }
+
+    /**
+     * @return array{
+     *     countries: list<array{value: string, label: string}>,
+     *     dutyStations: list<array{value: string, label: string}>,
+     *     positionAreas: list<array{value: string, label: string}>,
+     *     employmentTypes: list<array{value: string, label: string}>,
+     *     experience_levels: list<string>,
+     *     statuses: list<array{value: string, label: string}>
+     * }
+     */
+    private function editOptions(JobPost $jobPost): array
+    {
+        $options = JobTaxonomy::filterOptions();
+
+        $options['positionAreas'] = $this->withCurrentOption($options['positionAreas'], $jobPost->category);
+        $options['dutyStations'] = $this->withCurrentOption($options['dutyStations'], $jobPost->location);
+        $options['countries'] = $this->withCurrentOption($options['countries'], $jobPost->country);
+        $options['employmentTypes'] = $this->withCurrentOption($options['employmentTypes'], $jobPost->employment_type);
+
+        $experienceLevels = ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'];
+        if (filled($jobPost->experience_level) && ! in_array($jobPost->experience_level, $experienceLevels, true)) {
+            array_unshift($experienceLevels, (string) $jobPost->experience_level);
+        }
+
+        return [
+            ...$options,
+            'experience_levels' => $experienceLevels,
+            'statuses' => collect(JobPostStatus::cases())->map(fn (JobPostStatus $status) => [
+                'value' => $status->value,
+                'label' => $status->label(),
+            ])->values()->all(),
+        ];
+    }
+
+    /**
+     * @param  list<array{value: string, label: string}>  $options
+     * @return list<array{value: string, label: string}>
+     */
+    private function withCurrentOption(array $options, ?string $current): array
+    {
+        if ($current === null || trim($current) === '') {
+            return $options;
+        }
+
+        $exists = collect($options)->contains(
+            fn (array $option): bool => $option['value'] === $current,
+        );
+
+        if ($exists) {
+            return $options;
+        }
+
+        return [
+            ['value' => $current, 'label' => $current.' (current)'],
+            ...$options,
+        ];
+    }
+
+    private function storeJobLogo(JobPost $job, ?UploadedFile $logo): void
+    {
+        if ($logo === null) {
+            return;
+        }
+
+        $job->deleteLogoFile();
+
+        $path = $logo->store('job-logos/'.$job->employer_id, 'public');
+
+        $job->forceFill([
+            'logo_path' => $path,
+        ])->save();
     }
 }

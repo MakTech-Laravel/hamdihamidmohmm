@@ -68,8 +68,15 @@ type Plan = {
     label: string | null;
 };
 
+type OrganizationTypeOption = {
+    value: string;
+    label: string;
+    translation_key: string;
+};
+
 type Company = {
     name: string;
+    organization_type?: string | null;
     industry: string | null;
     about: string | null;
     website: string | null;
@@ -81,6 +88,7 @@ type Props = {
     job: JobForm | null;
     plan: Plan | null;
     company: Company | null;
+    organizationTypes?: OrganizationTypeOption[];
     options: {
         countries: TaxonomyOption[];
         dutyStations: TaxonomyOption[];
@@ -94,6 +102,7 @@ export default function EmployerJobEditor({
     job,
     plan,
     company,
+    organizationTypes = [],
     options,
 }: Props) {
     const { t } = useLocale();
@@ -144,10 +153,21 @@ export default function EmployerJobEditor({
     });
     const companyForm = useForm({
         company_name: company?.name ?? '',
+        organization_type: company?.organization_type ?? 'private_company',
         industry: company?.industry ?? '',
         about: company?.about ?? '',
         website: company?.website ?? '',
     });
+
+    useEffect(() => {
+        if (!job?.logo_url) {
+            return;
+        }
+
+        setJobLogoPreview((current) =>
+            current?.startsWith('blob:') ? current : job.logo_url ?? current,
+        );
+    }, [job?.logo_url]);
 
     const saveCompanyAbout = (): void => {
         companyForm.put('/employer/profile/public-about', {
@@ -155,6 +175,23 @@ export default function EmployerJobEditor({
             onSuccess: () => setEditingCompany(false),
         });
     };
+
+    const organizationTypeLabel = (
+        value: string | null | undefined,
+    ): string | null => {
+        const option = organizationTypes.find((item) => item.value === value);
+
+        return option ? t(option.translation_key) : null;
+    };
+
+    const organizationIndustryLine = [
+        organizationTypeLabel(
+            companyForm.data.organization_type || company?.organization_type,
+        ),
+        companyForm.data.industry || company?.industry,
+    ]
+        .filter(Boolean)
+        .join(' · ');
 
     const steps = [
         { id: 1, label: t('employer.job_editor.step.basics') },
@@ -487,7 +524,7 @@ export default function EmployerJobEditor({
                                     alt={t(
                                         'employer.job_editor.job_logo.badge',
                                     )}
-                                    className="size-full object-cover"
+                                    className="size-full object-contain p-1.5"
                                 />
                             ) : (
                                 <span className="flex flex-col items-center gap-0.5 text-[#64748b]">
@@ -901,12 +938,11 @@ export default function EmployerJobEditor({
                                             companyForm.data.company_name ||
                                             company?.name ||
                                             t(
-                                                'employer.profile.company_fallback',
+                                                'employer.profile.organization_fallback',
                                             )
                                         }
                                         industry={
-                                            companyForm.data.industry ||
-                                            company?.industry
+                                            organizationIndustryLine || null
                                         }
                                         about={
                                             companyForm.data.about ||
@@ -929,7 +965,7 @@ export default function EmployerJobEditor({
                                     <div className="mt-4 space-y-3 rounded-xl border border-[#e8d5e8] bg-white p-4">
                                         <Field
                                             label={t(
-                                                'employer.profile.company_name',
+                                                'employer.profile.organization_name',
                                             )}
                                             error={
                                                 companyForm.errors.company_name
@@ -948,6 +984,42 @@ export default function EmployerJobEditor({
                                                 }
                                                 className={inputClass}
                                             />
+                                        </Field>
+                                        <Field
+                                            label={t(
+                                                'employer.profile.organization_type',
+                                            )}
+                                            error={
+                                                companyForm.errors
+                                                    .organization_type
+                                            }
+                                        >
+                                            <select
+                                                value={
+                                                    companyForm.data
+                                                        .organization_type
+                                                }
+                                                onChange={(event) =>
+                                                    companyForm.setData(
+                                                        'organization_type',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                className={inputClass}
+                                            >
+                                                {organizationTypes.map(
+                                                    (option) => (
+                                                        <option
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {t(
+                                                                option.translation_key,
+                                                            )}
+                                                        </option>
+                                                    ),
+                                                )}
+                                            </select>
                                         </Field>
                                         <Field
                                             label={t(
@@ -1416,12 +1488,11 @@ export default function EmployerJobEditor({
                                                 companyForm.data.company_name ||
                                                 company?.name ||
                                                 t(
-                                                    'employer.profile.company_fallback',
+                                                    'employer.profile.organization_fallback',
                                                 )
                                             }
                                             industry={
-                                                companyForm.data.industry ||
-                                                company?.industry
+                                                organizationIndustryLine || null
                                             }
                                             about={
                                                 companyForm.data.about ||

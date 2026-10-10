@@ -38,6 +38,7 @@ class PlatformSetting extends Model
             'general' => [
                 'platform_name' => 'RR Job Portal',
                 'support_phone' => '+971 4 123 4567',
+                'support_phone_secondary' => '+971 50 123 4567',
                 'company_address' => 'Dubai Internet City, Building 12, Dubai, UAE',
                 'support_email' => 'support@rrjobportal.ae',
                 'website_url' => 'https://www.rrjobportal.ae',
@@ -67,6 +68,14 @@ class PlatformSetting extends Model
                 'bank_iban' => '',
                 'bank_instructions' => 'Transfer the package fee to the platform bank account, then upload your payment receipt for admin review.',
             ],
+            'experience_filters' => [
+                'ranges' => [
+                    ['key' => '0-2', 'label' => '0-2 years', 'min' => 0, 'max' => 2, 'enabled' => true],
+                    ['key' => '3-5', 'label' => '3-5 years', 'min' => 3, 'max' => 5, 'enabled' => true],
+                    ['key' => '6-10', 'label' => '6-10 years', 'min' => 6, 'max' => 10, 'enabled' => true],
+                    ['key' => '10+', 'label' => '10+ years', 'min' => 10, 'max' => null, 'enabled' => true],
+                ],
+            ],
         ];
     }
 
@@ -83,5 +92,40 @@ class PlatformSetting extends Model
         }
 
         return $defaults;
+    }
+
+    /**
+     * Public support contact details shown in the website footer and contact sections.
+     *
+     * @return array{
+     *     support_phone: string|null,
+     *     support_phone_secondary: string|null,
+     *     support_email: string|null,
+     *     contact_email: string|null,
+     *     company_address: string|null
+     * }
+     */
+    public static function publicContact(): array
+    {
+        $general = self::grouped()['general'] ?? [];
+
+        return [
+            'support_phone' => self::nullableString($general['support_phone'] ?? null),
+            'support_phone_secondary' => self::nullableString($general['support_phone_secondary'] ?? null),
+            'support_email' => self::nullableString($general['support_email'] ?? null),
+            'contact_email' => self::nullableString($general['contact_email'] ?? null),
+            'company_address' => self::nullableString($general['company_address'] ?? null),
+        ];
+    }
+
+    private static function nullableString(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

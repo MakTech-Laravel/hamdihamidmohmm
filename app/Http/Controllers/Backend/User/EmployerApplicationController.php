@@ -6,8 +6,11 @@ use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\UpdateEmployerApplicationRequest;
 use App\Models\JobApplication;
+use App\Models\JobPost;
 use App\Models\User;
+use App\Support\ApplicantDocumentDownloader;
 use App\Support\ApplicantProfilePreview;
+use App\Support\ExperienceFilterOptions;
 use App\Support\JobSeekerResume;
 use App\Support\PortalNotifier;
 use Illuminate\Http\RedirectResponse;
@@ -24,6 +27,9 @@ class EmployerApplicationController extends Controller
     {
         $status = $request->string('status')->toString();
         $search = $request->string('search')->toString();
+        $jobId = $request->integer('job_id');
+        $experience = $request->string('experience')->toString();
+        $experienceSort = $request->string('experience_sort')->toString();
 
         $appsQuery = JobApplication::query()
             ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id))
@@ -31,8 +37,11 @@ class EmployerApplicationController extends Controller
                 'jobSeeker',
                 'jobSeeker.jobSeekerProfile',
                 'jobPost:id,title',
-            ])
-            ->latest();
+            ]);
+
+        if ($jobId > 0) {
+            $appsQuery->where('job_post_id', $jobId);
+        }
 
         if (JobApplicationStatus::tryFrom($status) instanceof JobApplicationStatus) {
             $appsQuery->where('status', $status);
@@ -45,14 +54,43 @@ class EmployerApplicationController extends Controller
             });
         }
 
+        ExperienceFilterOptions::applyRange($appsQuery, $experience);
+
+        if (in_array($experienceSort, ['asc', 'desc'], true)) {
+            ExperienceFilterOptions::applySort($appsQuery, $experienceSort);
+        } else {
+            $appsQuery->latest();
+        }
+
         $applications = $appsQuery->get()->map(fn (JobApplication $application) => $this->row($application));
 
         $allForStats = JobApplication::query()
             ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id));
 
+        if ($jobId > 0) {
+            $allForStats->where('job_post_id', $jobId);
+        }
+
+        $jobTitle = null;
+
+        if ($jobId > 0) {
+            $jobTitle = JobPost::query()
+                ->where('employer_id', $request->user()?->id)
+                ->where('id', $jobId)
+                ->value('title');
+        }
+
         return Inertia::render('backend/User/EmployerApplications', [
             'applications' => $applications,
-            'filters' => ['status' => $status, 'search' => $search],
+            'filters' => [
+                'status' => $status,
+                'search' => $search,
+                'job_id' => $jobId > 0 ? $jobId : null,
+                'job_title' => $jobTitle,
+                'experience' => $experience,
+                'experience_sort' => in_array($experienceSort, ['asc', 'desc'], true) ? $experienceSort : '',
+            ],
+            'experience_options' => ExperienceFilterOptions::enabled(),
             'stats' => [
                 'total' => (clone $allForStats)->count(),
                 'new' => (clone $allForStats)->where('created_at', '>=', now()->startOfWeek())->count(),
@@ -77,13 +115,18 @@ class EmployerApplicationController extends Controller
             'status' => $status,
         ])->save();
 
-        $application->loadMissing(['jobSeeker', 'jobPost']);
+        $application->loadMissing(['jobSeeker', 'jobPost.employer']);
 
         if ($application->jobSeeker instanceof User) {
+            $company = $application->jobPost?->employer?->company_name
+                ?: $application->jobPost?->employer?->name
+                ?: 'the employer';
+
             PortalNotifier::applicationStatusChanged(
                 $application->jobSeeker,
                 (string) ($application->jobPost?->title ?? 'your application'),
                 $status,
+                $company,
             );
         }
 
@@ -92,14 +135,9 @@ class EmployerApplicationController extends Controller
 
     public function downloadResume(Request $request, JobApplication $application): StreamedResponse
     {
-        abort_unless($request->user()?->isEmployer() === true, 403);
+        $this->authorizeEmployerApplication($request, $application);
 
-        $application->loadMissing(['jobPost', 'jobSeeker.jobSeekerProfile']);
-
-        abort_unless($application->jobPost?->employer_id === $request->user()?->id, 403);
-
-        $seeker = $application->jobSeeker;
-        abort_unless($seeker instanceof User, 404);
+        $seeker = ApplicantDocumentDownloader::seekerFromApplication($application);
 
         if (filled($application->resume_path) && Storage::disk('local')->exists($application->resume_path)) {
             $downloadName = $application->resume_original_name ?: basename($application->resume_path);
@@ -118,6 +156,57 @@ class EmployerApplicationController extends Controller
         }, JobSeekerResume::filename($seeker), [
             'Content-Type' => 'application/pdf',
         ]);
+    }
+
+    public function downloadHighestDegree(Request $request, JobApplication $application): StreamedResponse
+    {
+        $this->authorizeEmployerApplication($request, $application);
+
+        return ApplicantDocumentDownloader::highestDegree(
+            ApplicantDocumentDownloader::seekerFromApplication($application),
+        );
+    }
+
+    public function downloadOtherDocument(Request $request, JobApplication $application): StreamedResponse
+    {
+        $this->authorizeEmployerApplication($request, $application);
+
+        return ApplicantDocumentDownloader::otherDocument(
+            ApplicantDocumentDownloader::seekerFromApplication($application),
+        );
+    }
+
+    public function downloadCoverLetter(Request $request, JobApplication $application): StreamedResponse
+    {
+        $this->authorizeEmployerApplication($request, $application);
+
+        return ApplicantDocumentDownloader::coverLetter(
+            ApplicantDocumentDownloader::seekerFromApplication($application),
+        );
+    }
+
+    public function downloadCertification(
+        Request $request,
+        JobApplication $application,
+        int $index,
+        ?int $attachment = null,
+    ): StreamedResponse {
+        $this->authorizeEmployerApplication($request, $application);
+
+        return ApplicantDocumentDownloader::certification(
+            ApplicantDocumentDownloader::seekerFromApplication($application),
+            $index,
+            $attachment ?? 0,
+        );
+    }
+
+    private function authorizeEmployerApplication(Request $request, JobApplication $application): void
+    {
+        abort_unless($request->user()?->isEmployer() === true, 403);
+
+        $application->loadMissing(['jobPost']);
+
+        abort_unless($application->jobPost?->employer_id === $request->user()?->id, 403);
     }
 
     /**
@@ -151,9 +240,16 @@ class EmployerApplicationController extends Controller
                 'experience' => [],
                 'languages' => [],
                 'certifications' => [],
+                'references' => [],
                 'cover_letter' => $application->cover_letter,
                 'resume_name' => null,
                 'has_resume_file' => false,
+                'highest_degree_name' => null,
+                'highest_degree_url' => null,
+                'other_document_name' => null,
+                'other_document_url' => null,
+                'cover_letter_file_name' => null,
+                'cover_letter_file_url' => null,
                 'avatar_url' => null,
                 'job' => $application->jobPost?->title,
                 'job_id' => $application->job_post_id,
@@ -169,7 +265,11 @@ class EmployerApplicationController extends Controller
             ];
         }
 
-        $preview = ApplicantProfilePreview::from($seeker, $application);
+        $preview = ApplicantDocumentDownloader::withDownloadUrls(
+            ApplicantProfilePreview::from($seeker, $application),
+            $application,
+            'employer',
+        );
 
         return [
             ...$preview,

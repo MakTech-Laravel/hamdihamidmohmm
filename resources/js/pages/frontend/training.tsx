@@ -10,9 +10,19 @@ import {
 } from 'lucide-react';
 import { useMemo } from 'react';
 
+import { TrainingVideoSlider } from '@/components/frontend/training-video-slider';
 import { useLocale } from '@/hooks/use-locale';
 import FrontendLayout from '@/layouts/frontend-layout';
 import { contact, register } from '@/routes';
+
+type TrainingVideo = {
+    id: string;
+    name: string;
+    file_name: string;
+    url: string;
+    mime: string | null;
+    size: number | null;
+};
 
 type TrainingDocument = {
     id: string;
@@ -24,6 +34,7 @@ type TrainingDocument = {
 };
 
 type Props = {
+    videos?: TrainingVideo[];
     heroVideoUrl?: string | null;
     documents?: TrainingDocument[];
 };
@@ -41,10 +52,26 @@ function formatBytes(bytes: number | null): string {
 }
 
 export default function Training({
+    videos = [],
     heroVideoUrl = null,
     documents = [],
 }: Props) {
     const { t } = useLocale();
+    const slides =
+        videos.length > 0
+            ? videos
+            : heroVideoUrl
+              ? [
+                    {
+                        id: 'hero',
+                        name: t('training.title'),
+                        file_name: '',
+                        url: heroVideoUrl,
+                        mime: null,
+                        size: null,
+                    },
+                ]
+              : [];
 
     const topics = useMemo(
         () => [
@@ -102,27 +129,26 @@ export default function Training({
                             >
                                 {t('training.cta_secondary')}
                             </Link>
+                            <Link
+                                href="/training/courses"
+                                className="inline-flex items-center rounded-lg border border-[#0057c8] px-5 py-2.5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#0057c8]/5"
+                            >
+                                {t('training.courses.link')}
+                            </Link>
                         </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-2xl border border-[#dbeafe] bg-[#0f172a] shadow-[0px_12px_32px_rgba(30,58,138,0.12)]">
-                        {heroVideoUrl ? (
-                            <video
-                                key={heroVideoUrl}
-                                src={heroVideoUrl}
-                                controls
-                                playsInline
-                                preload="metadata"
-                                className="aspect-video w-full bg-black"
-                            >
-                                {t('training.video_unsupported')}
-                            </video>
+                    <div>
+                        {slides.length > 0 ? (
+                            <TrainingVideoSlider videos={slides} />
                         ) : (
-                            <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#1e3a8a] to-[#0f172a] px-6 text-center">
-                                <PlayCircle className="size-12 text-white/70" />
-                                <p className="text-sm font-medium text-white/80">
-                                    {t('training.video_placeholder')}
-                                </p>
+                            <div className="overflow-hidden rounded-2xl border border-[#dbeafe] bg-[#0f172a] shadow-[0px_12px_32px_rgba(30,58,138,0.12)]">
+                                <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#1e3a8a] to-[#0f172a] px-6 text-center">
+                                    <PlayCircle className="size-12 text-white/70" />
+                                    <p className="text-sm font-medium text-white/80">
+                                        {t('training.video_placeholder')}
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>

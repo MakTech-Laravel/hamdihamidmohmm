@@ -96,7 +96,9 @@ test('job seekers can open a job to review before applying from the portal jobs 
 
     $this->actingAs($seeker)
         ->from(route('jobs.show', $job->slug))
-        ->post(route('jobs.apply', $job))
+        ->post(route('jobs.apply', $job), [
+            'cover_letter' => 'I would like to apply for this open position with my relevant skills.',
+        ])
         ->assertRedirect(route('job-seeker.dashboard'))
         ->assertSessionHas('success', 'application_submitted');
 

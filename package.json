@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node api.js && vite build",
+    "build": "vite build",
     "build:ssr": "vite build && vite build --ssr",
-    "dev": "node api.js && vite",
+    "dev": "vite",
     "format": "prettier --write resources/",
     "format:check": "prettier --check resources/",
     "lint": "eslint . --fix",
@@ -88,5 +88,10 @@
     "@tailwindcss/oxide-win32-x64-msvc": "^4.0.1",
     "lightningcss-linux-x64-gnu": "^1.29.1",
     "lightningcss-win32-x64-msvc": "^1.29.1"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "unrs-resolver@1.12.2": true,
+    "core-js@3.50.0": true
   }
 }
