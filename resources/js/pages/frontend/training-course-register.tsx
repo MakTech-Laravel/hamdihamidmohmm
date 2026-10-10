@@ -28,6 +28,8 @@ export default function TrainingCourseRegister({ course }: { course: Course }) {
     const form = useForm({
         full_name: '',
         email: '',
+        password: '',
+        password_confirmation: '',
         phone: '',
         country_city: '',
         organization: '',
@@ -45,9 +47,20 @@ export default function TrainingCourseRegister({ course }: { course: Course }) {
         name: keyof typeof form.data;
         label: string;
         multiline?: boolean;
+        type?: 'email' | 'password' | 'text';
     }> = [
         { name: 'full_name', label: t('training.register.full_name') },
-        { name: 'email', label: t('training.register.email') },
+        { name: 'email', label: t('training.register.email'), type: 'email' },
+        {
+            name: 'password',
+            label: t('training.register.password'),
+            type: 'password',
+        },
+        {
+            name: 'password_confirmation',
+            label: t('training.register.password_confirmation'),
+            type: 'password',
+        },
         { name: 'phone', label: t('training.register.phone') },
         { name: 'country_city', label: t('training.register.country_city') },
         { name: 'organization', label: t('training.register.organization') },
@@ -103,10 +116,11 @@ export default function TrainingCourseRegister({ course }: { course: Course }) {
                                     />
                                 ) : (
                                     <input
-                                        type={
-                                            field.name === 'email'
-                                                ? 'email'
-                                                : 'text'
+                                        type={field.type ?? 'text'}
+                                        autoComplete={
+                                            field.type === 'password'
+                                                ? 'new-password'
+                                                : undefined
                                         }
                                         value={String(form.data[field.name])}
                                         onChange={(event) =>

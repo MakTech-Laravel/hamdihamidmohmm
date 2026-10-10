@@ -1850,6 +1850,8 @@
     "training.courses.deadline_label": "آخر موعد للتسجيل",
     "training.register.full_name": "الاسم الكامل",
     "training.register.email": "البريد الإلكتروني",
+    "training.register.password": "كلمة المرور",
+    "training.register.password_confirmation": "تأكيد كلمة المرور",
     "training.register.phone": "رقم الهاتف",
     "training.register.country_city": "الدولة/المدينة",
     "training.register.organization": "الجهة/الشركة",

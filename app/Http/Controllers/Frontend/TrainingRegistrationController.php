@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Enums\ActivityAction;
+use App\Enums\JobSeekerAccountStatus;
+use App\Enums\JobSeekerResumeStatus;
 use App\Enums\PermissionName;
 use App\Enums\TrainingRegistrationStatus;
 use App\Enums\UserRole;
@@ -12,6 +15,8 @@ use App\Models\TrainingRegistration;
 use App\Models\User;
 use App\Notifications\TrainingRegistrationConfirmedNotification;
 use App\Notifications\TrainingRegistrationReceivedNotification;
+use App\Support\ActivityLogger;
+use App\Support\RoleAssigner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -76,6 +81,8 @@ class TrainingRegistrationController extends Controller
             if (! $course->is_published || $course->registrationDeadlinePassed() || $course->occupiedSeats() >= $course->seats) {
                 return null;
             }
+
+            $this->createJobSeeker($request);
 
             return $course->registrations()->create([
                 'registration_number' => TrainingRegistration::nextRegistrationNumber(),
@@ -167,6 +174,29 @@ class TrainingRegistrationController extends Controller
         }
 
         return $start.' – '.$end;
+    }
+
+    private function createJobSeeker(StoreTrainingRegistrationRequest $request): void
+    {
+        $seeker = User::query()->create([
+            'name' => $request->string('full_name')->toString(),
+            'email' => $request->string('email')->toString(),
+            'phone' => $request->string('phone')->toString(),
+            'location' => $request->string('country_city')->toString(),
+            'password' => $request->string('password')->toString(),
+            'role' => UserRole::JobSeeker,
+            'account_status' => JobSeekerAccountStatus::Active,
+            'resume_status' => JobSeekerResumeStatus::Warning,
+        ]);
+
+        $seeker = RoleAssigner::assign($seeker, UserRole::JobSeeker);
+
+        ActivityLogger::log(
+            $seeker,
+            ActivityAction::AccountCreated,
+            'Account registered.',
+            $seeker,
+        );
     }
 
     private function notifyParticipants(TrainingRegistration $registration): void

@@ -2,13 +2,17 @@
 
 namespace App\Http\Requests\Frontend;
 
+use App\Concerns\PasswordValidationRules;
 use App\Enums\TrainingQuestionType;
 use App\Models\TrainingCourse;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreTrainingRegistrationRequest extends FormRequest
 {
+    use PasswordValidationRules;
+
     public function authorize(): bool
     {
         return true;
@@ -32,7 +36,8 @@ class StoreTrainingRegistrationRequest extends FormRequest
     {
         return [
             'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
+            'password' => $this->passwordRules(),
             'phone' => ['required', 'string', 'max:50'],
             'country_city' => ['required', 'string', 'max:255'],
             'organization' => ['required', 'string', 'max:255'],

@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\JobSeekerAccountStatus;
+use App\Enums\JobSeekerResumeStatus;
 use App\Enums\TrainingRegistrationStatus;
 use App\Models\TrainingCourse;
 use App\Models\TrainingRegistration;
@@ -8,6 +10,7 @@ use App\Notifications\TrainingRegistrationConfirmedNotification;
 use App\Notifications\TrainingRegistrationReceivedNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,6 +19,8 @@ function registrationPayload(TrainingCourse $course, array $overrides = []): arr
     return array_merge([
         'full_name' => 'Layla Hassan',
         'email' => 'layla@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
         'phone' => '+974 5555 0101',
         'country_city' => 'Doha, Qatar',
         'organization' => 'Gulf Training',
@@ -97,12 +102,22 @@ test('a visitor can register and receives a confirmation number', function () {
 
     $registration = TrainingRegistration::query()->first();
 
+    $seeker = User::query()->where('email', 'layla@example.com')->first();
+
     expect($registration)->not->toBeNull()
         ->and($registration->status)->toBe(TrainingRegistrationStatus::Pending)
         ->and($registration->registration_number)->toStartWith('TR-')
         ->and($registration->consent_accepted_at)->not->toBeNull()
         ->and($registration->answers[0]['label'])->toBe('Do you need a visa letter?')
-        ->and($registration->answers[0]['value'])->toBe('yes');
+        ->and($registration->answers[0]['value'])->toBe('yes')
+        ->and($seeker)->not->toBeNull()
+        ->and($seeker->isJobSeeker())->toBeTrue()
+        ->and($seeker->name)->toBe('Layla Hassan')
+        ->and($seeker->phone)->toBe('+974 5555 0101')
+        ->and($seeker->location)->toBe('Doha, Qatar')
+        ->and($seeker->account_status)->toBe(JobSeekerAccountStatus::Active)
+        ->and($seeker->resume_status)->toBe(JobSeekerResumeStatus::Warning)
+        ->and(Hash::check('password', $seeker->password))->toBeTrue();
 
     $this->get(route('training.registrations.confirmation', [
         'trainingRegistration' => $registration->public_token,
@@ -151,6 +166,22 @@ test('registration requires consent and closes when the deadline passed or seats
         ->assertSessionHasErrors('course');
 
     expect(TrainingRegistration::query()->where('training_course_id', $full->id)->count())->toBe(1);
+});
+
+test('registration creates no account when the password does not match or the email is taken', function () {
+    $course = TrainingCourse::factory()->create();
+
+    $this->post(route('training.courses.register.store', $course), registrationPayload($course, [
+        'password_confirmation' => 'different-password',
+    ]))->assertSessionHasErrors('password');
+
+    User::factory()->jobSeeker()->create(['email' => 'layla@example.com']);
+
+    $this->post(route('training.courses.register.store', $course), registrationPayload($course))
+        ->assertSessionHasErrors('email');
+
+    expect(TrainingRegistration::query()->count())->toBe(0)
+        ->and(User::query()->where('email', 'layla@example.com')->count())->toBe(1);
 });
 
 test('admins can manage courses, filter registrations, export them, and protect seat capacity', function () {

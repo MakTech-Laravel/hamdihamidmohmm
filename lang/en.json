@@ -1851,6 +1851,8 @@
     "training.courses.deadline_label": "Registration deadline",
     "training.register.full_name": "Full name",
     "training.register.email": "Email",
+    "training.register.password": "Password",
+    "training.register.password_confirmation": "Confirm password",
     "training.register.phone": "Phone number",
     "training.register.country_city": "Country/City",
     "training.register.organization": "Organization/Company",
