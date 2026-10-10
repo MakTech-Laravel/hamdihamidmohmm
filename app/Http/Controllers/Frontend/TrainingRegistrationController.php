@@ -201,7 +201,13 @@ class TrainingRegistrationController extends Controller
 
     private function notifyParticipants(TrainingRegistration $registration): void
     {
-        $courseTitle = (string) $registration->course?->title;
+        $course = $registration->course;
+        $courseTitle = (string) $course?->title;
+        $statusLabel = $registration->status?->label() ?? '';
+        $dates = $course instanceof TrainingCourse ? $this->dateRange($course) : '';
+        $duration = (string) ($course?->duration ?? '');
+        $location = (string) ($course?->location ?? '');
+        $trainer = (string) ($course?->trainer ?? '');
         $adminUrl = route('admin.training.registrations.show', $registration);
 
         Notification::route('mail', $registration->email)
@@ -209,6 +215,11 @@ class TrainingRegistrationController extends Controller
                 $registration->registration_number,
                 $courseTitle,
                 $registration->full_name,
+                $statusLabel,
+                $dates,
+                $duration,
+                $location,
+                $trainer,
             ));
 
         $admins = User::query()
@@ -234,6 +245,15 @@ class TrainingRegistrationController extends Controller
                 $courseTitle,
                 $registration->full_name,
                 $adminUrl,
+                $statusLabel,
+                $dates,
+                $duration,
+                $location,
+                $trainer,
+                $registration->email,
+                $registration->phone,
+                $registration->organization,
+                $registration->job_title,
             ),
         );
     }

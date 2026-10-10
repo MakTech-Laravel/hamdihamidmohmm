@@ -15,6 +15,11 @@ class TrainingRegistrationConfirmedNotification extends Notification implements 
         public string $registrationNumber,
         public string $courseTitle,
         public string $participantName,
+        public string $statusLabel,
+        public string $dates,
+        public string $duration,
+        public string $location,
+        public string $trainer,
     ) {}
 
     /**
@@ -28,13 +33,30 @@ class TrainingRegistrationConfirmedNotification extends Notification implements 
     public function toMail(object $notifiable): MailMessage
     {
         $name = trim($this->participantName);
-        $portal = (string) config('app.name');
 
         return (new MailMessage)
-            ->subject("Registration confirmed: {$this->registrationNumber}")
-            ->greeting($name !== '' ? "Hello {$name}," : 'Hello,')
-            ->line("Your registration for {$this->courseTitle} has been received.")
-            ->line("Your registration number is {$this->registrationNumber}.")
-            ->line("Thank you for using {$portal}.");
+            ->subject("Training registration received: {$this->courseTitle}")
+            ->view('mail.training.confirmed', [
+                'greeting' => $name !== '' ? "Hello {$name}," : 'Hello,',
+                'courseTitle' => $this->courseTitle,
+                'statusLabel' => $this->statusLabel,
+                'details' => $this->details(),
+            ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function details(): array
+    {
+        return array_filter([
+            'Training' => $this->courseTitle,
+            'Status' => $this->statusLabel,
+            'Registration number' => $this->registrationNumber,
+            'Dates' => $this->dates,
+            'Duration' => $this->duration,
+            'Location' => $this->location,
+            'Trainer' => $this->trainer,
+        ], fn (string $value): bool => $value !== '');
     }
 }

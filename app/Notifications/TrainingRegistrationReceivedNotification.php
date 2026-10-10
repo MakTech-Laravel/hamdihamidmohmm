@@ -16,6 +16,15 @@ class TrainingRegistrationReceivedNotification extends Notification implements S
         public string $courseTitle,
         public string $participantName,
         public string $adminUrl,
+        public string $statusLabel,
+        public string $dates,
+        public string $duration,
+        public string $location,
+        public string $trainer,
+        public string $participantEmail,
+        public string $participantPhone,
+        public string $organization,
+        public string $jobTitle,
     ) {}
 
     /**
@@ -31,11 +40,15 @@ class TrainingRegistrationReceivedNotification extends Notification implements S
         $name = trim((string) ($notifiable->name ?? ''));
 
         return (new MailMessage)
-            ->subject("New training registration {$this->registrationNumber}")
-            ->greeting($name !== '' ? "Hello {$name}," : 'Hello,')
-            ->line("{$this->participantName} registered for {$this->courseTitle}.")
-            ->line("Registration number: {$this->registrationNumber}.")
-            ->action('View registration', $this->adminUrl);
+            ->subject("New training registration: {$this->courseTitle}")
+            ->view('mail.training.received', [
+                'greeting' => $name !== '' ? "Hello {$name}," : 'Hello,',
+                'participantName' => $this->participantName,
+                'courseTitle' => $this->courseTitle,
+                'statusLabel' => $this->statusLabel,
+                'adminUrl' => $this->adminUrl,
+                'details' => $this->details(),
+            ]);
     }
 
     /**
@@ -50,5 +63,26 @@ class TrainingRegistrationReceivedNotification extends Notification implements S
             'url' => $this->adminUrl,
             'registration_number' => $this->registrationNumber,
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function details(): array
+    {
+        return array_filter([
+            'Training' => $this->courseTitle,
+            'Status' => $this->statusLabel,
+            'Registration number' => $this->registrationNumber,
+            'Dates' => $this->dates,
+            'Duration' => $this->duration,
+            'Location' => $this->location,
+            'Trainer' => $this->trainer,
+            'Participant' => $this->participantName,
+            'Email' => $this->participantEmail,
+            'Phone' => $this->participantPhone,
+            'Organization' => $this->organization,
+            'Job title' => $this->jobTitle,
+        ], fn (string $value): bool => $value !== '');
     }
 }

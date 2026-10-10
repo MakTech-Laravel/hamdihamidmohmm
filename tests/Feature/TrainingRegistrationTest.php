@@ -136,10 +136,69 @@ test('a visitor can register and receives a confirmation number', function () {
             && str_contains($notification->adminUrl, '/admin/training/registrations/'.$registration->id);
     });
 
-    expect(new TrainingRegistrationConfirmedNotification('TR-2026-00001', 'Course', 'Layla'))
+    expect(new TrainingRegistrationConfirmedNotification('TR-2026-00001', 'Course', 'Layla', 'Pending', 'Jun 1, 2026 – Jun 3, 2026', '3 days', 'Doha', 'Nora Ali'))
         ->toBeInstanceOf(ShouldQueue::class)
-        ->and(new TrainingRegistrationReceivedNotification('TR-2026-00001', 'Course', 'Layla', 'https://example.test'))
+        ->and(new TrainingRegistrationReceivedNotification('TR-2026-00001', 'Course', 'Layla', 'https://example.test', 'Pending', 'Jun 1, 2026 – Jun 3, 2026', '3 days', 'Doha', 'Nora Ali', 'layla@example.com', '+974 5555 0101', 'Gulf Training', 'Coordinator'))
         ->toBeInstanceOf(ShouldQueue::class);
+});
+
+test('training registration emails use the site logo and colors', function () {
+    $confirmed = (new TrainingRegistrationConfirmedNotification(
+        'TR-2026-00001',
+        'Safety workshop',
+        'Layla Hassan',
+        'Pending',
+        'Jun 1, 2026 – Jun 3, 2026',
+        '3 days',
+        'Doha, Qatar',
+        'Nora Ali',
+    ))
+        ->toMail(new stdClass)
+        ->render();
+
+    expect($confirmed)
+        ->toContain('images/home/logo.png')
+        ->toContain('#0057c8')
+        ->toContain('TR-2026-00001')
+        ->toContain('Safety workshop')
+        ->toContain('Pending')
+        ->toContain('Jun 1, 2026 – Jun 3, 2026')
+        ->toContain('3 days')
+        ->toContain('Doha, Qatar')
+        ->toContain('Nora Ali')
+        ->toContain('Hello Layla Hassan,')
+        ->not->toContain('Thank you for using');
+
+    $adminUrl = 'https://example.test/admin/training/registrations/1';
+
+    $received = (new TrainingRegistrationReceivedNotification(
+        'TR-2026-00001',
+        'Safety workshop',
+        'Layla Hassan',
+        $adminUrl,
+        'Pending',
+        'Jun 1, 2026 – Jun 3, 2026',
+        '3 days',
+        'Doha, Qatar',
+        'Nora Ali',
+        'layla@example.com',
+        '+974 5555 0101',
+        'Gulf Training',
+        'Coordinator',
+    ))
+        ->toMail((object) ['name' => 'Nora Ali'])
+        ->render();
+
+    expect($received)
+        ->toContain('images/home/logo.png')
+        ->toContain('#0057c8')
+        ->toContain('TR-2026-00001')
+        ->toContain($adminUrl)
+        ->toContain('View registration')
+        ->toContain('layla@example.com')
+        ->toContain('Gulf Training')
+        ->toContain('Coordinator')
+        ->toContain('Hello Nora Ali,');
 });
 
 test('registration requires consent and closes when the deadline passed or seats are full', function () {
