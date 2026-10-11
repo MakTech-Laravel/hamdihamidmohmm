@@ -5,13 +5,9 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import typescript from 'typescript-eslint';
-import { createRequire } from 'module';
-import { createRequire } from 'module';
 
 var require = createRequire(import.meta.url);
 var module = { exports: {} };
-
-const require = createRequire(import.meta.url);
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
