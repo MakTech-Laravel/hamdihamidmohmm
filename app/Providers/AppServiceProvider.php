@@ -4,14 +4,17 @@ namespace App\Providers;
 
 use App\Listeners\LogUserLogin;
 use App\Models\JobPost;
+use App\Support\MailBranding;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\View\View as ViewInstance;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,6 +41,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(Login::class, LogUserLogin::class);
+
+        View::composer('mail.partials.footer', function (ViewInstance $view): void {
+            $view->with(MailBranding::footer());
+        });
     }
 
     protected function configureDefaults(): void

@@ -28,12 +28,16 @@ class ApplicationSubmittedNotification extends Notification
         $name = trim((string) ($notifiable->name ?? ''));
         $portal = (string) config('app.name');
 
+        $applicationsUrl = url('/job-seeker/applications');
+
         return (new MailMessage)
             ->subject("Your application for {$this->jobTitle} was submitted")
-            ->greeting($name !== '' ? "Hello {$name}," : 'Hello,')
-            ->line("Your application for {$this->jobTitle} at {$this->companyName} has been submitted successfully.")
-            ->action('View your applications', url('/job-seeker/applications'))
-            ->line("Thank you for using {$portal}.");
+            ->greeting($name !== '' ? "Dear {$name}," : 'Dear Applicant,')
+            ->line("Thank you for applying through {$portal} for the position of {$this->jobTitle} at {$this->companyName}. We confirm receipt of your application.")
+            ->line('After the vacancy closes, all applications will be reviewed. Only shortlisted candidates will be contacted for the assessment phase, which typically includes a technical assessment and a competency-based interview, though this may vary by role.')
+            ->line('If you’re shortlisted and require assistance or reasonable accommodation during the assessment, please notify our HR team when you receive the invitation.')
+            ->line("Follow your [application status]({$applicationsUrl}) on the {$portal} Careers portal.")
+            ->salutation("Best regards,\n{$portal} Talent Acquisition");
     }
 
     /**

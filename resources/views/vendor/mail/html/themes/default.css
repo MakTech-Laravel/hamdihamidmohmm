@@ -1,0 +1,71 @@
+.email-body p,
+.email-body li {
+    color: #1f2a44;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.email-body p {
+    margin: 0 0 20px;
+}
+
+.email-body ul,
+.email-body ol {
+    margin: 0 0 20px;
+    padding-left: 22px;
+}
+
+.email-body li {
+    margin: 0 0 6px;
+}
+
+.email-body h1,
+.email-body h2,
+.email-body h3 {
+    margin: 0 0 16px;
+    color: #1f2a44;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+}
+
+.email-body h1 {
+    font-size: 20px;
+}
+
+.email-body h2 {
+    font-size: 18px;
+}
+
+.email-body h3 {
+    font-size: 16px;
+}
+
+.email-body a {
+    color: #0a6fd8;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.email-body strong {
+    color: #1f2a44;
+}
+
+.email-body .subcopy p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.email-body .subcopy a {
+    font-weight: normal;
+}
+
+.email-body .break-all {
+    word-break: break-all;
+}
+
+.email-body .email-note {
+    color: #475569;
+}

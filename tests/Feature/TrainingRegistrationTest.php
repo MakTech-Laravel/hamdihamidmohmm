@@ -160,8 +160,9 @@ test('training registration emails use the site logo and colors', function () {
         ->render();
 
     expect($confirmed)
-        ->toContain('images/home/logo.png')
-        ->toContain('#0057c8')
+        ->toContain('images/email/header.jpg')
+        ->toContain('images/email/footer-wave.png')
+        ->toContain('#0256ae')
         ->toContain('TR-2026-00001')
         ->toContain('Safety workshop')
         ->toContain('Pending')
@@ -193,8 +194,9 @@ test('training registration emails use the site logo and colors', function () {
         ->render();
 
     expect($received)
-        ->toContain('images/home/logo.png')
-        ->toContain('#0057c8')
+        ->toContain('images/email/header.jpg')
+        ->toContain('images/email/footer-wave.png')
+        ->toContain('#0256ae')
         ->toContain('TR-2026-00001')
         ->toContain($adminUrl)
         ->toContain('View registration')
