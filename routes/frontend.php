@@ -30,6 +30,7 @@ Route::post('/locale', LocaleController::class)->name('locale.update');
 Route::get('/chatbot/messages', [ChatbotController::class, 'index'])->name('chatbot.messages.index');
 Route::post('/chatbot/messages', [ChatbotController::class, 'store'])->middleware('throttle:ai-chat')->name('chatbot.messages.store');
 Route::delete('/chatbot/messages', [ChatbotController::class, 'destroy'])->name('chatbot.messages.destroy');
+Route::post('/chatbot/translate', [ChatbotController::class, 'translate'])->middleware('throttle:ai-chat')->name('chatbot.translate');
 
 Route::middleware('guest')->group(function () {
     Route::get('/register/{role}', RegisterRoleController::class)
