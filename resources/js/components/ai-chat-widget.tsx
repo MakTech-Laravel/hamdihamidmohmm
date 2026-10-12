@@ -1,12 +1,14 @@
 import { Link } from '@inertiajs/react';
 import {
     Bot,
+    Languages,
     LifeBuoy,
+    LoaderCircle,
     Mail,
-    MessageCircle,
     Phone,
     RotateCcw,
     SendHorizontal,
+    Sparkles,
     X,
 } from 'lucide-react';
 import {
@@ -43,16 +45,51 @@ type ChatReply = {
     support: SupportContacts | null;
 };
 
+type ReplyLanguage = 'auto' | 'en' | 'ar';
+
+type TranslationTarget = Exclude<ReplyLanguage, 'auto'>;
+
+type MessageTranslation = {
+    target: TranslationTarget;
+    text: string | null;
+    showing: boolean;
+    loading: boolean;
+    error: string | null;
+};
+
 type AiChatWidgetProps = {
     endpoint: string;
+    translateEndpoint: string;
     title: string;
     subtitle: string;
     greeting: string;
     suggestions: string[];
     placeholder: string;
+    teaser: string;
 };
 
 const MAX_LENGTH = 1000;
+const TEASER_DELAY_MS = 4000;
+const TEASER_DISMISSED_KEY = 'ai_chat.teaser_dismissed';
+const REPLY_LANGUAGE_KEY = 'ai_chat.reply_language';
+const REPLY_LANGUAGES: ReplyLanguage[] = ['auto', 'en', 'ar'];
+const ARABIC_SCRIPT = /[\u0600-\u06FF]/;
+
+function translationTargetFor(text: string): TranslationTarget {
+    return ARABIC_SCRIPT.test(text) ? 'en' : 'ar';
+}
+
+function storedReplyLanguage(): ReplyLanguage {
+    if (typeof window === 'undefined') {
+        return 'auto';
+    }
+
+    const stored = window.localStorage.getItem(REPLY_LANGUAGE_KEY);
+
+    return REPLY_LANGUAGES.includes(stored as ReplyLanguage)
+        ? (stored as ReplyLanguage)
+        : 'auto';
+}
 
 function xsrfToken(): string | null {
     const raw = document.cookie
@@ -92,7 +129,8 @@ const SAFE_URL = /^(\/(?!\/)|https?:\/\/|mailto:|tel:)/i;
 
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
     const nodes: ReactNode[] = [];
-    const pattern = /\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*/g;
+    const pattern =
+        /\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*\s][^*]*?)\*/g;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
     let index = 0;
@@ -134,6 +172,8 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
             }
         } else if (match[3] !== undefined) {
             nodes.push(<strong key={key}>{match[3]}</strong>);
+        } else if (match[4] !== undefined) {
+            nodes.push(<em key={key}>{match[4]}</em>);
         }
 
         lastIndex = pattern.lastIndex;
@@ -214,7 +254,11 @@ function RichText({ content }: { content: string }) {
 
     flushList();
 
-    return <div className="space-y-2 break-words">{blocks}</div>;
+    return (
+        <div dir="auto" className="space-y-2 text-start break-words">
+            {blocks}
+        </div>
+    );
 }
 
 function SupportCard({ support }: { support: SupportContacts }) {
@@ -263,20 +307,76 @@ function SupportCard({ support }: { support: SupportContacts }) {
     );
 }
 
+function TranslateAction({
+    translation,
+    target,
+    onClick,
+}: {
+    translation?: MessageTranslation;
+    target: TranslationTarget;
+    onClick: () => void;
+}) {
+    const { t } = useLocale();
+
+    const label = translation?.loading
+        ? t('chatbot.translating')
+        : translation?.showing
+          ? t('chatbot.show_original')
+          : t(`chatbot.translate_to_${translation?.target ?? target}`);
+
+    return (
+        <div className="mt-2 border-t border-[#eef2f7] pt-1.5">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+                {translation?.showing ? (
+                    <span className="text-[#94a3b8]">
+                        {t('chatbot.translated')}
+                    </span>
+                ) : null}
+                <button
+                    type="button"
+                    onClick={onClick}
+                    disabled={translation?.loading}
+                    className="inline-flex cursor-pointer items-center gap-1 font-semibold text-[#0057c8] hover:underline disabled:cursor-wait disabled:opacity-70"
+                >
+                    {translation?.loading ? (
+                        <LoaderCircle className="size-3 animate-spin" />
+                    ) : (
+                        <Languages className="size-3" />
+                    )}
+                    {label}
+                </button>
+            </div>
+            {translation?.error ? (
+                <p className="mt-1 text-[11px] text-[#b91c1c]">
+                    {translation.error}
+                </p>
+            ) : null}
+        </div>
+    );
+}
+
 export function AiChatWidget({
     endpoint,
+    translateEndpoint,
     title,
     subtitle,
     greeting,
     suggestions,
     placeholder,
+    teaser,
 }: AiChatWidgetProps) {
     const { t } = useLocale();
     const [open, setOpen] = useState(false);
+    const [showTeaser, setShowTeaser] = useState(false);
     const [loaded, setLoaded] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [sending, setSending] = useState(false);
+    const [replyLanguage, setReplyLanguage] =
+        useState<ReplyLanguage>(storedReplyLanguage);
+    const [translations, setTranslations] = useState<
+        Record<number, MessageTranslation>
+    >({});
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -318,6 +418,31 @@ export function AiChatWidget({
         }
     }, [open]);
 
+    const teaserStorageKey = `${TEASER_DISMISSED_KEY}:${endpoint}`;
+
+    useEffect(() => {
+        if (sessionStorage.getItem(teaserStorageKey)) {
+            return;
+        }
+
+        const timer = window.setTimeout(
+            () => setShowTeaser(true),
+            TEASER_DELAY_MS,
+        );
+
+        return () => window.clearTimeout(timer);
+    }, [teaserStorageKey]);
+
+    const dismissTeaser = useCallback(() => {
+        setShowTeaser(false);
+        sessionStorage.setItem(teaserStorageKey, '1');
+    }, [teaserStorageKey]);
+
+    const toggleOpen = useCallback(() => {
+        dismissTeaser();
+        setOpen((value) => !value);
+    }, [dismissTeaser]);
+
     const send = useCallback(
         async (text: string) => {
             const message = text.trim();
@@ -339,7 +464,7 @@ export function AiChatWidget({
                         message?: string;
                         errors?: Record<string, string[]>;
                     }
-                >(endpoint, 'POST', { message });
+                >(endpoint, 'POST', { message, language: replyLanguage });
 
                 if (ok && data) {
                     setMessages((current) => [
@@ -376,11 +501,90 @@ export function AiChatWidget({
                 setSending(false);
             }
         },
-        [endpoint, sending, t],
+        [endpoint, sending, replyLanguage, t],
     );
+
+    const chooseReplyLanguage = (language: ReplyLanguage) => {
+        setReplyLanguage(language);
+        window.localStorage.setItem(REPLY_LANGUAGE_KEY, language);
+    };
+
+    const patchTranslation = (
+        index: number,
+        patch: Partial<MessageTranslation>,
+    ) => {
+        setTranslations((current) => {
+            const existing = current[index];
+
+            if (!existing) {
+                return current;
+            }
+
+            return { ...current, [index]: { ...existing, ...patch } };
+        });
+    };
+
+    const translate = async (index: number, content: string) => {
+        const existing = translations[index];
+
+        if (existing?.loading) {
+            return;
+        }
+
+        if (existing?.text) {
+            patchTranslation(index, { showing: !existing.showing });
+
+            return;
+        }
+
+        const target = translationTargetFor(content);
+
+        setTranslations((current) => ({
+            ...current,
+            [index]: {
+                target,
+                text: null,
+                showing: false,
+                loading: true,
+                error: null,
+            },
+        }));
+
+        try {
+            const { ok, data } = await request<{
+                translation?: string;
+                message?: string;
+                errors?: Record<string, string[]>;
+            }>(translateEndpoint, 'POST', { text: content, target });
+
+            if (ok && data?.translation) {
+                patchTranslation(index, {
+                    text: data.translation,
+                    showing: true,
+                    loading: false,
+                });
+
+                return;
+            }
+
+            patchTranslation(index, {
+                loading: false,
+                error:
+                    (data?.errors && Object.values(data.errors)[0]?.[0]) ||
+                    data?.message ||
+                    t('chatbot.translate_failed'),
+            });
+        } catch {
+            patchTranslation(index, {
+                loading: false,
+                error: t('chatbot.network_error'),
+            });
+        }
+    };
 
     const reset = async () => {
         setMessages([]);
+        setTranslations({});
         await request(endpoint, 'DELETE').catch(() => undefined);
     };
 
@@ -402,7 +606,7 @@ export function AiChatWidget({
                 <section
                     role="dialog"
                     aria-label={title}
-                    className="fixed end-4 bottom-24 z-[60] flex h-[min(600px,calc(100svh-8rem))] w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[#dbe5f5] bg-white shadow-[0_24px_60px_rgba(5,3,21,0.18)] sm:end-6"
+                    className="fixed end-4 bottom-24 z-[60] flex h-[min(600px,calc(100svh-8rem))] w-[min(390px,calc(100vw-2rem))] origin-bottom-right animate-in flex-col overflow-hidden rounded-2xl border border-[#dbe5f5] bg-white shadow-[0_24px_60px_rgba(5,3,21,0.18)] duration-300 zoom-in-95 fade-in slide-in-from-bottom-4 sm:end-6 rtl:origin-bottom-left"
                 >
                     <header className="flex items-center gap-3 bg-gradient-to-r from-[#0057c8] to-[#3b82f6] px-4 py-3 text-white">
                         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/20">
@@ -436,6 +640,38 @@ export function AiChatWidget({
                             <X className="size-4" />
                         </button>
                     </header>
+
+                    <div className="flex items-center gap-2 border-b border-[#e2e8f0] bg-white px-4 py-2 text-xs text-[#475569]">
+                        <Languages className="size-3.5 shrink-0 text-[#0057c8]" />
+                        <span id="ai-chat-reply-language" className="shrink-0">
+                            {t('chatbot.reply_language')}
+                        </span>
+                        <div
+                            role="radiogroup"
+                            aria-labelledby="ai-chat-reply-language"
+                            className="ms-auto flex rounded-full bg-[#f1f5f9] p-0.5"
+                        >
+                            {REPLY_LANGUAGES.map((language) => (
+                                <button
+                                    key={language}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={replyLanguage === language}
+                                    onClick={() =>
+                                        chooseReplyLanguage(language)
+                                    }
+                                    className={cn(
+                                        'cursor-pointer rounded-full px-2.5 py-1 font-semibold transition-colors',
+                                        replyLanguage === language
+                                            ? 'bg-[#0057c8] text-white shadow-sm'
+                                            : 'text-[#475569] hover:text-[#0057c8]',
+                                    )}
+                                >
+                                    {t(`chatbot.language_${language}`)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
                     <div
                         ref={scrollRef}
@@ -479,12 +715,33 @@ export function AiChatWidget({
                                             : 'bg-white text-[#1f2a44]',
                                     )}
                                 >
-                                    <RichText content={message.content} />
+                                    <RichText
+                                        content={
+                                            translations[index]?.showing &&
+                                            translations[index]?.text
+                                                ? translations[index].text
+                                                : message.content
+                                        }
+                                    />
                                     {message.support ? (
                                         <SupportCard
                                             support={message.support}
                                         />
                                     ) : null}
+                                    {message.isError ? null : (
+                                        <TranslateAction
+                                            translation={translations[index]}
+                                            target={translationTargetFor(
+                                                message.content,
+                                            )}
+                                            onClick={() =>
+                                                void translate(
+                                                    index,
+                                                    message.content,
+                                                )
+                                            }
+                                        />
+                                    )}
                                 </div>
                             ),
                         )}
@@ -532,19 +789,81 @@ export function AiChatWidget({
                 </section>
             ) : null}
 
-            <button
-                type="button"
-                onClick={() => setOpen((value) => !value)}
-                className="fixed end-4 bottom-5 z-[60] flex size-14 cursor-pointer items-center justify-center rounded-full bg-[#0057c8] text-white shadow-[0_12px_30px_rgba(0,87,200,0.4)] transition-transform hover:scale-105 hover:bg-[#0046a3] sm:end-6"
-                aria-label={open ? t('chatbot.close') : t('chatbot.open')}
-                aria-expanded={open}
-            >
-                {open ? (
-                    <X className="size-6" />
-                ) : (
-                    <MessageCircle className="size-6" />
+            {showTeaser && !open ? (
+                <div className="fixed end-22 bottom-7 z-[60] flex max-w-[min(240px,calc(100vw-7.5rem))] animate-in items-start gap-2 rounded-2xl rounded-ee-sm border border-[#dbe5f5] bg-white py-2.5 ps-3.5 pe-2 text-sm text-[#0f172a] shadow-[0_14px_36px_rgba(5,3,21,0.16)] duration-500 zoom-in-90 fade-in sm:end-24">
+                    <button
+                        type="button"
+                        onClick={toggleOpen}
+                        className="cursor-pointer text-start leading-snug font-medium"
+                    >
+                        {teaser}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={dismissTeaser}
+                        className="shrink-0 cursor-pointer rounded-full p-0.5 text-[#94a3b8] hover:bg-[#f1f5f9] hover:text-[#475569]"
+                        aria-label={t('chatbot.dismiss')}
+                    >
+                        <X className="size-3.5" />
+                    </button>
+                </div>
+            ) : null}
+
+            <div
+                className={cn(
+                    'fixed end-4 bottom-5 z-[60] sm:end-6',
+                    !open && 'motion-safe:animate-chatbot-float',
                 )}
-            </button>
+            >
+                {!open ? (
+                    <>
+                        <span
+                            aria-hidden="true"
+                            className="motion-safe:animate-chatbot-ring pointer-events-none absolute inset-0 rounded-full bg-[#2563eb]"
+                        />
+                        <span
+                            aria-hidden="true"
+                            className="motion-safe:animate-chatbot-ring pointer-events-none absolute inset-0 rounded-full bg-[#06b6d4] [animation-delay:1.2s]"
+                        />
+                    </>
+                ) : null}
+
+                <button
+                    type="button"
+                    onClick={toggleOpen}
+                    className="group motion-safe:animate-chatbot-gradient relative flex size-14 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-[#0057c8] via-[#2563eb] to-[#06b6d4] text-white shadow-[0_12px_30px_rgba(0,87,200,0.45)] ring-4 ring-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:scale-110 hover:shadow-[0_16px_40px_rgba(0,87,200,0.6)] focus-visible:ring-[#93c5fd] focus-visible:outline-none active:scale-95"
+                    aria-label={open ? t('chatbot.close') : t('chatbot.open')}
+                    aria-expanded={open}
+                >
+                    {open ? (
+                        <X
+                            key="close"
+                            className="size-6 animate-in duration-300 zoom-in-50 spin-in-90"
+                        />
+                    ) : (
+                        <Bot
+                            key="open"
+                            className="motion-safe:animate-chatbot-wave size-7"
+                        />
+                    )}
+
+                    {!open ? (
+                        <>
+                            <Sparkles
+                                aria-hidden="true"
+                                className="absolute -start-1 -top-1 size-4 fill-[#fbbf24] text-[#f59e0b] motion-safe:animate-pulse"
+                            />
+                            <span
+                                aria-hidden="true"
+                                className="absolute end-0.5 top-0.5 flex size-3.5"
+                            >
+                                <span className="absolute inline-flex size-full rounded-full bg-[#22c55e] opacity-75 motion-safe:animate-ping" />
+                                <span className="relative inline-flex size-3.5 rounded-full border-2 border-white bg-[#22c55e]" />
+                            </span>
+                        </>
+                    ) : null}
+                </button>
+            </div>
         </>
     );
 }
@@ -555,10 +874,12 @@ export function PublicChatWidget() {
     return (
         <AiChatWidget
             endpoint="/chatbot/messages"
+            translateEndpoint="/chatbot/translate"
             title={t('chatbot.public.title')}
             subtitle={t('chatbot.public.subtitle')}
             greeting={t('chatbot.public.greeting')}
             placeholder={t('chatbot.placeholder')}
+            teaser={t('chatbot.public.teaser')}
             suggestions={[
                 t('chatbot.public.suggestion_jobs'),
                 t('chatbot.public.suggestion_register'),
@@ -575,10 +896,12 @@ export function AdminAssistantWidget() {
     return (
         <AiChatWidget
             endpoint="/admin/ai-assistant/messages"
+            translateEndpoint="/admin/ai-assistant/translate"
             title={t('chatbot.admin.title')}
             subtitle={t('chatbot.admin.subtitle')}
             greeting={t('chatbot.admin.greeting')}
             placeholder={t('chatbot.admin.placeholder')}
+            teaser={t('chatbot.admin.teaser')}
             suggestions={[
                 t('chatbot.admin.suggestion_overview'),
                 t('chatbot.admin.suggestion_pending'),

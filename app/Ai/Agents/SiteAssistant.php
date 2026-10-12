@@ -3,11 +3,13 @@
 namespace App\Ai\Agents;
 
 use App\Ai\Concerns\ContinuesChatHistory;
+use App\Ai\Concerns\RespondsInChosenLanguage;
 use App\Ai\Tools\GetMyApplications;
 use App\Ai\Tools\GetSupportContacts;
 use App\Ai\Tools\ListPricingPlans;
 use App\Ai\Tools\ListTrainingCourses;
 use App\Ai\Tools\SearchJobs;
+use App\Enums\ChatLanguage;
 use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Services\Ai\AiChatService;
@@ -28,7 +30,7 @@ use Stringable;
 #[Timeout(60)]
 class SiteAssistant implements Agent, Conversational, HasTools
 {
-    use ContinuesChatHistory, Promptable;
+    use ContinuesChatHistory, Promptable, RespondsInChosenLanguage;
 
     /**
      * @param  list<array{role: string, content: string}>  $history
@@ -37,6 +39,7 @@ class SiteAssistant implements Agent, Conversational, HasTools
         public array $history = [],
         public ?User $user = null,
         public string $locale = 'en',
+        public ChatLanguage $replyLanguage = ChatLanguage::Auto,
     ) {}
 
     /**
@@ -46,14 +49,13 @@ class SiteAssistant implements Agent, Conversational, HasTools
     {
         $platform = PlatformSetting::grouped()['general']['platform_name'] ?? config('app.name');
         $marker = AiChatService::SUPPORT_MARKER;
-        $language = $this->locale === 'ar' ? 'Arabic' : 'English';
 
         return <<<PROMPT
         You are the friendly virtual assistant of "{$platform}", an online job portal that connects job seekers with employers.
         Today is {$this->today()}. {$this->visitorContext()}
 
         ## How to answer
-        - Reply in the same language as the visitor's latest message (English or Arabic). If unclear, reply in {$language}.
+        {$this->languageRule()}
         - Be concise: at most about 120 words, short paragraphs or "- " bullet lists.
         - Link to pages with markdown links using relative paths only, e.g. [Pricing](/pricing).
         - Never invent jobs, prices, courses, contact details or policies. Use the tools for live data

@@ -8,6 +8,7 @@ use App\Enums\AiChatStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\UpdateAiAssistantSettingsRequest;
 use App\Http\Requests\Frontend\SendChatMessageRequest;
+use App\Http\Requests\Frontend\TranslateChatMessageRequest;
 use App\Models\AiChatLog;
 use App\Models\PlatformSetting;
 use App\Services\Ai\AiChatService;
@@ -105,10 +106,28 @@ class AiAssistantController extends Controller
             $request,
             AiChatChannel::Admin,
             $request->validated('message'),
-            fn (array $history): AdminAssistant => new AdminAssistant($request->user(), $history, app()->getLocale()),
+            fn (array $history): AdminAssistant => new AdminAssistant(
+                $request->user(),
+                $history,
+                app()->getLocale(),
+                $request->replyLanguage(),
+            ),
         );
 
         return response()->json($result);
+    }
+
+    public function translate(TranslateChatMessageRequest $request, AiChatService $chat): JsonResponse
+    {
+        abort_unless(PlatformSetting::aiAssistant()['admin_assistant_enabled'], 403, __('chatbot.disabled'));
+
+        $translation = $chat->translate($request->validated('text'), $request->targetLanguage());
+
+        if ($translation === null) {
+            return response()->json(['message' => __('chatbot.translate_failed')], 503);
+        }
+
+        return response()->json(['translation' => $translation, 'target' => $request->targetLanguage()->value]);
     }
 
     public function clear(Request $request, AiChatService $chat): JsonResponse

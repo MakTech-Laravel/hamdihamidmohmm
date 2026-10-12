@@ -37,6 +37,7 @@ return [
         'public_per_minute' => (int) env('AI_CHATBOT_PUBLIC_PER_MINUTE', 8),
         'public_per_day' => (int) env('AI_CHATBOT_PUBLIC_PER_DAY', 120),
         'admin_per_minute' => (int) env('AI_CHATBOT_ADMIN_PER_MINUTE', 20),
+        'attempts' => (int) env('AI_CHATBOT_ATTEMPTS', 3),
     ],
 
     /*
