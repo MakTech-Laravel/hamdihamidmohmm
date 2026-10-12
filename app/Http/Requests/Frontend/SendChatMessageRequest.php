@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Frontend;
 
+use App\Enums\ChatLanguage;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SendChatMessageRequest extends FormRequest
 {
@@ -25,6 +27,7 @@ class SendChatMessageRequest extends FormRequest
     {
         return [
             'message' => ['required', 'string', 'min:2', 'max:1000'],
+            'language' => ['nullable', Rule::enum(ChatLanguage::class)],
         ];
     }
 
@@ -37,6 +40,12 @@ class SendChatMessageRequest extends FormRequest
             'message.required' => __('chatbot.validation.required'),
             'message.min' => __('chatbot.validation.min'),
             'message.max' => __('chatbot.validation.max'),
+            'language.enum' => __('chatbot.validation.language'),
         ];
+    }
+
+    public function replyLanguage(): ChatLanguage
+    {
+        return ChatLanguage::tryFrom((string) $this->validated('language')) ?? ChatLanguage::Auto;
     }
 }

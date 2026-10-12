@@ -2,14 +2,17 @@
 
 namespace App\Services\Ai;
 
+use App\Ai\Agents\ChatTranslator;
 use App\Enums\AiChatChannel;
 use App\Enums\AiChatStatus;
+use App\Enums\ChatLanguage;
 use App\Models\AiChatLog;
 use App\Models\PlatformSetting;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Exceptions\FailoverableException;
 use Throwable;
 
 class AiChatService
@@ -46,7 +49,7 @@ class AiChatService
         $error = null;
 
         try {
-            $response = $makeAgent($this->history($request, $channel))->prompt($question);
+            $response = $this->withRetries(fn() => $makeAgent($this->history($request, $channel))->prompt($question));
 
             $text = trim((string) $response);
             $fallback = $text === '' || str_contains($text, self::SUPPORT_MARKER);
@@ -64,7 +67,7 @@ class AiChatService
             $reply = __('chatbot.error_message');
             $fallback = true;
             $status = AiChatStatus::Failed;
-            $error = Str::limit(class_basename($exception).': '.$exception->getMessage(), 250);
+            $error = Str::limit(class_basename($exception) . ': ' . $exception->getMessage(), 250);
         }
 
         AiChatLog::query()->create([
@@ -94,6 +97,22 @@ class AiChatService
     }
 
     /**
+     * Translate a chat message, returning null when the provider is unavailable.
+     */
+    public function translate(string $text, ChatLanguage $target): ?string
+    {
+        try {
+            $translation = trim((string) $this->withRetries(fn() => (new ChatTranslator($target))->prompt($text)));
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return null;
+        }
+
+        return $translation === '' ? null : $translation;
+    }
+
+    /**
      * @return array<string, string>
      */
     public function supportContacts(): array
@@ -102,6 +121,24 @@ class AiChatService
             ...array_filter(PlatformSetting::publicContact()),
             'contact_url' => route('contact', absolute: false),
         ];
+    }
+
+    /**
+     * Retry briefly when the provider is overloaded or rate limited.
+     *
+     * @template TResult
+     *
+     * @param  Closure(): TResult  $callback
+     * @return TResult
+     */
+    private function withRetries(Closure $callback): mixed
+    {
+        return retry(
+            max(1, (int) config('ai.chatbot.attempts', 3)),
+            $callback,
+            fn(int $attempt): int => $attempt * 800,
+            fn(Throwable $exception): bool => $exception instanceof FailoverableException,
+        );
     }
 
     private function remember(Request $request, AiChatChannel $channel, string $question, string $reply): void

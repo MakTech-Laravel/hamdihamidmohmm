@@ -3,6 +3,7 @@
 namespace App\Ai\Agents;
 
 use App\Ai\Concerns\ContinuesChatHistory;
+use App\Ai\Concerns\RespondsInChosenLanguage;
 use App\Ai\Tools\GetApplicationInsights;
 use App\Ai\Tools\GetInboxInsights;
 use App\Ai\Tools\GetJobInsights;
@@ -12,6 +13,7 @@ use App\Ai\Tools\ListPricingPlans;
 use App\Ai\Tools\ListTrainingCourses;
 use App\Ai\Tools\SearchJobs;
 use App\Ai\Tools\SearchUsers;
+use App\Enums\ChatLanguage;
 use App\Models\User;
 use App\Services\Ai\AiChatService;
 use Laravel\Ai\Attributes\MaxSteps;
@@ -31,7 +33,7 @@ use Stringable;
 #[Timeout(90)]
 class AdminAssistant implements Agent, Conversational, HasTools
 {
-    use ContinuesChatHistory, Promptable;
+    use ContinuesChatHistory, Promptable, RespondsInChosenLanguage;
 
     /**
      * @param  list<array{role: string, content: string}>  $history
@@ -40,6 +42,7 @@ class AdminAssistant implements Agent, Conversational, HasTools
         public User $admin,
         public array $history = [],
         public string $locale = 'en',
+        public ChatLanguage $replyLanguage = ChatLanguage::Auto,
     ) {}
 
     /**
@@ -48,7 +51,6 @@ class AdminAssistant implements Agent, Conversational, HasTools
     public function instructions(): Stringable|string
     {
         $marker = AiChatService::SUPPORT_MARKER;
-        $language = $this->locale === 'ar' ? 'Arabic' : 'English';
         $role = $this->admin->primaryRoleName()?->label() ?? 'Admin';
         $superAdminNote = $this->admin->canManageAdmins()
             ? 'This admin is a Super Admin and can manage other admins and roles.'
@@ -60,7 +62,7 @@ class AdminAssistant implements Agent, Conversational, HasTools
         Today is {$this->today()}. {$superAdminNote}
 
         ## How to answer
-        - Reply in the same language as the admin's latest message (English or Arabic). If unclear, reply in {$language}.
+        {$this->languageRule()}
         - Always use the tools for numbers, lists and statuses. Never guess or invent figures. Mention the time the data
           refers to when relevant ("as of today").
         - Present figures clearly: short bullet lists, totals first, then notable items. Keep it under about 180 words
