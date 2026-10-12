@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { type ReactNode, useState } from 'react';
 
+import { AdminAssistantWidget } from '@/components/ai-chat-widget';
 import { Toaster } from '@/components/ui/sonner';
 import { useLocale } from '@/hooks/use-locale';
 import { AdminPortalHeader } from '@/layouts/partials/admin-portal/header';
@@ -15,9 +16,9 @@ export default function AdminPortalLayout({
 }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const { t } = useLocale();
-    const unreadCount = Number(
-        usePage<SharedData>().props.unread_notifications ?? 0,
-    );
+    const { unread_notifications: unreadNotifications, ai_chat: aiChat } =
+        usePage<SharedData>().props;
+    const unreadCount = Number(unreadNotifications ?? 0);
 
     return (
         <div className="flex h-svh overflow-hidden bg-[#f8faff]">
@@ -54,6 +55,7 @@ export default function AdminPortalLayout({
             </div>
 
             <Toaster position="top-right" richColors />
+            {aiChat?.admin_assistant_enabled ? <AdminAssistantWidget /> : null}
         </div>
     );
 }

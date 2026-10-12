@@ -68,6 +68,10 @@ class PlatformSetting extends Model
                 'bank_iban' => '',
                 'bank_instructions' => 'Transfer the package fee to the platform bank account, then upload your payment receipt for admin review.',
             ],
+            'ai' => [
+                'public_chat_enabled' => true,
+                'admin_assistant_enabled' => true,
+            ],
             'experience_filters' => [
                 'ranges' => [
                     ['key' => '0-2', 'label' => '0-2 years', 'min' => 0, 'max' => 2, 'enabled' => true],
@@ -115,6 +119,21 @@ class PlatformSetting extends Model
             'support_email' => self::nullableString($general['support_email'] ?? null),
             'contact_email' => self::nullableString($general['contact_email'] ?? null),
             'company_address' => self::nullableString($general['company_address'] ?? null),
+        ];
+    }
+
+    /**
+     * AI chatbot availability switches managed from the admin AI Assistant page.
+     *
+     * @return array{public_chat_enabled: bool, admin_assistant_enabled: bool}
+     */
+    public static function aiAssistant(): array
+    {
+        $ai = self::grouped()['ai'] ?? [];
+
+        return [
+            'public_chat_enabled' => filter_var($ai['public_chat_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            'admin_assistant_enabled' => filter_var($ai['admin_assistant_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN),
         ];
     }
 

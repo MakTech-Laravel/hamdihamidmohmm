@@ -127,6 +127,12 @@ const navItems: NavItem[] = [
         badgeKey: 'contact_messages',
     },
     {
+        titleKey: 'admin.nav.ai_assistant',
+        href: '/admin/ai-assistant',
+        icon: '/images/admin/nav-reports.svg',
+        match: '/admin/ai-assistant',
+    },
+    {
         titleKey: 'admin.nav.settings',
         href: '/admin/settings',
         icon: '/images/admin/nav-settings.svg',
@@ -141,7 +147,8 @@ const navItems: NavItem[] = [
     },
 ];
 
-const formatBadge = (count: number): string => (count > 99 ? '99+' : String(count));
+const formatBadge = (count: number): string =>
+    count > 99 ? '99+' : String(count);
 
 export function AdminPortalSidebar({ className }: { className?: string }) {
     const page = usePage<SharedData>();

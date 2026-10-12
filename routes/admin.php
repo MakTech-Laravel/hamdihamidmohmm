@@ -4,6 +4,7 @@ use App\Enums\RoleName;
 use App\Http\Controllers\Backend\Admin\AdminDashboardController;
 use App\Http\Controllers\Backend\Admin\AdminManagementController;
 use App\Http\Controllers\Backend\Admin\AdminNotificationController;
+use App\Http\Controllers\Backend\Admin\AiAssistantController;
 use App\Http\Controllers\Backend\Admin\ApplicationMonitoringController;
 use App\Http\Controllers\Backend\Admin\ContactMessageController;
 use App\Http\Controllers\Backend\Admin\ContentManagementController;
@@ -145,6 +146,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/contact-messages/read-all', [ContactMessageController::class, 'markAllRead'])->name('contact-messages.read-all');
         Route::post('/contact-messages/{contactMessage}/read', [ContactMessageController::class, 'markRead'])->name('contact-messages.read');
         Route::delete('/contact-messages/{contactMessage}', [ContactMessageController::class, 'destroy'])->name('contact-messages.destroy');
+
+        Route::get('/ai-assistant', [AiAssistantController::class, 'index'])->name('ai-assistant.index');
+        Route::put('/ai-assistant/settings', [AiAssistantController::class, 'updateSettings'])->name('ai-assistant.settings.update');
+        Route::get('/ai-assistant/messages', [AiAssistantController::class, 'messages'])->name('ai-assistant.messages.index');
+        Route::post('/ai-assistant/messages', [AiAssistantController::class, 'send'])->middleware('throttle:ai-admin-chat')->name('ai-assistant.messages.store');
+        Route::delete('/ai-assistant/messages', [AiAssistantController::class, 'clear'])->name('ai-assistant.messages.destroy');
 
         Route::get('/settings', [PlatformSettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [PlatformSettingController::class, 'update'])->name('settings.update');

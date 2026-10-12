@@ -7,9 +7,13 @@ use App\Models\JobPost;
 use App\Support\MailBranding;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -45,6 +49,32 @@ class AppServiceProvider extends ServiceProvider
         View::composer('mail.partials.footer', function (ViewInstance $view): void {
             $view->with(MailBranding::footer());
         });
+
+        $this->configureChatRateLimits();
+    }
+
+    protected function configureChatRateLimits(): void
+    {
+        $tooManyMessages = fn (): JsonResponse => response()->json([
+            'message' => __('chatbot.rate_limited'),
+        ], 429);
+
+        RateLimiter::for('ai-chat', function (Request $request) use ($tooManyMessages): array {
+            $key = $request->user()?->id ?? $request->ip();
+
+            return [
+                Limit::perMinute((int) config('ai.chatbot.public_per_minute', 8))
+                    ->by('ai-chat-minute:'.$key)
+                    ->response($tooManyMessages),
+                Limit::perDay((int) config('ai.chatbot.public_per_day', 120))
+                    ->by('ai-chat-day:'.$key)
+                    ->response($tooManyMessages),
+            ];
+        });
+
+        RateLimiter::for('ai-admin-chat', fn (Request $request): Limit => Limit::perMinute((int) config('ai.chatbot.admin_per_minute', 20))
+            ->by('ai-admin-chat:'.($request->user()?->id ?? $request->ip()))
+            ->response($tooManyMessages));
     }
 
     protected function configureDefaults(): void

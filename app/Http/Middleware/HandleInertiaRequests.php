@@ -96,6 +96,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'platform_social' => fn () => PlatformSetting::grouped()['social'] ?? [],
             'platform_contact' => fn () => PlatformSetting::publicContact(),
+            'ai_chat' => fn () => PlatformSetting::aiAssistant(),
         ];
     }
 

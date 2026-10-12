@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { type ReactNode, useState } from 'react';
 
+import { PublicChatWidget } from '@/components/ai-chat-widget';
 import { Toaster } from '@/components/ui/sonner';
 import { JobSeekerHeader } from '@/layouts/partials/job-seeker/header';
 import { JobSeekerSidebar } from '@/layouts/partials/job-seeker/sidebar';
@@ -18,9 +19,9 @@ export default function JobSeekerLayout({
     unreadCount,
 }: JobSeekerLayoutProps) {
     const [collapsed, setCollapsed] = useState(false);
-    const sharedUnread = Number(
-        usePage<SharedData>().props.unread_notifications ?? 0,
-    );
+    const { unread_notifications: unreadNotifications, ai_chat: aiChat } =
+        usePage<SharedData>().props;
+    const sharedUnread = Number(unreadNotifications ?? 0);
 
     return (
         <div className="flex h-svh overflow-hidden bg-[#f1f5f9]">
@@ -40,6 +41,7 @@ export default function JobSeekerLayout({
                 </main>
             </div>
             <Toaster position="top-right" richColors />
+            {aiChat?.public_chat_enabled ? <PublicChatWidget /> : null}
         </div>
     );
 }

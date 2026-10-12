@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\RegisterRoleController;
+use App\Http\Controllers\Frontend\ChatbotController;
 use App\Http\Controllers\Frontend\ContactController;
 use App\Http\Controllers\Frontend\FrontendController;
 use App\Http\Controllers\Frontend\TrainingRegistrationController;
@@ -25,6 +26,10 @@ Route::get('/contact', [FrontendController::class, 'contact'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 Route::post('/locale', LocaleController::class)->name('locale.update');
+
+Route::get('/chatbot/messages', [ChatbotController::class, 'index'])->name('chatbot.messages.index');
+Route::post('/chatbot/messages', [ChatbotController::class, 'store'])->middleware('throttle:ai-chat')->name('chatbot.messages.store');
+Route::delete('/chatbot/messages', [ChatbotController::class, 'destroy'])->name('chatbot.messages.destroy');
 
 Route::middleware('guest')->group(function () {
     Route::get('/register/{role}', RegisterRoleController::class)

@@ -78,6 +78,10 @@ export interface SharedData {
         contact_email?: string | null;
         company_address?: string | null;
     };
+    ai_chat?: {
+        public_chat_enabled: boolean;
+        admin_assistant_enabled: boolean;
+    };
     [key: string]: unknown;
 }
 
