@@ -152,6 +152,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/ai-assistant/messages', [AiAssistantController::class, 'messages'])->name('ai-assistant.messages.index');
         Route::post('/ai-assistant/messages', [AiAssistantController::class, 'send'])->middleware('throttle:ai-admin-chat')->name('ai-assistant.messages.store');
         Route::delete('/ai-assistant/messages', [AiAssistantController::class, 'clear'])->name('ai-assistant.messages.destroy');
+        Route::post('/ai-assistant/translate', [AiAssistantController::class, 'translate'])->middleware('throttle:ai-admin-chat')->name('ai-assistant.translate');
 
         Route::get('/settings', [PlatformSettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [PlatformSettingController::class, 'update'])->name('settings.update');
