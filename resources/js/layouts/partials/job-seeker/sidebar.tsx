@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bell,
+    BellRing,
     Briefcase,
     ChevronLeft,
     LayoutDashboard,
@@ -29,6 +30,12 @@ const navItems = [
         href: '/job-seeker/jobs',
         icon: Search,
         match: '/job-seeker/jobs',
+    },
+    {
+        titleKey: 'job_seeker.nav.alerts',
+        href: '/job-seeker/alerts',
+        icon: BellRing,
+        match: '/job-seeker/alerts',
     },
     {
         titleKey: 'job_seeker.nav.profile',
@@ -126,7 +133,10 @@ export function JobSeekerSidebar({
                             {active && (
                                 <span className="absolute top-1/2 left-0 h-6 w-0.5 -translate-y-1/2 rounded-full bg-[#0057c8]" />
                             )}
-                            <Icon className="size-5 shrink-0" strokeWidth={1.75} />
+                            <Icon
+                                className="size-5 shrink-0"
+                                strokeWidth={1.75}
+                            />
                             {!collapsed && <span>{t(item.titleKey)}</span>}
                         </Link>
                     );

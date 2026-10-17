@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Backend\User;
 
+use App\Enums\Gender;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateJobSeekerProfileRequest extends FormRequest
 {
@@ -13,6 +15,12 @@ class UpdateJobSeekerProfileRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $gender = $this->input('gender');
+
+        if ($gender === '' || $gender === null) {
+            $this->merge(['gender' => null]);
+        }
+
         foreach (['skills', 'availability'] as $field) {
             $value = $this->input($field);
 
@@ -50,6 +58,7 @@ class UpdateJobSeekerProfileRequest extends FormRequest
             'location' => ['nullable', 'string', 'max:255'],
             'headline' => ['nullable', 'string', 'max:255'],
             'current_title' => ['nullable', 'string', 'max:255'],
+            'gender' => ['nullable', Rule::enum(Gender::class)],
             'experience_years' => ['nullable', 'string', 'max:50'],
             'bio' => ['nullable', 'string'],
             'linkedin_url' => ['nullable', 'string', 'max:255'],

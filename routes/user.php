@@ -9,6 +9,7 @@ use App\Http\Controllers\Backend\User\EmployerPortalPageController;
 use App\Http\Controllers\Backend\User\EmployerProfileController;
 use App\Http\Controllers\Backend\User\JobSeekerApplicationsController;
 use App\Http\Controllers\Backend\User\JobSeekerDashboardController;
+use App\Http\Controllers\Backend\User\JobSeekerJobAlertController;
 use App\Http\Controllers\Backend\User\JobSeekerJobsController;
 use App\Http\Controllers\Backend\User\JobSeekerNotificationsController;
 use App\Http\Controllers\Backend\User\JobSeekerProfileController;
@@ -20,9 +21,13 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
 
-    Route::middleware('role:' . RoleName::JobSeeker->value)->prefix('job-seeker')->name('job-seeker.')->group(function () {
+    Route::middleware('role:'.RoleName::JobSeeker->value)->prefix('job-seeker')->name('job-seeker.')->group(function () {
         Route::get('/dashboard', JobSeekerDashboardController::class)->name('dashboard');
         Route::get('/jobs', JobSeekerJobsController::class)->name('jobs');
+        Route::get('/alerts', [JobSeekerJobAlertController::class, 'index'])->name('alerts.index');
+        Route::post('/alerts', [JobSeekerJobAlertController::class, 'store'])->name('alerts.store');
+        Route::put('/alerts/{alert}', [JobSeekerJobAlertController::class, 'update'])->name('alerts.update');
+        Route::delete('/alerts/{alert}', [JobSeekerJobAlertController::class, 'destroy'])->name('alerts.destroy');
         Route::get('/profile', [JobSeekerProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [JobSeekerProfileController::class, 'update'])->name('profile.update');
         Route::post('/profile/photo', [JobSeekerProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
@@ -57,9 +62,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/settings/sessions', [JobSeekerSettingsController::class, 'destroyOtherSessions'])->name('settings.sessions.destroy');
     });
 
-    Route::middleware('role:' . RoleName::JobSeeker->value)->post('/jobs/{jobPost}/apply', [JobSeekerApplicationsController::class, 'store'])->name('jobs.apply');
+    Route::middleware('role:'.RoleName::JobSeeker->value)->post('/jobs/{jobPost}/apply', [JobSeekerApplicationsController::class, 'store'])->name('jobs.apply');
 
-    Route::middleware(['role:' . RoleName::Employer->value, 'employer.approved'])->prefix('employer')->name('employer.')->group(function () {
+    Route::middleware(['role:'.RoleName::Employer->value, 'employer.approved'])->prefix('employer')->name('employer.')->group(function () {
         Route::get('/dashboard', EmployerDashboardController::class)->name('dashboard');
         Route::get('/profile', [EmployerProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [EmployerProfileController::class, 'update'])->name('profile.update');

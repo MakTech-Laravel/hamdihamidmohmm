@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\Gender;
 use App\Models\JobApplication;
 use App\Models\JobSeekerProfile;
 use App\Models\User;
@@ -15,6 +16,8 @@ class ApplicantProfilePreview
      *     title: string,
      *     headline: string|null,
      *     current_title: string|null,
+     *     gender: string|null,
+     *     gender_label: string|null,
      *     experience_years: string,
      *     experience_years_value: int|null,
      *     email: string,
@@ -58,6 +61,8 @@ class ApplicantProfilePreview
             'title' => self::displayTitle($profile),
             'headline' => self::nullableString($profile?->headline),
             'current_title' => self::nullableString($profile?->current_title),
+            'gender' => $profile?->gender instanceof Gender ? $profile->gender->value : null,
+            'gender_label' => $profile?->gender instanceof Gender ? $profile->gender->label() : null,
             'experience_years' => $experienceYears,
             'experience_years_value' => self::experienceYearsValue($profile),
             'email' => filled($seeker->email) ? (string) $seeker->email : '—',

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\JobPostStatus;
+use App\Support\JobAlertMatcher;
 use Database\Factories\JobPostFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -67,6 +68,14 @@ class JobPost extends Model
 
         static::deleting(function (JobPost $job): void {
             $job->deleteLogoFile();
+        });
+
+        static::saved(function (JobPost $job): void {
+            if (! $job->wasChanged('status') || $job->status !== JobPostStatus::Active) {
+                return;
+            }
+
+            JobAlertMatcher::notifyFor($job);
         });
     }
 

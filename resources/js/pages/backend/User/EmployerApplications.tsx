@@ -30,6 +30,8 @@ type ApplicationRow = {
     cover_letter: string | null;
     headline: string | null;
     current_title: string | null;
+    gender: string | null;
+    gender_label: string | null;
     industry: string | null;
     expected_salary: string | null;
     availability: string[];
@@ -73,8 +75,10 @@ type Props = {
         job_title?: string | null;
         experience?: string;
         experience_sort?: string;
+        gender?: string;
     };
     experience_options?: ExperienceOption[];
+    gender_options?: Array<{ value: string; label: string }>;
     stats: {
         total: number;
         new: number;
@@ -115,6 +119,7 @@ function toPreview(
         phone: row.phone || '—',
         location: row.preview_location || row.location || '—',
         current_title: row.current_title,
+        gender: row.gender_label || row.gender,
         experience_years: row.experience_years,
         industry: row.industry,
         expected_salary: row.expected_salary,
@@ -173,6 +178,7 @@ export default function EmployerApplications({
     applications,
     filters,
     experience_options = [],
+    gender_options = [],
     stats,
     statuses,
 }: Props) {
@@ -180,6 +186,7 @@ export default function EmployerApplications({
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
     const [experience, setExperience] = useState(filters.experience ?? '');
+    const [gender, setGender] = useState(filters.gender ?? '');
     const [experienceSort, setExperienceSort] = useState(
         filters.experience_sort ?? '',
     );
@@ -224,6 +231,7 @@ export default function EmployerApplications({
         status?: string;
         experience?: string;
         experience_sort?: string;
+        gender?: string;
         search?: string;
     }): void => {
         router.get(
@@ -235,6 +243,7 @@ export default function EmployerApplications({
                     experience_sort:
                         (overrides.experience_sort ?? experienceSort) ||
                         undefined,
+                    gender: (overrides.gender ?? gender) || undefined,
                     search: (overrides.search ?? search) || undefined,
                     job_id: filters.job_id || undefined,
                 },
@@ -252,6 +261,11 @@ export default function EmployerApplications({
     const setExperienceFilter = (value: string): void => {
         setExperience(value);
         applyFilters({ experience: value });
+    };
+
+    const setGenderFilter = (value: string): void => {
+        setGender(value);
+        applyFilters({ gender: value });
     };
 
     const setExperienceSortFilter = (value: string): void => {
@@ -352,6 +366,32 @@ export default function EmployerApplications({
                                 {statuses.map((item) => (
                                     <option key={item.value} value={item.value}>
                                         {item.label}
+                                    </option>
+                                ))}
+                            </NativeSelect>
+                            <NativeSelect
+                                variant="filter"
+                                wrapperClassName="w-[160px] shrink-0"
+                                className="border-[#e8d5e8]"
+                                value={gender}
+                                onChange={(event) =>
+                                    setGenderFilter(event.target.value)
+                                }
+                                aria-label={t(
+                                    'employer.applications.gender_filter',
+                                )}
+                            >
+                                <option value="">
+                                    {t('employer.applications.gender_all')}
+                                </option>
+                                {gender_options.map((option) => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {t(
+                                            `employer.applications.gender_${option.value}`,
+                                        )}
                                     </option>
                                 ))}
                             </NativeSelect>

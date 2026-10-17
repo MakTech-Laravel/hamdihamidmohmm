@@ -45,6 +45,7 @@ export type ApplicationPreview = {
     phone: string;
     location: string;
     current_title: string | null;
+    gender?: string | null;
     experience_years: string | null;
     industry: string | null;
     expected_salary: string | null;
@@ -196,6 +197,7 @@ function DrawerBody({
                                 t('employer.drawer.current_title'),
                                 preview.current_title,
                             ],
+                            [t('employer.drawer.gender'), preview.gender],
                             [
                                 t('employer.drawer.experience'),
                                 preview.experience_years,

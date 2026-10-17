@@ -431,6 +431,14 @@ class User extends Authenticatable
         return $this->hasMany(JobSeekerCv::class);
     }
 
+    /**
+     * @return HasMany<JobAlert, $this>
+     */
+    public function jobAlerts(): HasMany
+    {
+        return $this->hasMany(JobAlert::class);
+    }
+
     public function syncDefaultResumeFromCvs(): void
     {
         $default = $this->jobSeekerCvs()
