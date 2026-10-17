@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Gender;
 use App\Models\JobSeekerProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,6 +21,7 @@ class JobSeekerProfileFactory extends Factory
             'user_id' => User::factory()->jobSeeker(),
             'headline' => fake()->jobTitle(),
             'current_title' => fake()->jobTitle(),
+            'gender' => fake()->randomElement(Gender::cases()),
             'experience_years' => (string) fake()->numberBetween(1, 12),
             'bio' => fake()->paragraph(),
             'linkedin_url' => 'https://linkedin.com/in/'.fake()->userName(),

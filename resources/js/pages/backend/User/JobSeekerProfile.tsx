@@ -99,6 +99,8 @@ type Profile = {
     photo_url: string | null;
     headline: string | null;
     current_title: string | null;
+    gender: string | null;
+    gender_label: string | null;
     experience_years: string | null;
     experience_years_label: string;
     bio: string | null;
@@ -521,6 +523,7 @@ function profileToFormData(profile: Profile) {
         location: profile.location ?? '',
         headline: profile.headline ?? '',
         current_title: profile.current_title ?? '',
+        gender: profile.gender ?? '',
         experience_years: profile.experience_years ?? '',
         bio: profile.bio ?? '',
         linkedin_url: profile.linkedin_url ?? '',
@@ -690,6 +693,7 @@ function emptyProfileFormData(): ProfileFormData {
         location: '',
         headline: '',
         current_title: '',
+        gender: '',
         experience_years: '',
         bio: '',
         linkedin_url: '',
@@ -765,6 +769,7 @@ function buildProfilePayload(data: ProfileFormData) {
         location: data.location,
         headline: data.headline,
         current_title: data.current_title,
+        gender: data.gender || null,
         experience_years: data.experience_years,
         bio: data.bio,
         linkedin_url: data.linkedin_url,
@@ -789,7 +794,13 @@ function draftFormData(draft: ProfileDraft): ProfileFormData {
     return data;
 }
 
-export default function JobSeekerProfile({ profile }: { profile: Profile }) {
+export default function JobSeekerProfile({
+    profile,
+    gender_options = [],
+}: {
+    profile: Profile;
+    gender_options?: Array<{ value: string; label: string }>;
+}) {
     const { flash, auth } = usePage<SharedData>().props;
     const { t } = useLocale();
     const [editing, setEditing] = useState<SectionId | null>(null);
@@ -1181,6 +1192,44 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                                 required
                                 error={form.errors.phone}
                             />
+                            <div>
+                                <p className="pb-1.5 text-xs font-semibold text-[#4a5565]">
+                                    {t('job_seeker.profile.gender')}
+                                </p>
+                                <NativeSelect
+                                    value={form.data.gender}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'gender',
+                                            event.target.value,
+                                        )
+                                    }
+                                    aria-label={t('job_seeker.profile.gender')}
+                                    className={cn(
+                                        form.errors.gender &&
+                                            'border-red-400 focus:border-red-500',
+                                    )}
+                                >
+                                    <option value="">
+                                        {t('job_seeker.profile.gender_select')}
+                                    </option>
+                                    {gender_options.map((option) => (
+                                        <option
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {t(
+                                                `job_seeker.profile.gender_${option.value}`,
+                                            )}
+                                        </option>
+                                    ))}
+                                </NativeSelect>
+                                {form.errors.gender ? (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {form.errors.gender}
+                                    </p>
+                                ) : null}
+                            </div>
                             <Field
                                 label={t('job_seeker.profile.linkedin')}
                                 value={form.data.linkedin_url}
@@ -1245,6 +1294,16 @@ export default function JobSeekerProfile({ profile }: { profile: Profile }) {
                             <ReadOnlyField
                                 label={t('job_seeker.profile.phone')}
                                 value={profile.phone}
+                            />
+                            <ReadOnlyField
+                                label={t('job_seeker.profile.gender')}
+                                value={
+                                    profile.gender
+                                        ? t(
+                                              `job_seeker.profile.gender_${profile.gender}`,
+                                          )
+                                        : null
+                                }
                             />
                             <ReadOnlyField
                                 label={t('job_seeker.profile.linkedin')}

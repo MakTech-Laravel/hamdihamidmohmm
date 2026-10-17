@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Backend\User;
 
+use App\Enums\Gender;
 use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\UpdateEmployerApplicationRequest;
@@ -30,6 +31,7 @@ class EmployerApplicationController extends Controller
         $jobId = $request->integer('job_id');
         $experience = $request->string('experience')->toString();
         $experienceSort = $request->string('experience_sort')->toString();
+        $gender = Gender::tryFrom($request->string('gender')->toString());
 
         $appsQuery = JobApplication::query()
             ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id))
@@ -51,6 +53,12 @@ class EmployerApplicationController extends Controller
             $appsQuery->whereHas('jobSeeker', function ($query) use ($search): void {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($gender instanceof Gender) {
+            $appsQuery->whereHas('jobSeeker.jobSeekerProfile', function ($query) use ($gender): void {
+                $query->where('gender', $gender->value);
             });
         }
 
@@ -89,8 +97,10 @@ class EmployerApplicationController extends Controller
                 'job_title' => $jobTitle,
                 'experience' => $experience,
                 'experience_sort' => in_array($experienceSort, ['asc', 'desc'], true) ? $experienceSort : '',
+                'gender' => $gender?->value ?? '',
             ],
             'experience_options' => ExperienceFilterOptions::enabled(),
+            'gender_options' => Gender::options(),
             'stats' => [
                 'total' => (clone $allForStats)->count(),
                 'new' => (clone $allForStats)->where('created_at', '>=', now()->startOfWeek())->count(),
@@ -224,6 +234,8 @@ class EmployerApplicationController extends Controller
                 'title' => 'Applicant',
                 'headline' => null,
                 'current_title' => null,
+                'gender' => null,
+                'gender_label' => null,
                 'experience_years' => '—',
                 'email' => '—',
                 'phone' => '—',
