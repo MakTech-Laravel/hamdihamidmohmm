@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Gender;
 use App\Enums\RoleName;
 use App\Enums\UserRole;
 use App\Models\User;
@@ -19,6 +20,7 @@ test('registration assigns spatie roles for job seekers and employers', function
         'name' => 'Amina Seeker',
         'email' => 'seeker-role@example.com',
         'phone' => '+249900000016',
+        'gender' => Gender::Female->value,
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::JobSeeker->value,

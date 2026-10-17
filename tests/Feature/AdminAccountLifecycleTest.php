@@ -3,6 +3,7 @@
 use App\Enums\ActivityAction;
 use App\Enums\EmployerAccountStatus;
 use App\Enums\EmployerVerificationStatus;
+use App\Enums\Gender;
 use App\Enums\UserRole;
 use App\Models\ActivityLog;
 use App\Models\User;
@@ -89,6 +90,7 @@ test('admins can delete a job seeker account and free the email', function () {
         'name' => 'Returning Seeker',
         'email' => 'reuse-seeker@example.com',
         'phone' => '+249900000077',
+        'gender' => Gender::Male->value,
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::JobSeeker->value,
@@ -130,6 +132,7 @@ test('registration requires a phone number and stores it', function () {
     $this->post(route('register.store'), [
         'name' => 'Phone Seeker',
         'email' => 'phone-seeker@example.com',
+        'gender' => Gender::Female->value,
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::JobSeeker->value,
@@ -140,6 +143,7 @@ test('registration requires a phone number and stores it', function () {
         'name' => 'Phone Seeker',
         'email' => 'phone-seeker@example.com',
         'phone' => '+249911223344',
+        'gender' => Gender::Female->value,
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::JobSeeker->value,
