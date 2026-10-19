@@ -59,7 +59,7 @@ class JobApplication extends Model
         $current = $this->status ?? JobApplicationStatus::Applied;
         $reached = false;
 
-        if (in_array($current, [JobApplicationStatus::Rejected, JobApplicationStatus::Withdrawn], true)) {
+        if ($current->isOffPipeline()) {
             return [
                 ['label' => 'Applied', 'date' => $this->created_at?->toDateString(), 'state' => 'done'],
                 ['label' => $current->label(), 'date' => $this->updated_at?->toDateString(), 'state' => 'current'],
