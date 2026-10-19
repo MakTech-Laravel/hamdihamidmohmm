@@ -5,21 +5,28 @@ namespace App\Http\Controllers\Backend\User;
 use App\Enums\Gender;
 use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Backend\User\BulkUpdateEmployerApplicationsRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerApplicationRequest;
 use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\User;
 use App\Support\ApplicantDocumentDownloader;
 use App\Support\ApplicantProfilePreview;
+use App\Support\ApplicantQualification;
 use App\Support\ExperienceFilterOptions;
 use App\Support\JobSeekerResume;
 use App\Support\PortalNotifier;
+use App\Support\RecruitmentReport;
+use App\Support\XlsxWriter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EmployerApplicationController extends Controller
@@ -30,7 +37,8 @@ class EmployerApplicationController extends Controller
         $search = $request->string('search')->toString();
         $jobId = $request->integer('job_id');
         $experience = $request->string('experience')->toString();
-        $experienceSort = $request->string('experience_sort')->toString();
+        $sort = $this->resolveSort($request);
+        $direction = $this->resolveDirection($request);
         $gender = Gender::tryFrom($request->string('gender')->toString());
 
         $appsQuery = JobApplication::query()
@@ -64,13 +72,15 @@ class EmployerApplicationController extends Controller
 
         ExperienceFilterOptions::applyRange($appsQuery, $experience);
 
-        if (in_array($experienceSort, ['asc', 'desc'], true)) {
-            ExperienceFilterOptions::applySort($appsQuery, $experienceSort);
-        } else {
-            $appsQuery->latest();
+        ExperienceFilterOptions::applySort($appsQuery, $sort === 'experience' ? $direction : 'desc');
+
+        $sortedApplications = $appsQuery->get();
+
+        if ($sort !== 'experience') {
+            $sortedApplications = $this->sortApplications($sortedApplications, $sort, $direction);
         }
 
-        $applications = $appsQuery->get()->map(fn (JobApplication $application) => $this->row($application));
+        $applications = $sortedApplications->map(fn (JobApplication $application) => $this->row($application));
 
         $allForStats = JobApplication::query()
             ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id));
@@ -96,8 +106,10 @@ class EmployerApplicationController extends Controller
                 'job_id' => $jobId > 0 ? $jobId : null,
                 'job_title' => $jobTitle,
                 'experience' => $experience,
-                'experience_sort' => in_array($experienceSort, ['asc', 'desc'], true) ? $experienceSort : '',
+                'sort' => $sort,
+                'direction' => $direction,
                 'gender' => $gender?->value ?? '',
+                'shortlist' => $request->boolean('shortlist'),
             ],
             'experience_options' => ExperienceFilterOptions::enabled(),
             'gender_options' => Gender::options(),
@@ -107,6 +119,8 @@ class EmployerApplicationController extends Controller
                 'shortlisted' => (clone $allForStats)->where('status', JobApplicationStatus::Shortlisted)->count(),
                 'interview' => (clone $allForStats)->where('status', JobApplicationStatus::Interview)->count(),
             ],
+            'status_counts' => $this->statusCounts($allForStats),
+            'gender_stats' => $this->genderStats($allForStats),
             'statuses' => collect(JobApplicationStatus::cases())
                 ->reject(fn (JobApplicationStatus $item) => $item === JobApplicationStatus::Withdrawn)
                 ->map(fn (JobApplicationStatus $item) => [
@@ -119,28 +133,52 @@ class EmployerApplicationController extends Controller
 
     public function update(UpdateEmployerApplicationRequest $request, JobApplication $application): RedirectResponse
     {
-        $status = JobApplicationStatus::from($request->validated('status'));
-
-        $application->forceFill([
-            'status' => $status,
-        ])->save();
-
-        $application->loadMissing(['jobSeeker', 'jobPost.employer']);
-
-        if ($application->jobSeeker instanceof User) {
-            $company = $application->jobPost?->employer?->company_name
-                ?: $application->jobPost?->employer?->name
-                ?: 'the employer';
-
-            PortalNotifier::applicationStatusChanged(
-                $application->jobSeeker,
-                (string) ($application->jobPost?->title ?? 'your application'),
-                $status,
-                $company,
-            );
-        }
+        $this->applyStatus($application, JobApplicationStatus::from($request->validated('status')));
 
         return back()->with('success', 'Application updated.');
+    }
+
+    public function bulkUpdate(BulkUpdateEmployerApplicationsRequest $request): RedirectResponse
+    {
+        $status = JobApplicationStatus::from($request->validated('status'));
+
+        $applications = JobApplication::query()
+            ->whereIn('id', $request->validated('ids'))
+            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id))
+            ->get();
+
+        foreach ($applications as $application) {
+            $this->applyStatus($application, $status);
+        }
+
+        return back()->with('success', 'Applications updated.');
+    }
+
+    public function export(Request $request): HttpResponse
+    {
+        abort_unless($request->user()?->isEmployer() === true, 403);
+
+        $jobId = $request->integer('job_id');
+
+        $applications = JobApplication::query()
+            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()->id))
+            ->when($jobId > 0, fn ($query) => $query->where('job_post_id', $jobId))
+            ->with(['jobSeeker.jobSeekerProfile', 'jobPost:id,title,expires_at'])
+            ->latest()
+            ->get();
+
+        abort_if($jobId > 0 && $applications->isEmpty() && ! $this->employerOwnsJob($request, $jobId), 404);
+
+        $suffix = $jobId > 0 ? 'JOB-'.str_pad((string) $jobId, 5, '0', STR_PAD_LEFT) : 'all-jobs';
+
+        return response(
+            XlsxWriter::build('Recruitment Report', RecruitmentReport::headings(), RecruitmentReport::rows($applications)),
+            200,
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="recruitment-report-'.$suffix.'-'.now()->toDateString().'.xlsx"',
+            ],
+        );
     }
 
     public function downloadResume(Request $request, JobApplication $application): StreamedResponse
@@ -210,6 +248,130 @@ class EmployerApplicationController extends Controller
         );
     }
 
+    private function applyStatus(JobApplication $application, JobApplicationStatus $status): void
+    {
+        $application->forceFill([
+            'status' => $status,
+        ])->save();
+
+        $application->loadMissing(['jobSeeker', 'jobPost.employer']);
+
+        if ($application->jobSeeker instanceof User) {
+            $company = $application->jobPost?->employer?->company_name
+                ?: $application->jobPost?->employer?->name
+                ?: 'the employer';
+
+            PortalNotifier::applicationStatusChanged(
+                $application->jobSeeker,
+                (string) ($application->jobPost?->title ?? 'your application'),
+                $status,
+                $company,
+            );
+        }
+    }
+
+    private function employerOwnsJob(Request $request, int $jobId): bool
+    {
+        return JobPost::query()
+            ->where('employer_id', $request->user()?->id)
+            ->whereKey($jobId)
+            ->exists();
+    }
+
+    private function resolveSort(Request $request): string
+    {
+        $sort = $request->string('sort')->toString();
+
+        if (in_array($sort, ['experience', 'qualification', 'certificates', 'gender'], true)) {
+            return $sort;
+        }
+
+        return 'experience';
+    }
+
+    private function resolveDirection(Request $request): string
+    {
+        $legacy = $request->string('experience_sort')->toString();
+        $direction = $request->string('direction')->toString();
+
+        if (in_array($direction, ['asc', 'desc'], true)) {
+            return $direction;
+        }
+
+        return in_array($legacy, ['asc', 'desc'], true) ? $legacy : 'desc';
+    }
+
+    /**
+     * Experience is already ordered in SQL, so this stable sort breaks ties by experience (high to low).
+     *
+     * @param  Collection<int, JobApplication>  $applications
+     * @return Collection<int, JobApplication>
+     */
+    private function sortApplications(Collection $applications, string $sort, string $direction): Collection
+    {
+        $key = fn (JobApplication $application): int => match ($sort) {
+            'qualification' => ApplicantQualification::rank($application->jobSeeker?->jobSeekerProfile),
+            'certificates' => ApplicantQualification::certificateCount($application->jobSeeker?->jobSeekerProfile),
+            default => match ($application->jobSeeker?->jobSeekerProfile?->gender) {
+                Gender::Female => 2,
+                Gender::Male => 1,
+                default => 0,
+            },
+        };
+
+        return $applications
+            ->sortBy($key, SORT_REGULAR, $direction === 'desc')
+            ->values();
+    }
+
+    /**
+     * @param  Builder<JobApplication>  $scope
+     * @return array<string, int>
+     */
+    private function statusCounts(Builder $scope): array
+    {
+        $counts = (clone $scope)
+            ->toBase()
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        return collect(JobApplicationStatus::cases())
+            ->mapWithKeys(fn (JobApplicationStatus $status): array => [
+                $status->value => (int) ($counts[$status->value] ?? 0),
+            ])
+            ->all();
+    }
+
+    /**
+     * @param  Builder<JobApplication>  $scope
+     * @return array{total: int, male: int, female: int, unspecified: int, male_percent: float, female_percent: float}
+     */
+    private function genderStats(Builder $scope): array
+    {
+        $total = (clone $scope)->count();
+
+        $counts = (clone $scope)
+            ->join('job_seeker_profiles', 'job_seeker_profiles.user_id', '=', 'job_applications.job_seeker_id')
+            ->toBase()
+            ->selectRaw('job_seeker_profiles.gender as gender, COUNT(*) as aggregate')
+            ->groupBy('job_seeker_profiles.gender')
+            ->pluck('aggregate', 'gender');
+
+        $male = (int) ($counts[Gender::Male->value] ?? 0);
+        $female = (int) ($counts[Gender::Female->value] ?? 0);
+        $known = $male + $female;
+
+        return [
+            'total' => $total,
+            'male' => $male,
+            'female' => $female,
+            'unspecified' => max($total - $known, 0),
+            'male_percent' => $total > 0 ? round($male / $total * 100, 1) : 0.0,
+            'female_percent' => $total > 0 ? round($female / $total * 100, 1) : 0.0,
+        ];
+    }
+
     private function authorizeEmployerApplication(Request $request, JobApplication $application): void
     {
         abort_unless($request->user()?->isEmployer() === true, 403);
@@ -236,6 +398,9 @@ class EmployerApplicationController extends Controller
                 'current_title' => null,
                 'gender' => null,
                 'gender_label' => null,
+                'nationality' => null,
+                'qualification' => null,
+                'certificate_count' => 0,
                 'experience_years' => '—',
                 'email' => '—',
                 'phone' => '—',
@@ -285,6 +450,8 @@ class EmployerApplicationController extends Controller
 
         return [
             ...$preview,
+            'qualification' => ApplicantQualification::label($seeker->jobSeekerProfile) ?: null,
+            'certificate_count' => ApplicantQualification::certificateCount($seeker->jobSeekerProfile),
             'id' => $application->id,
             'job' => $application->jobPost?->title,
             'job_id' => $application->job_post_id,

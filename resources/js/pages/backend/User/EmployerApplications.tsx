@@ -2,6 +2,8 @@ import { Head, router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
+    bulkUpdate,
+    exportMethod,
     index,
     update,
 } from '@/actions/App/Http/Controllers/Backend/User/EmployerApplicationController';
@@ -32,6 +34,9 @@ type ApplicationRow = {
     current_title: string | null;
     gender: string | null;
     gender_label: string | null;
+    nationality?: string | null;
+    qualification?: string | null;
+    certificate_count?: number;
     industry: string | null;
     expected_salary: string | null;
     availability: string[];
@@ -74,8 +79,19 @@ type Props = {
         job_id?: number | null;
         job_title?: string | null;
         experience?: string;
-        experience_sort?: string;
+        sort?: string;
+        direction?: string;
         gender?: string;
+        shortlist?: boolean;
+    };
+    status_counts?: Record<string, number>;
+    gender_stats?: {
+        total: number;
+        male: number;
+        female: number;
+        unspecified: number;
+        male_percent: number;
+        female_percent: number;
     };
     experience_options?: ExperienceOption[];
     gender_options?: Array<{ value: string; label: string }>;
@@ -90,6 +106,8 @@ type Props = {
 
 const statusTone: Record<string, string> = {
     interview: 'bg-[#fdf4ff] text-[#7e22ce]',
+    longlisted: 'bg-[#f0f9ff] text-[#0369a1]',
+    under_consideration: 'bg-[#fefce8] text-[#a16207]',
     shortlisted: 'bg-[#f0fdf4] text-[#15803d]',
     under_review: 'bg-[#fff7ed] text-[#c2410c]',
     applied: 'bg-[#e6f0fb] text-[#0057c8]',
@@ -179,6 +197,8 @@ export default function EmployerApplications({
     filters,
     experience_options = [],
     gender_options = [],
+    status_counts = {},
+    gender_stats,
     stats,
     statuses,
 }: Props) {
@@ -187,8 +207,11 @@ export default function EmployerApplications({
     const [status, setStatus] = useState(filters.status ?? '');
     const [experience, setExperience] = useState(filters.experience ?? '');
     const [gender, setGender] = useState(filters.gender ?? '');
-    const [experienceSort, setExperienceSort] = useState(
-        filters.experience_sort ?? '',
+    const [sort, setSort] = useState(filters.sort || 'experience');
+    const [direction, setDirection] = useState(filters.direction || 'desc');
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [bulkStatus, setBulkStatus] = useState(
+        filters.shortlist ? 'shortlisted' : '',
     );
     const [viewingId, setViewingId] = useState<number | null>(
         () =>
@@ -230,7 +253,8 @@ export default function EmployerApplications({
     const applyFilters = (overrides: {
         status?: string;
         experience?: string;
-        experience_sort?: string;
+        sort?: string;
+        direction?: string;
         gender?: string;
         search?: string;
     }): void => {
@@ -240,12 +264,12 @@ export default function EmployerApplications({
                     status: (overrides.status ?? status) || undefined,
                     experience:
                         (overrides.experience ?? experience) || undefined,
-                    experience_sort:
-                        (overrides.experience_sort ?? experienceSort) ||
-                        undefined,
+                    sort: overrides.sort ?? sort,
+                    direction: overrides.direction ?? direction,
                     gender: (overrides.gender ?? gender) || undefined,
                     search: (overrides.search ?? search) || undefined,
                     job_id: filters.job_id || undefined,
+                    shortlist: filters.shortlist ? 1 : undefined,
                 },
             }),
             {},
@@ -268,10 +292,50 @@ export default function EmployerApplications({
         applyFilters({ gender: value });
     };
 
-    const setExperienceSortFilter = (value: string): void => {
-        setExperienceSort(value);
-        applyFilters({ experience_sort: value });
+    const setSortFilter = (value: string): void => {
+        setSort(value);
+        applyFilters({ sort: value });
     };
+
+    const setDirectionFilter = (value: string): void => {
+        setDirection(value);
+        applyFilters({ direction: value });
+    };
+
+    const allSelected =
+        filtered.length > 0 &&
+        filtered.every((row) => selectedIds.includes(row.id));
+
+    const toggleAll = (): void => {
+        setSelectedIds(allSelected ? [] : filtered.map((row) => row.id));
+    };
+
+    const toggleRow = (rowId: number): void => {
+        setSelectedIds((current) =>
+            current.includes(rowId)
+                ? current.filter((id) => id !== rowId)
+                : [...current, rowId],
+        );
+    };
+
+    const applyBulkStatus = (): void => {
+        if (selectedIds.length === 0 || bulkStatus === '') {
+            return;
+        }
+
+        router.put(
+            bulkUpdate.url(),
+            { ids: selectedIds, status: bulkStatus },
+            {
+                preserveScroll: true,
+                onSuccess: () => setSelectedIds([]),
+            },
+        );
+    };
+
+    const exportUrl = exportMethod.url({
+        query: { job_id: filters.job_id || undefined },
+    });
 
     const updateStatus = (rowId: number, nextStatus: string): void => {
         router.put(
@@ -286,7 +350,7 @@ export default function EmployerApplications({
             <Head title={t('employer.applications.title')} />
 
             <div className="flex flex-col px-6 py-6">
-                <div className="flex h-[85px] items-center pb-6">
+                <div className="flex min-h-[85px] flex-wrap items-center justify-between gap-3 pb-6">
                     <div>
                         <h1 className="text-2xl leading-9 font-extrabold text-[#050315]">
                             {t('employer.applications.title')}
@@ -299,6 +363,12 @@ export default function EmployerApplications({
                                 : t('employer.applications.subtitle')}
                         </p>
                     </div>
+                    <a
+                        href={exportUrl}
+                        className="inline-flex h-10 cursor-pointer items-center rounded-xl bg-[#0057c8] px-5 text-sm font-semibold text-white"
+                    >
+                        {t('employer.applications.recruitment_report')}
+                    </a>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -325,6 +395,79 @@ export default function EmployerApplications({
                                 {label}
                             </p>
                         </div>
+                    ))}
+                </div>
+
+                {gender_stats && (
+                    <div className="grid grid-cols-1 gap-3 pt-3 sm:grid-cols-2 xl:grid-cols-4">
+                        {[
+                            [
+                                t('employer.applications.gender_stats.total'),
+                                String(gender_stats.total),
+                                '',
+                            ],
+                            [
+                                t('employer.applications.gender_stats.male'),
+                                String(gender_stats.male),
+                                `${gender_stats.male_percent}%`,
+                            ],
+                            [
+                                t('employer.applications.gender_stats.female'),
+                                String(gender_stats.female),
+                                `${gender_stats.female_percent}%`,
+                            ],
+                            [
+                                t('employer.applications.gender_stats.ratio'),
+                                `${gender_stats.male} : ${gender_stats.female}`,
+                                gender_stats.unspecified > 0
+                                    ? t(
+                                          'employer.applications.gender_stats.unspecified',
+                                          { count: gender_stats.unspecified },
+                                      )
+                                    : '',
+                            ],
+                        ].map(([label, value, hint]) => (
+                            <div
+                                key={label}
+                                className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-[#e8d5e8] bg-[#f8faff] px-5 py-3"
+                            >
+                                <p className="text-2xl leading-9 font-extrabold text-[#050315]">
+                                    {value}
+                                </p>
+                                <div>
+                                    <p className="text-[12.8px] leading-[19.2px] font-medium text-[#6b7280]">
+                                        {label}
+                                    </p>
+                                    {hint !== '' && (
+                                        <p className="text-xs font-semibold text-[#0057c8]">
+                                            {hint}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 pt-3">
+                    {statuses.map((item) => (
+                        <button
+                            key={item.value}
+                            type="button"
+                            onClick={() => setStatusFilter(item.value)}
+                            className={cn(
+                                'inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold',
+                                statusTone[item.value] ??
+                                    'bg-[#f8faff] text-[#0057c8]',
+                                status === item.value &&
+                                    'ring-2 ring-[#0057c8]/40',
+                            )}
+                        >
+                            {item.label}
+                            <span className="rounded-full bg-white/70 px-1.5">
+                                {status_counts[item.value] ?? 0}
+                            </span>
+                        </button>
                     ))}
                 </div>
 
@@ -425,34 +568,107 @@ export default function EmployerApplications({
                                 variant="filter"
                                 wrapperClassName="w-[200px] shrink-0"
                                 className="border-[#e8d5e8]"
-                                value={experienceSort}
+                                value={sort}
                                 onChange={(event) =>
-                                    setExperienceSortFilter(
-                                        event.target.value,
-                                    )
+                                    setSortFilter(event.target.value)
+                                }
+                                aria-label={t('employer.applications.sort_by')}
+                            >
+                                <option value="experience">
+                                    {t('employer.applications.sort.experience')}
+                                </option>
+                                <option value="certificates">
+                                    {t(
+                                        'employer.applications.sort.certificates',
+                                    )}
+                                </option>
+                                <option value="qualification">
+                                    {t(
+                                        'employer.applications.sort.qualification',
+                                    )}
+                                </option>
+                                <option value="gender">
+                                    {t('employer.applications.sort.gender')}
+                                </option>
+                            </NativeSelect>
+                            <NativeSelect
+                                variant="filter"
+                                wrapperClassName="w-[160px] shrink-0"
+                                className="border-[#e8d5e8]"
+                                value={direction}
+                                onChange={(event) =>
+                                    setDirectionFilter(event.target.value)
                                 }
                                 aria-label={t(
-                                    'employer.applications.experience_sort',
+                                    'employer.applications.sort_direction',
                                 )}
                             >
-                                <option value="">
-                                    {t('employer.applications.sort_newest')}
+                                <option value="desc">
+                                    {t('employer.applications.sort_desc')}
                                 </option>
                                 <option value="asc">
-                                    {t('employer.applications.sort_exp_asc')}
-                                </option>
-                                <option value="desc">
-                                    {t(
-                                        'employer.applications.sort_exp_desc',
-                                    )}
+                                    {t('employer.applications.sort_asc')}
                                 </option>
                             </NativeSelect>
                         </div>
 
+                        {selectedIds.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-3 border-b border-[#e8d5e8] bg-[#f8faff] px-4 py-3">
+                                <p className="text-sm font-semibold text-[#050315]">
+                                    {t('employer.applications.selected', {
+                                        count: selectedIds.length,
+                                    })}
+                                </p>
+                                <NativeSelect
+                                    variant="filter"
+                                    wrapperClassName="w-[200px] shrink-0"
+                                    className="border-[#e8d5e8]"
+                                    value={bulkStatus}
+                                    onChange={(event) =>
+                                        setBulkStatus(event.target.value)
+                                    }
+                                    aria-label={t(
+                                        'employer.applications.bulk_status',
+                                    )}
+                                >
+                                    <option value="">
+                                        {t('employer.applications.bulk_status')}
+                                    </option>
+                                    {statuses.map((item) => (
+                                        <option
+                                            key={item.value}
+                                            value={item.value}
+                                        >
+                                            {item.label}
+                                        </option>
+                                    ))}
+                                </NativeSelect>
+                                <button
+                                    type="button"
+                                    disabled={bulkStatus === ''}
+                                    onClick={applyBulkStatus}
+                                    className="inline-flex h-[34px] cursor-pointer items-center rounded-lg bg-[#0057c8] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {t('employer.applications.bulk_apply')}
+                                </button>
+                            </div>
+                        )}
+
                         <div className="overflow-x-auto">
-                            <table className="w-full min-w-[1080px] text-left">
+                            <table className="w-full min-w-[1280px] text-left">
                                 <thead>
                                     <tr className="border-b border-[#d1f6ff] bg-white">
+                                        <th className="w-10 px-4 py-3">
+                                            <input
+                                                type="checkbox"
+                                                checked={allSelected}
+                                                onChange={toggleAll}
+                                                aria-label={t(
+                                                    'employer.applications.select_all',
+                                                )}
+                                                className="size-4 cursor-pointer"
+                                            />
+                                        </th>
                                         {[
                                             t(
                                                 'employer.applications.col.candidate',
@@ -462,6 +678,12 @@ export default function EmployerApplications({
                                             t('employer.applications.col.date'),
                                             t(
                                                 'employer.applications.col.experience',
+                                            ),
+                                            t(
+                                                'employer.applications.col.qualification',
+                                            ),
+                                            t(
+                                                'employer.applications.col.certificates',
                                             ),
                                             t(
                                                 'employer.applications.col.location',
@@ -483,6 +705,19 @@ export default function EmployerApplications({
                                             key={row.id}
                                             className="border-b border-[#f3e8f3] last:border-b-0"
                                         >
+                                            <td className="px-4 py-[13px]">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(
+                                                        row.id,
+                                                    )}
+                                                    onChange={() =>
+                                                        toggleRow(row.id)
+                                                    }
+                                                    aria-label={row.name ?? ''}
+                                                    className="size-4 cursor-pointer"
+                                                />
+                                            </td>
                                             <td className="px-4 py-[13px]">
                                                 <div className="flex items-center gap-2">
                                                     <CandidateAvatar
@@ -516,6 +751,12 @@ export default function EmployerApplications({
                                             </td>
                                             <td className="px-4 py-[13px] text-sm leading-[21px] text-[#374151]">
                                                 {row.experience_years || '—'}
+                                            </td>
+                                            <td className="px-4 py-[13px] text-sm leading-[21px] text-[#374151]">
+                                                {row.qualification || '—'}
+                                            </td>
+                                            <td className="px-4 py-[13px] text-sm leading-[21px] text-[#374151]">
+                                                {row.certificate_count ?? 0}
                                             </td>
                                             <td className="px-4 py-[13px] text-sm leading-[21px] text-[#374151]">
                                                 {row.location || '—'}

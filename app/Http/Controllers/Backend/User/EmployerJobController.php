@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Backend\User;
 
+use App\Enums\JobApplicationStatus;
 use App\Enums\JobPostStatus;
 use App\Enums\JobTaxonomyType;
 use App\Enums\OrganizationType;
@@ -15,6 +16,7 @@ use App\Models\JobTaxonomy;
 use App\Models\User;
 use App\Support\EmployerPlanSnapshot;
 use App\Support\JobListingQuery;
+use App\Support\RecruitmentReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +37,7 @@ class EmployerJobController extends Controller
             ->withCount([
                 'applications',
                 'applications as new_applications_count' => fn ($query) => $query->where('created_at', '>=', now()->subDays(7)),
+                'applications as shortlisted_applications_count' => fn ($query) => $query->where('status', JobApplicationStatus::Shortlisted),
             ])
             ->latest()
             ->get()
@@ -281,6 +284,7 @@ class EmployerJobController extends Controller
     {
         return [
             'id' => $job->id,
+            'reference' => RecruitmentReport::jobReference($job),
             'slug' => $job->slug,
             'title' => $job->title,
             'logo_url' => $job->listingLogoUrl(),
@@ -293,6 +297,7 @@ class EmployerJobController extends Controller
             'status_value' => $job->effectiveStatus()->value,
             'applications' => (int) $job->applications_count,
             'new_applications' => (int) $job->new_applications_count,
+            'shortlisted' => (int) $job->shortlisted_applications_count,
             'views' => (int) $job->views,
             'expires_at' => $job->expires_at?->toFormattedDateString(),
             'created_at' => $job->created_at?->toFormattedDateString(),
