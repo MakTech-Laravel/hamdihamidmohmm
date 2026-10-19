@@ -59,6 +59,7 @@ class UpdateJobSeekerProfileRequest extends FormRequest
             'headline' => ['nullable', 'string', 'max:255'],
             'current_title' => ['nullable', 'string', 'max:255'],
             'gender' => ['nullable', Rule::enum(Gender::class)],
+            'nationality' => ['nullable', 'string', 'max:100'],
             'experience_years' => ['nullable', 'string', 'max:50'],
             'bio' => ['nullable', 'string'],
             'linkedin_url' => ['nullable', 'string', 'max:255'],
