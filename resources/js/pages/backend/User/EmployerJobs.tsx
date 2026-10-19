@@ -18,6 +18,7 @@ import type { SharedData } from '@/types';
 
 type JobRow = {
     id: number;
+    reference: string;
     slug: string;
     title: string;
     logo_url?: string | null;
@@ -29,6 +30,7 @@ type JobRow = {
     status_value: string;
     applications: number;
     new_applications: number;
+    shortlisted: number;
     views: number;
     expires_at: string | null;
     created_at: string | null;
@@ -132,10 +134,14 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
 
     const headings = [
         t('employer.jobs.col.job'),
+        t('employer.jobs.col.job_id'),
         t('employer.jobs.col.location_type'),
         t('employer.jobs.col.salary'),
         t('common.status'),
         t('employer.jobs.col.applications'),
+        t('employer.jobs.col.shortlisted'),
+        t('employer.jobs.col.post_date'),
+        t('employer.jobs.col.closing_date'),
         t('employer.jobs.col.views'),
         t('common.actions'),
     ];
@@ -228,7 +234,7 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[1080px] text-left">
+                        <table className="w-full min-w-[1400px] text-left">
                             <thead>
                                 <tr className="border-b border-[#d1f6ff]">
                                     {headings.map((heading) => (
@@ -301,6 +307,9 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                                 </div>
                                             </div>
                                         </td>
+                                        <td className="px-5 py-4 align-top text-sm font-semibold whitespace-nowrap text-[#475569]">
+                                            {job.reference}
+                                        </td>
                                         <td className="px-5 py-4 align-top">
                                             <p className="text-sm font-medium text-[#475569]">
                                                 📍 {job.location || '—'}
@@ -344,6 +353,15 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                                 )}
                                             </div>
                                         </td>
+                                        <td className="px-5 py-4 align-top text-base font-bold text-[#15803d]">
+                                            {job.shortlisted}
+                                        </td>
+                                        <td className="px-5 py-4 align-top text-sm whitespace-nowrap text-[#475569]">
+                                            {job.created_at || '—'}
+                                        </td>
+                                        <td className="px-5 py-4 align-top text-sm whitespace-nowrap text-[#475569]">
+                                            {job.expires_at || '—'}
+                                        </td>
                                         <td className="px-5 py-4 align-top text-[14.4px] leading-[21.6px] font-medium text-[#475569]">
                                             👁 {job.views}
                                         </td>
@@ -360,6 +378,28 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                                         'employer.jobs.view_applicants',
                                                     )}
                                                 </Link>
+                                                <Link
+                                                    href={`/employer/applications?job_id=${job.id}&shortlist=1`}
+                                                    className={cn(
+                                                        actionClass,
+                                                        'bg-[#f0fdf4] text-[#15803d]',
+                                                    )}
+                                                >
+                                                    {t(
+                                                        'employer.jobs.make_shortlist',
+                                                    )}
+                                                </Link>
+                                                <a
+                                                    href={`/employer/applications/export?job_id=${job.id}`}
+                                                    className={cn(
+                                                        actionClass,
+                                                        'bg-[#eef2ff] text-[#4338ca]',
+                                                    )}
+                                                >
+                                                    {t(
+                                                        'employer.jobs.recruitment_report',
+                                                    )}
+                                                </a>
                                                 <Link
                                                     href={`/employer/jobs/${job.id}/edit`}
                                                     className={cn(

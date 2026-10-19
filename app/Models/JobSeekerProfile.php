@@ -21,6 +21,7 @@ class JobSeekerProfile extends Model
         'headline',
         'current_title',
         'gender',
+        'nationality',
         'experience_years',
         'bio',
         'linkedin_url',

@@ -95,6 +95,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/jobs/{job}/publish', [EmployerJobController::class, 'publish'])->name('jobs.publish');
         Route::delete('/jobs/{job}', [EmployerJobController::class, 'destroy'])->name('jobs.destroy');
         Route::get('/applications', [EmployerApplicationController::class, 'index'])->name('applications');
+        Route::get('/applications/export', [EmployerApplicationController::class, 'export'])->name('applications.export');
+        Route::put('/applications/bulk-status', [EmployerApplicationController::class, 'bulkUpdate'])->name('applications.bulk-update');
         Route::get('/applications/{application}/resume', [EmployerApplicationController::class, 'downloadResume'])->name('applications.resume');
         Route::get('/applications/{application}/highest-degree', [EmployerApplicationController::class, 'downloadHighestDegree'])->name('applications.highest-degree');
         Route::get('/applications/{application}/other-document', [EmployerApplicationController::class, 'downloadOtherDocument'])->name('applications.other-document');
