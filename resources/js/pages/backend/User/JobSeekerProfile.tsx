@@ -101,6 +101,7 @@ type Profile = {
     current_title: string | null;
     gender: string | null;
     gender_label: string | null;
+    nationality: string | null;
     experience_years: string | null;
     experience_years_label: string;
     bio: string | null;
@@ -524,6 +525,7 @@ function profileToFormData(profile: Profile) {
         headline: profile.headline ?? '',
         current_title: profile.current_title ?? '',
         gender: profile.gender ?? '',
+        nationality: profile.nationality ?? '',
         experience_years: profile.experience_years ?? '',
         bio: profile.bio ?? '',
         linkedin_url: profile.linkedin_url ?? '',
@@ -694,6 +696,7 @@ function emptyProfileFormData(): ProfileFormData {
         headline: '',
         current_title: '',
         gender: '',
+        nationality: '',
         experience_years: '',
         bio: '',
         linkedin_url: '',
@@ -770,6 +773,7 @@ function buildProfilePayload(data: ProfileFormData) {
         headline: data.headline,
         current_title: data.current_title,
         gender: data.gender || null,
+        nationality: data.nationality,
         experience_years: data.experience_years,
         bio: data.bio,
         linkedin_url: data.linkedin_url,
@@ -1230,6 +1234,14 @@ export default function JobSeekerProfile({
                                     </p>
                                 ) : null}
                             </div>
+                            <Field
+                                label={t('job_seeker.profile.nationality')}
+                                value={form.data.nationality}
+                                onChange={(value) =>
+                                    form.setData('nationality', value)
+                                }
+                                error={form.errors.nationality}
+                            />
                             <Field
                                 label={t('job_seeker.profile.linkedin')}
                                 value={form.data.linkedin_url}

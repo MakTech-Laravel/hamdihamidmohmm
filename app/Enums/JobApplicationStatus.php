@@ -6,6 +6,8 @@ enum JobApplicationStatus: string
 {
     case Applied = 'applied';
     case UnderReview = 'under_review';
+    case Longlisted = 'longlisted';
+    case UnderConsideration = 'under_consideration';
     case Shortlisted = 'shortlisted';
     case Interview = 'interview';
     case Offer = 'offer';
@@ -18,6 +20,8 @@ enum JobApplicationStatus: string
         return match ($this) {
             self::Applied => 'Applied',
             self::UnderReview => 'Under Review',
+            self::Longlisted => 'Longlisted',
+            self::UnderConsideration => 'Under Consideration',
             self::Shortlisted => 'Shortlisted',
             self::Interview => 'Interview',
             self::Offer => 'Offer',
@@ -51,8 +55,22 @@ enum JobApplicationStatus: string
             self::Interview => 4,
             self::Offer => 5,
             self::Hired => 6,
+            self::Longlisted, self::UnderConsideration => 2,
             self::Rejected, self::Withdrawn => 0,
         };
+    }
+
+    /**
+     * Whether the status sits outside the linear hiring timeline.
+     */
+    public function isOffPipeline(): bool
+    {
+        return in_array($this, [
+            self::Longlisted,
+            self::UnderConsideration,
+            self::Rejected,
+            self::Withdrawn,
+        ], true);
     }
 
     public function canWithdraw(): bool
