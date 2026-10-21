@@ -8,10 +8,12 @@ use App\Enums\ActivityAction;
 use App\Enums\EmployerAccountStatus;
 use App\Enums\EmployerPackage;
 use App\Enums\EmployerVerificationStatus;
+use App\Enums\Gender;
 use App\Enums\JobSeekerAccountStatus;
 use App\Enums\JobSeekerResumeStatus;
 use App\Enums\OrganizationType;
 use App\Enums\UserRole;
+use App\Models\JobSeekerProfile;
 use App\Models\User;
 use App\Support\ActivityLogger;
 use App\Support\PortalNotifier;
@@ -44,6 +46,7 @@ class CreateNewUser implements CreatesNewUsers
             'name' => $isEmployer ? ['nullable', 'string', 'max:255'] : $this->nameRules(),
             'email' => $this->emailRules(),
             'phone' => ['required', 'string', 'max:30'],
+            'gender' => [$isEmployer ? 'nullable' : 'required', Rule::enum(Gender::class)],
             'password' => $this->passwordRules(),
             'password_confirmation' => $this->profilePasswordConfirmationRules(),
             'role' => ['required', 'integer', Rule::in(UserRole::registrableValues())],
@@ -56,6 +59,8 @@ class CreateNewUser implements CreatesNewUsers
             'company_name.required' => 'Please enter your company or organization name.',
             'organization_type.enum' => 'Please select a valid organization type.',
             'phone.required' => 'Please enter your phone number.',
+            'gender.required' => 'Please select your gender.',
+            'gender.enum' => 'Please select a valid gender.',
             'terms.accepted' => 'You must agree to the Terms & Conditions and Privacy Policy.',
         ])->validate();
 
@@ -87,6 +92,13 @@ class CreateNewUser implements CreatesNewUsers
         ]);
 
         $user = RoleAssigner::assign($user, UserRole::from($role));
+
+        if (! $isEmployer) {
+            JobSeekerProfile::query()->create([
+                'user_id' => $user->id,
+                'gender' => Gender::from((string) $input['gender']),
+            ]);
+        }
 
         ActivityLogger::log(
             $user,

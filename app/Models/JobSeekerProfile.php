@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Gender;
 use Database\Factories\JobSeekerProfileFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,8 @@ class JobSeekerProfile extends Model
         'user_id',
         'headline',
         'current_title',
+        'gender',
+        'nationality',
         'experience_years',
         'bio',
         'linkedin_url',
@@ -40,6 +43,7 @@ class JobSeekerProfile extends Model
     protected function casts(): array
     {
         return [
+            'gender' => Gender::class,
             'availability' => 'array',
             'skills' => 'array',
             'education' => 'array',

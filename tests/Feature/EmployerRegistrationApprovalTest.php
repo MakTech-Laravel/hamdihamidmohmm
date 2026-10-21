@@ -2,6 +2,7 @@
 
 use App\Enums\EmployerAccountStatus;
 use App\Enums\EmployerVerificationStatus;
+use App\Enums\Gender;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Notifications\PortalNotification;
@@ -76,6 +77,7 @@ test('job seeker registration is unaffected by employer approval flow', function
         'name' => 'Free Seeker',
         'email' => 'free-seeker@example.com',
         'phone' => '+249900000015',
+        'gender' => Gender::Male->value,
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::JobSeeker->value,

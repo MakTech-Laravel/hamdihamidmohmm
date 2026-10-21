@@ -191,6 +191,35 @@ export default function RegisterForm({
                             <InputError message={errors.phone} />
                         </div>
 
+                        {!isEmployer ? (
+                            <div className="space-y-1.5">
+                                <Label
+                                    htmlFor="gender"
+                                    className="text-sm font-semibold text-[#364153]"
+                                >
+                                    {t('job_seeker.profile.gender')}
+                                </Label>
+                                <select
+                                    id="gender"
+                                    name="gender"
+                                    required
+                                    defaultValue=""
+                                    className="h-[46px] w-full rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] outline-none focus:border-[#0057c8] focus:ring-[#0057c8]/30"
+                                >
+                                    <option value="" disabled>
+                                        {t('job_seeker.profile.gender_select')}
+                                    </option>
+                                    <option value="male">
+                                        {t('job_seeker.profile.gender_male')}
+                                    </option>
+                                    <option value="female">
+                                        {t('job_seeker.profile.gender_female')}
+                                    </option>
+                                </select>
+                                <InputError message={errors.gender} />
+                            </div>
+                        ) : null}
+
                         <div className="space-y-1.5">
                             <Label
                                 htmlFor="password"

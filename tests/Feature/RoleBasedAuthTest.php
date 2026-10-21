@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Gender;
 use App\Enums\UserRole;
 use App\Models\User;
 
@@ -30,6 +31,7 @@ test('job seekers can register and land on the job seeker profile', function () 
         'name' => 'Amina Seeker',
         'email' => 'seeker@example.com',
         'phone' => '+249900000011',
+        'gender' => Gender::Female->value,
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::JobSeeker->value,
@@ -42,7 +44,8 @@ test('job seekers can register and land on the job seeker profile', function () 
 
     expect($user)->not->toBeNull()
         ->and($user->role)->toBe(UserRole::JobSeeker)
-        ->and($user->company_name)->toBeNull();
+        ->and($user->company_name)->toBeNull()
+        ->and($user->jobSeekerProfile?->gender)->toBe(Gender::Female);
 
     $response->assertRedirect(route('job-seeker.profile', absolute: false));
 });
@@ -77,6 +80,7 @@ test('registration requires an accepted terms agreement', function () {
         'name' => 'No Terms User',
         'email' => 'noterms@example.com',
         'phone' => '+249900000013',
+        'gender' => Gender::Male->value,
         'password' => 'password',
         'password_confirmation' => 'password',
         'role' => UserRole::JobSeeker->value,
