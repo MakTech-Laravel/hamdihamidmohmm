@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Run Queue Via Scheduler
+    |--------------------------------------------------------------------------
+    |
+    | Hosts without a long-running worker process (e.g. shared hosting) can
+    | let the scheduler drain the queue every minute instead.
+    |
+    */
+
+    'run_via_scheduler' => (bool) env('QUEUE_VIA_SCHEDULER', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue Connections
     |--------------------------------------------------------------------------
     |

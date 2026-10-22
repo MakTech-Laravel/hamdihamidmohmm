@@ -14,6 +14,8 @@ use App\Http\Requests\Backend\User\UploadEmployerJobLogoRequest;
 use App\Models\JobPost;
 use App\Models\JobTaxonomy;
 use App\Models\User;
+use App\Services\Ats\AtsJobQuality;
+use App\Services\Ats\AtsSettings;
 use App\Support\EmployerPlanSnapshot;
 use App\Support\JobListingQuery;
 use App\Support\RecruitmentReport;
@@ -65,6 +67,7 @@ class EmployerJobController extends Controller
             'company' => $employer ? $this->companySummary($employer) : null,
             'organizationTypes' => OrganizationType::options(),
             'options' => $this->formOptions(),
+            'ats' => $this->atsFormProps($employer),
         ]);
     }
 
@@ -121,6 +124,7 @@ class EmployerJobController extends Controller
                 'expires_at' => $job->expires_at?->toDateString(),
                 'status' => $job->effectiveStatus()->value,
             ],
+            'ats' => $this->atsFormProps($employer, $job),
             'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
             'company' => $employer ? $this->companySummary($employer) : null,
             'organizationTypes' => OrganizationType::options(),
@@ -380,5 +384,26 @@ class EmployerJobController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Soft ATS quality hints for the job editor. Never blocks publishing.
+     *
+     * @return array{enabled: bool, quality: array{missing_skills: bool, thin_description: bool, show: bool}}
+     */
+    private function atsFormProps(?User $employer, ?JobPost $job = null): array
+    {
+        $enabled = app(AtsSettings::class)->enabledForEmployer($employer);
+
+        return [
+            'enabled' => $enabled,
+            'quality' => $enabled
+                ? AtsJobQuality::hints(
+                    $job?->skills,
+                    $job?->requirements,
+                    $job?->description,
+                )
+                : ['missing_skills' => false, 'thin_description' => false, 'show' => false],
+        ];
     }
 }

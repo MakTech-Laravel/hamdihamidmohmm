@@ -103,6 +103,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/applications/{application}/cover-letter', [EmployerApplicationController::class, 'downloadCoverLetter'])->name('applications.cover-letter');
         Route::get('/applications/{application}/certifications/{index}/{attachment?}', [EmployerApplicationController::class, 'downloadCertification'])->name('applications.certifications');
         Route::put('/applications/{application}', [EmployerApplicationController::class, 'update'])->name('applications.update');
+        Route::post('/applications/{application}/rescore', [EmployerApplicationController::class, 'rescore'])
+            ->middleware('throttle:ats-rescore')
+            ->name('applications.rescore');
+        Route::post('/jobs/{job}/applications/rescore', [EmployerApplicationController::class, 'rescoreJob'])
+            ->middleware('throttle:ats-rescore')
+            ->name('jobs.applications.rescore');
         Route::get('/notifications', [EmployerPortalPageController::class, 'notifications'])->name('notifications');
         Route::post('/notifications/read-all', [EmployerPortalPageController::class, 'markAllRead'])->name('notifications.read-all');
         Route::post('/notifications/{notification}/read', [EmployerPortalPageController::class, 'markRead'])->name('notifications.read');

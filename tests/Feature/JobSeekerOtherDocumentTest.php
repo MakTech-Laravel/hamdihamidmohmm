@@ -59,7 +59,11 @@ test('resume documents section is last in the job seeker profile checklist', fun
     $this->actingAs($seeker)
         ->get(route('job-seeker.profile'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
-            ->where('profile.checklist.7.id', 'resume')
-            ->where('profile.checklist.0.id', 'personal'));
+        ->assertInertia(fn ($page) => $page
+            ->where('profile.checklist.0.id', 'personal')
+            ->has('profile.checklist')
+            ->where(
+                'profile.checklist',
+                fn (mixed $checklist): bool => (string) (data_get(collect($checklist)->last(), 'id') ?? '') === 'resume',
+            ));
 });

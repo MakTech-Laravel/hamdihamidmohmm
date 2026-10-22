@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
+import { AtsMatchSection, type AtsMatch } from '@/components/employer/ats-score';
 import { getInitials } from '@/components/employer/demo-data';
 import { NativeSelect } from '@/components/ui/native-select';
 import {
@@ -82,6 +83,7 @@ export type ApplicationPreview = {
     cover_letter_file_url?: string | null;
     avatar_url?: string | null;
     timeline: ApplicationPreviewTimelineStep[];
+    ai?: AtsMatch | null;
 };
 
 type StatusOption = {
@@ -95,12 +97,14 @@ export function ApplicationPreviewDrawer({
     preview,
     statuses,
     onUpdateStatus,
+    onRescore,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     preview: ApplicationPreview | null;
     statuses: StatusOption[];
     onUpdateStatus: (applicationId: number, status: string) => void;
+    onRescore?: (applicationId: number) => void;
 }) {
     const { t } = useLocale();
 
@@ -118,6 +122,7 @@ export function ApplicationPreviewDrawer({
                         preview={preview}
                         statuses={statuses}
                         onUpdateStatus={onUpdateStatus}
+                        onRescore={onRescore}
                     />
                 ) : (
                     <div className="p-5 text-sm text-[#3977a6]">
@@ -133,10 +138,12 @@ function DrawerBody({
     preview,
     statuses,
     onUpdateStatus,
+    onRescore,
 }: {
     preview: ApplicationPreview;
     statuses: StatusOption[];
     onUpdateStatus: (applicationId: number, status: string) => void;
+    onRescore?: (applicationId: number) => void;
 }) {
     const { t } = useLocale();
     const [selectedStatus, setSelectedStatus] = useState(preview.status_value);
@@ -182,6 +189,15 @@ function DrawerBody({
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5">
+                {preview.ai ? (
+                    <AtsMatchSection
+                        match={preview.ai}
+                        onRescore={
+                            onRescore ? () => onRescore(preview.id) : undefined
+                        }
+                    />
+                ) : null}
+
                 <Section title={t('employer.drawer.contact')}>
                     <div className="flex flex-col gap-[4.8px]">
                         <ContactRow icon={Mail} value={preview.email} />
