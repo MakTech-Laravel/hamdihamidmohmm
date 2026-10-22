@@ -203,21 +203,22 @@ function toPreview(
         cover_letter_file_url: row.cover_letter_file_url ?? null,
         avatar_url: row.avatar_url ?? null,
         timeline: row.timeline ?? [],
-        ai: atsEnabled
-            ? {
-                  ai_score: row.ai_score,
-                  ai_status: row.ai_status,
-                  ai_source: row.ai_source,
-                  ai_recommendation: row.ai_recommendation,
-                  ai_summary: row.ai_summary,
-                  ai_breakdown: row.ai_breakdown,
-                  ai_scored_at: row.ai_scored_at,
-                  ai_outdated: row.ai_outdated,
-                  ai_cv_name: row.ai_cv_name,
-                  ai_error: row.ai_error,
-                  ai_rescore_url: row.ai_rescore_url,
-              }
-            : null,
+        ai:
+            row.ai_score != null || row.ai_status != null
+                ? {
+                      ai_score: row.ai_score,
+                      ai_status: row.ai_status,
+                      ai_source: row.ai_source,
+                      ai_recommendation: row.ai_recommendation,
+                      ai_summary: row.ai_summary,
+                      ai_breakdown: row.ai_breakdown,
+                      ai_scored_at: row.ai_scored_at,
+                      ai_outdated: atsEnabled ? row.ai_outdated : false,
+                      ai_cv_name: row.ai_cv_name,
+                      ai_error: row.ai_error,
+                      ai_rescore_url: atsEnabled ? row.ai_rescore_url : null,
+                  }
+                : null,
     };
 }
 
@@ -262,6 +263,11 @@ export default function EmployerApplications({
 }: Props) {
     const { t } = useLocale();
     const atsEnabled = ats?.enabled === true;
+    const showAtsScores =
+        atsEnabled ||
+        applications.some(
+            (row) => row.ai_score != null || row.ai_status != null,
+        );
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
     const [experience, setExperience] = useState(filters.experience ?? '');
@@ -1002,7 +1008,7 @@ export default function EmployerApplications({
                                             t(
                                                 'employer.applications.col.candidate',
                                             ),
-                                            ...(atsEnabled
+                                            ...(showAtsScores
                                                 ? [t('employer.ats.col_score')]
                                                 : []),
                                             t('employer.applications.col.job'),
@@ -1061,7 +1067,7 @@ export default function EmployerApplications({
                                                     </p>
                                                 </div>
                                             </td>
-                                            {atsEnabled ? (
+                                            {showAtsScores ? (
                                                 <td className="px-4 py-[13px]">
                                                     <AtsScoreBadge
                                                         match={row}

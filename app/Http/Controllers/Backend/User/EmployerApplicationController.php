@@ -563,22 +563,6 @@ class EmployerApplicationController extends Controller
      */
     private function aiFields(JobApplication $application, bool $atsEnabled, array $jobHashes): array
     {
-        if (! $atsEnabled) {
-            return [
-                'ai_score' => null,
-                'ai_status' => null,
-                'ai_source' => null,
-                'ai_recommendation' => null,
-                'ai_summary' => null,
-                'ai_breakdown' => null,
-                'ai_scored_at' => null,
-                'ai_outdated' => false,
-                'ai_cv_name' => null,
-                'ai_error' => null,
-                'ai_rescore_url' => null,
-            ];
-        }
-
         $breakdown = is_array($application->ai_breakdown) ? $application->ai_breakdown : null;
         $completed = $application->ai_status === AtsScreeningStatus::Completed;
         $scoredJobHash = $breakdown['job_hash'] ?? null;
@@ -597,7 +581,8 @@ class EmployerApplicationController extends Controller
                 ? collect($breakdown)->except(['job_hash', 'version', 'ai_recommendation'])->all()
                 : null,
             'ai_scored_at' => $application->ai_scored_at?->format('M j, Y g:i A'),
-            'ai_outdated' => $completed
+            'ai_outdated' => $atsEnabled
+                && $completed
                 && is_string($scoredJobHash)
                 && isset($jobHashes[$application->job_post_id])
                 && $jobHashes[$application->job_post_id] !== $scoredJobHash,
@@ -607,7 +592,9 @@ class EmployerApplicationController extends Controller
             'ai_error' => $showError && filled($application->ai_error)
                 ? (string) $application->ai_error
                 : null,
-            'ai_rescore_url' => route('employer.applications.rescore', $application),
+            'ai_rescore_url' => $atsEnabled
+                ? route('employer.applications.rescore', $application)
+                : null,
         ];
     }
 

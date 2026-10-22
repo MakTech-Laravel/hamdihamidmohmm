@@ -196,7 +196,7 @@ test('the page reports pending screening so it can poll', function () {
             ->where('applications.0.ai_status', 'pending'));
 });
 
-test('AI fields are hidden from employers with screening disabled', function () {
+test('employers with screening disabled still see prior scores but cannot use interactive ATS', function () {
     $employer = User::factory()->employer()->create(['ats_enabled' => false]);
     $job = JobPost::factory()->create(['employer_id' => $employer->id]);
     scoredApplication($job, 90);
@@ -207,8 +207,8 @@ test('AI fields are hidden from employers with screening disabled', function () 
             ->where('ats.enabled', false)
             ->where('filters.ai_sort', '')
             ->where('filters.ai_band', '')
-            ->where('applications.0.ai_score', null)
-            ->where('applications.0.ai_summary', null)
+            ->where('applications.0.ai_score', 90)
+            ->where('applications.0.ai_summary', 'Scored 90')
             ->where('applications.0.ai_rescore_url', null));
 });
 
