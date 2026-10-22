@@ -72,6 +72,10 @@ class PlatformSetting extends Model
                 'public_chat_enabled' => true,
                 'admin_assistant_enabled' => true,
             ],
+            'ats' => [
+                'enabled' => true,
+                'ai_enabled' => true,
+            ],
             'experience_filters' => [
                 'ranges' => [
                     ['key' => '0-2', 'label' => '0-2 years', 'min' => 0, 'max' => 2, 'enabled' => true],
@@ -134,6 +138,21 @@ class PlatformSetting extends Model
         return [
             'public_chat_enabled' => filter_var($ai['public_chat_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN),
             'admin_assistant_enabled' => filter_var($ai['admin_assistant_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN),
+        ];
+    }
+
+    /**
+     * ATS application screening switches managed from the admin AI Assistant page.
+     *
+     * @return array{enabled: bool, ai_enabled: bool}
+     */
+    public static function atsScreening(): array
+    {
+        $ats = self::grouped()['ats'] ?? [];
+
+        return [
+            'enabled' => filter_var($ats['enabled'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            'ai_enabled' => filter_var($ats['ai_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN),
         ];
     }
 

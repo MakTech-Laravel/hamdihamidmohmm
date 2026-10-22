@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\RejectEmployerRequest;
 use App\Http\Requests\Backend\Admin\ResetUserPasswordRequest;
 use App\Http\Requests\Backend\Admin\StoreEmployerRequest;
+use App\Http\Requests\Backend\Admin\ToggleEmployerAtsRequest;
 use App\Http\Requests\Backend\Admin\UpdateEmployerRequest;
 use App\Models\User;
 use App\Support\ActivityLogger;
@@ -212,6 +213,17 @@ class EmployerManagementController extends Controller
         return back()->with('success', 'Employer approved successfully.');
     }
 
+    public function toggleAts(ToggleEmployerAtsRequest $request, User $user): RedirectResponse
+    {
+        $this->ensureEmployer($user);
+
+        $user->forceFill(['ats_enabled' => $request->boolean('ats_enabled')])->save();
+
+        return back()->with('success', $user->ats_enabled
+            ? 'AI screening enabled for this employer.'
+            : 'AI screening disabled for this employer.');
+    }
+
     public function reject(RejectEmployerRequest $request, User $user): RedirectResponse
     {
         $this->ensureEmployer($user);
@@ -398,6 +410,7 @@ class EmployerManagementController extends Controller
             'contact_name' => $employer->contact_name ?: $employer->name,
             'package_value' => $employer->package?->value ?? EmployerPackage::Starter->value,
             'rejection_reason' => $employer->rejection_reason,
+            'ats_enabled' => $employer->ats_enabled !== false,
             'verified_at' => $employer->verified_at?->timezone(config('app.timezone'))->toDayDateTimeString(),
             'created_at' => $employer->created_at?->timezone(config('app.timezone'))->toDayDateTimeString(),
             'updated_at' => $employer->updated_at?->timezone(config('app.timezone'))->toDayDateTimeString(),

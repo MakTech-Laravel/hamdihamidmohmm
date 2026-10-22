@@ -84,6 +84,15 @@ type Company = {
     logo_url: string | null;
 };
 
+type AtsFormProps = {
+    enabled: boolean;
+    quality: {
+        missing_skills: boolean;
+        thin_description: boolean;
+        show: boolean;
+    };
+};
+
 type Props = {
     job: JobForm | null;
     plan: Plan | null;
@@ -96,7 +105,32 @@ type Props = {
         employmentTypes: TaxonomyOption[];
         experience_levels: string[];
     };
+    ats?: AtsFormProps;
 };
+
+const ATS_MIN_BODY_CHARS = 80;
+
+function atsQualityFromForm(
+    skills: string,
+    requirements: string,
+    description: string,
+): AtsFormProps['quality'] {
+    const hasSkills = skills
+        .split(',')
+        .map((skill) => skill.trim())
+        .some(Boolean);
+    const body = `${requirements} ${description}`
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const thinDescription = body.length < ATS_MIN_BODY_CHARS;
+
+    return {
+        missing_skills: !hasSkills,
+        thin_description: thinDescription,
+        show: !hasSkills || thinDescription,
+    };
+}
 
 export default function EmployerJobEditor({
     job,
@@ -104,6 +138,7 @@ export default function EmployerJobEditor({
     company,
     organizationTypes = [],
     options,
+    ats,
 }: Props) {
     const { t } = useLocale();
     const { errors: pageErrors } = usePage<SharedData>().props;
@@ -192,6 +227,17 @@ export default function EmployerJobEditor({
     ]
         .filter(Boolean)
         .join(' · ');
+
+    const atsQuality = useMemo(
+        () =>
+            atsQualityFromForm(
+                form.data.skills,
+                form.data.requirements,
+                form.data.description,
+            ),
+        [form.data.skills, form.data.requirements, form.data.description],
+    );
+    const showAtsQualityHint = ats?.enabled === true && atsQuality.show;
 
     const steps = [
         { id: 1, label: t('employer.job_editor.step.basics') },
@@ -1162,6 +1208,16 @@ export default function EmployerJobEditor({
                             <h2 className="text-lg font-bold text-[#050315]">
                                 {t('employer.job_editor.step.requirements')}
                             </h2>
+                            {showAtsQualityHint ? (
+                                <div className="rounded-xl border border-[#fde68a] bg-[#fffbeb] px-4 py-3 text-[13px] text-[#92400e]">
+                                    <p className="font-semibold">
+                                        {t('employer.ats.job_quality_title')}
+                                    </p>
+                                    <p className="pt-1">
+                                        {t('employer.ats.job_quality_hint')}
+                                    </p>
+                                </div>
+                            ) : null}
                             <Field
                                 label={t(
                                     'employer.job_editor.field.requirements',

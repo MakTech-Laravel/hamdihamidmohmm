@@ -37,6 +37,16 @@ class JobSeekerCvExtractor
         $extension = Str::lower($file->getClientOriginalExtension() ?: $file->extension() ?: '');
         $path = $file->getRealPath() ?: $file->getPathname();
 
+        return self::textFromPath($path, $extension);
+    }
+
+    /**
+     * Extract plain text from a CV file on disk (absolute path).
+     */
+    public static function textFromPath(string $path, string $extension): string
+    {
+        $extension = Str::lower(ltrim($extension, '.'));
+
         return match ($extension) {
             'docx' => self::textFromDocx($path),
             'doc' => self::textFromBinary($path),
@@ -84,11 +94,11 @@ class JobSeekerCvExtractor
         );
 
         if ($linkedin !== null && ! str_starts_with(Str::lower($linkedin), 'http')) {
-            $linkedin = 'https://' . $linkedin;
+            $linkedin = 'https://'.$linkedin;
         }
 
         if ($github !== null && ! str_starts_with(Str::lower($github), 'http')) {
-            $github = 'https://' . $github;
+            $github = 'https://'.$github;
         }
 
         $name = self::sanitizeString(self::guessName($lines, $email), 120);
@@ -99,25 +109,25 @@ class JobSeekerCvExtractor
             120,
         );
         $skills = array_values(array_filter(
-            array_map(fn(string $skill): ?string => self::sanitizeString($skill, 100), self::listFromSection($normalized, ['skills', 'technical skills', 'core skills', 'key skills'])),
+            array_map(fn (string $skill): ?string => self::sanitizeString($skill, 100), self::listFromSection($normalized, ['skills', 'technical skills', 'core skills', 'key skills'])),
         ));
         $languages = collect(self::languagesFromSection($normalized))
-            ->map(fn(array $entry): ?array => self::sanitizeLanguage($entry))
+            ->map(fn (array $entry): ?array => self::sanitizeLanguage($entry))
             ->filter()
             ->values()
             ->all();
         $education = collect(self::educationFromSection($normalized))
-            ->map(fn(array $entry): ?array => self::sanitizeEducation($entry))
+            ->map(fn (array $entry): ?array => self::sanitizeEducation($entry))
             ->filter()
             ->values()
             ->all();
         $experience = collect(self::experienceFromSection($normalized))
-            ->map(fn(array $entry): ?array => self::sanitizeExperience($entry))
+            ->map(fn (array $entry): ?array => self::sanitizeExperience($entry))
             ->filter()
             ->values()
             ->all();
         $certifications = collect(self::certificationsFromSection($normalized))
-            ->map(fn(array $entry): ?array => self::sanitizeCertification($entry))
+            ->map(fn (array $entry): ?array => self::sanitizeCertification($entry))
             ->filter()
             ->values()
             ->all();
@@ -147,6 +157,14 @@ class JobSeekerCvExtractor
             'languages' => $languages,
             'certifications' => $certifications,
         ];
+    }
+
+    /**
+     * Normalise extracted text and keep only human-readable lines (drops PDF binary noise).
+     */
+    public static function readableText(string $text): string
+    {
+        return implode("\n", self::lines(self::normalizeText($text)));
     }
 
     private static function textFromDocx(string $path): string
@@ -247,8 +265,8 @@ class JobSeekerCvExtractor
     private static function lines(string $text): array
     {
         return collect(preg_split('/\n+/', $text) ?: [])
-            ->map(fn(string $line): string => trim($line))
-            ->filter(fn(string $line): bool => $line !== '' && self::looksLikeReadableText($line))
+            ->map(fn (string $line): string => trim($line))
+            ->filter(fn (string $line): bool => $line !== '' && self::looksLikeReadableText($line))
             ->values()
             ->all();
     }
@@ -466,12 +484,12 @@ class JobSeekerCvExtractor
     private static function sectionBody(string $text, array $labels): ?string
     {
         $labelPattern = collect($labels)
-            ->map(fn(string $label): string => preg_quote($label, '/'))
+            ->map(fn (string $label): string => preg_quote($label, '/'))
             ->implode('|');
 
-        $pattern = '/(?:^|\n)\s*(?:' . $labelPattern . ')\s*:?\s*\n(.*?)(?=\n\s*(?:education|experience|work experience|employment|skills|technical skills|languages|certifications?|projects|summary|profile|objective|references)\s*:?\s*\n|\z)/is';
+        $pattern = '/(?:^|\n)\s*(?:'.$labelPattern.')\s*:?\s*\n(.*?)(?=\n\s*(?:education|experience|work experience|employment|skills|technical skills|languages|certifications?|projects|summary|profile|objective|references)\s*:?\s*\n|\z)/is';
 
-        if (preg_match($pattern, "\n" . $text . "\n", $matches) !== 1) {
+        if (preg_match($pattern, "\n".$text."\n", $matches) !== 1) {
             return null;
         }
 
@@ -486,10 +504,10 @@ class JobSeekerCvExtractor
     private static function sectionValue(string $text, array $labels): ?string
     {
         $labelPattern = collect($labels)
-            ->map(fn(string $label): string => preg_quote($label, '/'))
+            ->map(fn (string $label): string => preg_quote($label, '/'))
             ->implode('|');
 
-        if (preg_match('/(?:' . $labelPattern . ')\s*[:\-]\s*(.+)/i', $text, $matches) === 1) {
+        if (preg_match('/(?:'.$labelPattern.')\s*[:\-]\s*(.+)/i', $text, $matches) === 1) {
             $value = trim(Str::before($matches[1], "\n"));
 
             return $value !== '' ? $value : null;
@@ -511,9 +529,9 @@ class JobSeekerCvExtractor
         }
 
         return collect(preg_split('/[\n,•|]+/', $body) ?: [])
-            ->map(fn(string $item): string => trim($item, " \t\n\r\0\x0B-•"))
-            ->filter(fn(string $item): bool => $item !== '' && mb_strlen($item) <= 80)
-            ->unique(fn(string $item): string => Str::lower($item))
+            ->map(fn (string $item): string => trim($item, " \t\n\r\0\x0B-•"))
+            ->filter(fn (string $item): bool => $item !== '' && mb_strlen($item) <= 80)
+            ->unique(fn (string $item): string => Str::lower($item))
             ->take(30)
             ->values()
             ->all();
@@ -547,7 +565,7 @@ class JobSeekerCvExtractor
         $found = [];
 
         foreach ($known as $language) {
-            if (preg_match('/\b' . preg_quote($language, '/') . '\b(?:\s*[\(:\-]?\s*(' . implode('|', $levels) . '))?/i', $source, $matches) === 1) {
+            if (preg_match('/\b'.preg_quote($language, '/').'\b(?:\s*[\(:\-]?\s*('.implode('|', $levels).'))?/i', $source, $matches) === 1) {
                 $level = isset($matches[1]) ? Str::title($matches[1]) : 'Intermediate';
                 $found[] = ['name' => $language, 'level' => $level];
             }
@@ -662,10 +680,10 @@ class JobSeekerCvExtractor
         }
 
         return collect(preg_split('/\n+/', $body) ?: [])
-            ->map(fn(string $line): string => trim($line, " \t-•"))
-            ->filter(fn(string $line): bool => $line !== '')
+            ->map(fn (string $line): string => trim($line, " \t-•"))
+            ->filter(fn (string $line): bool => $line !== '')
             ->take(8)
-            ->map(fn(string $line): array => [
+            ->map(fn (string $line): array => [
                 'name' => Str::limit($line, 120, ''),
                 'issuer' => '',
                 'date' => self::firstMatch('/(?:19|20)\d{2}/', $line) ?? '',

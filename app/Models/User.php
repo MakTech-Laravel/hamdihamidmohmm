@@ -129,6 +129,7 @@ class User extends Authenticatable
             'verified_at' => 'datetime',
             'founded_year' => 'integer',
             'portal_preferences' => 'array',
+            'ats_enabled' => 'boolean',
         ];
     }
 
