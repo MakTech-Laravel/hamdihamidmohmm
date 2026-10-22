@@ -9,12 +9,14 @@ use App\Http\Requests\Backend\User\StoreJobApplicationRequest;
 use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\JobSeekerCv;
+use App\Services\Ats\ApplicationScreeningDispatcher;
 use App\Support\PortalNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class JobSeekerApplicationsController extends Controller
 {
@@ -25,7 +27,7 @@ class JobSeekerApplicationsController extends Controller
             ->with(['jobPost:id,title,location,employment_type,salary_range,slug,employer_id', 'jobPost.employer:id,name,company_name'])
             ->latest()
             ->get()
-            ->map(fn(JobApplication $application) => $this->row($application));
+            ->map(fn (JobApplication $application) => $this->row($application));
 
         return Inertia::render('backend/User/JobSeekerApplications', [
             'applications' => $applications,
@@ -48,7 +50,7 @@ class JobSeekerApplicationsController extends Controller
                 JobApplicationStatus::Hired,
                 JobApplicationStatus::Rejected,
                 JobApplicationStatus::Withdrawn,
-            ])->map(fn(JobApplicationStatus $status) => [
+            ])->map(fn (JobApplicationStatus $status) => [
                 'value' => $status->value,
                 'label' => $status->label(),
                 'count' => $applications->where('status_value', $status->value)->count(),
@@ -56,7 +58,7 @@ class JobSeekerApplicationsController extends Controller
         ]);
     }
 
-    public function store(StoreJobApplicationRequest $request, JobPost $jobPost): RedirectResponse
+    public function store(StoreJobApplicationRequest $request, JobPost $jobPost, ApplicationScreeningDispatcher $screening): RedirectResponse
     {
         abort_unless($jobPost->effectiveStatus() === JobPostStatus::Active, 403);
 
@@ -69,7 +71,7 @@ class JobSeekerApplicationsController extends Controller
         if ($request->hasFile('resume')) {
             $resume = $request->file('resume');
             $userId = $user?->id ?? 0;
-            $payload['resume_path'] = $resume->store('resumes/' . $userId, 'local');
+            $payload['resume_path'] = $resume->store('resumes/'.$userId, 'local');
             $payload['resume_original_name'] = $resume->getClientOriginalName();
         } elseif ($user !== null) {
             $selectedCv = null;
@@ -103,7 +105,7 @@ class JobSeekerApplicationsController extends Controller
 
             if ($source !== null) {
                 $extension = pathinfo($source, PATHINFO_EXTENSION) ?: 'pdf';
-                $copyPath = 'resumes/' . $user->id . '/application-' . uniqid('', true) . '.' . $extension;
+                $copyPath = 'resumes/'.$user->id.'/application-'.uniqid('', true).'.'.$extension;
 
                 Storage::disk('local')->copy($source, $copyPath);
 
@@ -143,6 +145,12 @@ class JobSeekerApplicationsController extends Controller
                     (string) $jobPost->title,
                     (string) $company,
                 );
+            }
+
+            try {
+                $screening->dispatchOne($application);
+            } catch (Throwable $exception) {
+                report($exception);
             }
         }
 

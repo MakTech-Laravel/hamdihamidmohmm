@@ -55,6 +55,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/employers/{user}/approve', [EmployerManagementController::class, 'approve'])->name('employers.approve');
         Route::post('/employers/{user}/reject', [EmployerManagementController::class, 'reject'])->name('employers.reject');
         Route::post('/employers/{user}/reset-password', [EmployerManagementController::class, 'resetPassword'])->name('employers.reset-password');
+        Route::post('/employers/{user}/ats-toggle', [EmployerManagementController::class, 'toggleAts'])->name('employers.ats-toggle');
         Route::delete('/employers/{user}', [EmployerManagementController::class, 'destroy'])->name('employers.destroy');
 
         Route::get('/job-seekers/export', [JobSeekerManagementController::class, 'export'])->name('job-seekers.export');
@@ -149,6 +150,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/ai-assistant', [AiAssistantController::class, 'index'])->name('ai-assistant.index');
         Route::put('/ai-assistant/settings', [AiAssistantController::class, 'updateSettings'])->name('ai-assistant.settings.update');
+        Route::put('/ai-assistant/ats-settings', [AiAssistantController::class, 'updateAtsSettings'])->name('ai-assistant.ats-settings.update');
         Route::get('/ai-assistant/messages', [AiAssistantController::class, 'messages'])->name('ai-assistant.messages.index');
         Route::post('/ai-assistant/messages', [AiAssistantController::class, 'send'])->middleware('throttle:ai-admin-chat')->name('ai-assistant.messages.store');
         Route::delete('/ai-assistant/messages', [AiAssistantController::class, 'clear'])->name('ai-assistant.messages.destroy');

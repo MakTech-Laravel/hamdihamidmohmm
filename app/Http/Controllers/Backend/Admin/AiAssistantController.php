@@ -5,13 +5,20 @@ namespace App\Http\Controllers\Backend\Admin;
 use App\Ai\Agents\AdminAssistant;
 use App\Enums\AiChatChannel;
 use App\Enums\AiChatStatus;
+use App\Enums\AtsScoreSource;
+use App\Enums\AtsScreeningStatus;
+use App\Enums\RoleName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\UpdateAiAssistantSettingsRequest;
+use App\Http\Requests\Backend\Admin\UpdateAtsSettingsRequest;
 use App\Http\Requests\Frontend\SendChatMessageRequest;
 use App\Http\Requests\Frontend\TranslateChatMessageRequest;
 use App\Models\AiChatLog;
+use App\Models\JobApplication;
 use App\Models\PlatformSetting;
+use App\Models\User;
 use App\Services\Ai\AiChatService;
+use App\Services\Ats\AtsSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +28,7 @@ use Inertia\Response;
 
 class AiAssistantController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AtsSettings $atsSettings): Response
     {
         abort_unless($request->user()?->isAdmin() === true, 403);
 
@@ -68,6 +75,7 @@ class AiAssistantController extends Controller
                 'configured' => filled(config("ai.providers.{$provider}.key")) || $provider === 'ollama',
             ],
             'stats' => $this->stats(),
+            'ats' => $this->atsOverview($atsSettings),
             'logs' => $logs,
             'filters' => [
                 'channel' => $channel?->value ?? '',
@@ -88,6 +96,19 @@ class AiAssistantController extends Controller
         );
 
         return back()->with('success', 'AI assistant settings saved.');
+    }
+
+    public function updateAtsSettings(UpdateAtsSettingsRequest $request): RedirectResponse
+    {
+        PlatformSetting::query()->updateOrCreate(
+            ['key' => 'ats'],
+            ['value' => [
+                'enabled' => $request->boolean('enabled'),
+                'ai_enabled' => $request->boolean('ai_enabled'),
+            ]],
+        );
+
+        return back()->with('success', 'ATS screening settings saved.');
     }
 
     public function messages(Request $request, AiChatService $chat): JsonResponse
@@ -135,6 +156,55 @@ class AiAssistantController extends Controller
         $chat->clear($request, AiChatChannel::Admin);
 
         return response()->json(['messages' => []]);
+    }
+
+    /**
+     * @return array{
+     *     settings: array{enabled: bool, ai_enabled: bool},
+     *     config_enabled: bool,
+     *     config_ai_enabled: bool,
+     *     providers: list<string>,
+     *     disabled_employers: int,
+     *     stats: array{scored: int, ai: int, rules: int, failed: int, no_cv: int, pending: int, tokens: int, tokens_today: int, daily_token_budget: int}
+     * }
+     */
+    private function atsOverview(AtsSettings $atsSettings): array
+    {
+        $recent = fn (): Builder => JobApplication::query()->where('ai_scored_at', '>=', now()->subDays(30));
+
+        $bySource = $recent()
+            ->where('ai_status', AtsScreeningStatus::Completed->value)
+            ->toBase()
+            ->selectRaw('ai_source, COUNT(*) as aggregate')
+            ->groupBy('ai_source')
+            ->pluck('aggregate', 'ai_source');
+
+        return [
+            'settings' => PlatformSetting::atsScreening(),
+            'config_enabled' => (bool) config('ai.ats.enabled', true),
+            'config_ai_enabled' => (bool) config('ai.ats.ai_enabled', true),
+            'providers' => array_map(
+                fn (array $entry): string => $entry['provider'].($entry['model'] !== null ? " ({$entry['model']})" : ''),
+                $atsSettings->providers(),
+            ),
+            'disabled_employers' => User::query()->role(RoleName::Employer->value)->where('ats_enabled', false)->count(),
+            'stats' => [
+                'scored' => (int) $bySource->sum(),
+                'ai' => (int) ($bySource[AtsScoreSource::Ai->value] ?? 0),
+                'rules' => (int) ($bySource[AtsScoreSource::Rules->value] ?? 0),
+                'failed' => $recent()->whereIn('ai_status', [AtsScreeningStatus::Failed->value, AtsScreeningStatus::Unreadable->value])->count(),
+                'no_cv' => $recent()->where('ai_status', AtsScreeningStatus::NoCv->value)->count(),
+                'pending' => JobApplication::query()
+                    ->whereIn('ai_status', [AtsScreeningStatus::Pending->value, AtsScreeningStatus::Processing->value])
+                    ->count(),
+                'tokens' => (int) $recent()
+                    ->toBase()
+                    ->selectRaw('COALESCE(SUM(ai_input_tokens + ai_output_tokens), 0) as tokens')
+                    ->value('tokens'),
+                'tokens_today' => $atsSettings->tokensUsedToday(),
+                'daily_token_budget' => $atsSettings->dailyTokenBudget(),
+            ],
+        ];
     }
 
     /**

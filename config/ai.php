@@ -42,6 +42,70 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | ATS Application Screening
+    |--------------------------------------------------------------------------
+    |
+    | Scores each job application (0-100) against the job requirements using
+    | the CV attached to that application. "providers" is a comma separated
+    | failover list of "provider" or "provider:model" entries, e.g.
+    | "openai:gpt-4o-mini,gemini". When every AI provider fails, the
+    | rule-based scorer is used instead. Bulk runs are split into queue
+    | batches of at most 1000 applications.
+    |
+    */
+
+    'ats' => [
+        'enabled' => (bool) env('AI_ATS_ENABLED', true),
+        'ai_enabled' => (bool) env('AI_ATS_AI_ENABLED', true),
+        'providers' => env('AI_ATS_PROVIDERS', ''),
+        'model' => env('AI_ATS_MODEL'),
+        'attempts' => (int) env('AI_ATS_ATTEMPTS', 2),
+        'timeout' => (int) env('AI_ATS_TIMEOUT', 45),
+        'max_cv_chars' => (int) env('AI_ATS_MAX_CV_CHARS', 15000),
+        'min_text_chars' => 200,
+        'batch_size' => (int) env('AI_ATS_BATCH_SIZE', 1000),
+        'per_minute' => (int) env('AI_ATS_PER_MINUTE', 60),
+        'queue' => env('AI_ATS_QUEUE', 'ats'),
+        'shortlist_size' => (int) env('AI_ATS_SHORTLIST_SIZE', 5),
+        'stale_after_minutes' => (int) env('AI_ATS_STALE_AFTER_MINUTES', 30),
+        'daily_token_budget' => (int) env('AI_ATS_DAILY_TOKEN_BUDGET', 0),
+        'retry_ai_within_hours' => 48,
+        'max_ai_attempts' => 3,
+        'weights' => [
+            'skills' => 50,
+            'experience' => 30,
+            'education' => 20,
+        ],
+        'thresholds' => [
+            'strong' => 75,
+            'possible' => 50,
+        ],
+        'experience_levels' => [
+            'entry' => ['min' => 0, 'max' => 2],
+            'junior' => ['min' => 0, 'max' => 2],
+            'mid' => ['min' => 3, 'max' => 5],
+            'senior' => ['min' => 6, 'max' => null],
+            'lead' => ['min' => 8, 'max' => null],
+            'manager' => ['min' => 8, 'max' => null],
+            'executive' => ['min' => 10, 'max' => null],
+        ],
+        'skill_synonyms' => [
+            'javascript' => ['js', 'ecmascript'],
+            'typescript' => ['ts'],
+            'node.js' => ['node', 'nodejs'],
+            'react' => ['reactjs', 'react.js'],
+            'vue' => ['vuejs', 'vue.js'],
+            'postgresql' => ['postgres'],
+            'kubernetes' => ['k8s'],
+            'microsoft excel' => ['excel', 'ms excel'],
+            'microsoft office' => ['ms office', 'office 365'],
+            'human resources' => ['hr'],
+            'customer service' => ['customer support'],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Caching
     |--------------------------------------------------------------------------
     |

@@ -1,6 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
+import { ToggleRow } from '@/components/admin-portal/toggle-row';
 import {
     AdminPageHeader,
     AdminPanel,
@@ -37,6 +38,7 @@ type Employer = {
     jobs: number;
     status: string;
     rejection_reason: string | null;
+    ats_enabled?: boolean;
     verified_at: string | null;
     created_at: string | null;
     updated_at: string | null;
@@ -217,6 +219,22 @@ export default function EmployerShow({ employer, activities }: Props) {
                         </div>
                     ))}
                 </div>
+
+                <AdminPanel>
+                    <ToggleRow
+                        title={t('admin.ats.employer_toggle')}
+                        description={t('admin.ats.employer_toggle_help')}
+                        checked={employer.ats_enabled !== false}
+                        disabled={false}
+                        onChange={(value) =>
+                            router.post(
+                                `/admin/employers/${employer.id}/ats-toggle`,
+                                { ats_enabled: value },
+                                { preserveScroll: true },
+                            )
+                        }
+                    />
+                </AdminPanel>
 
                 <AdminPanel>
                     <h2 className="mb-4 text-base font-bold text-[#101828]">
