@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Backend\Admin;
 
+use App\Enums\AtsScreeningStatus;
 use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
@@ -189,6 +190,7 @@ class ApplicationMonitoringController extends Controller
             'date' => $application->created_at?->toDateString(),
             'resume_url' => route('admin.applications.resume', $application),
             'timeline' => $this->formatTimeline($application->timeline()),
+            'ai' => $this->aiDetails($application),
         ];
 
         if (! $seeker instanceof User) {
@@ -219,6 +221,7 @@ class ApplicationMonitoringController extends Controller
                     'cover_letter_file_url' => null,
                     'avatar_url' => null,
                     'timeline' => $base['timeline'],
+                    'ai' => $base['ai'],
                 ],
             ];
         }
@@ -241,7 +244,38 @@ class ApplicationMonitoringController extends Controller
                 'location' => $preview['preview_location'],
                 'resume_url' => $base['resume_url'],
                 'timeline' => $base['timeline'],
+                'ai' => $base['ai'],
             ],
+        ];
+    }
+
+    /**
+     * Read-only ATS details for admins, shown even when the employer's ATS switch is off.
+     *
+     * @return array<string, mixed>
+     */
+    private function aiDetails(JobApplication $application): array
+    {
+        $completed = $application->ai_status === AtsScreeningStatus::Completed;
+        $breakdown = is_array($application->ai_breakdown) ? $application->ai_breakdown : null;
+
+        return [
+            'ai_score' => $completed ? $application->ai_score : null,
+            'ai_status' => $application->ai_status?->value,
+            'ai_source' => $application->ai_source?->value,
+            'ai_recommendation' => $completed ? $application->ai_recommendation?->value : null,
+            'ai_summary' => $completed ? $application->ai_summary : null,
+            'ai_breakdown' => $completed && $breakdown !== null
+                ? collect($breakdown)->except(['job_hash', 'version', 'ai_recommendation'])->all()
+                : null,
+            'ai_scored_at' => $application->ai_scored_at?->format('M j, Y g:i A'),
+            'ai_outdated' => false,
+            'ai_cv_name' => filled($application->resume_path)
+                ? ($application->resume_original_name ?: basename((string) $application->resume_path))
+                : null,
+            'ai_rescore_url' => null,
+            'ai_model' => $application->ai_model,
+            'ai_error' => $application->ai_error,
         ];
     }
 

@@ -3,6 +3,7 @@ import {
     AlertTriangle,
     Bot,
     CheckCircle2,
+    FileSearch,
     Globe,
     LifeBuoy,
     MessagesSquare,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
+import { ToggleRow } from '@/components/admin-portal/toggle-row';
 import {
     AdminFilterChip,
     AdminPageHeader,
@@ -22,7 +24,6 @@ import {
 } from '@/components/admin-portal/ui';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
-import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
 type Settings = {
@@ -61,6 +62,7 @@ type Props = {
         tokens: number;
         sessions: number;
     };
+    ats: AtsOverview;
     logs: {
         data: ChatLogRow[];
         from: number | null;
@@ -71,61 +73,37 @@ type Props = {
     filters: { channel: string; status: string; search: string };
 };
 
+type AtsOverview = {
+    settings: { enabled: boolean; ai_enabled: boolean };
+    config_enabled: boolean;
+    config_ai_enabled: boolean;
+    providers: string[];
+    disabled_employers: number;
+    stats: {
+        scored: number;
+        ai: number;
+        rules: number;
+        failed: number;
+        no_cv: number;
+        pending: number;
+        tokens: number;
+        tokens_today: number;
+        daily_token_budget: number;
+    };
+};
+
 const statusTone = {
     answered: 'success',
     fallback: 'warning',
     failed: 'danger',
 } as const;
 
-function ToggleRow({
-    title,
-    description,
-    checked,
-    disabled,
-    onChange,
-}: {
-    title: string;
-    description: string;
-    checked: boolean;
-    disabled: boolean;
-    onChange: (value: boolean) => void;
-}) {
-    return (
-        <div className="flex items-start justify-between gap-4 rounded-xl border border-[#e2e8f0] p-4">
-            <div>
-                <p className="text-sm font-bold text-[#050315]">{title}</p>
-                <p className="mt-1 text-xs text-[#64748b]">{description}</p>
-            </div>
-            <button
-                type="button"
-                role="switch"
-                aria-checked={checked}
-                aria-label={title}
-                disabled={disabled}
-                onClick={() => onChange(!checked)}
-                className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-                    checked ? 'bg-[#0057c8]' : 'bg-[#cbd5e1]',
-                )}
-            >
-                <span
-                    className={cn(
-                        'inline-block size-5 rounded-full bg-white shadow transition-transform',
-                        checked
-                            ? 'translate-x-5.5 rtl:-translate-x-5.5'
-                            : 'translate-x-0.5 rtl:-translate-x-0.5',
-                    )}
-                />
-            </button>
-        </div>
-    );
-}
-
 export default function AiAssistant({
     settings,
     canManageSettings,
     provider,
     stats,
+    ats,
     logs,
     filters,
 }: Props) {
@@ -133,6 +111,18 @@ export default function AiAssistant({
     const { t } = useLocale();
     const [values, setValues] = useState<Settings>(settings);
     const [saving, setSaving] = useState(false);
+    const [atsValues, setAtsValues] = useState<AtsOverview['settings']>(
+        ats.settings,
+    );
+    const [savingAts, setSavingAts] = useState(false);
+
+    const saveAtsSettings = () => {
+        setSavingAts(true);
+        router.put('/admin/ai-assistant/ats-settings', atsValues, {
+            preserveScroll: true,
+            onFinish: () => setSavingAts(false),
+        });
+    };
     const [search, setSearch] = useState(filters.search);
 
     const applyFilters = (next: Partial<Props['filters']>) => {
@@ -331,6 +321,111 @@ export default function AiAssistant({
                         </p>
                     </AdminPanel>
                 </div>
+
+                <AdminPanel className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <FileSearch className="size-5 text-[#0057c8]" />
+                        <div>
+                            <h2 className="text-base font-bold text-[#050315]">
+                                {t('admin.ats.title')}
+                            </h2>
+                            <p className="text-xs text-[#64748b]">
+                                {t('admin.ats.subtitle')}
+                            </p>
+                        </div>
+                    </div>
+
+                    {!ats.config_enabled ? (
+                        <p className="rounded-lg bg-[#fffbeb] p-3 text-xs text-[#92400e]">
+                            {t('admin.ats.config_disabled')}
+                        </p>
+                    ) : null}
+
+                    <div className="grid gap-3 lg:grid-cols-2">
+                        <ToggleRow
+                            title={t('admin.ats.enabled_toggle')}
+                            description={t('admin.ats.enabled_toggle_help')}
+                            checked={atsValues.enabled}
+                            disabled={!canManageSettings}
+                            onChange={(value) =>
+                                setAtsValues((current) => ({
+                                    ...current,
+                                    enabled: value,
+                                }))
+                            }
+                        />
+                        <ToggleRow
+                            title={t('admin.ats.ai_toggle')}
+                            description={t('admin.ats.ai_toggle_help')}
+                            checked={atsValues.ai_enabled}
+                            disabled={!canManageSettings}
+                            onChange={(value) =>
+                                setAtsValues((current) => ({
+                                    ...current,
+                                    ai_enabled: value,
+                                }))
+                            }
+                        />
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        {[
+                            [t('admin.ats.stats.scored'), ats.stats.scored],
+                            [t('admin.ats.stats.ai'), ats.stats.ai],
+                            [t('admin.ats.stats.rules'), ats.stats.rules],
+                            [t('admin.ats.stats.failed'), ats.stats.failed],
+                            [t('admin.ats.stats.no_cv'), ats.stats.no_cv],
+                            [t('admin.ats.stats.pending'), ats.stats.pending],
+                            [
+                                t('admin.ats.stats.tokens'),
+                                ats.stats.tokens.toLocaleString(),
+                            ],
+                            [
+                                t('admin.ats.stats.tokens_today'),
+                                ats.stats.daily_token_budget > 0
+                                    ? `${ats.stats.tokens_today.toLocaleString()} / ${ats.stats.daily_token_budget.toLocaleString()}`
+                                    : ats.stats.tokens_today.toLocaleString(),
+                            ],
+                            [
+                                t('admin.ats.stats.disabled_employers'),
+                                ats.disabled_employers,
+                            ],
+                        ].map(([label, value]) => (
+                            <div
+                                key={String(label)}
+                                className="rounded-xl border border-[#e2e8f0] p-3"
+                            >
+                                <p className="text-xs text-[#64748b]">
+                                    {label}
+                                </p>
+                                <p className="pt-1 text-lg font-bold text-[#050315]">
+                                    {value}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <p className="text-xs text-[#64748b]">
+                        {t('admin.ats.providers', {
+                            providers: ats.providers.join(' → ') || '—',
+                        })}
+                    </p>
+
+                    {canManageSettings ? (
+                        <AdminPrimaryButton
+                            onClick={saveAtsSettings}
+                            disabled={savingAts}
+                        >
+                            {savingAts
+                                ? t('common.saving')
+                                : t('common.save_changes')}
+                        </AdminPrimaryButton>
+                    ) : (
+                        <p className="text-xs text-[#64748b]">
+                            {t('admin.ai_assistant.read_only')}
+                        </p>
+                    )}
+                </AdminPanel>
 
                 <AdminPanel className="space-y-4">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Listeners\LogUserLogin;
 use App\Models\JobPost;
+use App\Services\Ats\AtsSettings;
 use App\Support\MailBranding;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
@@ -75,6 +76,13 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('ai-admin-chat', fn (Request $request): Limit => Limit::perMinute((int) config('ai.chatbot.admin_per_minute', 20))
             ->by('ai-admin-chat:'.($request->user()?->id ?? $request->ip()))
             ->response($tooManyMessages));
+
+        RateLimiter::for('ats-ai', fn (): Limit => app(AtsSettings::class)->aiEnabled()
+            ? Limit::perMinute(max(1, (int) config('ai.ats.per_minute', 60)))
+            : Limit::none());
+
+        RateLimiter::for('ats-rescore', fn (Request $request): Limit => Limit::perMinute(10)
+            ->by('ats-rescore:'.($request->user()?->id ?? $request->ip())));
     }
 
     protected function configureDefaults(): void

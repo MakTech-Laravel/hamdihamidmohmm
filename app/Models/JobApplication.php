@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\AtsRecommendation;
+use App\Enums\AtsScoreSource;
+use App\Enums\AtsScreeningStatus;
 use App\Enums\JobApplicationStatus;
 use Database\Factories\JobApplicationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,6 +35,12 @@ class JobApplication extends Model
     {
         return [
             'status' => JobApplicationStatus::class,
+            'ai_status' => AtsScreeningStatus::class,
+            'ai_source' => AtsScoreSource::class,
+            'ai_recommendation' => AtsRecommendation::class,
+            'ai_breakdown' => 'array',
+            'ai_score' => 'integer',
+            'ai_scored_at' => 'datetime',
         ];
     }
 

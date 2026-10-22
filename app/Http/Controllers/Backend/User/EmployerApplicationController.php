@@ -2,14 +2,21 @@
 
 namespace App\Http\Controllers\Backend\User;
 
+use App\Enums\AtsScoreSource;
+use App\Enums\AtsScreeningStatus;
 use App\Enums\Gender;
 use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\BulkUpdateEmployerApplicationsRequest;
+use App\Http\Requests\Backend\User\RescoreEmployerApplicationRequest;
+use App\Http\Requests\Backend\User\RescoreEmployerJobApplicationsRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerApplicationRequest;
 use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\User;
+use App\Services\Ats\ApplicationScreeningDispatcher;
+use App\Services\Ats\AtsInputBuilder;
+use App\Services\Ats\AtsSettings;
 use App\Support\ApplicantDocumentDownloader;
 use App\Support\ApplicantProfilePreview;
 use App\Support\ApplicantQualification;
@@ -31,6 +38,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EmployerApplicationController extends Controller
 {
+    private const AI_BANDS = ['strong', 'possible', 'weak', 'pending', 'no_cv', 'failed', 'unreadable'];
+
+    public function __construct(
+        private AtsSettings $atsSettings,
+        private AtsInputBuilder $atsInputBuilder,
+    ) {}
+
     public function index(Request $request): Response
     {
         $status = $request->string('status')->toString();
@@ -40,6 +54,13 @@ class EmployerApplicationController extends Controller
         $sort = $this->resolveSort($request);
         $direction = $this->resolveDirection($request);
         $gender = Gender::tryFrom($request->string('gender')->toString());
+        $atsEnabled = $this->atsSettings->enabledForEmployer($request->user());
+        $aiSort = $atsEnabled && in_array($request->string('ai_sort')->toString(), ['asc', 'desc'], true)
+            ? $request->string('ai_sort')->toString()
+            : '';
+        $aiBand = $atsEnabled && in_array($request->string('ai_band')->toString(), self::AI_BANDS, true)
+            ? $request->string('ai_band')->toString()
+            : '';
 
         $appsQuery = JobApplication::query()
             ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id))
@@ -72,15 +93,27 @@ class EmployerApplicationController extends Controller
 
         ExperienceFilterOptions::applyRange($appsQuery, $experience);
 
-        ExperienceFilterOptions::applySort($appsQuery, $sort === 'experience' ? $direction : 'desc');
-
-        $sortedApplications = $appsQuery->get();
-
-        if ($sort !== 'experience') {
-            $sortedApplications = $this->sortApplications($sortedApplications, $sort, $direction);
+        if ($aiBand !== '') {
+            $this->applyAiBand($appsQuery, $aiBand);
         }
 
-        $applications = $sortedApplications->map(fn (JobApplication $application) => $this->row($application));
+        if ($aiSort !== '') {
+            $appsQuery->orderByRaw('ai_score IS NULL')->orderBy('ai_score', $aiSort)->latest();
+            $sortedApplications = $appsQuery->get();
+        } else {
+            ExperienceFilterOptions::applySort($appsQuery, $sort === 'experience' ? $direction : 'desc');
+
+            $sortedApplications = $appsQuery->get();
+
+            if ($sort !== 'experience') {
+                $sortedApplications = $this->sortApplications($sortedApplications, $sort, $direction);
+            }
+        }
+
+        $jobHashes = $atsEnabled ? $this->jobHashes($sortedApplications->pluck('job_post_id')->unique()->all()) : [];
+        $applications = $sortedApplications->map(
+            fn (JobApplication $application) => $this->row($application, $atsEnabled, $jobHashes),
+        );
 
         $allForStats = JobApplication::query()
             ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id));
@@ -110,7 +143,10 @@ class EmployerApplicationController extends Controller
                 'direction' => $direction,
                 'gender' => $gender?->value ?? '',
                 'shortlist' => $request->boolean('shortlist'),
+                'ai_sort' => $aiSort,
+                'ai_band' => $aiBand,
             ],
+            'ats' => $this->atsProps($request, $atsEnabled, $jobId, clone $allForStats),
             'experience_options' => ExperienceFilterOptions::enabled(),
             'gender_options' => Gender::options(),
             'stats' => [
@@ -179,6 +215,35 @@ class EmployerApplicationController extends Controller
                 'Content-Disposition' => 'attachment; filename="recruitment-report-'.$suffix.'-'.now()->toDateString().'.xlsx"',
             ],
         );
+    }
+
+    public function rescore(
+        RescoreEmployerApplicationRequest $request,
+        JobApplication $application,
+        ApplicationScreeningDispatcher $dispatcher,
+    ): RedirectResponse {
+        $queued = $dispatcher->dispatchOne($application, true);
+
+        return back()->with(
+            $queued ? 'success' : 'error',
+            $queued ? 'AI re-score queued.' : 'This application has no CV to score.',
+        );
+    }
+
+    public function rescoreJob(
+        RescoreEmployerJobApplicationsRequest $request,
+        JobPost $job,
+        ApplicationScreeningDispatcher $dispatcher,
+    ): RedirectResponse {
+        $queued = $dispatcher->dispatchForJob($job, $request->validated('mode'));
+
+        if ($queued === null) {
+            return back()->with('error', 'A re-score is already running for this job. Please try again shortly.');
+        }
+
+        return back()->with('success', $queued === 0
+            ? 'No applications needed re-scoring.'
+            : "Queued {$queued} application(s) for AI scoring.");
     }
 
     public function downloadResume(Request $request, JobApplication $application): StreamedResponse
@@ -382,9 +447,175 @@ class EmployerApplicationController extends Controller
     }
 
     /**
+     * @param  Builder<JobApplication>  $query
+     */
+    private function applyAiBand(Builder $query, string $band): void
+    {
+        $strong = $this->atsSettings->strongThreshold();
+        $possible = $this->atsSettings->possibleThreshold();
+        $completed = AtsScreeningStatus::Completed->value;
+
+        match ($band) {
+            'strong' => $query->where('ai_status', $completed)->where('ai_score', '>=', $strong),
+            'possible' => $query->where('ai_status', $completed)->where('ai_score', '>=', $possible)->where('ai_score', '<', $strong),
+            'weak' => $query->where('ai_status', $completed)->where('ai_score', '<', $possible),
+            'no_cv' => $query->where('ai_status', AtsScreeningStatus::NoCv->value),
+            'failed' => $query->where('ai_status', AtsScreeningStatus::Failed->value),
+            'unreadable' => $query->where('ai_status', AtsScreeningStatus::Unreadable->value),
+            default => $query->where(fn (Builder $pending) => $pending
+                ->whereNull('ai_status')
+                ->orWhereIn('ai_status', [AtsScreeningStatus::Pending->value, AtsScreeningStatus::Processing->value])),
+        };
+    }
+
+    /**
+     * @param  list<int>  $jobIds
+     * @return array<int, string>
+     */
+    private function jobHashes(array $jobIds): array
+    {
+        if ($jobIds === []) {
+            return [];
+        }
+
+        return JobPost::query()
+            ->whereKey($jobIds)
+            ->get()
+            ->mapWithKeys(fn (JobPost $job): array => [
+                $job->id => $this->atsInputBuilder->jobHash($this->atsInputBuilder->jobContext($job)),
+            ])
+            ->all();
+    }
+
+    /**
+     * @param  Builder<JobApplication>  $allForEmployer
+     * @return array{
+     *     enabled: bool,
+     *     ai_enabled: bool,
+     *     has_pending: bool,
+     *     rescore_url: string|null,
+     *     thresholds: array{strong: int, possible: int},
+     *     suggested_shortlist: list<array<string, mixed>>
+     * }
+     */
+    private function atsProps(Request $request, bool $atsEnabled, int $jobId, Builder $allForEmployer): array
+    {
+        if (! $atsEnabled) {
+            return [
+                'enabled' => false,
+                'ai_enabled' => false,
+                'has_pending' => false,
+                'rescore_url' => null,
+                'thresholds' => [
+                    'strong' => $this->atsSettings->strongThreshold(),
+                    'possible' => $this->atsSettings->possibleThreshold(),
+                ],
+                'suggested_shortlist' => [],
+            ];
+        }
+
+        $shortlist = [];
+        $job = $jobId > 0
+            ? JobPost::query()->where('employer_id', $request->user()?->id)->whereKey($jobId)->first()
+            : null;
+
+        if ($job instanceof JobPost) {
+            $shortlist = JobApplication::query()
+                ->where('job_post_id', $job->id)
+                ->whereIn('status', [JobApplicationStatus::Applied->value, JobApplicationStatus::UnderReview->value])
+                ->where('ai_status', AtsScreeningStatus::Completed->value)
+                ->where('ai_score', '>=', $this->atsSettings->strongThreshold())
+                ->with('jobSeeker:id,name')
+                ->orderByDesc('ai_score')
+                ->oldest()
+                ->limit($this->atsSettings->shortlistSize())
+                ->get()
+                ->map(fn (JobApplication $application): array => [
+                    'id' => $application->id,
+                    'name' => $application->jobSeeker?->name ?? 'Applicant',
+                    'ai_score' => $application->ai_score,
+                    'ai_source' => $application->ai_source?->value,
+                    'ai_summary' => $application->ai_summary,
+                    'status' => $application->status?->label(),
+                ])
+                ->values()
+                ->all();
+        }
+
+        return [
+            'enabled' => true,
+            'ai_enabled' => $this->atsSettings->aiEnabled(),
+            'has_pending' => $allForEmployer
+                ->whereIn('ai_status', [AtsScreeningStatus::Pending->value, AtsScreeningStatus::Processing->value])
+                ->exists(),
+            'rescore_url' => $job instanceof JobPost ? route('employer.jobs.applications.rescore', $job) : null,
+            'thresholds' => [
+                'strong' => $this->atsSettings->strongThreshold(),
+                'possible' => $this->atsSettings->possibleThreshold(),
+            ],
+            'suggested_shortlist' => $shortlist,
+        ];
+    }
+
+    /**
+     * @param  array<int, string>  $jobHashes
      * @return array<string, mixed>
      */
-    private function row(JobApplication $application): array
+    private function aiFields(JobApplication $application, bool $atsEnabled, array $jobHashes): array
+    {
+        if (! $atsEnabled) {
+            return [
+                'ai_score' => null,
+                'ai_status' => null,
+                'ai_source' => null,
+                'ai_recommendation' => null,
+                'ai_summary' => null,
+                'ai_breakdown' => null,
+                'ai_scored_at' => null,
+                'ai_outdated' => false,
+                'ai_cv_name' => null,
+                'ai_error' => null,
+                'ai_rescore_url' => null,
+            ];
+        }
+
+        $breakdown = is_array($application->ai_breakdown) ? $application->ai_breakdown : null;
+        $completed = $application->ai_status === AtsScreeningStatus::Completed;
+        $scoredJobHash = $breakdown['job_hash'] ?? null;
+        $showError = in_array($application->ai_status, [
+            AtsScreeningStatus::Failed,
+            AtsScreeningStatus::Unreadable,
+        ], true) || ($completed && $application->ai_source === AtsScoreSource::Rules && filled($application->ai_error));
+
+        return [
+            'ai_score' => $completed ? $application->ai_score : null,
+            'ai_status' => $application->ai_status?->value,
+            'ai_source' => $application->ai_source?->value,
+            'ai_recommendation' => $completed ? $application->ai_recommendation?->value : null,
+            'ai_summary' => $completed ? $application->ai_summary : null,
+            'ai_breakdown' => $completed && $breakdown !== null
+                ? collect($breakdown)->except(['job_hash', 'version', 'ai_recommendation'])->all()
+                : null,
+            'ai_scored_at' => $application->ai_scored_at?->format('M j, Y g:i A'),
+            'ai_outdated' => $completed
+                && is_string($scoredJobHash)
+                && isset($jobHashes[$application->job_post_id])
+                && $jobHashes[$application->job_post_id] !== $scoredJobHash,
+            'ai_cv_name' => filled($application->resume_path)
+                ? ($application->resume_original_name ?: basename((string) $application->resume_path))
+                : null,
+            'ai_error' => $showError && filled($application->ai_error)
+                ? (string) $application->ai_error
+                : null,
+            'ai_rescore_url' => route('employer.applications.rescore', $application),
+        ];
+    }
+
+    /**
+     * @param  array<int, string>  $jobHashes
+     * @return array<string, mixed>
+     */
+    private function row(JobApplication $application, bool $atsEnabled = false, array $jobHashes = []): array
     {
         $next = $application->status?->next();
         $seeker = $application->jobSeeker;
@@ -439,6 +670,7 @@ class EmployerApplicationController extends Controller
                 'can_move' => $next instanceof JobApplicationStatus,
                 'can_reject' => $application->status !== JobApplicationStatus::Withdrawn
                     && $application->status !== JobApplicationStatus::Rejected,
+                ...$this->aiFields($application, $atsEnabled, $jobHashes),
             ];
         }
 
@@ -464,6 +696,7 @@ class EmployerApplicationController extends Controller
             'can_move' => $next instanceof JobApplicationStatus,
             'can_reject' => $application->status !== JobApplicationStatus::Withdrawn
                 && $application->status !== JobApplicationStatus::Rejected,
+            ...$this->aiFields($application, $atsEnabled, $jobHashes),
         ];
     }
 

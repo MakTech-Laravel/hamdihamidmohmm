@@ -16,6 +16,7 @@ import {
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import { AtsScoreBadge, type AtsMatch } from '@/components/employer/ats-score';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
@@ -30,6 +31,7 @@ type ApplicationRow = {
     status_value: string;
     date: string | null;
     resume_url: string;
+    ai?: AtsMatch;
     preview: CandidatePreview;
 };
 
@@ -282,6 +284,7 @@ export default function ApplicationsMonitoring({
                             t('admin.applications.cols.job'),
                             t('admin.applications.cols.employer'),
                             t('admin.applications.cols.status'),
+                            t('employer.ats.col_score'),
                             t('admin.applications.cols.date'),
                             t('common.actions'),
                         ]}
@@ -308,6 +311,13 @@ export default function ApplicationsMonitoring({
                                         label={row.status}
                                         tone={statusTone(row.status)}
                                     />
+                                </td>
+                                <td className="px-3 py-3">
+                                    {row.ai ? (
+                                        <AtsScoreBadge match={row.ai} />
+                                    ) : (
+                                        '—'
+                                    )}
                                 </td>
                                 <td className="px-3 py-3 text-[#64748b]">
                                     {row.date ?? '—'}

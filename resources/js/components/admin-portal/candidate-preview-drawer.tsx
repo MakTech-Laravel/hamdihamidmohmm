@@ -1,6 +1,7 @@
 import { Download, ExternalLink, Mail, MapPin, Phone, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
+import { AtsMatchSection, type AtsMatch } from '@/components/employer/ats-score';
 import { getInitials } from '@/components/job-seeker/demo-data';
 import {
     Sheet,
@@ -70,6 +71,7 @@ export type CandidatePreview = {
     cover_letter_file_url?: string | null;
     avatar_url?: string | null;
     timeline: CandidatePreviewTimelineStep[];
+    ai?: AtsMatch | null;
 };
 
 export function CandidatePreviewDrawer({
@@ -153,6 +155,8 @@ function DrawerBody({ preview }: { preview: CandidatePreview }) {
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5">
+                {preview.ai ? <AtsMatchSection match={preview.ai} /> : null}
+
                 <Section title={t('admin.candidate.contact')}>
                     <div className="flex flex-col gap-[4.8px]">
                         <ContactRow icon={Mail} value={preview.email} />
