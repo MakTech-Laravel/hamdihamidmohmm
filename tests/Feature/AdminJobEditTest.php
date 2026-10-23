@@ -25,7 +25,7 @@ test('admins can open the job edit page', function () {
     $this->actingAs($admin)
         ->get(route('admin.jobs.edit', $job))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/JobEdit')
             ->where('job.title', 'Policy Officer')
             ->has('job.logo_url')
@@ -56,7 +56,7 @@ test('admins can update a job posting', function () {
             'experience_level' => 'Senior',
             'salary_range' => 'SDG 10,000 - 15,000',
             'description' => '<p><strong>Updated</strong> description for policy compliance.</p><script>alert(1)</script>',
-            'requirements' => 'Updated requirements.',
+            'requirements' => '<p><em>Updated</em> requirements.</p><script>alert(1)</script>',
             'skills' => 'Laravel, React',
             'expires_at' => now()->addDays(20)->toDateString(),
             'status' => JobPostStatus::Active->value,
@@ -70,7 +70,9 @@ test('admins can update a job posting', function () {
         ->and($job->status)->toBe(JobPostStatus::Active)
         ->and($job->skills)->toContain('Laravel')
         ->and($job->description)->toContain('<strong>Updated</strong>')
-        ->and($job->description)->not->toContain('<script>');
+        ->and($job->description)->not->toContain('<script>')
+        ->and($job->requirements)->toContain('<em>Updated</em>')
+        ->and($job->requirements)->not->toContain('<script>');
 });
 
 test('admins can upload and remove a job logo', function () {
@@ -117,5 +119,5 @@ test('admins can upload pdf attachments for job descriptions', function () {
         ->assertJsonStructure(['url', 'name'])
         ->assertJsonPath('name', 'P11-form.pdf');
 
-    expect($response->json('url'))->toStartWith('/storage/job-description-attachments/admin/' . $admin->id . '/');
+    expect($response->json('url'))->toStartWith('/storage/job-description-attachments/admin/'.$admin->id.'/');
 });
