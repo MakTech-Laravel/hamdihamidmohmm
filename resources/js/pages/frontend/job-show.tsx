@@ -50,7 +50,7 @@ type JobDetail = {
     overview?: string | null;
     description?: string | null;
     responsibilities?: string[];
-    requirements?: string[];
+    requirements?: string | null;
     skills?: string[];
     benefits?: string[];
     similar?: SimilarJob[];
@@ -121,7 +121,7 @@ export default function JobShow({
     const overview = job.overview || job.description || '';
     const similar = job.similar ?? [];
     const responsibilities = job.responsibilities ?? [];
-    const requirements = job.requirements ?? [];
+    const requirements = job.requirements?.trim() ? job.requirements : null;
     const skills = job.skills ?? [];
     const benefits = job.benefits ?? [];
 
@@ -389,30 +389,16 @@ export default function JobShow({
                                     </section>
                                 ) : null}
 
-                                {requirements.length > 0 ? (
+                                {requirements ? (
                                     <section className="mt-8">
                                         <h2 className="text-lg font-bold text-[#050315]">
                                             {t('job_detail.requirements')}
                                         </h2>
-                                        <ul className="mt-4 space-y-3">
-                                            {requirements.map((item) => (
-                                                <li
-                                                    key={item}
-                                                    className="flex items-start gap-3 text-sm text-[#364153]"
-                                                >
-                                                    <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[#dcfce7]">
-                                                        <img
-                                                            src="/images/job-detail/check-green.svg"
-                                                            alt=""
-                                                            className="size-3"
-                                                            width={12}
-                                                            height={12}
-                                                        />
-                                                    </span>
-                                                    {item}
-                                                </li>
-                                            ))}
-                                        </ul>
+                                        <div className="mt-4 text-sm leading-[23px] text-[#4a5565]">
+                                            <RichTextContent
+                                                html={requirements}
+                                            />
+                                        </div>
                                     </section>
                                 ) : null}
 
