@@ -35,6 +35,7 @@ class UpdateEmployerJobRequest extends FormRequest
 
         $payload = [
             'description' => SafeHtml::clean($this->input('description')),
+            'requirements' => SafeHtml::clean($this->input('requirements')),
             'country' => $this->nullableSlug('country'),
             'location' => $this->nullableSlug('location'),
             'category' => $this->nullableSlug('category'),
@@ -91,7 +92,7 @@ class UpdateEmployerJobRequest extends FormRequest
             'experience_level' => ['required', 'string', 'max:50'],
             'salary_range' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:20000'],
-            'requirements' => ['nullable', 'string'],
+            'requirements' => ['nullable', 'string', 'max:20000'],
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:80'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
