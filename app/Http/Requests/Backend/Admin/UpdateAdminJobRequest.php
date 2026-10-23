@@ -24,7 +24,7 @@ class UpdateAdminJobRequest extends FormRequest
         if (is_string($skills)) {
             $this->merge([
                 'skills' => collect(explode(',', $skills))
-                    ->map(fn(string $skill): string => trim($skill))
+                    ->map(fn (string $skill): string => trim($skill))
                     ->filter()
                     ->values()
                     ->all(),
@@ -33,6 +33,7 @@ class UpdateAdminJobRequest extends FormRequest
 
         $this->merge([
             'description' => SafeHtml::clean($this->input('description')),
+            'requirements' => SafeHtml::clean($this->input('requirements')),
             'country' => $this->nullableSlug('country'),
             'location' => $this->nullableSlug('location'),
             'category' => $this->nullableSlug('category'),
@@ -81,7 +82,7 @@ class UpdateAdminJobRequest extends FormRequest
             'experience_level' => ['required', 'string', 'max:50'],
             'salary_range' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:20000'],
-            'requirements' => ['nullable', 'string'],
+            'requirements' => ['nullable', 'string', 'max:20000'],
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:80'],
             'expires_at' => ['nullable', 'date'],
