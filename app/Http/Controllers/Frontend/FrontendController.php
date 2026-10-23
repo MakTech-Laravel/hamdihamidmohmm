@@ -32,7 +32,7 @@ class FrontendController extends Controller
                 ->latest()
                 ->limit(6)
                 ->get()
-                ->map(fn(JobPost $job) => $this->homeJobCard($job))
+                ->map(fn (JobPost $job) => $this->homeJobCard($job))
                 ->values(),
         ]);
     }
@@ -49,7 +49,7 @@ class FrontendController extends Controller
         $location = $request->string('location')->toString();
         $category = $request->string('category')->toString();
         $types = collect($request->input('types', []))
-            ->map(fn(mixed $type): string => trim((string) $type))
+            ->map(fn (mixed $type): string => trim((string) $type))
             ->filter()
             ->values()
             ->all();
@@ -72,7 +72,7 @@ class FrontendController extends Controller
             ->latest()
             ->paginate(30)
             ->withQueryString()
-            ->through(fn(JobPost $job) => [
+            ->through(fn (JobPost $job) => [
                 'id' => $job->id,
                 'slug' => $job->slug,
                 'title' => $job->title,
@@ -119,9 +119,9 @@ class FrontendController extends Controller
 
         $applied = $request->user()?->isJobSeeker()
             ? JobApplication::query()
-            ->where('job_post_id', $jobPost->id)
-            ->where('job_seeker_id', $request->user()->id)
-            ->exists()
+                ->where('job_post_id', $jobPost->id)
+                ->where('job_seeker_id', $request->user()->id)
+                ->exists()
             : false;
 
         return Inertia::render('frontend/job-show', [
@@ -144,10 +144,10 @@ class FrontendController extends Controller
                 'deadline' => $jobPost->expires_at?->toDateString(),
                 'description' => $jobPost->description,
                 'overview' => $jobPost->description,
-                'requirements' => $this->lines($jobPost->requirements),
+                'requirements' => $jobPost->requirements,
                 'skills' => array_values(array_filter(
                     is_array($jobPost->skills) ? $jobPost->skills : [],
-                    fn(mixed $skill): bool => filled($skill),
+                    fn (mixed $skill): bool => filled($skill),
                 )),
                 'about' => $jobPost->employer?->about,
                 'industry' => $jobPost->employer?->industry,
@@ -161,7 +161,7 @@ class FrontendController extends Controller
                     ->latest()
                     ->limit(3)
                     ->get()
-                    ->map(fn(JobPost $similar) => [
+                    ->map(fn (JobPost $similar) => [
                         'slug' => $similar->slug,
                         'title' => $similar->title,
                         'company' => $similar->employer?->company_name ?: $similar->employer?->name,
@@ -174,17 +174,17 @@ class FrontendController extends Controller
             'is_preview' => ! $isLive,
             'applicant_cvs' => $request->user()?->isJobSeeker() === true
                 ? $request->user()->jobSeekerCvs()
-                ->orderByDesc('is_default')
-                ->orderByDesc('id')
-                ->get(['id', 'label', 'original_name', 'is_default'])
-                ->map(fn($cv) => [
-                    'id' => $cv->id,
-                    'label' => $cv->label,
-                    'file_name' => $cv->original_name,
-                    'is_default' => (bool) $cv->is_default,
-                ])
-                ->values()
-                ->all()
+                    ->orderByDesc('is_default')
+                    ->orderByDesc('id')
+                    ->get(['id', 'label', 'original_name', 'is_default'])
+                    ->map(fn ($cv) => [
+                        'id' => $cv->id,
+                        'label' => $cv->label,
+                        'file_name' => $cv->original_name,
+                        'is_default' => (bool) $cv->is_default,
+                    ])
+                    ->values()
+                    ->all()
                 : [],
         ]);
     }
@@ -275,21 +275,5 @@ class FrontendController extends Controller
         $letters = preg_replace('/[^A-Za-z]/', '', (string) $name) ?: 'JP';
 
         return Str::upper(Str::substr($letters, 0, 2));
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function lines(?string $value): array
-    {
-        if (! filled($value)) {
-            return [];
-        }
-
-        return collect(preg_split('/\r\n|\r|\n/', $value) ?: [])
-            ->map(fn(string $line): string => trim($line))
-            ->filter()
-            ->values()
-            ->all();
     }
 }
