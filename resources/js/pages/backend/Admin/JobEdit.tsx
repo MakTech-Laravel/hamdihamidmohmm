@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { Textarea } from '@/components/ui/textarea';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
@@ -512,17 +511,21 @@ export default function JobEdit({ job, options }: Props) {
                             <Label htmlFor="requirements">
                                 {t('admin.jobs.fields.requirements')}
                             </Label>
-                            <Textarea
-                                id="requirements"
+                            <RichTextEditor
                                 value={form.data.requirements}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'requirements',
-                                        event.target.value,
-                                    )
+                                onChange={(value) =>
+                                    form.setData('requirements', value)
                                 }
-                                className="min-h-24 rounded-xl"
+                                placeholder={t(
+                                    'employer.job_editor.field.requirements_placeholder',
+                                )}
+                                attachmentUploadUrl="/admin/jobs/description-attachments"
                             />
+                            <p className="text-xs text-[#94a3b8]">
+                                {t(
+                                    'employer.job_editor.field.description_hint',
+                                )}
+                            </p>
                             <InputError message={form.errors.requirements} />
                         </div>
 

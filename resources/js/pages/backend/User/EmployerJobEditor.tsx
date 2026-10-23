@@ -1222,21 +1222,23 @@ export default function EmployerJobEditor({
                                 label={t(
                                     'employer.job_editor.field.requirements',
                                 )}
+                                error={form.errors.requirements}
                             >
-                                <textarea
-                                    rows={6}
+                                <RichTextEditor
                                     value={form.data.requirements}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'requirements',
-                                            event.target.value,
-                                        )
+                                    onChange={(value) =>
+                                        form.setData('requirements', value)
                                     }
                                     placeholder={t(
                                         'employer.job_editor.field.requirements_placeholder',
                                     )}
-                                    className={inputClass}
+                                    attachmentUploadUrl="/employer/jobs/description-attachments"
                                 />
+                                <p className="mt-1.5 text-xs text-[#94a3b8]">
+                                    {t(
+                                        'employer.job_editor.field.description_hint',
+                                    )}
+                                </p>
                             </Field>
                             <Field
                                 label={t('employer.job_editor.field.skills')}
@@ -1505,9 +1507,13 @@ export default function EmployerJobEditor({
                                                     'employer.job_editor.field.requirements',
                                                 )}
                                             </h4>
-                                            <p className="mt-2 text-sm whitespace-pre-wrap text-[#334155]">
-                                                {form.data.requirements}
-                                            </p>
+                                            <div className="mt-2 text-sm text-[#334155]">
+                                                <RichTextContent
+                                                    html={
+                                                        form.data.requirements
+                                                    }
+                                                />
+                                            </div>
                                         </div>
                                     )}
 
