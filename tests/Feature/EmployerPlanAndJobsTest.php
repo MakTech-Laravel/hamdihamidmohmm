@@ -178,7 +178,7 @@ test('employers can save a draft and later submit it for review', function () {
             'experience_level' => 'Senior',
             'salary_range' => 'SAR 18,000–25,000',
             'description' => '<p><strong>Design</strong> the portal. <span style="font-size: 18px">Impact role.</span></p><script>alert(1)</script>',
-            'requirements' => 'Figma and research.',
+            'requirements' => '<ul><li><strong>Figma</strong> and research.</li></ul><script>alert(1)</script><a href="javascript:alert(1)">bad</a>',
             'skills' => 'Figma, UX',
             'publish' => false,
         ])
@@ -192,7 +192,10 @@ test('employers can save a draft and later submit it for review', function () {
         ->and($job->skills)->toBe(['Figma', 'UX'])
         ->and($job->description)->toContain('<strong>Design</strong>')
         ->and($job->description)->toContain('font-size: 18px')
-        ->and($job->description)->not->toContain('<script>');
+        ->and($job->description)->not->toContain('<script>')
+        ->and($job->requirements)->toContain('<strong>Figma</strong>')
+        ->and($job->requirements)->not->toContain('<script>')
+        ->and($job->requirements)->not->toContain('javascript');
 
     $this->actingAs($employer)
         ->put(route('employer.jobs.update', $job), [
