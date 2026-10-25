@@ -3,6 +3,14 @@ import { Check, Download } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
 import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+    MobileListEmpty,
+    MobileListStack,
+} from '@/components/mobile-list-card';
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -471,7 +479,69 @@ export default function EmployerPackages({
                     <h2 className="mb-4 text-base font-bold text-[#050315]">
                         {t('employer.packages.invoice_history')}
                     </h2>
-                    <div className="overflow-x-auto">
+                    {invoices.length === 0 ? (
+                        <MobileListEmpty>
+                            {t('employer.packages.no_invoices')}
+                        </MobileListEmpty>
+                    ) : (
+                        <MobileListStack>
+                            {invoices.map((invoice) => (
+                                <MobileListCard key={invoice.id}>
+                                    <MobileListCardHeader
+                                        title={invoice.reference}
+                                        subtitle={invoice.package}
+                                        badge={
+                                            <span
+                                                className={cn(
+                                                    'rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+                                                    invoice.status_value ===
+                                                        'completed'
+                                                        ? 'bg-[#dcfce7] text-[#166534]'
+                                                        : 'bg-[#fff7ed] text-[#c2410c]',
+                                                )}
+                                            >
+                                                {invoice.status}
+                                            </span>
+                                        }
+                                    />
+                                    <MobileListCardMeta
+                                        items={[
+                                            {
+                                                label: t(
+                                                    'employer.packages.date',
+                                                ),
+                                                value: invoice.date,
+                                            },
+                                            {
+                                                label: t(
+                                                    'employer.packages.amount',
+                                                ),
+                                                value: `${invoice.currency} ${invoice.amount.toLocaleString()}`,
+                                            },
+                                        ]}
+                                    />
+                                    {invoice.invoice_url ? (
+                                        <MobileListCardActions
+                                            primary={
+                                                <a
+                                                    href={invoice.invoice_url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                >
+                                                    <Download className="size-3.5" />
+                                                    {t(
+                                                        'employer.packages.action',
+                                                    )}
+                                                </a>
+                                            }
+                                        />
+                                    ) : null}
+                                </MobileListCard>
+                            ))}
+                        </MobileListStack>
+                    )}
+                    <div className="hidden overflow-x-auto md:block">
                         <table className="w-full min-w-[640px] text-left text-sm">
                             <thead className="text-xs tracking-wide text-[#64748b] uppercase">
                                 <tr>
@@ -546,7 +616,7 @@ export default function EmployerPackages({
                             </tbody>
                         </table>
                         {invoices.length === 0 && (
-                            <p className="py-6 text-sm text-[#99a1af]">
+                            <p className="hidden py-6 text-sm text-[#99a1af] md:block">
                                 {t('employer.packages.no_invoices')}
                             </p>
                         )}

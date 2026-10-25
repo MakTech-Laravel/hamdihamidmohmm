@@ -7,6 +7,14 @@ import {
     type RosterCandidatePreview,
     type RosterApplicationSummary,
 } from '@/components/employer/roster-candidate-drawer';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+    MobileListEmpty,
+    MobileListStack,
+} from '@/components/mobile-list-card';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
@@ -127,7 +135,100 @@ export default function EmployerRoster({
                     ) : null}
                 </div>
 
-                <div className="overflow-x-auto rounded-2xl border border-[rgba(57,119,166,0.2)] bg-white">
+                {entries.length === 0 ? (
+                    <MobileListEmpty>
+                        {t('employer.roster.empty')}
+                    </MobileListEmpty>
+                ) : (
+                    <MobileListStack>
+                        {entries.map((entry) => (
+                            <MobileListCard key={entry.id}>
+                                <MobileListCardHeader
+                                    title={entry.name || '—'}
+                                    subtitle={entry.current_title || entry.email}
+                                    badge={
+                                        <span className="inline-flex rounded-full bg-[#eff6ff] px-2.5 py-0.5 text-[11px] font-semibold text-[#0057c8]">
+                                            {entry.category}
+                                        </span>
+                                    }
+                                />
+                                <MobileListCardMeta
+                                    items={[
+                                        {
+                                            label: t('employer.roster.col.job'),
+                                            value: entry.job || '—',
+                                        },
+                                        {
+                                            label: t(
+                                                'employer.roster.col.status',
+                                            ),
+                                            value:
+                                                entry.application_status ||
+                                                '—',
+                                        },
+                                        {
+                                            label: t(
+                                                'employer.roster.col.applications',
+                                            ),
+                                            value: String(
+                                                entry.applications_count ??
+                                                    entry.applications
+                                                        ?.length ??
+                                                    0,
+                                            ),
+                                        },
+                                        {
+                                            label: t(
+                                                'employer.roster.col.added_by',
+                                            ),
+                                            value: entry.added_by || '—',
+                                        },
+                                    ]}
+                                />
+                                <MobileListCardActions
+                                    primary={
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setViewingId(entry.id)
+                                            }
+                                            className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                        >
+                                            {t('common.view')}
+                                        </button>
+                                    }
+                                    moreItems={[
+                                        {
+                                            key: 'remove',
+                                            label: t('common.remove'),
+                                            destructive: true,
+                                            onSelect: () => {
+                                                if (
+                                                    !window.confirm(
+                                                        t(
+                                                            'employer.roster.remove_confirm',
+                                                        ),
+                                                    )
+                                                ) {
+                                                    return;
+                                                }
+
+                                                router.delete(
+                                                    `/employer/roster/${entry.id}`,
+                                                    {
+                                                        preserveScroll: true,
+                                                    },
+                                                );
+                                            },
+                                        },
+                                    ]}
+                                />
+                            </MobileListCard>
+                        ))}
+                    </MobileListStack>
+                )}
+
+                <div className="hidden overflow-x-auto rounded-2xl border border-[rgba(57,119,166,0.2)] bg-white md:block">
                     <table className="min-w-full text-left text-sm">
                         <thead className="border-b border-[rgba(57,119,166,0.15)] bg-[#f8faff] text-xs font-semibold tracking-wide text-[#475569] uppercase">
                             <tr>

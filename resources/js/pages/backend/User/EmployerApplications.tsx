@@ -23,6 +23,14 @@ import {
     type AtsThresholds,
 } from '@/components/employer/ats-score';
 import { getInitials } from '@/components/employer/demo-data';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+    MobileListEmpty,
+    MobileListStack,
+} from '@/components/mobile-list-card';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
@@ -1003,7 +1011,169 @@ export default function EmployerApplications({
                             </div>
                         )}
 
-                        <div className="overflow-x-auto">
+                        {filtered.length === 0 ? (
+                            <MobileListEmpty>
+                                {filters.job_title
+                                    ? t(
+                                          'employer.applications.empty_for_job',
+                                          { job: filters.job_title },
+                                      )
+                                    : t('employer.applications.empty_yet')}
+                            </MobileListEmpty>
+                        ) : (
+                            <MobileListStack className="p-3">
+                                {filtered.map((row) => (
+                                    <MobileListCard key={row.id}>
+                                        <div className="mb-2 flex items-start gap-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(
+                                                    row.id,
+                                                )}
+                                                onChange={() =>
+                                                    toggleRow(row.id)
+                                                }
+                                                aria-label={row.name ?? ''}
+                                                className="mt-1 size-4 shrink-0 cursor-pointer"
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <MobileListCardHeader
+                                                    leading={
+                                                        <CandidateAvatar
+                                                            name={
+                                                                row.name || 'A'
+                                                            }
+                                                            avatarUrl={
+                                                                row.avatar_url
+                                                            }
+                                                        />
+                                                    }
+                                                    title={row.name || '—'}
+                                                    subtitle={row.job || undefined}
+                                                    badge={
+                                                        <span
+                                                            className={cn(
+                                                                'inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+                                                                statusTone[
+                                                                    row.status_value ??
+                                                                        ''
+                                                                ] ??
+                                                                    'bg-[#f8faff] text-[#0057c8]',
+                                                            )}
+                                                        >
+                                                            {row.status}
+                                                        </span>
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+                                        <MobileListCardMeta
+                                            items={[
+                                                {
+                                                    label: t(
+                                                        'employer.applications.col.date',
+                                                    ),
+                                                    value: row.date || '—',
+                                                },
+                                                {
+                                                    label: t(
+                                                        'employer.applications.col.experience',
+                                                    ),
+                                                    value:
+                                                        row.experience_years ||
+                                                        '—',
+                                                },
+                                                {
+                                                    label: t(
+                                                        'employer.applications.col.location',
+                                                    ),
+                                                    value: row.location || '—',
+                                                },
+                                                ...(showAtsScores
+                                                    ? [
+                                                          {
+                                                              label: t(
+                                                                  'employer.ats.col_score',
+                                                              ),
+                                                              value: (
+                                                                  <AtsScoreBadge
+                                                                      match={
+                                                                          row
+                                                                      }
+                                                                      thresholds={
+                                                                          ats?.thresholds
+                                                                      }
+                                                                  />
+                                                              ),
+                                                          },
+                                                      ]
+                                                    : []),
+                                            ]}
+                                        />
+                                        <MobileListCardActions
+                                            primary={
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setViewingId(row.id)
+                                                    }
+                                                    className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                >
+                                                    {t('common.view')}
+                                                </button>
+                                            }
+                                            moreItems={[
+                                                {
+                                                    key: 'roster',
+                                                    label: row.on_roster
+                                                        ? t(
+                                                              'employer.roster.on_roster',
+                                                          )
+                                                        : t(
+                                                              'employer.roster.add',
+                                                          ),
+                                                    onSelect: () =>
+                                                        setRosterApplicationId(
+                                                            row.id,
+                                                        ),
+                                                },
+                                                {
+                                                    key: 'move',
+                                                    label: t(
+                                                        'employer.applications.move',
+                                                    ),
+                                                    disabled: !(
+                                                        row.can_move &&
+                                                        row.next_status
+                                                    ),
+                                                    onSelect: () => {
+                                                        if (row.next_status) {
+                                                            updateStatus(
+                                                                row.id,
+                                                                row.next_status,
+                                                            );
+                                                        }
+                                                    },
+                                                },
+                                                {
+                                                    key: 'reject',
+                                                    label: t('common.reject'),
+                                                    destructive: true,
+                                                    disabled: !row.can_reject,
+                                                    onSelect: () =>
+                                                        updateStatus(
+                                                            row.id,
+                                                            'rejected',
+                                                        ),
+                                                },
+                                            ]}
+                                        />
+                                    </MobileListCard>
+                                ))}
+                            </MobileListStack>
+                        )}
+
+                        <div className="hidden overflow-x-auto md:block">
                             <table className="w-full min-w-[1280px] text-left">
                                 <thead>
                                     <tr className="border-b border-[#d1f6ff] bg-white">
@@ -1207,7 +1377,7 @@ export default function EmployerApplications({
                                 </tbody>
                             </table>
                             {filtered.length === 0 && (
-                                <p className="px-5 py-10 text-center text-sm text-[#99a1af]">
+                                <p className="hidden px-5 py-10 text-center text-sm text-[#99a1af] md:block">
                                     {filters.job_title
                                         ? t(
                                               'employer.applications.empty_for_job',

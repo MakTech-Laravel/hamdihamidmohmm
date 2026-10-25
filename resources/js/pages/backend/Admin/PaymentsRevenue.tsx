@@ -13,6 +13,12 @@ import {
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+} from '@/components/mobile-list-card';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -232,6 +238,146 @@ export default function PaymentsRevenue({
                             t('admin.payments.cols.receipt'),
                             t('common.actions'),
                         ]}
+                        mobileCards={
+                            <div className="space-y-3">
+                                {payments.data.map((row) => (
+                                    <MobileListCard key={row.id}>
+                                        <MobileListCardHeader
+                                            title={row.reference}
+                                            subtitle={row.employer}
+                                            badge={
+                                                <AdminStatusBadge
+                                                    label={row.status}
+                                                    tone={statusTone(
+                                                        row.status,
+                                                    )}
+                                                />
+                                            }
+                                        />
+                                        <MobileListCardMeta
+                                            items={[
+                                                {
+                                                    label: t(
+                                                        'admin.payments.cols.package',
+                                                    ),
+                                                    value: row.package,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.payments.cols.amount',
+                                                    ),
+                                                    value: `${row.currency} ${row.amount.toLocaleString()}`,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.payments.cols.method',
+                                                    ),
+                                                    value: row.method,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.payments.cols.date',
+                                                    ),
+                                                    value: row.date,
+                                                },
+                                            ]}
+                                        />
+                                        <MobileListCardActions
+                                            primary={
+                                                row.receipt_url ? (
+                                                    <a
+                                                        href={row.receipt_url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                    >
+                                                        {t(
+                                                            'admin.payments.view_receipt',
+                                                        )}
+                                                    </a>
+                                                ) : row.status_value !==
+                                                  'completed' ? (
+                                                    <button
+                                                        type="button"
+                                                        className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                        onClick={() =>
+                                                            router.post(
+                                                                `/admin/payments/${row.id}/approve`,
+                                                            )
+                                                        }
+                                                    >
+                                                        {t('common.approve')}
+                                                    </button>
+                                                ) : row.status_value ===
+                                                  'completed' ? (
+                                                    <button
+                                                        type="button"
+                                                        className="inline-flex h-9 w-full items-center justify-center rounded-xl border border-[#fee2e2] bg-white px-3 text-xs font-semibold text-[#991b1b]"
+                                                        onClick={() =>
+                                                            router.post(
+                                                                `/admin/payments/${row.id}/refund`,
+                                                            )
+                                                        }
+                                                    >
+                                                        {t(
+                                                            'admin.payments.refund',
+                                                        )}
+                                                    </button>
+                                                ) : undefined
+                                            }
+                                            moreItems={[
+                                                ...(row.receipt_url &&
+                                                row.status_value !== 'completed'
+                                                    ? [
+                                                          {
+                                                              key: 'approve',
+                                                              label: t(
+                                                                  'common.approve',
+                                                              ),
+                                                              onSelect: () =>
+                                                                  router.post(
+                                                                      `/admin/payments/${row.id}/approve`,
+                                                                  ),
+                                                          },
+                                                      ]
+                                                    : []),
+                                                ...(row.receipt_url &&
+                                                row.status_value === 'completed'
+                                                    ? [
+                                                          {
+                                                              key: 'refund',
+                                                              label: t(
+                                                                  'admin.payments.refund',
+                                                              ),
+                                                              onSelect: () =>
+                                                                  router.post(
+                                                                      `/admin/payments/${row.id}/refund`,
+                                                                  ),
+                                                              destructive: true,
+                                                          },
+                                                      ]
+                                                    : []),
+                                                ...(row.status_value ===
+                                                'failed'
+                                                    ? [
+                                                          {
+                                                              key: 'retry',
+                                                              label: t(
+                                                                  'admin.payments.retry',
+                                                              ),
+                                                              onSelect: () =>
+                                                                  router.post(
+                                                                      `/admin/payments/${row.id}/retry`,
+                                                                  ),
+                                                          },
+                                                      ]
+                                                    : []),
+                                            ]}
+                                        />
+                                    </MobileListCard>
+                                ))}
+                            </div>
+                        }
                     >
                         {payments.data.map((row) => (
                             <tr

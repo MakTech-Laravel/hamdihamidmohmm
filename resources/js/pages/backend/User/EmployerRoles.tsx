@@ -1,5 +1,13 @@
 import { Head, Link, router } from '@inertiajs/react';
 
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+    MobileListEmpty,
+    MobileListStack,
+} from '@/components/mobile-list-card';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 
@@ -42,7 +50,80 @@ export default function EmployerRoles({ roles }: Props) {
                     </Link>
                 </div>
 
-                <div className="overflow-x-auto rounded-2xl border border-[rgba(57,119,166,0.2)] bg-white">
+                {roles.length === 0 ? (
+                    <MobileListEmpty>
+                        {t('employer.roles.empty')}
+                    </MobileListEmpty>
+                ) : (
+                    <MobileListStack>
+                        {roles.map((role) => (
+                            <MobileListCard key={role.id}>
+                                <MobileListCardHeader
+                                    title={role.label}
+                                    subtitle={role.description || undefined}
+                                />
+                                <MobileListCardMeta
+                                    items={[
+                                        {
+                                            label: t(
+                                                'employer.roles.col.members',
+                                            ),
+                                            value: String(role.users_count),
+                                        },
+                                        {
+                                            label: t(
+                                                'employer.roles.col.permissions',
+                                            ),
+                                            value: String(
+                                                role.permissions.length,
+                                            ),
+                                        },
+                                    ]}
+                                />
+                                <MobileListCardActions
+                                    primary={
+                                        <Link
+                                            href={`/employer/roles/${role.id}/edit`}
+                                            className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                        >
+                                            {t('common.edit')}
+                                        </Link>
+                                    }
+                                    moreItems={
+                                        role.can_delete
+                                            ? [
+                                                  {
+                                                      key: 'delete',
+                                                      label: t(
+                                                          'common.delete',
+                                                      ),
+                                                      destructive: true,
+                                                      onSelect: () => {
+                                                          if (
+                                                              !window.confirm(
+                                                                  t(
+                                                                      'employer.roles.delete_confirm',
+                                                                  ),
+                                                              )
+                                                          ) {
+                                                              return;
+                                                          }
+
+                                                          router.delete(
+                                                              `/employer/roles/${role.id}`,
+                                                          );
+                                                      },
+                                                  },
+                                              ]
+                                            : []
+                                    }
+                                />
+                            </MobileListCard>
+                        ))}
+                    </MobileListStack>
+                )}
+
+                <div className="hidden overflow-x-auto rounded-2xl border border-[rgba(57,119,166,0.2)] bg-white md:block">
                     <table className="min-w-full text-left text-sm">
                         <thead className="border-b border-[rgba(57,119,166,0.15)] bg-[#f8faff] text-xs font-semibold tracking-wide text-[#475569] uppercase">
                             <tr>

@@ -9,6 +9,12 @@ import {
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+} from '@/components/mobile-list-card';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -90,6 +96,88 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                             t('admin.content.cols.updated'),
                             t('common.actions'),
                         ]}
+                        mobileCards={
+                            <div className="space-y-3">
+                                {pages.map((page) => (
+                                    <MobileListCard key={page.id}>
+                                        <MobileListCardHeader
+                                            title={page.title}
+                                            subtitle={page.type}
+                                            badge={
+                                                <AdminStatusBadge
+                                                    label={page.status}
+                                                    tone={
+                                                        page.status_value ===
+                                                        'published'
+                                                            ? 'success'
+                                                            : 'neutral'
+                                                    }
+                                                />
+                                            }
+                                        />
+                                        <MobileListCardMeta
+                                            items={[
+                                                {
+                                                    label: t(
+                                                        'admin.content.cols.updated',
+                                                    ),
+                                                    value: page.updated_at,
+                                                },
+                                            ]}
+                                        />
+                                        <MobileListCardActions
+                                            primary={
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                    onClick={() => {
+                                                        form.setData({
+                                                            title: page.title,
+                                                            slug: page.slug,
+                                                            type: page.type_value,
+                                                            body:
+                                                                page.body ??
+                                                                '',
+                                                            status: page.status_value,
+                                                        });
+                                                        setEditing(page);
+                                                    }}
+                                                >
+                                                    {t('common.edit')}
+                                                </button>
+                                            }
+                                            moreItems={[
+                                                {
+                                                    key: 'publish',
+                                                    label:
+                                                        page.status_value ===
+                                                        'published'
+                                                            ? t(
+                                                                  'common.unpublish',
+                                                              )
+                                                            : t(
+                                                                  'common.publish',
+                                                              ),
+                                                    onSelect: () =>
+                                                        router.post(
+                                                            `/admin/content/${page.id}/publish`,
+                                                        ),
+                                                },
+                                                {
+                                                    key: 'delete',
+                                                    label: t('common.delete'),
+                                                    onSelect: () =>
+                                                        router.delete(
+                                                            `/admin/content/${page.id}`,
+                                                        ),
+                                                    destructive: true,
+                                                },
+                                            ]}
+                                        />
+                                    </MobileListCard>
+                                ))}
+                            </div>
+                        }
                     >
                         {pages.map((page) => (
                             <tr

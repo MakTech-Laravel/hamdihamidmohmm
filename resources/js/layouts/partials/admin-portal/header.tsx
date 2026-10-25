@@ -40,7 +40,7 @@ export function AdminPortalHeader({
     return (
         <header
             className={cn(
-                'sticky top-0 z-30 flex h-[60px] shrink-0 items-center justify-between gap-4 border-b border-[#e2e8f0] bg-white/95 px-5 backdrop-blur supports-[backdrop-filter]:bg-white/90',
+                'sticky top-0 z-30 flex h-[60px] shrink-0 items-center justify-between gap-2 overflow-x-hidden border-b border-[#e2e8f0] bg-white/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-white/90 sm:gap-4 sm:px-5',
                 className,
             )}
         >
@@ -48,14 +48,14 @@ export function AdminPortalHeader({
                 <button
                     type="button"
                     onClick={onToggleSidebar}
-                    className="rounded-lg p-1.5 text-[#3977a6] hover:bg-[#f8faff] md:hidden"
+                    className="shrink-0 rounded-lg p-1.5 text-[#3977a6] hover:bg-[#f8faff] md:hidden"
                     aria-label={t('common.toggle_sidebar')}
                 >
                     <AdminIcon src="/images/admin/header-menu.svg" size={18} />
                 </button>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                 <div className="hidden items-center gap-2 lg:flex">
                     <div className="text-right text-[11px] leading-tight text-[#3977a6]">
                         <p className="font-semibold text-[#050315]">

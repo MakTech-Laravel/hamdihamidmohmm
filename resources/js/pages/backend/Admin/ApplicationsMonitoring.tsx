@@ -17,6 +17,12 @@ import {
     AdminTableShell,
 } from '@/components/admin-portal/ui';
 import { AtsScoreBadge, type AtsMatch } from '@/components/employer/ats-score';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+} from '@/components/mobile-list-card';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
@@ -288,6 +294,72 @@ export default function ApplicationsMonitoring({
                             t('admin.applications.cols.date'),
                             t('common.actions'),
                         ]}
+                        mobileCards={
+                            <div className="space-y-3">
+                                {applications.data.map((row) => (
+                                    <MobileListCard key={row.id}>
+                                        <MobileListCardHeader
+                                            title={row.seeker ?? '—'}
+                                            subtitle={row.email}
+                                            badge={
+                                                <AdminStatusBadge
+                                                    label={row.status}
+                                                    tone={statusTone(
+                                                        row.status,
+                                                    )}
+                                                />
+                                            }
+                                        />
+                                        <MobileListCardMeta
+                                            items={[
+                                                {
+                                                    label: t(
+                                                        'admin.applications.cols.job',
+                                                    ),
+                                                    value: row.job,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.applications.cols.employer',
+                                                    ),
+                                                    value: row.employer,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'employer.ats.col_score',
+                                                    ),
+                                                    value: row.ai ? (
+                                                        <AtsScoreBadge
+                                                            match={row.ai}
+                                                        />
+                                                    ) : null,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.applications.cols.date',
+                                                    ),
+                                                    value: row.date,
+                                                },
+                                            ]}
+                                        />
+                                        <MobileListCardActions
+                                            primary={
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                    onClick={() =>
+                                                        setViewing(row)
+                                                    }
+                                                >
+                                                    <Eye className="size-3.5" />
+                                                    {t('common.details')}
+                                                </button>
+                                            }
+                                        />
+                                    </MobileListCard>
+                                ))}
+                            </div>
+                        }
                     >
                         {applications.data.map((row) => (
                             <tr

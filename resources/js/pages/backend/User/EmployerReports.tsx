@@ -1,5 +1,13 @@
 import { Head, Link } from '@inertiajs/react';
 
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+    MobileListEmpty,
+    MobileListStack,
+} from '@/components/mobile-list-card';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 
@@ -52,7 +60,78 @@ export default function EmployerReports({ jobs }: Props) {
                     </p>
                 </div>
 
-                <div className="overflow-x-auto rounded-2xl border border-[rgba(57,119,166,0.2)] bg-white">
+                {jobs.length === 0 ? (
+                    <MobileListEmpty>
+                        {t('employer.reports.empty')}
+                    </MobileListEmpty>
+                ) : (
+                    <MobileListStack>
+                        {jobs.map((job) => (
+                            <MobileListCard key={job.id}>
+                                <MobileListCardHeader
+                                    title={job.title}
+                                    subtitle={job.reference}
+                                    badge={
+                                        <span className="inline-flex rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-[11px] font-semibold text-[#475569]">
+                                            {job.status}
+                                        </span>
+                                    }
+                                />
+                                <MobileListCardMeta
+                                    items={[
+                                        {
+                                            label: t(
+                                                'employer.reports.col.total',
+                                            ),
+                                            value: String(job.total),
+                                        },
+                                        {
+                                            label: t(
+                                                'employer.reports.col.shortlisted',
+                                            ),
+                                            value: String(job.shortlisted),
+                                        },
+                                        {
+                                            label: t(
+                                                'employer.reports.col.interview',
+                                            ),
+                                            value: String(job.interview),
+                                        },
+                                        {
+                                            label: t(
+                                                'employer.reports.col.hired',
+                                            ),
+                                            value: String(job.hired),
+                                        },
+                                    ]}
+                                />
+                                <MobileListCardActions
+                                    primary={
+                                        <Link
+                                            href={job.applications_url}
+                                            className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                        >
+                                            {t(
+                                                'employer.reports.view_applicants',
+                                            )}
+                                        </Link>
+                                    }
+                                    moreItems={[
+                                        {
+                                            key: 'download',
+                                            label: t(
+                                                'employer.reports.download',
+                                            ),
+                                            href: job.export_url,
+                                        },
+                                    ]}
+                                />
+                            </MobileListCard>
+                        ))}
+                    </MobileListStack>
+                )}
+
+                <div className="hidden overflow-x-auto rounded-2xl border border-[rgba(57,119,166,0.2)] bg-white md:block">
                     <table className="min-w-full text-left text-sm">
                         <thead className="border-b border-[rgba(57,119,166,0.15)] bg-[#f8faff] text-xs font-semibold tracking-wide text-[#475569] uppercase">
                             <tr>

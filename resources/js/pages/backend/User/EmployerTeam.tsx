@@ -1,6 +1,13 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
 
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListEmpty,
+    MobileListStack,
+} from '@/components/mobile-list-card';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 
@@ -195,7 +202,78 @@ export default function EmployerTeam({ members, roleOptions }: Props) {
                     </form>
                 ) : null}
 
-                <div className="overflow-x-auto rounded-2xl border border-[rgba(57,119,166,0.2)] bg-white">
+                {members.length === 0 ? (
+                    <MobileListEmpty>
+                        {t('employer.team.empty')}
+                    </MobileListEmpty>
+                ) : (
+                    <MobileListStack>
+                        {members.map((member) => (
+                            <MobileListCard key={member.id}>
+                                <MobileListCardHeader
+                                    title={member.name}
+                                    subtitle={member.email}
+                                />
+                                <label className="mt-3 block text-xs font-semibold text-[#64748b]">
+                                    {t('employer.team.col.role')}
+                                    <select
+                                        value={member.role ?? ''}
+                                        onChange={(event) =>
+                                            router.put(
+                                                `/employer/team/${member.id}`,
+                                                {
+                                                    role: event.target.value,
+                                                },
+                                                {
+                                                    preserveScroll: true,
+                                                },
+                                            )
+                                        }
+                                        className="mt-1 h-9 w-full rounded-lg border border-[#dbeafe] px-2 text-sm font-medium text-[#050315]"
+                                    >
+                                        {roleOptions.map((option) => (
+                                            <option
+                                                key={option.value}
+                                                value={option.value}
+                                            >
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <MobileListCardActions
+                                    moreItems={[
+                                        {
+                                            key: 'remove',
+                                            label: t('common.remove'),
+                                            destructive: true,
+                                            onSelect: () => {
+                                                if (
+                                                    !window.confirm(
+                                                        t(
+                                                            'employer.team.remove_confirm',
+                                                        ),
+                                                    )
+                                                ) {
+                                                    return;
+                                                }
+
+                                                router.delete(
+                                                    `/employer/team/${member.id}`,
+                                                    {
+                                                        preserveScroll: true,
+                                                    },
+                                                );
+                                            },
+                                        },
+                                    ]}
+                                />
+                            </MobileListCard>
+                        ))}
+                    </MobileListStack>
+                )}
+
+                <div className="hidden overflow-x-auto rounded-2xl border border-[rgba(57,119,166,0.2)] bg-white md:block">
                     <table className="min-w-full text-left text-sm">
                         <thead className="border-b border-[rgba(57,119,166,0.15)] bg-[#f8faff] text-xs font-semibold tracking-wide text-[#475569] uppercase">
                             <tr>

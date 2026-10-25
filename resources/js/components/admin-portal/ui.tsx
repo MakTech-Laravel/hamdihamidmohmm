@@ -218,28 +218,35 @@ export function AdminPanel({
 export function AdminTableShell({
     headers,
     children,
+    mobileCards,
 }: {
     headers: string[];
     children: ReactNode;
+    mobileCards?: ReactNode;
 }) {
     return (
-        <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-[#d1f6ff]">
-                    <tr>
-                        {headers.map((header) => (
-                            <th
-                                key={header}
-                                className="px-4 py-2.5 text-[11px] font-semibold tracking-[0.55px] text-[#3977a6] uppercase"
-                            >
-                                {header}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>{children}</tbody>
-            </table>
-        </div>
+        <>
+            {mobileCards ? (
+                <div className="md:hidden">{mobileCards}</div>
+            ) : null}
+            <div className={cn('overflow-x-auto', mobileCards && 'hidden md:block')}>
+                <table className="min-w-full text-left text-sm">
+                    <thead className="border-b border-[#d1f6ff]">
+                        <tr>
+                            {headers.map((header) => (
+                                <th
+                                    key={header}
+                                    className="px-4 py-2.5 text-[11px] font-semibold tracking-[0.55px] text-[#3977a6] uppercase"
+                                >
+                                    {header}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>{children}</tbody>
+                </table>
+            </div>
+        </>
     );
 }
 

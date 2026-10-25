@@ -1,6 +1,12 @@
-import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { Form, Head, Link, router, usePage } from '@inertiajs/react';
 
 import { AdminIcon } from '@/components/admin-icon';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+} from '@/components/mobile-list-card';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
@@ -106,7 +112,83 @@ export default function RolePermissions({
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    <div className="space-y-3 md:hidden">
+                        {roles.map((role) => (
+                            <MobileListCard key={role.id}>
+                                <MobileListCardHeader
+                                    title={role.label}
+                                    subtitle={
+                                        role.description || role.value
+                                    }
+                                    badge={
+                                        <span
+                                            className={cn(
+                                                'rounded-full px-2.5 py-1 text-xs font-semibold',
+                                                roleBadgeStyles[role.value] ??
+                                                    'bg-[#eef2ff] text-[#3730a3]',
+                                            )}
+                                        >
+                                            {role.locked
+                                                ? t('status.locked')
+                                                : role.is_system
+                                                  ? t('status.system')
+                                                  : t('status.custom')}
+                                        </span>
+                                    }
+                                />
+                                <MobileListCardMeta
+                                    items={[
+                                        {
+                                            label: t('admin.roles.cols.users'),
+                                            value: role.users_count,
+                                        },
+                                        {
+                                            label: t(
+                                                'admin.roles.cols.permissions',
+                                            ),
+                                            value: role.permissions_count,
+                                        },
+                                    ]}
+                                />
+                                <MobileListCardActions
+                                    primary={
+                                        <Link
+                                            href={`/admin/roles-permissions/${role.id}`}
+                                            className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                        >
+                                            {t('common.view')}
+                                        </Link>
+                                    }
+                                    moreItems={[
+                                        ...(canManageAdmins && role.editable
+                                            ? [
+                                                  {
+                                                      key: 'edit',
+                                                      label: t('common.edit'),
+                                                      href: `/admin/roles-permissions/${role.id}/edit`,
+                                                  },
+                                              ]
+                                            : []),
+                                        ...(canManageAdmins && role.can_delete
+                                            ? [
+                                                  {
+                                                      key: 'delete',
+                                                      label: t('common.delete'),
+                                                      onSelect: () =>
+                                                          router.delete(
+                                                              `/admin/roles-permissions/${role.id}`,
+                                                          ),
+                                                      destructive: true,
+                                                  },
+                                              ]
+                                            : []),
+                                    ]}
+                                />
+                            </MobileListCard>
+                        ))}
+                    </div>
+
+                    <div className="hidden overflow-x-auto md:block">
                         <table className="min-w-full text-left text-sm">
                             <thead className="border-b border-[#e2e8f0] text-[#64748b]">
                                 <tr>
