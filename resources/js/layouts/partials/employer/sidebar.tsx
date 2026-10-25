@@ -77,13 +77,6 @@ export function EmployerSidebar({
                 permission: 'employer.applications',
             },
             {
-                title: t('employer.nav.roster'),
-                href: '/employer/roster',
-                icon: '📋',
-                match: '/employer/roster',
-                permission: 'employer.applications',
-            },
-            {
                 title: t('employer.nav.reports'),
                 href: '/employer/reports',
                 icon: '📈',
@@ -96,6 +89,13 @@ export function EmployerSidebar({
                 icon: '🧑‍🤝‍🧑',
                 match: '/employer/team',
                 permission: 'employer.team',
+            },
+            {
+                title: t('employer.nav.roster'),
+                href: '/employer/roster',
+                icon: '📋',
+                match: '/employer/roster',
+                permission: 'employer.applications',
             },
             {
                 title: t('employer.nav.roles'),
