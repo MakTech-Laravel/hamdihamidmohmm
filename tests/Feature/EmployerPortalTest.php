@@ -69,5 +69,5 @@ test('job seekers cannot view the employer dashboard', function () {
 
     $this->actingAs($seeker)
         ->get(route('employer.dashboard'))
-        ->assertRedirect(route('job-seeker.dashboard'));
+        ->assertForbidden();
 });

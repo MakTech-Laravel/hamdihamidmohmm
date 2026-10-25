@@ -37,7 +37,15 @@ class RolePermissionSeeder extends Seeder
         );
         $employer = $this->systemRole(
             RoleName::Employer,
-            'Public portal access for hiring companies.',
+            'Employer account owner with full hiring portal access.',
+        );
+        $employerManager = $this->systemRole(
+            RoleName::EmployerManager,
+            'Employer team member who manages jobs and applications.',
+        );
+        $employerInterviewer = $this->systemRole(
+            RoleName::EmployerInterviewer,
+            'Employer team member who reviews applications on the panel board.',
         );
 
         $superAdmin->syncPermissions(collect(PermissionName::cases())->map->value->all());
@@ -57,7 +65,9 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         $jobSeeker->syncPermissions([]);
-        $employer->syncPermissions([]);
+        $employer->syncPermissions(PermissionName::employerOwnerPermissionValues());
+        $employerManager->syncPermissions(PermissionName::employerManagerPermissionValues());
+        $employerInterviewer->syncPermissions(PermissionName::employerInterviewerPermissionValues());
     }
 
     private function systemRole(RoleName $roleName, string $description, bool $locked = false): Role

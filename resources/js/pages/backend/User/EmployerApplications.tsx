@@ -10,6 +10,7 @@ import {
     rescoreJob,
     update,
 } from '@/actions/App/Http/Controllers/Backend/User/EmployerApplicationController';
+import { AddToRosterDialog } from '@/components/employer/add-to-roster-dialog';
 import {
     ApplicationPreviewDrawer,
     type ApplicationPreview,
@@ -72,6 +73,7 @@ type ApplicationRow = AtsMatch & {
     next_status: string | null;
     can_move: boolean;
     can_reject: boolean;
+    on_roster: boolean;
 };
 
 type ShortlistSuggestion = {
@@ -143,6 +145,7 @@ type Props = {
         interview: number;
     };
     statuses: Array<{ value: string; label: string }>;
+    roster_categories?: string[];
 };
 
 const statusTone: Record<string, string> = {
@@ -203,6 +206,7 @@ function toPreview(
         cover_letter_file_url: row.cover_letter_file_url ?? null,
         avatar_url: row.avatar_url ?? null,
         timeline: row.timeline ?? [],
+        on_roster: row.on_roster,
         ai:
             row.ai_score != null || row.ai_status != null
                 ? {
@@ -260,6 +264,7 @@ export default function EmployerApplications({
     stats,
     statuses,
     ats,
+    roster_categories = [],
 }: Props) {
     const { t } = useLocale();
     const atsEnabled = ats?.enabled === true;
@@ -269,7 +274,9 @@ export default function EmployerApplications({
             (row) => row.ai_score != null || row.ai_status != null,
         );
     const [search, setSearch] = useState(filters.search ?? '');
-    const [status, setStatus] = useState(filters.status ?? '');
+    const [status, setStatus] = useState(
+        filters.status || (filters.shortlist ? 'shortlisted' : ''),
+    );
     const [experience, setExperience] = useState(filters.experience ?? '');
     const [gender, setGender] = useState(filters.gender ?? '');
     const [sort, setSort] = useState(filters.sort || 'experience');
@@ -277,6 +284,13 @@ export default function EmployerApplications({
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [bulkStatus, setBulkStatus] = useState(
         filters.shortlist ? 'shortlisted' : '',
+    );
+    const [rosterApplicationId, setRosterApplicationId] = useState<
+        number | null
+    >(null);
+    const pageTitle = t('employer.applications.title');
+    const rosterCandidate = applications.find(
+        (row) => row.id === rosterApplicationId,
     );
     const [aiSort, setAiSort] = useState(filters.ai_sort ?? '');
     const [aiBand, setAiBand] = useState(filters.ai_band ?? '');
@@ -469,14 +483,14 @@ export default function EmployerApplications({
     };
 
     return (
-        <EmployerLayout title={t('employer.applications.title')}>
-            <Head title={t('employer.applications.title')} />
+        <EmployerLayout title={pageTitle}>
+            <Head title={pageTitle} />
 
             <div className="flex flex-col px-6 py-6">
                 <div className="flex min-h-[85px] flex-wrap items-center justify-between gap-3 pb-6">
                     <div>
                         <h1 className="text-2xl leading-9 font-extrabold text-[#050315]">
-                            {t('employer.applications.title')}
+                            {pageTitle}
                         </h1>
                         <p className="pt-1 text-sm leading-[21px] text-[#6b7280]">
                             {filters.job_title
@@ -1123,6 +1137,28 @@ export default function EmployerApplications({
                                                     >
                                                         {t('common.view')}
                                                     </button>
+                                                    <button
+                                                        type="button"
+                                                        className={cn(
+                                                            actionClass,
+                                                            row.on_roster
+                                                                ? 'border border-[#bbf7d0] bg-[#f0fdf4] text-[#15803d]'
+                                                                : 'border border-[#bfdbfe] bg-white text-[#0057c8]',
+                                                        )}
+                                                        onClick={() =>
+                                                            setRosterApplicationId(
+                                                                row.id,
+                                                            )
+                                                        }
+                                                    >
+                                                        {row.on_roster
+                                                            ? t(
+                                                                  'employer.roster.on_roster',
+                                                              )
+                                                            : t(
+                                                                  'employer.roster.add',
+                                                              )}
+                                                    </button>
                                                     {row.can_move &&
                                                         row.next_status && (
                                                             <button
@@ -1196,6 +1232,21 @@ export default function EmployerApplications({
                 statuses={statuses}
                 onUpdateStatus={updateStatus}
                 onRescore={atsEnabled ? rescoreApplication : undefined}
+                onAddToRoster={(applicationId) =>
+                    setRosterApplicationId(applicationId)
+                }
+            />
+
+            <AddToRosterDialog
+                open={rosterApplicationId !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setRosterApplicationId(null);
+                    }
+                }}
+                applicationId={rosterApplicationId}
+                categories={roster_categories}
+                candidateName={rosterCandidate?.name}
             />
         </EmployerLayout>
     );

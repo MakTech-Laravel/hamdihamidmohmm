@@ -20,7 +20,7 @@ class RescoreEmployerJobApplicationsRequest extends FormRequest
         }
 
         return $this->user()?->isEmployer() === true
-            && $job->employer_id === $this->user()?->id
+            && $job->employer_id === $this->user()?->employerAccountId()
             && app(AtsSettings::class)->enabledForEmployer($this->user());
     }
 

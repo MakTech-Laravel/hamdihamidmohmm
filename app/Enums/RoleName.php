@@ -8,6 +8,8 @@ enum RoleName: string
     case Admin = 'admin';
     case JobSeeker = 'job-seeker';
     case Employer = 'employer';
+    case EmployerManager = 'employer-manager';
+    case EmployerInterviewer = 'employer-interviewer';
 
     public function label(): string
     {
@@ -15,7 +17,9 @@ enum RoleName: string
             self::SuperAdmin => 'Super Admin',
             self::Admin => 'Admin',
             self::JobSeeker => 'Job Seeker',
-            self::Employer => 'Employer',
+            self::Employer => 'Employer Owner',
+            self::EmployerManager => 'Manager',
+            self::EmployerInterviewer => 'Interviewer',
         };
     }
 
@@ -23,7 +27,7 @@ enum RoleName: string
     {
         return match ($this) {
             self::SuperAdmin, self::Admin => 'admin.dashboard',
-            self::Employer => 'employer.dashboard',
+            self::Employer, self::EmployerManager, self::EmployerInterviewer => 'employer.dashboard',
             self::JobSeeker => 'job-seeker.dashboard',
         };
     }
@@ -31,6 +35,15 @@ enum RoleName: string
     public function isAdminPanelRole(): bool
     {
         return $this === self::SuperAdmin || $this === self::Admin;
+    }
+
+    public function isEmployerPortalRole(): bool
+    {
+        return in_array($this, [
+            self::Employer,
+            self::EmployerManager,
+            self::EmployerInterviewer,
+        ], true);
     }
 
     /**
@@ -41,6 +54,18 @@ enum RoleName: string
         return [
             self::SuperAdmin->value,
             self::Admin->value,
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function employerPortalValues(): array
+    {
+        return [
+            self::Employer->value,
+            self::EmployerManager->value,
+            self::EmployerInterviewer->value,
         ];
     }
 

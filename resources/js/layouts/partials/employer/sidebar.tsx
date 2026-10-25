@@ -1,11 +1,19 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { getInitials } from '@/components/employer/demo-data';
 import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
 import { jobs } from '@/routes';
 import type { SharedData } from '@/types';
+
+type NavItem = {
+    title: string;
+    href: string;
+    icon: string;
+    match: string;
+    permission: string;
+};
 
 export function EmployerSidebar() {
     const page = usePage<SharedData>();
@@ -17,51 +25,92 @@ export function EmployerSidebar() {
     const initials = getInitials(personName);
     const [avatarFailed, setAvatarFailed] = useState(false);
     const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
+    const userPermissions = user.permissions ?? [];
 
-    const navItems = [
-        {
-            title: t('employer.nav.dashboard'),
-            href: '/employer/dashboard',
-            icon: '📊',
-            match: '/employer/dashboard',
-        },
-        {
-            title: t('employer.nav.company_profile'),
-            href: '/employer/profile',
-            icon: '🏢',
-            match: '/employer/profile',
-        },
-        {
-            title: t('employer.nav.packages'),
-            href: '/employer/packages',
-            icon: '💳',
-            match: '/employer/packages',
-        },
-        {
-            title: t('employer.nav.jobs'),
-            href: '/employer/jobs',
-            icon: '💼',
-            match: '/employer/jobs',
-        },
-        {
-            title: t('employer.nav.applications'),
-            href: '/employer/applications',
-            icon: '👥',
-            match: '/employer/applications',
-        },
-        {
-            title: t('employer.nav.notifications'),
-            href: '/employer/notifications',
-            icon: '🔔',
-            match: '/employer/notifications',
-        },
-        {
-            title: t('employer.nav.settings'),
-            href: '/employer/settings',
-            icon: '⚙️',
-            match: '/employer/settings',
-        },
-    ];
+    const navItems = useMemo(() => {
+        const permissions = new Set(userPermissions);
+        const items: NavItem[] = [
+            {
+                title: t('employer.nav.dashboard'),
+                href: '/employer/dashboard',
+                icon: '📊',
+                match: '/employer/dashboard',
+                permission: 'employer.dashboard',
+            },
+            {
+                title: t('employer.nav.company_profile'),
+                href: '/employer/profile',
+                icon: '🏢',
+                match: '/employer/profile',
+                permission: 'employer.profile',
+            },
+            {
+                title: t('employer.nav.packages'),
+                href: '/employer/packages',
+                icon: '💳',
+                match: '/employer/packages',
+                permission: 'employer.packages',
+            },
+            {
+                title: t('employer.nav.jobs'),
+                href: '/employer/jobs',
+                icon: '💼',
+                match: '/employer/jobs',
+                permission: 'employer.jobs',
+            },
+            {
+                title: t('employer.nav.applications'),
+                href: '/employer/applications',
+                icon: '👥',
+                match: '/employer/applications',
+                permission: 'employer.applications',
+            },
+            {
+                title: t('employer.nav.roster'),
+                href: '/employer/roster',
+                icon: '📋',
+                match: '/employer/roster',
+                permission: 'employer.applications',
+            },
+            {
+                title: t('employer.nav.reports'),
+                href: '/employer/reports',
+                icon: '📈',
+                match: '/employer/reports',
+                permission: 'employer.reports',
+            },
+            {
+                title: t('employer.nav.team'),
+                href: '/employer/team',
+                icon: '🧑‍🤝‍🧑',
+                match: '/employer/team',
+                permission: 'employer.team',
+            },
+            {
+                title: t('employer.nav.roles'),
+                href: '/employer/roles',
+                icon: '🛡️',
+                match: '/employer/roles',
+                permission: 'employer.team',
+            },
+            {
+                title: t('employer.nav.notifications'),
+                href: '/employer/notifications',
+                icon: '🔔',
+                match: '/employer/notifications',
+                permission: 'employer.notifications',
+            },
+            {
+                title: t('employer.nav.settings'),
+                href: '/employer/settings',
+                icon: '⚙️',
+                match: '/employer/settings',
+                permission: 'employer.settings',
+            },
+        ];
+
+        return items.filter((item) => permissions.has(item.permission));
+    }, [userPermissions, t]);
 
     return (
         <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-white">
@@ -91,7 +140,8 @@ export function EmployerSidebar() {
 
             <nav className="flex-1 overflow-y-auto py-4">
                 {navItems.map((item) => {
-                    const active = currentUrl.startsWith(item.match);
+                    const pathOnly = currentUrl.split('?')[0] ?? currentUrl;
+                    const active = pathOnly.startsWith(item.match);
 
                     return (
                         <div key={item.href} className="px-2">

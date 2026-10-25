@@ -37,6 +37,7 @@ class JobPost extends Model
         'description',
         'requirements',
         'skills',
+        'application_questions',
         'status',
         'featured',
         'views',
@@ -54,6 +55,7 @@ class JobPost extends Model
             'featured' => 'boolean',
             'views' => 'integer',
             'skills' => 'array',
+            'application_questions' => 'array',
             'expires_at' => 'datetime',
         ];
     }

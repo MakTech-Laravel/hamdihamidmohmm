@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PermissionName;
 use App\Enums\RoleName;
 use App\Http\Controllers\Backend\User\EmployerApplicationController;
 use App\Http\Controllers\Backend\User\EmployerDashboardController;
@@ -7,6 +8,10 @@ use App\Http\Controllers\Backend\User\EmployerJobController;
 use App\Http\Controllers\Backend\User\EmployerPackageController;
 use App\Http\Controllers\Backend\User\EmployerPortalPageController;
 use App\Http\Controllers\Backend\User\EmployerProfileController;
+use App\Http\Controllers\Backend\User\EmployerReportController;
+use App\Http\Controllers\Backend\User\EmployerRoleController;
+use App\Http\Controllers\Backend\User\EmployerRosterController;
+use App\Http\Controllers\Backend\User\EmployerTeamController;
 use App\Http\Controllers\Backend\User\JobSeekerApplicationsController;
 use App\Http\Controllers\Backend\User\JobSeekerDashboardController;
 use App\Http\Controllers\Backend\User\JobSeekerJobAlertController;
@@ -64,61 +69,105 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('role:'.RoleName::JobSeeker->value)->post('/jobs/{jobPost}/apply', [JobSeekerApplicationsController::class, 'store'])->name('jobs.apply');
 
-    Route::middleware(['role:'.RoleName::Employer->value, 'employer.approved'])->prefix('employer')->name('employer.')->group(function () {
-        Route::get('/dashboard', EmployerDashboardController::class)->name('dashboard');
-        Route::get('/profile', [EmployerProfileController::class, 'edit'])->name('profile');
-        Route::put('/profile', [EmployerProfileController::class, 'update'])->name('profile.update');
-        Route::put('/profile/public-about', [EmployerProfileController::class, 'updatePublicAbout'])->name('profile.public-about.update');
-        Route::post('/profile/photo', [EmployerProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
-        Route::delete('/profile/photo', [EmployerProfileController::class, 'destroyPhoto'])->name('profile.photo.destroy');
-        Route::post('/profile/logo', [EmployerProfileController::class, 'uploadLogo'])->name('profile.logo.upload');
-        Route::delete('/profile/logo', [EmployerProfileController::class, 'destroyLogo'])->name('profile.logo.destroy');
-        Route::post('/profile/cover', [EmployerProfileController::class, 'uploadCover'])->name('profile.cover.upload');
-        Route::delete('/profile/cover', [EmployerProfileController::class, 'destroyCover'])->name('profile.cover.destroy');
-        Route::post('/profile/verification-document', [EmployerProfileController::class, 'uploadVerificationDocument'])->name('profile.verification-document.upload');
-        Route::get('/profile/verification-document', [EmployerProfileController::class, 'downloadVerificationDocument'])->name('profile.verification-document.download');
-        Route::delete('/profile/verification-document', [EmployerProfileController::class, 'destroyVerificationDocument'])->name('profile.verification-document.destroy');
-        Route::get('/packages', [EmployerPackageController::class, 'index'])->name('packages');
-        Route::post('/packages/{package}/select', [EmployerPackageController::class, 'select'])->name('packages.select');
-        Route::post('/packages/{package}/manual-payment', [EmployerPackageController::class, 'submitManualPayment'])->name('packages.manual-payment');
-        Route::get('/packages/checkout/success', [EmployerPackageController::class, 'checkoutSuccess'])->name('packages.checkout.success');
-        Route::get('/jobs', [EmployerJobController::class, 'index'])->name('jobs');
-        Route::get('/jobs/create', [EmployerJobController::class, 'create'])->name('jobs.create');
-        Route::post('/jobs/description-attachments', [EmployerJobController::class, 'uploadDescriptionAttachment'])->name('jobs.description-attachments.store');
-        Route::post('/jobs', [EmployerJobController::class, 'store'])->name('jobs.store');
-        Route::get('/jobs/{job}/edit', [EmployerJobController::class, 'edit'])->name('jobs.edit');
-        Route::put('/jobs/{job}', [EmployerJobController::class, 'update'])->name('jobs.update');
-        Route::post('/jobs/{job}/logo', [EmployerJobController::class, 'uploadLogo'])->name('jobs.logo.upload');
-        Route::delete('/jobs/{job}/logo', [EmployerJobController::class, 'destroyLogo'])->name('jobs.logo.destroy');
-        Route::post('/jobs/{job}/duplicate', [EmployerJobController::class, 'duplicate'])->name('jobs.duplicate');
-        Route::post('/jobs/{job}/pause', [EmployerJobController::class, 'pause'])->name('jobs.pause');
-        Route::post('/jobs/{job}/publish', [EmployerJobController::class, 'publish'])->name('jobs.publish');
-        Route::delete('/jobs/{job}', [EmployerJobController::class, 'destroy'])->name('jobs.destroy');
-        Route::get('/applications', [EmployerApplicationController::class, 'index'])->name('applications');
-        Route::get('/applications/export', [EmployerApplicationController::class, 'export'])->name('applications.export');
-        Route::put('/applications/bulk-status', [EmployerApplicationController::class, 'bulkUpdate'])->name('applications.bulk-update');
-        Route::get('/applications/{application}/resume', [EmployerApplicationController::class, 'downloadResume'])->name('applications.resume');
-        Route::get('/applications/{application}/highest-degree', [EmployerApplicationController::class, 'downloadHighestDegree'])->name('applications.highest-degree');
-        Route::get('/applications/{application}/other-document', [EmployerApplicationController::class, 'downloadOtherDocument'])->name('applications.other-document');
-        Route::get('/applications/{application}/cover-letter', [EmployerApplicationController::class, 'downloadCoverLetter'])->name('applications.cover-letter');
-        Route::get('/applications/{application}/certifications/{index}/{attachment?}', [EmployerApplicationController::class, 'downloadCertification'])->name('applications.certifications');
-        Route::put('/applications/{application}', [EmployerApplicationController::class, 'update'])->name('applications.update');
-        Route::post('/applications/{application}/rescore', [EmployerApplicationController::class, 'rescore'])
-            ->middleware('throttle:ats-rescore')
-            ->name('applications.rescore');
-        Route::post('/jobs/{job}/applications/rescore', [EmployerApplicationController::class, 'rescoreJob'])
-            ->middleware('throttle:ats-rescore')
-            ->name('jobs.applications.rescore');
-        Route::get('/notifications', [EmployerPortalPageController::class, 'notifications'])->name('notifications');
-        Route::post('/notifications/read-all', [EmployerPortalPageController::class, 'markAllRead'])->name('notifications.read-all');
-        Route::post('/notifications/{notification}/read', [EmployerPortalPageController::class, 'markRead'])->name('notifications.read');
-        Route::delete('/notifications/{notification}', [EmployerPortalPageController::class, 'destroyNotification'])->name('notifications.destroy');
-        Route::get('/settings', [EmployerPortalPageController::class, 'settings'])->name('settings');
-        Route::put('/settings', [EmployerPortalPageController::class, 'updateSettings'])->name('settings.update');
-        Route::put('/settings/notifications', [EmployerPortalPageController::class, 'updateNotificationPreferences'])->name('settings.notifications');
-        Route::put('/settings/privacy', [EmployerPortalPageController::class, 'updatePrivacyPreferences'])->name('settings.privacy');
-        Route::post('/settings/deactivate', [EmployerPortalPageController::class, 'deactivate'])->name('settings.deactivate');
-        Route::delete('/settings', [EmployerPortalPageController::class, 'destroy'])->name('settings.destroy');
+    Route::middleware([
+        'permission:'.PermissionName::AccessEmployerPortal->value,
+        'employer.approved',
+    ])->prefix('employer')->name('employer.')->group(function () {
+        Route::middleware('permission:'.PermissionName::EmployerDashboard->value)
+            ->get('/dashboard', EmployerDashboardController::class)
+            ->name('dashboard');
+
+        Route::middleware('permission:'.PermissionName::EmployerProfile->value)->group(function () {
+            Route::get('/profile', [EmployerProfileController::class, 'edit'])->name('profile');
+            Route::put('/profile', [EmployerProfileController::class, 'update'])->name('profile.update');
+            Route::put('/profile/public-about', [EmployerProfileController::class, 'updatePublicAbout'])->name('profile.public-about.update');
+            Route::post('/profile/photo', [EmployerProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
+            Route::delete('/profile/photo', [EmployerProfileController::class, 'destroyPhoto'])->name('profile.photo.destroy');
+            Route::post('/profile/logo', [EmployerProfileController::class, 'uploadLogo'])->name('profile.logo.upload');
+            Route::delete('/profile/logo', [EmployerProfileController::class, 'destroyLogo'])->name('profile.logo.destroy');
+            Route::post('/profile/cover', [EmployerProfileController::class, 'uploadCover'])->name('profile.cover.upload');
+            Route::delete('/profile/cover', [EmployerProfileController::class, 'destroyCover'])->name('profile.cover.destroy');
+            Route::post('/profile/verification-document', [EmployerProfileController::class, 'uploadVerificationDocument'])->name('profile.verification-document.upload');
+            Route::get('/profile/verification-document', [EmployerProfileController::class, 'downloadVerificationDocument'])->name('profile.verification-document.download');
+            Route::delete('/profile/verification-document', [EmployerProfileController::class, 'destroyVerificationDocument'])->name('profile.verification-document.destroy');
+        });
+
+        Route::middleware('permission:'.PermissionName::EmployerPackages->value)->group(function () {
+            Route::get('/packages', [EmployerPackageController::class, 'index'])->name('packages');
+            Route::post('/packages/{package}/select', [EmployerPackageController::class, 'select'])->name('packages.select');
+            Route::post('/packages/{package}/manual-payment', [EmployerPackageController::class, 'submitManualPayment'])->name('packages.manual-payment');
+            Route::get('/packages/checkout/success', [EmployerPackageController::class, 'checkoutSuccess'])->name('packages.checkout.success');
+        });
+
+        Route::middleware('permission:'.PermissionName::EmployerJobs->value)->group(function () {
+            Route::get('/jobs', [EmployerJobController::class, 'index'])->name('jobs');
+            Route::get('/jobs/create', [EmployerJobController::class, 'create'])->name('jobs.create');
+            Route::post('/jobs/description-attachments', [EmployerJobController::class, 'uploadDescriptionAttachment'])->name('jobs.description-attachments.store');
+            Route::post('/jobs', [EmployerJobController::class, 'store'])->name('jobs.store');
+            Route::get('/jobs/{job}/edit', [EmployerJobController::class, 'edit'])->name('jobs.edit');
+            Route::put('/jobs/{job}', [EmployerJobController::class, 'update'])->name('jobs.update');
+            Route::post('/jobs/{job}/logo', [EmployerJobController::class, 'uploadLogo'])->name('jobs.logo.upload');
+            Route::delete('/jobs/{job}/logo', [EmployerJobController::class, 'destroyLogo'])->name('jobs.logo.destroy');
+            Route::post('/jobs/{job}/duplicate', [EmployerJobController::class, 'duplicate'])->name('jobs.duplicate');
+            Route::post('/jobs/{job}/pause', [EmployerJobController::class, 'pause'])->name('jobs.pause');
+            Route::post('/jobs/{job}/publish', [EmployerJobController::class, 'publish'])->name('jobs.publish');
+            Route::delete('/jobs/{job}', [EmployerJobController::class, 'destroy'])->name('jobs.destroy');
+        });
+
+        Route::middleware('permission:'.PermissionName::EmployerReports->value)
+            ->get('/reports', [EmployerReportController::class, 'index'])
+            ->name('reports');
+
+        Route::middleware('permission:'.PermissionName::EmployerApplications->value)->group(function () {
+            Route::get('/applications', [EmployerApplicationController::class, 'index'])->name('applications');
+            Route::get('/applications/export', [EmployerApplicationController::class, 'export'])->name('applications.export');
+            Route::put('/applications/bulk-status', [EmployerApplicationController::class, 'bulkUpdate'])->name('applications.bulk-update');
+            Route::get('/applications/{application}/resume', [EmployerApplicationController::class, 'downloadResume'])->name('applications.resume');
+            Route::get('/applications/{application}/highest-degree', [EmployerApplicationController::class, 'downloadHighestDegree'])->name('applications.highest-degree');
+            Route::get('/applications/{application}/other-document', [EmployerApplicationController::class, 'downloadOtherDocument'])->name('applications.other-document');
+            Route::get('/applications/{application}/cover-letter', [EmployerApplicationController::class, 'downloadCoverLetter'])->name('applications.cover-letter');
+            Route::get('/applications/{application}/certifications/{index}/{attachment?}', [EmployerApplicationController::class, 'downloadCertification'])->name('applications.certifications');
+            Route::put('/applications/{application}', [EmployerApplicationController::class, 'update'])->name('applications.update');
+            Route::post('/applications/{application}/rescore', [EmployerApplicationController::class, 'rescore'])
+                ->middleware('throttle:ats-rescore')
+                ->name('applications.rescore');
+            Route::post('/jobs/{job}/applications/rescore', [EmployerApplicationController::class, 'rescoreJob'])
+                ->middleware('throttle:ats-rescore')
+                ->name('jobs.applications.rescore');
+
+            Route::get('/roster', [EmployerRosterController::class, 'index'])->name('roster');
+            Route::post('/roster', [EmployerRosterController::class, 'store'])->name('roster.store');
+            Route::delete('/roster/{entry}', [EmployerRosterController::class, 'destroy'])->name('roster.destroy');
+        });
+
+        Route::middleware('permission:'.PermissionName::EmployerNotifications->value)->group(function () {
+            Route::get('/notifications', [EmployerPortalPageController::class, 'notifications'])->name('notifications');
+            Route::post('/notifications/read-all', [EmployerPortalPageController::class, 'markAllRead'])->name('notifications.read-all');
+            Route::post('/notifications/{notification}/read', [EmployerPortalPageController::class, 'markRead'])->name('notifications.read');
+            Route::delete('/notifications/{notification}', [EmployerPortalPageController::class, 'destroyNotification'])->name('notifications.destroy');
+        });
+
+        Route::middleware('permission:'.PermissionName::EmployerSettings->value)->group(function () {
+            Route::get('/settings', [EmployerPortalPageController::class, 'settings'])->name('settings');
+            Route::put('/settings', [EmployerPortalPageController::class, 'updateSettings'])->name('settings.update');
+            Route::put('/settings/notifications', [EmployerPortalPageController::class, 'updateNotificationPreferences'])->name('settings.notifications');
+            Route::put('/settings/privacy', [EmployerPortalPageController::class, 'updatePrivacyPreferences'])->name('settings.privacy');
+            Route::post('/settings/deactivate', [EmployerPortalPageController::class, 'deactivate'])->name('settings.deactivate');
+            Route::delete('/settings', [EmployerPortalPageController::class, 'destroy'])->name('settings.destroy');
+        });
+
+        Route::middleware('permission:'.PermissionName::EmployerTeam->value)->group(function () {
+            Route::get('/team', [EmployerTeamController::class, 'index'])->name('team');
+            Route::post('/team', [EmployerTeamController::class, 'store'])->name('team.store');
+            Route::put('/team/{member}', [EmployerTeamController::class, 'update'])->name('team.update');
+            Route::delete('/team/{member}', [EmployerTeamController::class, 'destroy'])->name('team.destroy');
+            Route::get('/roles', [EmployerRoleController::class, 'index'])->name('roles');
+            Route::get('/roles/create', [EmployerRoleController::class, 'create'])->name('roles.create');
+            Route::post('/roles', [EmployerRoleController::class, 'store'])->name('roles.store');
+            Route::get('/roles/{role}/edit', [EmployerRoleController::class, 'edit'])->name('roles.edit');
+            Route::put('/roles/{role}', [EmployerRoleController::class, 'update'])->name('roles.update');
+            Route::delete('/roles/{role}', [EmployerRoleController::class, 'destroy'])->name('roles.destroy');
+        });
     });
 
     Route::get('/profile', [UserProfileController::class, 'edit'])->name('user-profile.edit');

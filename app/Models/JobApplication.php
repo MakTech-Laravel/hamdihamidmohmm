@@ -24,6 +24,7 @@ class JobApplication extends Model
         'job_seeker_id',
         'status',
         'cover_letter',
+        'question_answers',
         'resume_path',
         'resume_original_name',
     ];
@@ -35,6 +36,7 @@ class JobApplication extends Model
     {
         return [
             'status' => JobApplicationStatus::class,
+            'question_answers' => 'array',
             'ai_status' => AtsScreeningStatus::class,
             'ai_source' => AtsScoreSource::class,
             'ai_recommendation' => AtsRecommendation::class,

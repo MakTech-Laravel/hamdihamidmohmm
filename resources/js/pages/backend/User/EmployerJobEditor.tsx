@@ -58,9 +58,23 @@ type JobForm = {
     description: string | null;
     requirements: string | null;
     skills: string[];
+    application_questions?: ApplicationQuestion[];
     expires_at: string | null;
     status: string;
 };
+
+type ApplicationQuestion = {
+    id: string;
+    prompt: string;
+    type: 'text' | 'textarea' | 'yes_no';
+    required: boolean;
+    sort: number;
+};
+
+const newQuestionId = (): string =>
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 type Plan = {
     credits_remaining: number;
@@ -167,6 +181,7 @@ export default function EmployerJobEditor({
         description: string;
         requirements: string;
         skills: string;
+        application_questions: ApplicationQuestion[];
         expires_at: string;
         publish: boolean;
         logo: File | null;
@@ -182,6 +197,15 @@ export default function EmployerJobEditor({
         description: job?.description ?? '',
         requirements: job?.requirements ?? '',
         skills: (job?.skills ?? []).join(', '),
+        application_questions: (job?.application_questions ?? []).map(
+            (question, index) => ({
+                id: question.id || newQuestionId(),
+                prompt: question.prompt ?? '',
+                type: question.type ?? 'text',
+                required: Boolean(question.required),
+                sort: question.sort ?? index,
+            }),
+        ),
         expires_at: job?.expires_at ?? '',
         publish: true,
         logo: null,
@@ -1262,6 +1286,189 @@ export default function EmployerJobEditor({
                                     )}
                                 </p>
                             </Field>
+
+                            <div className="space-y-3 rounded-xl border border-[#e8eef5] bg-[#f8faff] p-4">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                        <p className="text-sm font-semibold text-[#050315]">
+                                            {t(
+                                                'employer.job_editor.questions.title',
+                                            )}
+                                        </p>
+                                        <p className="text-xs text-[#64748b]">
+                                            {t(
+                                                'employer.job_editor.questions.hint',
+                                            )}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        disabled={
+                                            form.data.application_questions
+                                                .length >= 10
+                                        }
+                                        onClick={() =>
+                                            form.setData(
+                                                'application_questions',
+                                                [
+                                                    ...form.data
+                                                        .application_questions,
+                                                    {
+                                                        id: newQuestionId(),
+                                                        prompt: '',
+                                                        type: 'text',
+                                                        required: false,
+                                                        sort: form.data
+                                                            .application_questions
+                                                            .length,
+                                                    },
+                                                ],
+                                            )
+                                        }
+                                        className="inline-flex h-9 cursor-pointer items-center rounded-lg bg-[#0057c8] px-3 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {t(
+                                            'employer.job_editor.questions.add',
+                                        )}
+                                    </button>
+                                </div>
+
+                                {form.data.application_questions.length ===
+                                0 ? (
+                                    <p className="text-xs text-[#94a3b8]">
+                                        {t(
+                                            'employer.job_editor.questions.empty',
+                                        )}
+                                    </p>
+                                ) : (
+                                    form.data.application_questions.map(
+                                        (question, index) => (
+                                            <div
+                                                key={question.id}
+                                                className="space-y-2 rounded-xl border border-[#dbeafe] bg-white p-3"
+                                            >
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p className="text-xs font-semibold text-[#0057c8]">
+                                                        {t(
+                                                            'employer.job_editor.questions.item',
+                                                            {
+                                                                number:
+                                                                    index + 1,
+                                                            },
+                                                        )}
+                                                    </p>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            form.setData(
+                                                                'application_questions',
+                                                                form.data.application_questions.filter(
+                                                                    (item) =>
+                                                                        item.id !==
+                                                                        question.id,
+                                                                ),
+                                                            )
+                                                        }
+                                                        className="text-xs font-semibold text-[#b91c1c]"
+                                                    >
+                                                        {t('common.remove')}
+                                                    </button>
+                                                </div>
+                                                <input
+                                                    value={question.prompt}
+                                                    onChange={(event) => {
+                                                        const next = [
+                                                            ...form.data
+                                                                .application_questions,
+                                                        ];
+                                                        next[index] = {
+                                                            ...question,
+                                                            prompt: event
+                                                                .target.value,
+                                                        };
+                                                        form.setData(
+                                                            'application_questions',
+                                                            next,
+                                                        );
+                                                    }}
+                                                    placeholder={t(
+                                                        'employer.job_editor.questions.prompt_placeholder',
+                                                    )}
+                                                    className={inputClass}
+                                                />
+                                                <div className="flex flex-wrap items-center gap-3">
+                                                    <select
+                                                        value={question.type}
+                                                        onChange={(event) => {
+                                                            const next = [
+                                                                ...form.data
+                                                                    .application_questions,
+                                                            ];
+                                                            next[index] = {
+                                                                ...question,
+                                                                type: event
+                                                                    .target
+                                                                    .value as ApplicationQuestion['type'],
+                                                            };
+                                                            form.setData(
+                                                                'application_questions',
+                                                                next,
+                                                            );
+                                                        }}
+                                                        className={inputClass}
+                                                    >
+                                                        <option value="text">
+                                                            {t(
+                                                                'employer.job_editor.questions.type.text',
+                                                            )}
+                                                        </option>
+                                                        <option value="textarea">
+                                                            {t(
+                                                                'employer.job_editor.questions.type.textarea',
+                                                            )}
+                                                        </option>
+                                                        <option value="yes_no">
+                                                            {t(
+                                                                'employer.job_editor.questions.type.yes_no',
+                                                            )}
+                                                        </option>
+                                                    </select>
+                                                    <label className="inline-flex items-center gap-2 text-xs text-[#475569]">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={
+                                                                question.required
+                                                            }
+                                                            onChange={(
+                                                                event,
+                                                            ) => {
+                                                                const next = [
+                                                                    ...form.data
+                                                                        .application_questions,
+                                                                ];
+                                                                next[index] = {
+                                                                    ...question,
+                                                                    required:
+                                                                        event
+                                                                            .target
+                                                                            .checked,
+                                                                };
+                                                                form.setData(
+                                                                    'application_questions',
+                                                                    next,
+                                                                );
+                                                            }}
+                                                        />
+                                                        {t(
+                                                            'employer.job_editor.questions.required',
+                                                        )}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        ),
+                                    )
+                                )}
+                            </div>
                         </div>
                     )}
 

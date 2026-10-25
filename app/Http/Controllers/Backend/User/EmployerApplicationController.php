@@ -11,6 +11,7 @@ use App\Http\Requests\Backend\User\BulkUpdateEmployerApplicationsRequest;
 use App\Http\Requests\Backend\User\RescoreEmployerApplicationRequest;
 use App\Http\Requests\Backend\User\RescoreEmployerJobApplicationsRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerApplicationRequest;
+use App\Models\EmployerRosterEntry;
 use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\User;
@@ -21,6 +22,7 @@ use App\Support\ApplicantDocumentDownloader;
 use App\Support\ApplicantProfilePreview;
 use App\Support\ApplicantQualification;
 use App\Support\ExperienceFilterOptions;
+use App\Support\JobApplicationQuestions;
 use App\Support\JobSeekerResume;
 use App\Support\PortalNotifier;
 use App\Support\RecruitmentReport;
@@ -48,6 +50,12 @@ class EmployerApplicationController extends Controller
     public function index(Request $request): Response
     {
         $status = $request->string('status')->toString();
+        $shortlist = $request->boolean('shortlist');
+
+        if ($shortlist && $status === '') {
+            $status = JobApplicationStatus::Shortlisted->value;
+        }
+
         $search = $request->string('search')->toString();
         $jobId = $request->integer('job_id');
         $experience = $request->string('experience')->toString();
@@ -63,11 +71,11 @@ class EmployerApplicationController extends Controller
             : '';
 
         $appsQuery = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id))
+            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->employerAccountId()))
             ->with([
                 'jobSeeker',
                 'jobSeeker.jobSeekerProfile',
-                'jobPost:id,title',
+                'jobPost:id,title,application_questions',
             ]);
 
         if ($jobId > 0) {
@@ -111,12 +119,17 @@ class EmployerApplicationController extends Controller
         }
 
         $jobHashes = $atsEnabled ? $this->jobHashes($sortedApplications->pluck('job_post_id')->unique()->all()) : [];
+        $rosterSeekerIds = EmployerRosterEntry::query()
+            ->forAccount((int) $request->user()?->employerAccountId())
+            ->pluck('job_seeker_id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
         $applications = $sortedApplications->map(
-            fn (JobApplication $application) => $this->row($application, $atsEnabled, $jobHashes),
+            fn (JobApplication $application) => $this->row($application, $atsEnabled, $jobHashes, $rosterSeekerIds),
         );
 
         $allForStats = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id));
+            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->employerAccountId()));
 
         if ($jobId > 0) {
             $allForStats->where('job_post_id', $jobId);
@@ -126,7 +139,7 @@ class EmployerApplicationController extends Controller
 
         if ($jobId > 0) {
             $jobTitle = JobPost::query()
-                ->where('employer_id', $request->user()?->id)
+                ->where('employer_id', $request->user()?->employerAccountId())
                 ->where('id', $jobId)
                 ->value('title');
         }
@@ -142,7 +155,7 @@ class EmployerApplicationController extends Controller
                 'sort' => $sort,
                 'direction' => $direction,
                 'gender' => $gender?->value ?? '',
-                'shortlist' => $request->boolean('shortlist'),
+                'shortlist' => $shortlist,
                 'ai_sort' => $aiSort,
                 'ai_band' => $aiBand,
             ],
@@ -164,6 +177,9 @@ class EmployerApplicationController extends Controller
                     'label' => $item->label(),
                 ])
                 ->values(),
+            'roster_categories' => EmployerRosterEntry::categoriesForAccount(
+                (int) $request->user()?->employerAccountId(),
+            ),
         ]);
     }
 
@@ -180,7 +196,7 @@ class EmployerApplicationController extends Controller
 
         $applications = JobApplication::query()
             ->whereIn('id', $request->validated('ids'))
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id))
+            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->employerAccountId()))
             ->get();
 
         foreach ($applications as $application) {
@@ -197,7 +213,7 @@ class EmployerApplicationController extends Controller
         $jobId = $request->integer('job_id');
 
         $applications = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()->id))
+            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()->employerAccountId()))
             ->when($jobId > 0, fn ($query) => $query->where('job_post_id', $jobId))
             ->with(['jobSeeker.jobSeekerProfile', 'jobPost:id,title,expires_at'])
             ->latest()
@@ -338,7 +354,7 @@ class EmployerApplicationController extends Controller
     private function employerOwnsJob(Request $request, int $jobId): bool
     {
         return JobPost::query()
-            ->where('employer_id', $request->user()?->id)
+            ->where('employer_id', $request->user()?->employerAccountId())
             ->whereKey($jobId)
             ->exists();
     }
@@ -443,7 +459,7 @@ class EmployerApplicationController extends Controller
 
         $application->loadMissing(['jobPost']);
 
-        abort_unless($application->jobPost?->employer_id === $request->user()?->id, 403);
+        abort_unless($application->jobPost?->employer_id === $request->user()?->employerAccountId(), 403);
     }
 
     /**
@@ -516,7 +532,7 @@ class EmployerApplicationController extends Controller
 
         $shortlist = [];
         $job = $jobId > 0
-            ? JobPost::query()->where('employer_id', $request->user()?->id)->whereKey($jobId)->first()
+            ? JobPost::query()->where('employer_id', $request->user()?->employerAccountId())->whereKey($jobId)->first()
             : null;
 
         if ($job instanceof JobPost) {
@@ -600,12 +616,15 @@ class EmployerApplicationController extends Controller
 
     /**
      * @param  array<int, string>  $jobHashes
+     * @param  list<int>  $rosterSeekerIds
      * @return array<string, mixed>
      */
-    private function row(JobApplication $application, bool $atsEnabled = false, array $jobHashes = []): array
+    private function row(JobApplication $application, bool $atsEnabled = false, array $jobHashes = [], array $rosterSeekerIds = []): array
     {
         $next = $application->status?->next();
         $seeker = $application->jobSeeker;
+        $onRoster = $seeker instanceof User
+            && in_array((int) $seeker->id, $rosterSeekerIds, true);
 
         if (! $seeker instanceof User) {
             return [
@@ -637,6 +656,10 @@ class EmployerApplicationController extends Controller
                 'certifications' => [],
                 'references' => [],
                 'cover_letter' => $application->cover_letter,
+                'question_answers' => JobApplicationQuestions::paired(
+                    JobApplicationQuestions::normalize($application->jobPost?->application_questions),
+                    $application->question_answers,
+                ),
                 'resume_name' => null,
                 'has_resume_file' => false,
                 'highest_degree_name' => null,
@@ -657,6 +680,7 @@ class EmployerApplicationController extends Controller
                 'can_move' => $next instanceof JobApplicationStatus,
                 'can_reject' => $application->status !== JobApplicationStatus::Withdrawn
                     && $application->status !== JobApplicationStatus::Rejected,
+                'on_roster' => false,
                 ...$this->aiFields($application, $atsEnabled, $jobHashes),
             ];
         }
@@ -678,11 +702,16 @@ class EmployerApplicationController extends Controller
             'status_value' => $application->status?->value,
             'date' => $application->created_at?->format('M j, Y'),
             'resume_url' => route('employer.applications.resume', $application),
+            'question_answers' => JobApplicationQuestions::paired(
+                JobApplicationQuestions::normalize($application->jobPost?->application_questions),
+                $application->question_answers,
+            ),
             'timeline' => $this->formatTimeline($application->timeline()),
             'next_status' => $next?->value,
             'can_move' => $next instanceof JobApplicationStatus,
             'can_reject' => $application->status !== JobApplicationStatus::Withdrawn
                 && $application->status !== JobApplicationStatus::Rejected,
+            'on_roster' => $onRoster,
             ...$this->aiFields($application, $atsEnabled, $jobHashes),
         ];
     }

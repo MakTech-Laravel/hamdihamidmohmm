@@ -17,6 +17,7 @@ use App\Support\RoleAssigner;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -72,6 +73,7 @@ class User extends Authenticatable
         'portal_preferences',
         'password',
         'role',
+        'employer_owner_id',
         'verification_status',
         'account_status',
         'package',
@@ -271,8 +273,34 @@ class User extends Authenticatable
 
     public function isEmployer(): bool
     {
-        return $this->hasRole(RoleName::Employer->value)
+        return $this->hasAnyRole(RoleName::employerPortalValues())
             || $this->role === UserRole::Employer;
+    }
+
+    public function isEmployerOwner(): bool
+    {
+        return $this->isEmployer() && $this->employer_owner_id === null;
+    }
+
+    public function employerAccountId(): int
+    {
+        return (int) ($this->employer_owner_id ?? $this->id);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function employerOwner(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'employer_owner_id');
+    }
+
+    /**
+     * @return HasMany<User, $this>
+     */
+    public function employerMembers(): HasMany
+    {
+        return $this->hasMany(self::class, 'employer_owner_id');
     }
 
     public function employerAccountAllowsLogin(): bool
@@ -281,8 +309,12 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->account_status === EmployerAccountStatus::Active
-            && $this->verification_status === EmployerVerificationStatus::Approved;
+        $account = $this->isEmployerOwner()
+            ? $this
+            : ($this->employerOwner ?? $this);
+
+        return $account->account_status === EmployerAccountStatus::Active
+            && $account->verification_status === EmployerVerificationStatus::Approved;
     }
 
     public function employerLoginDenialReason(): ?string
@@ -291,7 +323,11 @@ class User extends Authenticatable
             return null;
         }
 
-        return match ($this->account_status?->value) {
+        $account = $this->isEmployerOwner()
+            ? $this
+            : ($this->employerOwner ?? $this);
+
+        return match ($account->account_status?->value) {
             'rejected' => 'Your employer account was rejected. Please contact support for help.',
             'suspended' => 'Your employer account has been suspended. Please contact support for help.',
             default => 'Your employer account is awaiting admin approval before you can sign in.',
@@ -476,6 +512,23 @@ class User extends Authenticatable
 
     public function dashboardRoute(): string
     {
+        if ($this->isEmployer()) {
+            $employerHomes = [
+                PermissionName::EmployerDashboard->value => 'employer.dashboard',
+                PermissionName::EmployerApplications->value => 'employer.applications',
+                PermissionName::EmployerJobs->value => 'employer.jobs',
+                PermissionName::EmployerNotifications->value => 'employer.notifications',
+            ];
+
+            foreach ($employerHomes as $permission => $route) {
+                if ($this->can($permission)) {
+                    return $route;
+                }
+            }
+
+            return 'employer.applications';
+        }
+
         return $this->primaryRoleName()?->dashboardRoute()
             ?? $this->role?->dashboardRoute()
             ?? 'job-seeker.dashboard';

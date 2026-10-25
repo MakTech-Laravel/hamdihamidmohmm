@@ -149,6 +149,9 @@ class FrontendController extends Controller
                     is_array($jobPost->skills) ? $jobPost->skills : [],
                     fn (mixed $skill): bool => filled($skill),
                 )),
+                'application_questions' => is_array($jobPost->application_questions)
+                    ? $jobPost->application_questions
+                    : [],
                 'about' => $jobPost->employer?->about,
                 'industry' => $jobPost->employer?->industry,
                 'company_industry' => $jobPost->employer?->industry,

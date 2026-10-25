@@ -93,7 +93,9 @@ enum UserRole: int
             RoleName::SuperAdmin => self::SuperAdmin,
             RoleName::Admin => self::Admin,
             RoleName::JobSeeker => self::JobSeeker,
-            RoleName::Employer => self::Employer,
+            RoleName::Employer,
+            RoleName::EmployerManager,
+            RoleName::EmployerInterviewer => self::Employer,
         };
     }
 }

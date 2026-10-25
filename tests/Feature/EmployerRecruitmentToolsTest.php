@@ -169,3 +169,30 @@ test('employer jobs list exposes job reference, closing date and shortlist count
             ->where('jobs.0.shortlisted', 1)
             ->has('jobs.0.expires_at'));
 });
+
+test('shortlist query shows only shortlisted applications', function () {
+    applyToJob($this->job, 'Applied Candidate', []);
+    applyToJob($this->job, 'Shortlisted Candidate', [], JobApplicationStatus::Shortlisted);
+
+    $this->actingAs($this->employer)
+        ->get(route('employer.applications', ['shortlist' => 1]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filters.shortlist', true)
+            ->where('filters.status', JobApplicationStatus::Shortlisted->value)
+            ->has('applications', 1)
+            ->where('applications.0.name', 'Shortlisted Candidate'));
+});
+
+test('applications without shortlist still list every status', function () {
+    applyToJob($this->job, 'Applied Candidate', []);
+    applyToJob($this->job, 'Shortlisted Candidate', [], JobApplicationStatus::Shortlisted);
+
+    $this->actingAs($this->employer)
+        ->get(route('employer.applications'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filters.shortlist', false)
+            ->where('filters.status', '')
+            ->has('applications', 2));
+});

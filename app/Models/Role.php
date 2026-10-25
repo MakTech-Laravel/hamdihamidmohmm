@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PermissionName;
 use App\Enums\RoleName;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Permission\Models\Role as SpatieRole;
 
 class Role extends SpatieRole
@@ -19,6 +20,7 @@ class Role extends SpatieRole
         'description',
         'is_system',
         'is_locked',
+        'employer_owner_id',
     ];
 
     /**
@@ -30,6 +32,14 @@ class Role extends SpatieRole
             'is_system' => 'boolean',
             'is_locked' => 'boolean',
         ];
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function employerOwner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'employer_owner_id');
     }
 
     public function displayLabel(): string
@@ -47,6 +57,11 @@ class Role extends SpatieRole
         return str($this->name)->replace('-', ' ')->title()->toString();
     }
 
+    public function isEmployerScoped(): bool
+    {
+        return $this->employer_owner_id !== null;
+    }
+
     public function isSystemRole(): bool
     {
         return $this->is_system || RoleName::tryFrom($this->name) instanceof RoleName;
@@ -59,20 +74,32 @@ class Role extends SpatieRole
 
     public function isPortalRole(): bool
     {
+        if ($this->isEmployerScoped()) {
+            return true;
+        }
+
         return in_array($this->name, [
             RoleName::JobSeeker->value,
-            RoleName::Employer->value,
+            ...RoleName::employerPortalValues(),
         ], true);
     }
 
     public function requiresAdminPanelAccess(): bool
     {
-        return ! $this->isPortalRole() && ! $this->isLocked();
+        return ! $this->isPortalRole() && ! $this->isLocked() && ! $this->isEmployerScoped();
     }
 
     public function canBeDeleted(): bool
     {
-        return ! $this->isSystemRole() && ! $this->isLocked() && $this->users()->count() === 0;
+        if ($this->isLocked()) {
+            return false;
+        }
+
+        if ($this->isEmployerScoped()) {
+            return $this->users()->count() === 0;
+        }
+
+        return ! $this->isSystemRole() && $this->users()->count() === 0;
     }
 
     /**
@@ -93,6 +120,25 @@ class Role extends SpatieRole
     }
 
     /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopePlatform(Builder $query): Builder
+    {
+        return $query->whereNull('employer_owner_id');
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeForEmployer(Builder $query, User $owner): Builder
+    {
+        return $query->where('employer_owner_id', $owner->id);
+    }
+
+    /**
+     * @param  list<mixed>  $permissions
      * @return list<string>
      */
     public static function syncablePermissions(self $role, array $permissions): array
@@ -102,8 +148,20 @@ class Role extends SpatieRole
             ->unique()
             ->values();
 
+        if ($role->isEmployerScoped()) {
+            $allowed = collect(PermissionName::employerDelegatablePermissionValues());
+            $names = $names->intersect($allowed)->values();
+            $names->push(PermissionName::AccessEmployerPortal->value);
+
+            return $names->unique()->values()->all();
+        }
+
         if ($role->requiresAdminPanelAccess()) {
             $names->push(PermissionName::AccessAdminPanel->value);
+        }
+
+        if ($role->isPortalRole() && in_array($role->name, RoleName::employerPortalValues(), true)) {
+            $names->push(PermissionName::AccessEmployerPortal->value);
         }
 
         if ($role->isLocked()) {
