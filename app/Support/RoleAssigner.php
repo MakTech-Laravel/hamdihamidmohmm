@@ -35,12 +35,26 @@ class RoleAssigner
 
     public static function userRoleFor(Role $role): UserRole
     {
+        if ($role->isEmployerScoped()) {
+            return UserRole::Employer;
+        }
+
         $roleName = RoleName::tryFrom($role->name);
 
         if ($roleName instanceof RoleName) {
+            if ($roleName->isEmployerPortalRole()) {
+                return UserRole::Employer;
+            }
+
             return UserRole::fromRoleName($roleName);
         }
 
         return UserRole::Admin;
+    }
+
+    public static function isAssignableEmployerMemberRole(Role $role, User $owner): bool
+    {
+        return $role->isEmployerScoped()
+            && (int) $role->employer_owner_id === (int) $owner->id;
     }
 }

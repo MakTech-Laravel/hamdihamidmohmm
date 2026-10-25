@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Backend\User;
 
 use App\Enums\JobTaxonomyType;
+use App\Support\JobApplicationQuestions;
 use App\Support\SafeHtml;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -36,6 +37,7 @@ class StoreEmployerJobRequest extends FormRequest
             'location' => $this->nullableSlug('location'),
             'category' => $this->nullableSlug('category'),
             'employment_type' => trim((string) $this->input('employment_type')),
+            'application_questions' => JobApplicationQuestions::normalize($this->input('application_questions')),
         ]);
     }
 
@@ -85,6 +87,7 @@ class StoreEmployerJobRequest extends FormRequest
             'requirements' => ['nullable', 'string', 'max:20000'],
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:80'],
+            ...JobApplicationQuestions::validationRules(),
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'expires_at' => ['nullable', 'date'],
             'publish' => ['sometimes', 'boolean'],

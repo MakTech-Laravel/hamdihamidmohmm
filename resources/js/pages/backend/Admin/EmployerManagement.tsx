@@ -23,6 +23,12 @@ import {
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+} from '@/components/mobile-list-card';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -289,6 +295,111 @@ export default function EmployerManagement({
                             t('common.status'),
                             t('common.actions'),
                         ]}
+                        mobileCards={
+                            <div className="space-y-3">
+                                {employers.data.map((row) => (
+                                    <MobileListCard key={row.id}>
+                                        <MobileListCardHeader
+                                            title={row.company_name}
+                                            subtitle={row.industry}
+                                            badge={
+                                                <AdminStatusBadge
+                                                    label={row.status}
+                                                    tone={statusTone(
+                                                        row.status,
+                                                    )}
+                                                />
+                                            }
+                                        />
+                                        <MobileListCardMeta
+                                            items={[
+                                                {
+                                                    label: t(
+                                                        'admin.employers.cols.contact',
+                                                    ),
+                                                    value: row.contact,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.employers.cols.package',
+                                                    ),
+                                                    value: row.package,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.dashboard.active_jobs',
+                                                    ),
+                                                    value: row.jobs,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'common.verified',
+                                                    ),
+                                                    value: row.verification,
+                                                },
+                                            ]}
+                                        />
+                                        <MobileListCardActions
+                                            primary={
+                                                <Link
+                                                    href={`/admin/employers/${row.id}`}
+                                                    className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                >
+                                                    {t('admin.employers.view')}
+                                                </Link>
+                                            }
+                                            moreItems={[
+                                                {
+                                                    key: 'edit',
+                                                    label: t(
+                                                        'admin.employers.edit',
+                                                    ),
+                                                    href: `/admin/employers/${row.id}/edit`,
+                                                },
+                                                ...(row.can_review
+                                                    ? [
+                                                          {
+                                                              key: 'approve',
+                                                              label: t(
+                                                                  'admin.employers.approve',
+                                                              ),
+                                                              onSelect: () =>
+                                                                  router.post(
+                                                                      `/admin/employers/${row.id}/approve`,
+                                                                  ),
+                                                          },
+                                                          {
+                                                              key: 'reject',
+                                                              label: t(
+                                                                  'admin.employers.reject',
+                                                              ),
+                                                              onSelect: () => {
+                                                                  setRejectionReason(
+                                                                      '',
+                                                                  );
+                                                                  setRejecting(
+                                                                      row,
+                                                                  );
+                                                              },
+                                                              destructive: true,
+                                                          },
+                                                      ]
+                                                    : []),
+                                                {
+                                                    key: 'delete',
+                                                    label: t(
+                                                        'admin.employers.delete_account',
+                                                    ),
+                                                    onSelect: () =>
+                                                        setDeleting(row),
+                                                    destructive: true,
+                                                },
+                                            ]}
+                                        />
+                                    </MobileListCard>
+                                ))}
+                            </div>
+                        }
                     >
                         {employers.data.map((row) => (
                             <tr

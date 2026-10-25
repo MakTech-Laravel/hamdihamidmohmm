@@ -52,6 +52,13 @@ type JobDetail = {
     responsibilities?: string[];
     requirements?: string | null;
     skills?: string[];
+    application_questions?: Array<{
+        id: string;
+        prompt: string;
+        type: 'text' | 'textarea' | 'yes_no';
+        required: boolean;
+        sort?: number;
+    }>;
     benefits?: string[];
     similar?: SimilarJob[];
 };
@@ -86,6 +93,12 @@ export default function JobShow({
     const [coverLetterError, setCoverLetterError] = useState<string | null>(
         null,
     );
+    const [questionAnswers, setQuestionAnswers] = useState<
+        Record<string, string>
+    >({});
+    const [questionErrors, setQuestionErrors] = useState<
+        Record<string, string>
+    >({});
     const [cvError, setCvError] = useState<string | null>(null);
     const defaultCvId =
         applicant_cvs.find((cv) => cv.is_default)?.id ??
@@ -123,6 +136,7 @@ export default function JobShow({
     const responsibilities = job.responsibilities ?? [];
     const requirements = job.requirements?.trim() ? job.requirements : null;
     const skills = job.skills ?? [];
+    const applicationQuestions = job.application_questions ?? [];
     const benefits = job.benefits ?? [];
 
     useEffect(() => {
@@ -141,12 +155,14 @@ export default function JobShow({
         }
 
         setCoverLetterError(null);
+        setQuestionErrors({});
         setCvError(null);
         setApplying(true);
         router.post(
             job.id ? applyToJob.url(job.id) : `/jobs/${job.slug}/apply`,
             {
                 cover_letter: coverLetter.trim() || null,
+                question_answers: questionAnswers,
                 ...(selectedCvId ? { cv_id: selectedCvId } : {}),
             },
             {
@@ -159,9 +175,21 @@ export default function JobShow({
                     if (errors.cv_id) {
                         setCvError(errors.cv_id);
                     }
+
+                    const nextQuestionErrors: Record<string, string> = {};
+
+                    for (const [key, message] of Object.entries(errors)) {
+                        if (key.startsWith('question_answers.')) {
+                            nextQuestionErrors[key.replace('question_answers.', '')] =
+                                message;
+                        }
+                    }
+
+                    setQuestionErrors(nextQuestionErrors);
                 },
                 onSuccess: () => {
                     setCoverLetter('');
+                    setQuestionAnswers({});
                     setApplyModalOpen(false);
                 },
             },
@@ -762,6 +790,112 @@ export default function JobShow({
                                     </p>
                                 )}
                             </div>
+
+                            {applicationQuestions.length > 0 ? (
+                                <div className="mt-4 w-full space-y-3 text-start">
+                                    {applicationQuestions.map((question) => (
+                                        <div key={question.id}>
+                                            <label
+                                                htmlFor={`apply-q-${question.id}`}
+                                                className="mb-1.5 block text-xs font-semibold text-[#3977a6]"
+                                            >
+                                                {question.prompt}
+                                                {question.required ? (
+                                                    <span className="text-[#b91c1c]">
+                                                        {' '}
+                                                        *
+                                                    </span>
+                                                ) : (
+                                                    <span className="font-normal text-[#94a3b8]">
+                                                        {' '}
+                                                        ({t('common.optional')})
+                                                    </span>
+                                                )}
+                                            </label>
+                                            {question.type === 'yes_no' ? (
+                                                <select
+                                                    id={`apply-q-${question.id}`}
+                                                    value={
+                                                        questionAnswers[
+                                                            question.id
+                                                        ] ?? ''
+                                                    }
+                                                    onChange={(event) =>
+                                                        setQuestionAnswers(
+                                                            (current) => ({
+                                                                ...current,
+                                                                [question.id]:
+                                                                    event.target
+                                                                        .value,
+                                                            }),
+                                                        )
+                                                    }
+                                                    className="w-full rounded-xl border border-[#dbeafe] bg-white px-3 py-2.5 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
+                                                >
+                                                    <option value="">
+                                                        {t(
+                                                            'job_detail.question_select',
+                                                        )}
+                                                    </option>
+                                                    <option value="yes">
+                                                        {t('common.yes')}
+                                                    </option>
+                                                    <option value="no">
+                                                        {t('common.no')}
+                                                    </option>
+                                                </select>
+                                            ) : question.type === 'textarea' ? (
+                                                <textarea
+                                                    id={`apply-q-${question.id}`}
+                                                    rows={3}
+                                                    value={
+                                                        questionAnswers[
+                                                            question.id
+                                                        ] ?? ''
+                                                    }
+                                                    onChange={(event) =>
+                                                        setQuestionAnswers(
+                                                            (current) => ({
+                                                                ...current,
+                                                                [question.id]:
+                                                                    event.target
+                                                                        .value,
+                                                            }),
+                                                        )
+                                                    }
+                                                    className="w-full rounded-xl border border-[#dbeafe] bg-white px-3 py-2.5 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
+                                                />
+                                            ) : (
+                                                <input
+                                                    id={`apply-q-${question.id}`}
+                                                    type="text"
+                                                    value={
+                                                        questionAnswers[
+                                                            question.id
+                                                        ] ?? ''
+                                                    }
+                                                    onChange={(event) =>
+                                                        setQuestionAnswers(
+                                                            (current) => ({
+                                                                ...current,
+                                                                [question.id]:
+                                                                    event.target
+                                                                        .value,
+                                                            }),
+                                                        )
+                                                    }
+                                                    className="w-full rounded-xl border border-[#dbeafe] bg-white px-3 py-2.5 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
+                                                />
+                                            )}
+                                            {questionErrors[question.id] ? (
+                                                <p className="mt-1.5 text-xs font-medium text-[#b91c1c]">
+                                                    {questionErrors[question.id]}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : null}
                         </DialogHeader>
                     </div>
 

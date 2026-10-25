@@ -64,11 +64,15 @@ const navItems = [
 ] as const;
 
 export function JobSeekerSidebar({
-    collapsed,
+    className,
+    collapsed = false,
     onToggle,
+    onNavigate,
 }: {
-    collapsed: boolean;
-    onToggle: () => void;
+    className?: string;
+    collapsed?: boolean;
+    onToggle?: () => void;
+    onNavigate?: () => void;
 }) {
     const page = usePage<SharedData>();
     const { t } = useLocale();
@@ -82,25 +86,39 @@ export function JobSeekerSidebar({
     return (
         <aside
             className={cn(
-                'relative flex h-full shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-white transition-all duration-300',
+                'relative flex h-full shrink-0 flex-col border-r border-[rgba(57,119,166,0.2)] bg-white transition-[width] duration-300 ease-in-out',
                 collapsed ? 'w-[72px]' : 'w-[240px]',
-                'hidden md:flex',
+                className,
             )}
         >
-            <div className="flex h-[60px] items-center gap-3 border-b border-[rgba(57,119,166,0.2)] px-4">
+            <div
+                className={cn(
+                    'flex h-[60px] items-center border-b border-[rgba(57,119,166,0.2)]',
+                    collapsed ? 'justify-center px-2' : 'gap-3 px-4',
+                )}
+            >
                 <Link
                     href={jobs()}
-                    className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80"
+                    onClick={onNavigate}
+                    className={cn(
+                        'flex min-w-0 items-center transition-opacity hover:opacity-80',
+                        collapsed ? 'justify-center' : 'gap-3',
+                    )}
                     aria-label={t('nav.jobs')}
                 >
                     <img
                         src="/images/admin/logo.png"
                         alt={t('app.name')}
-                        className="h-[51px] w-[76px] shrink-0 object-contain"
-                        width={76}
-                        height={51}
+                        className={cn(
+                            'shrink-0 object-contain',
+                            collapsed
+                                ? 'h-9 w-9 max-w-full'
+                                : 'h-[51px] w-[76px]',
+                        )}
+                        width={collapsed ? 36 : 76}
+                        height={collapsed ? 36 : 51}
                     />
-                    {!collapsed && (
+                    {!collapsed ? (
                         <div className="min-w-0">
                             <p className="truncate text-sm font-bold text-[#050315]">
                                 {t('app.name')}
@@ -109,19 +127,23 @@ export function JobSeekerSidebar({
                                 {t('job_seeker.portal')}
                             </p>
                         </div>
-                    )}
+                    ) : null}
                 </Link>
             </div>
 
-            <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-4">
+            <nav className="flex-1 space-y-0.5 overflow-x-hidden overflow-y-auto overscroll-contain px-2 py-4">
                 {navItems.map((item) => {
                     const active = currentUrl.startsWith(item.match);
                     const Icon = item.icon;
+                    const title = t(item.titleKey);
 
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
+                            onClick={onNavigate}
+                            title={title}
+                            aria-label={title}
                             className={cn(
                                 'relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors',
                                 active
@@ -130,21 +152,21 @@ export function JobSeekerSidebar({
                                 collapsed && 'justify-center px-2',
                             )}
                         >
-                            {active && (
+                            {active ? (
                                 <span className="absolute top-1/2 left-0 h-6 w-0.5 -translate-y-1/2 rounded-full bg-[#0057c8]" />
-                            )}
+                            ) : null}
                             <Icon
                                 className="size-5 shrink-0"
                                 strokeWidth={1.75}
                             />
-                            {!collapsed && <span>{t(item.titleKey)}</span>}
+                            {!collapsed ? <span>{title}</span> : null}
                         </Link>
                     );
                 })}
             </nav>
 
-            <div className="border-t border-[rgba(57,119,166,0.2)] p-3">
-                {!collapsed && (
+            <div className={cn('border-t border-[rgba(57,119,166,0.2)] p-3', collapsed && 'px-2')}>
+                {!collapsed ? (
                     <div className="mb-2 flex items-center gap-3 rounded-xl bg-white p-2">
                         {showAvatar ? (
                             <img
@@ -168,37 +190,41 @@ export function JobSeekerSidebar({
                             </p>
                         </div>
                     </div>
-                )}
+                ) : null}
                 <button
                     type="button"
                     onClick={() => router.post('/logout')}
+                    title={t('common.logout')}
+                    aria-label={t('common.logout')}
                     className={cn(
                         'flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-[#3977a6] transition-colors hover:bg-white/60',
                         collapsed && 'justify-center px-2',
                     )}
                 >
                     <LogOut className="size-5 shrink-0" strokeWidth={1.75} />
-                    {!collapsed && <span>{t('common.logout')}</span>}
+                    {!collapsed ? <span>{t('common.logout')}</span> : null}
                 </button>
             </div>
 
-            <button
-                type="button"
-                onClick={onToggle}
-                className="absolute top-20 -right-3 z-10 flex size-6 items-center justify-center rounded-full border border-[#3977a6] bg-[#0057c8] text-white shadow-sm"
-                aria-label={
-                    collapsed
-                        ? t('common.expand_sidebar')
-                        : t('common.collapse_sidebar')
-                }
-            >
-                <ChevronLeft
-                    className={cn(
-                        'size-3 transition-transform',
-                        collapsed && 'rotate-180',
-                    )}
-                />
-            </button>
+            {onToggle ? (
+                <button
+                    type="button"
+                    onClick={onToggle}
+                    className="absolute top-[4.75rem] right-0 z-50 hidden size-7 translate-x-1/2 items-center justify-center rounded-full border-2 border-white bg-[#0057c8] text-white shadow-[0_2px_8px_rgba(5,3,21,0.18)] transition-transform duration-300 ease-in-out hover:bg-[#0046a3] md:flex"
+                    aria-label={
+                        collapsed
+                            ? t('common.expand_sidebar')
+                            : t('common.collapse_sidebar')
+                    }
+                >
+                    <ChevronLeft
+                        className={cn(
+                            'size-3.5 transition-transform duration-300 ease-in-out',
+                            collapsed && 'rotate-180',
+                        )}
+                    />
+                </button>
+            ) : null}
         </aside>
     );
 }

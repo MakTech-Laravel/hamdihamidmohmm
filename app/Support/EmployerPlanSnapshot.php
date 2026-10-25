@@ -35,6 +35,14 @@ class EmployerPlanSnapshot
      */
     public static function for(User $employer): array
     {
+        if (! $employer->isEmployerOwner()) {
+            $owner = $employer->employerOwner;
+
+            if ($owner instanceof User) {
+                $employer = $owner;
+            }
+        }
+
         $catalog = static::catalogPackage($employer->package);
         $jobsPosted = static::jobsUsingCredits($employer);
 

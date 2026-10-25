@@ -64,6 +64,7 @@ class RolePermissionController extends Controller
     public function show(Request $request, Role $role): Response
     {
         abort_unless($request->user()?->canManageUsers(), 403);
+        $this->ensurePlatformRole($role);
 
         $role->load('permissions');
         $role->loadCount('users');
@@ -78,6 +79,7 @@ class RolePermissionController extends Controller
     public function edit(Request $request, Role $role): Response
     {
         abort_unless($request->user()?->canManageAdmins(), 403);
+        $this->ensurePlatformRole($role);
         abort_if($role->isLocked(), 403, 'Super Admin permissions cannot be changed.');
 
         $role->load('permissions');
@@ -91,6 +93,8 @@ class RolePermissionController extends Controller
 
     public function update(UpdateManagedRoleRequest $request, Role $role): RedirectResponse
     {
+        $this->ensurePlatformRole($role);
+
         $role->forceFill([
             'label' => $request->string('label')->toString(),
             'description' => $request->filled('description')
@@ -107,6 +111,7 @@ class RolePermissionController extends Controller
     public function destroy(Request $request, Role $role): RedirectResponse
     {
         abort_unless($request->user()?->canManageAdmins(), 403);
+        $this->ensurePlatformRole($role);
         abort_unless($role->canBeDeleted(), 403, 'This role cannot be deleted.');
 
         $role->syncPermissions([]);
@@ -117,6 +122,11 @@ class RolePermissionController extends Controller
             ->with('success', 'Role deleted successfully.');
     }
 
+    private function ensurePlatformRole(Role $role): void
+    {
+        abort_if($role->isEmployerScoped(), 404);
+    }
+
     /**
      * @return Collection<int, Role>
      */
@@ -124,6 +134,7 @@ class RolePermissionController extends Controller
     {
         return Role::query()
             ->web()
+            ->platform()
             ->with('permissions')
             ->withCount('users')
             ->orderBy('is_system', 'desc')

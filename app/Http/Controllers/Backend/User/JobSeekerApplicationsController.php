@@ -66,6 +66,7 @@ class JobSeekerApplicationsController extends Controller
         $payload = [
             'status' => JobApplicationStatus::Applied,
             'cover_letter' => $request->string('cover_letter')->toString() ?: null,
+            'question_answers' => $request->input('question_answers', []),
         ];
 
         if ($request->hasFile('resume')) {

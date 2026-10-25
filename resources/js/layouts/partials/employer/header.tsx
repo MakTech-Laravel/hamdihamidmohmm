@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { LogOut, UserRound } from 'lucide-react';
+import { LogOut, Menu, UserRound } from 'lucide-react';
 import { useState } from 'react';
 
 import { firstName, getInitials } from '@/components/employer/demo-data';
@@ -11,14 +11,17 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useLocale } from '@/hooks/use-locale';
+import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
 export function EmployerHeader({
     title,
     unreadCount = 0,
+    onToggleSidebar,
 }: {
     title: string;
     unreadCount?: number;
+    onToggleSidebar?: () => void;
 }) {
     const { auth } = usePage<SharedData>().props;
     const { locale, setLocale, t } = useLocale();
@@ -37,20 +40,32 @@ export function EmployerHeader({
     const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
 
     return (
-        <header className="sticky top-0 z-30 flex h-[60px] shrink-0 items-center justify-between border-b border-[rgba(57,119,166,0.2)] bg-white px-6 shadow-[0px_1px_2px_rgba(0,0,0,0.04)]">
-            <div>
-                <p className="text-sm leading-5 font-bold text-[#101828]">
-                    {title}
-                </p>
-                <p className="text-xs leading-4 text-[#99a1af]">
-                    {companyName} · {personName}
-                </p>
+        <header className="sticky top-0 z-30 flex h-[60px] shrink-0 items-center justify-between gap-2 overflow-x-hidden border-b border-[rgba(57,119,166,0.2)] bg-white px-3 shadow-[0px_1px_2px_rgba(0,0,0,0.04)] sm:gap-4 sm:px-6">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+                {onToggleSidebar ? (
+                    <button
+                        type="button"
+                        onClick={onToggleSidebar}
+                        className="shrink-0 rounded-lg p-1.5 text-[#3977a6] hover:bg-[#f8faff] md:hidden"
+                        aria-label={t('common.toggle_sidebar')}
+                    >
+                        <Menu className="size-[18px]" strokeWidth={1.75} />
+                    </button>
+                ) : null}
+                <div className="min-w-0">
+                    <p className="truncate text-sm leading-5 font-bold text-[#101828]">
+                        {title}
+                    </p>
+                    <p className="hidden truncate text-xs leading-4 text-[#99a1af] sm:block">
+                        {companyName} · {personName}
+                    </p>
+                </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                 <Link
                     href="/"
-                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#d1f6ff] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white"
+                    className="hidden cursor-pointer items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#d1f6ff] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white sm:inline-flex"
                 >
                     <img
                         src="/images/employer/external-link.svg"
@@ -59,13 +74,19 @@ export function EmployerHeader({
                         height={14}
                         className="size-3.5 shrink-0 object-contain"
                     />
-                    {t('common.public_website')}
+                    <span className="hidden lg:inline">
+                        {t('common.public_website')}
+                    </span>
                 </Link>
 
                 <button
                     type="button"
                     onClick={() => setLocale(switchLocale)}
-                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#d1f6ff] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white"
+                    className={cn(
+                        'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#d1f6ff] px-2 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white sm:px-3',
+                    )}
+                    aria-label={localeLabel}
+                    title={localeLabel}
                 >
                     <img
                         src="/images/employer/globe.svg"
@@ -74,7 +95,7 @@ export function EmployerHeader({
                         height={14}
                         className="size-3.5 shrink-0 object-contain"
                     />
-                    {localeLabel}
+                    <span className="hidden sm:inline">{localeLabel}</span>
                 </button>
 
                 <Link
@@ -128,7 +149,7 @@ export function EmployerHeader({
                                 alt=""
                                 width={16}
                                 height={16}
-                                className="size-4 shrink-0 object-contain"
+                                className="hidden size-4 shrink-0 object-contain sm:block"
                             />
                         </button>
                     </DropdownMenuTrigger>

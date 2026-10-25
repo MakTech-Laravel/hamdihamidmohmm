@@ -4,6 +4,7 @@ namespace App\Http\Requests\Backend\User;
 
 use App\Enums\JobTaxonomyType;
 use App\Models\JobPost;
+use App\Support\JobApplicationQuestions;
 use App\Support\SafeHtml;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -16,7 +17,7 @@ class UpdateEmployerJobRequest extends FormRequest
 
         return $this->user()?->isEmployer() === true
             && $job instanceof JobPost
-            && $job->employer_id === $this->user()?->id;
+            && $job->employer_id === $this->user()?->employerAccountId();
     }
 
     protected function prepareForValidation(): void
@@ -40,6 +41,7 @@ class UpdateEmployerJobRequest extends FormRequest
             'location' => $this->nullableSlug('location'),
             'category' => $this->nullableSlug('category'),
             'employment_type' => trim((string) $this->input('employment_type')),
+            'application_questions' => JobApplicationQuestions::normalize($this->input('application_questions')),
         ];
 
         if ($this->exists('publish')) {
@@ -95,6 +97,7 @@ class UpdateEmployerJobRequest extends FormRequest
             'requirements' => ['nullable', 'string', 'max:20000'],
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:80'],
+            ...JobApplicationQuestions::validationRules(),
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'expires_at' => ['nullable', 'date'],
             'publish' => ['sometimes', 'boolean'],

@@ -34,7 +34,7 @@ class EmployerJobController extends Controller
         $employer = $request->user();
 
         $jobs = JobPost::query()
-            ->where('employer_id', $employer?->id)
+            ->where('employer_id', $employer?->employerAccountId())
             ->with('employer:id,name,company_name,company_logo_path')
             ->withCount([
                 'applications',
@@ -86,7 +86,7 @@ class EmployerJobController extends Controller
 
         $job = JobPost::query()->create([
             ...$request->safe()->except(['publish', 'featured', 'logo']),
-            'employer_id' => $employer->id,
+            'employer_id' => $employer->employerAccountId(),
             'featured' => false,
             'status' => $publish ? JobPostStatus::Pending : JobPostStatus::Draft,
             'expires_at' => $request->date('expires_at') ?? ($publish ? now()->addDays(30) : null),
@@ -121,6 +121,7 @@ class EmployerJobController extends Controller
                 'description' => $job->description,
                 'requirements' => $job->requirements,
                 'skills' => $job->skills ?? [],
+                'application_questions' => $job->application_questions ?? [],
                 'expires_at' => $job->expires_at?->toDateString(),
                 'status' => $job->effectiveStatus()->value,
             ],
@@ -372,7 +373,7 @@ class EmployerJobController extends Controller
 
     private function authorizeJob(Request $request, JobPost $job): void
     {
-        abort_unless($job->employer_id === $request->user()?->id, 403);
+        abort_unless($job->employer_id === $request->user()?->employerAccountId(), 403);
     }
 
     private function creditError(User $employer, bool $needsJobCredit): ?string

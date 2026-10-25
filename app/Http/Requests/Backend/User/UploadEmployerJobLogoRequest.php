@@ -12,7 +12,7 @@ class UploadEmployerJobLogoRequest extends FormRequest
 
         return $this->user()?->isEmployer() === true
             && $job !== null
-            && (int) $job->employer_id === (int) $this->user()?->id;
+            && (int) $job->employer_id === (int) $this->user()?->employerAccountId();
     }
 
     /**

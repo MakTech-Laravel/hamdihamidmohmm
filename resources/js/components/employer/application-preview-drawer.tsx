@@ -73,6 +73,13 @@ export type ApplicationPreview = {
         relationship: string | null;
     }>;
     cover_letter: string | null;
+    question_answers?: Array<{
+        id: string;
+        prompt: string;
+        type: string;
+        required: boolean;
+        answer: string | null;
+    }>;
     resume_name: string | null;
     resume_url: string | null;
     highest_degree_name?: string | null;
@@ -83,6 +90,7 @@ export type ApplicationPreview = {
     cover_letter_file_url?: string | null;
     avatar_url?: string | null;
     timeline: ApplicationPreviewTimelineStep[];
+    on_roster?: boolean;
     ai?: AtsMatch | null;
 };
 
@@ -98,6 +106,7 @@ export function ApplicationPreviewDrawer({
     statuses,
     onUpdateStatus,
     onRescore,
+    onAddToRoster,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -105,6 +114,7 @@ export function ApplicationPreviewDrawer({
     statuses: StatusOption[];
     onUpdateStatus: (applicationId: number, status: string) => void;
     onRescore?: (applicationId: number) => void;
+    onAddToRoster?: (applicationId: number) => void;
 }) {
     const { t } = useLocale();
 
@@ -123,6 +133,7 @@ export function ApplicationPreviewDrawer({
                         statuses={statuses}
                         onUpdateStatus={onUpdateStatus}
                         onRescore={onRescore}
+                        onAddToRoster={onAddToRoster}
                     />
                 ) : (
                     <div className="p-5 text-sm text-[#3977a6]">
@@ -139,11 +150,13 @@ function DrawerBody({
     statuses,
     onUpdateStatus,
     onRescore,
+    onAddToRoster,
 }: {
     preview: ApplicationPreview;
     statuses: StatusOption[];
     onUpdateStatus: (applicationId: number, status: string) => void;
     onRescore?: (applicationId: number) => void;
+    onAddToRoster?: (applicationId: number) => void;
 }) {
     const { t } = useLocale();
     const [selectedStatus, setSelectedStatus] = useState(preview.status_value);
@@ -390,6 +403,23 @@ function DrawerBody({
                     </Section>
                 ) : null}
 
+                {(preview.question_answers ?? []).length > 0 ? (
+                    <Section title={t('employer.drawer.questions')}>
+                        <div className="space-y-3">
+                            {(preview.question_answers ?? []).map((item) => (
+                                <div key={item.id}>
+                                    <p className="text-xs font-semibold text-[#64748b]">
+                                        {item.prompt}
+                                    </p>
+                                    <p className="mt-1 whitespace-pre-wrap text-[13.6px] leading-5 text-[#050315]">
+                                        {item.answer || '—'}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </Section>
+                ) : null}
+
                 <Section title={t('employer.drawer.documents')}>
                     <div className="flex flex-col gap-2">
                         <DocumentDownload
@@ -474,6 +504,28 @@ function DrawerBody({
                         </button>
                     </div>
                 </Section>
+
+                {onAddToRoster ? (
+                    <Section title={t('employer.roster.title')}>
+                        <button
+                            type="button"
+                            className={cn(
+                                'inline-flex h-[38px] w-full items-center justify-center rounded-[8px] border px-3 text-[13.6px] font-semibold',
+                                preview.on_roster
+                                    ? 'border-[#bbf7d0] bg-[#f0fdf4] text-[#15803d]'
+                                    : 'border-[#0057c8] bg-white text-[#0057c8] hover:bg-[#f8faff]',
+                            )}
+                            onClick={() => onAddToRoster(preview.id)}
+                        >
+                            {preview.on_roster
+                                ? t('employer.roster.on_roster')
+                                : t('employer.roster.add')}
+                        </button>
+                        <p className="mt-2 text-[12px] leading-[18px] text-[#64748b]">
+                            {t('employer.roster.not_shortlist_hint')}
+                        </p>
+                    </Section>
+                ) : null}
             </div>
 
             <div className="flex shrink-0 gap-2 border-t border-[#e2e8f0] p-4">

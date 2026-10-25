@@ -18,14 +18,16 @@ class EmployerDashboardController extends Controller
         $employer = $request->user();
         abort_unless($employer !== null, 403);
 
+        $accountId = $employer->employerAccountId();
+
         $jobs = JobPost::query()
-            ->where('employer_id', $employer->id)
+            ->where('employer_id', $accountId)
             ->withCount('applications')
             ->latest()
             ->get();
 
         $applications = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $employer->id))
+            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $accountId))
             ->with(['jobSeeker:id,name', 'jobPost:id,title'])
             ->latest()
             ->limit(4)
@@ -42,7 +44,7 @@ class EmployerDashboardController extends Controller
                 'active_jobs' => $jobs->filter(fn (JobPost $job) => $job->effectiveStatus() === JobPostStatus::Active)->count(),
                 'total_applications' => $jobs->sum('applications_count'),
                 'new_this_week' => JobApplication::query()
-                    ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $employer->id))
+                    ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $accountId))
                     ->where('created_at', '>=', now()->startOfWeek())
                     ->count(),
             ],

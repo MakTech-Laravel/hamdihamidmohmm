@@ -1,0 +1,265 @@
+<?php
+
+namespace App\Http\Controllers\Backend\User;
+
+use App\Enums\PermissionName;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Backend\User\StoreEmployerRosterEntryRequest;
+use App\Models\EmployerRosterEntry;
+use App\Models\JobApplication;
+use App\Models\User;
+use App\Support\ApplicantDocumentDownloader;
+use App\Support\ApplicantProfilePreview;
+use App\Support\JobApplicationQuestions;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class EmployerRosterController extends Controller
+{
+    public function index(Request $request): Response
+    {
+        $user = $request->user();
+        abort_unless(
+            $user?->isEmployer() === true
+            && $user->can(PermissionName::EmployerApplications->value),
+            403,
+        );
+
+        $accountId = $user->employerAccountId();
+        $category = $request->string('category')->toString();
+
+        $entriesQuery = EmployerRosterEntry::query()
+            ->forAccount($accountId)
+            ->with([
+                'jobSeeker.jobSeekerProfile',
+                'jobApplication.jobPost:id,title,employer_id,application_questions',
+                'addedBy:id,name',
+            ])
+            ->latest();
+
+        if ($category !== '') {
+            $entriesQuery->where('category', $category);
+        }
+
+        $entries = $entriesQuery->get()->map(
+            fn (EmployerRosterEntry $entry): array => $this->entryPayload($entry, $accountId),
+        );
+
+        return Inertia::render('backend/User/EmployerRoster', [
+            'entries' => $entries,
+            'categories' => EmployerRosterEntry::categoriesForAccount($accountId),
+            'filters' => [
+                'category' => $category,
+            ],
+        ]);
+    }
+
+    public function store(StoreEmployerRosterEntryRequest $request): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $accountId = $user->employerAccountId();
+        $application = $request->application();
+
+        abort_unless(
+            (int) $application->jobPost?->employer_id === $accountId,
+            403,
+        );
+
+        $seekerId = (int) $application->job_seeker_id;
+        abort_unless($seekerId > 0, 422);
+
+        EmployerRosterEntry::query()->updateOrCreate(
+            [
+                'employer_owner_id' => $accountId,
+                'job_seeker_id' => $seekerId,
+            ],
+            [
+                'job_application_id' => $application->id,
+                'category' => trim($request->string('category')->toString()),
+                'comments' => $request->filled('comments')
+                    ? $request->string('comments')->toString()
+                    : null,
+                'added_by' => $user->id,
+            ],
+        );
+
+        return back()->with('success', 'Candidate added to roster.');
+    }
+
+    public function destroy(Request $request, EmployerRosterEntry $entry): RedirectResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user?->isEmployer() === true
+            && $user->can(PermissionName::EmployerApplications->value)
+            && (int) $entry->employer_owner_id === $user->employerAccountId(),
+            403,
+        );
+
+        $entry->delete();
+
+        return back()->with('success', 'Candidate removed from roster.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function entryPayload(EmployerRosterEntry $entry, int $accountId): array
+    {
+        $seeker = $entry->jobSeeker;
+        $application = $entry->jobApplication;
+        $preview = $this->candidatePreview($seeker, $application);
+        $applications = $this->applicationsForAccount($seeker, $accountId);
+
+        return [
+            'id' => $entry->id,
+            'name' => $preview['name'] ?? $seeker?->name,
+            'email' => $preview['email'] ?? $seeker?->email,
+            'phone' => $preview['phone'] ?? null,
+            'location' => $preview['location'] ?? null,
+            'experience_years' => $preview['experience_years'] ?? null,
+            'current_title' => $preview['current_title'] ?? null,
+            'job' => $application?->jobPost?->title,
+            'job_application_id' => $entry->job_application_id,
+            'application_status' => $application?->status?->label(),
+            'application_status_value' => $application?->status?->value,
+            'category' => $entry->category,
+            'comments' => $entry->comments,
+            'added_by' => $entry->addedBy?->name,
+            'created_at' => $entry->created_at?->toDateString(),
+            'applications_count' => count($applications),
+            'applications' => $applications,
+            'candidate' => $preview,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function candidatePreview(?User $seeker, ?JobApplication $application): array
+    {
+        if (! $seeker instanceof User) {
+            return [
+                'name' => 'Applicant',
+                'title' => 'Applicant',
+                'status' => $application?->status?->label(),
+                'status_value' => $application?->status?->value,
+                'email' => '—',
+                'phone' => '—',
+                'location' => '—',
+                'current_title' => null,
+                'gender' => null,
+                'experience_years' => '—',
+                'industry' => null,
+                'expected_salary' => null,
+                'availability' => [],
+                'bio' => null,
+                'linkedin_url' => null,
+                'github_url' => null,
+                'skills' => [],
+                'education' => [],
+                'experience' => [],
+                'languages' => [],
+                'certifications' => [],
+                'references' => [],
+                'cover_letter' => $application?->cover_letter,
+                'question_answers' => [],
+                'resume_name' => null,
+                'resume_url' => null,
+                'highest_degree_name' => null,
+                'highest_degree_url' => null,
+                'other_document_name' => null,
+                'other_document_url' => null,
+                'cover_letter_file_name' => null,
+                'cover_letter_file_url' => null,
+                'avatar_url' => null,
+                'timeline' => $application instanceof JobApplication
+                    ? $this->formatTimeline($application->timeline())
+                    : [],
+                'job' => $application?->jobPost?->title,
+                'job_id' => $application?->job_post_id,
+            ];
+        }
+
+        $base = $application instanceof JobApplication
+            ? ApplicantDocumentDownloader::withDownloadUrls(
+                ApplicantProfilePreview::from($seeker, $application),
+                $application,
+                'employer',
+            )
+            : ApplicantProfilePreview::from($seeker);
+
+        return [
+            ...$base,
+            'gender' => $base['gender_label'] ?? $base['gender'] ?? null,
+            'status' => $application?->status?->label(),
+            'status_value' => $application?->status?->value,
+            'job' => $application?->jobPost?->title,
+            'job_id' => $application?->job_post_id,
+            'question_answers' => $application instanceof JobApplication
+                ? JobApplicationQuestions::paired(
+                    JobApplicationQuestions::normalize($application->jobPost?->application_questions),
+                    $application->question_answers,
+                )
+                : [],
+            'timeline' => $application instanceof JobApplication
+                ? $this->formatTimeline($application->timeline())
+                : [],
+            'resume_url' => $application instanceof JobApplication
+                ? ($base['resume_url'] ?? route('employer.applications.resume', $application))
+                : null,
+        ];
+    }
+
+    /**
+     * @return list<array{id: int, job: string|null, job_id: int|null, status: string|null, status_value: string|null, date: string|null, applications_url: string}>
+     */
+    private function applicationsForAccount(?User $seeker, int $accountId): array
+    {
+        if (! $seeker instanceof User) {
+            return [];
+        }
+
+        return JobApplication::query()
+            ->where('job_seeker_id', $seeker->id)
+            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $accountId))
+            ->with('jobPost:id,title,employer_id')
+            ->latest()
+            ->get()
+            ->map(fn (JobApplication $application): array => [
+                'id' => $application->id,
+                'job' => $application->jobPost?->title,
+                'job_id' => $application->job_post_id,
+                'status' => $application->status?->label(),
+                'status_value' => $application->status?->value,
+                'date' => $application->created_at?->toDateString(),
+                'applications_url' => route('employer.applications', [
+                    'job_id' => $application->job_post_id,
+                ]),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  list<array{label: string, date: string|null, state: string}>  $steps
+     * @return list<array{label: string, date: string|null, state: string}>
+     */
+    private function formatTimeline(array $steps): array
+    {
+        return array_map(function (array $step): array {
+            return [
+                'label' => $step['label'],
+                'date' => $step['date'] !== null
+                    ? Carbon::parse($step['date'])->format('M j')
+                    : null,
+                'state' => $step['state'],
+            ];
+        }, $steps);
+    }
+}

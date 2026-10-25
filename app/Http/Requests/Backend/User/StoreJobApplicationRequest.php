@@ -2,9 +2,13 @@
 
 namespace App\Http\Requests\Backend\User;
 
+use App\Models\JobPost;
 use App\Models\JobSeekerCv;
+use App\Support\JobApplicationQuestions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Validator;
 
 class StoreJobApplicationRequest extends FormRequest
 {
@@ -31,7 +35,41 @@ class StoreJobApplicationRequest extends FormRequest
                 'integer',
                 Rule::exists('job_seeker_cvs', 'id')->where('user_id', $this->user()?->id),
             ],
+            'question_answers' => ['nullable', 'array'],
+            'question_answers.*' => ['nullable', 'string', 'max:5000'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $job = $this->route('jobPost');
+
+            if (! $job instanceof JobPost) {
+                return;
+            }
+
+            $questions = JobApplicationQuestions::normalize($job->application_questions);
+
+            try {
+                $this->merge([
+                    'question_answers' => JobApplicationQuestions::normalizeAnswers(
+                        $questions,
+                        $this->input('question_answers'),
+                    ),
+                ]);
+            } catch (ValidationException $exception) {
+                foreach ($exception->errors() as $key => $messages) {
+                    foreach ($messages as $message) {
+                        $validator->errors()->add($key, $message);
+                    }
+                }
+            }
+        });
     }
 
     /**

@@ -20,6 +20,12 @@ import {
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+} from '@/components/mobile-list-card';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -285,6 +291,106 @@ export default function JobSeekerManagement({
                             t('common.status'),
                             t('common.actions'),
                         ]}
+                        mobileCards={
+                            <div className="space-y-3">
+                                {jobSeekers.data.map((row) => (
+                                    <MobileListCard key={row.id}>
+                                        <MobileListCardHeader
+                                            title={row.name}
+                                            subtitle={row.email}
+                                            badge={
+                                                <AdminStatusBadge
+                                                    label={row.status}
+                                                    tone={statusTone(
+                                                        row.status,
+                                                    )}
+                                                />
+                                            }
+                                        />
+                                        <MobileListCardMeta
+                                            items={[
+                                                {
+                                                    label: t(
+                                                        'admin.job_seekers.cols.location',
+                                                    ),
+                                                    value: row.location,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.job_seekers.cols.applications',
+                                                    ),
+                                                    value: row.applications,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.job_seekers.fields.resume',
+                                                    ),
+                                                    value: row.resume,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.job_seekers.cols.registered',
+                                                    ),
+                                                    value: row.date,
+                                                },
+                                            ]}
+                                        />
+                                        <MobileListCardActions
+                                            primary={
+                                                <Link
+                                                    href={`/admin/job-seekers/${row.id}`}
+                                                    className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                >
+                                                    {t(
+                                                        'admin.job_seekers.view',
+                                                    )}
+                                                </Link>
+                                            }
+                                            moreItems={[
+                                                {
+                                                    key: 'edit',
+                                                    label: t(
+                                                        'admin.job_seekers.edit',
+                                                    ),
+                                                    href: `/admin/job-seekers/${row.id}/edit`,
+                                                },
+                                                row.can_reactivate
+                                                    ? {
+                                                          key: 'reactivate',
+                                                          label: t(
+                                                              'common.reactivate',
+                                                          ),
+                                                          onSelect: () =>
+                                                              router.post(
+                                                                  `/admin/job-seekers/${row.id}/reactivate`,
+                                                              ),
+                                                      }
+                                                    : {
+                                                          key: 'suspend',
+                                                          label: t(
+                                                              'common.suspend',
+                                                          ),
+                                                          onSelect: () =>
+                                                              router.post(
+                                                                  `/admin/job-seekers/${row.id}/suspend`,
+                                                              ),
+                                                          destructive: true,
+                                                      },
+                                                {
+                                                    key: 'delete',
+                                                    label: t(
+                                                        'admin.job_seekers.delete_account',
+                                                    ),
+                                                    onSelect: () =>
+                                                        setDeleting(row),
+                                                    destructive: true,
+                                                },
+                                            ]}
+                                        />
+                                    </MobileListCard>
+                                ))}
+                            </div>
+                        }
                     >
                         {jobSeekers.data.map((row) => (
                             <tr
