@@ -41,6 +41,8 @@ test('employer portal translation keys exist in english and arabic', function ()
         'employer.nav.roster',
         'employer.roster.title',
         'employer.roster.add',
+        'employer.roster.in',
+        'employer.roster.out',
         'employer.nav.reports',
         'employer.nav.team',
         'employer.nav.roles',

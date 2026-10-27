@@ -1348,6 +1348,8 @@
     "employer.roster.empty": "لا يوجد مرشحون في اللوحة بعد. أضِف شخصًا من الطلبات.",
     "employer.roster.add": "إضافة إلى اللوحة",
     "employer.roster.on_roster": "في اللوحة",
+    "employer.roster.in": "للوحة",
+    "employer.roster.out": "إخراج",
     "employer.roster.add_title": "إضافة إلى اللوحة",
     "employer.roster.add_subtitle": "اختر فئة واترك تعليقًا اختياريًا. هذا لا يضع المرشح في القائمة المختصرة.",
     "employer.roster.add_subtitle_named": "أضِف :name إلى اللوحة. هذا لا يضعه في القائمة المختصرة.",
