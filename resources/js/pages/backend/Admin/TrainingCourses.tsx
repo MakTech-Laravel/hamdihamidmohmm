@@ -5,6 +5,13 @@ import {
     AdminPanel,
 } from '@/components/admin-portal/ui';
 import { TrainingSectionNav } from '@/components/admin-portal/training-section-nav';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+    MobileListEmpty,
+} from '@/components/mobile-list-card';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
@@ -46,62 +53,151 @@ export default function TrainingCourses({ courses }: { courses: CourseRow[] }) {
                         {String(flash.success)}
                     </div>
                 ) : null}
-                <AdminPanel className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                        <thead className="text-left text-[#64748b]">
-                            <tr>
-                                <th className="px-4 py-3">{t('admin.training.courses.col.title')}</th>
-                                <th className="px-4 py-3">{t('admin.training.courses.col.dates')}</th>
-                                <th className="px-4 py-3">{t('admin.training.courses.col.seats')}</th>
-                                <th className="px-4 py-3">{t('admin.training.courses.col.status')}</th>
-                                <th className="px-4 py-3" />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {courses.length === 0 ? (
-                                <tr>
-                                    <td className="px-4 py-6 text-[#64748b]" colSpan={5}>
-                                        {t('admin.training.courses.empty')}
-                                    </td>
-                                </tr>
-                            ) : (
-                                courses.map((course) => (
-                                    <tr key={course.id} className="border-t border-[#e2e8f0]">
-                                        <td className="px-4 py-3 font-semibold text-[#050315]">
-                                            {course.title}
-                                            <p className="text-xs font-normal text-[#64748b]">
-                                                {t('admin.training.courses.registrations', {
-                                                    count: course.registrations_count,
-                                                })}
-                                            </p>
-                                        </td>
-                                        <td className="px-4 py-3 text-[#4a5565]">
-                                            {course.starts_on}
-                                            <p className="text-xs text-[#64748b]">
-                                                {course.registration_deadline}
-                                            </p>
-                                        </td>
-                                        <td className="px-4 py-3 text-[#4a5565]">
-                                            {course.available_seats} / {course.seats}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {course.is_published
-                                                ? t('admin.training.courses.published')
-                                                : t('admin.training.courses.draft')}
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
+                <AdminPanel>
+                    {courses.length === 0 ? (
+                        <MobileListEmpty>
+                            {t('admin.training.courses.empty')}
+                        </MobileListEmpty>
+                    ) : (
+                        <div className="space-y-3 md:hidden">
+                            {courses.map((course) => (
+                                <MobileListCard key={course.id}>
+                                    <MobileListCardHeader
+                                        title={course.title}
+                                        subtitle={t(
+                                            'admin.training.courses.registrations',
+                                            {
+                                                count: course.registrations_count,
+                                            },
+                                        )}
+                                        badge={
+                                            <span className="rounded-full bg-[#eff6ff] px-2 py-0.5 text-[11px] font-semibold text-[#1d4ed8]">
+                                                {course.is_published
+                                                    ? t(
+                                                          'admin.training.courses.published',
+                                                      )
+                                                    : t(
+                                                          'admin.training.courses.draft',
+                                                      )}
+                                            </span>
+                                        }
+                                    />
+                                    <MobileListCardMeta
+                                        items={[
+                                            {
+                                                label: t(
+                                                    'admin.training.courses.col.dates',
+                                                ),
+                                                value: course.starts_on,
+                                            },
+                                            {
+                                                label: t(
+                                                    'admin.training.courses.col.seats',
+                                                ),
+                                                value: `${course.available_seats} / ${course.seats}`,
+                                            },
+                                        ]}
+                                    />
+                                    <MobileListCardActions
+                                        primary={
                                             <Link
                                                 href={`/admin/training/courses/${course.id}/edit`}
-                                                className="font-semibold text-[#0057c8]"
+                                                className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
                                             >
-                                                {t('admin.training.courses.edit')}
+                                                {t(
+                                                    'admin.training.courses.edit',
+                                                )}
                                             </Link>
+                                        }
+                                    />
+                                </MobileListCard>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="hidden overflow-x-auto md:block">
+                        <table className="min-w-full text-sm">
+                            <thead className="text-left text-[#64748b]">
+                                <tr>
+                                    <th className="px-4 py-3">
+                                        {t('admin.training.courses.col.title')}
+                                    </th>
+                                    <th className="px-4 py-3">
+                                        {t('admin.training.courses.col.dates')}
+                                    </th>
+                                    <th className="px-4 py-3">
+                                        {t('admin.training.courses.col.seats')}
+                                    </th>
+                                    <th className="px-4 py-3">
+                                        {t('admin.training.courses.col.status')}
+                                    </th>
+                                    <th className="px-4 py-3" />
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {courses.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            className="px-4 py-6 text-[#64748b]"
+                                            colSpan={5}
+                                        >
+                                            {t('admin.training.courses.empty')}
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : (
+                                    courses.map((course) => (
+                                        <tr
+                                            key={course.id}
+                                            className="border-t border-[#e2e8f0]"
+                                        >
+                                            <td className="px-4 py-3 font-semibold text-[#050315]">
+                                                {course.title}
+                                                <p className="text-xs font-normal text-[#64748b]">
+                                                    {t(
+                                                        'admin.training.courses.registrations',
+                                                        {
+                                                            count: course.registrations_count,
+                                                        },
+                                                    )}
+                                                </p>
+                                            </td>
+                                            <td className="px-4 py-3 text-[#4a5565]">
+                                                {course.starts_on}
+                                                <p className="text-xs text-[#64748b]">
+                                                    {
+                                                        course.registration_deadline
+                                                    }
+                                                </p>
+                                            </td>
+                                            <td className="px-4 py-3 text-[#4a5565]">
+                                                {course.available_seats} /{' '}
+                                                {course.seats}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {course.is_published
+                                                    ? t(
+                                                          'admin.training.courses.published',
+                                                      )
+                                                    : t(
+                                                          'admin.training.courses.draft',
+                                                      )}
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <Link
+                                                    href={`/admin/training/courses/${course.id}/edit`}
+                                                    className="font-semibold text-[#0057c8]"
+                                                >
+                                                    {t(
+                                                        'admin.training.courses.edit',
+                                                    )}
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </AdminPanel>
             </div>
         </AdminPortalLayout>

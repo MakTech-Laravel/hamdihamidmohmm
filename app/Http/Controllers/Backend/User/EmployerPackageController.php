@@ -73,7 +73,7 @@ class EmployerPackageController extends Controller
             });
 
         $invoices = Payment::query()
-            ->where('employer_id', $employer->id)
+            ->where('employer_id', $employer->employerAccountId())
             ->with('package:id,name,currency')
             ->latest()
             ->get()
@@ -153,7 +153,7 @@ class EmployerPackageController extends Controller
         }
 
         $pendingExists = Payment::query()
-            ->where('employer_id', $employer->id)
+            ->where('employer_id', $employer->employerAccountId())
             ->where('package_id', $package->id)
             ->where('method', 'bank_transfer')
             ->where('status', PaymentStatus::Pending)
@@ -201,7 +201,7 @@ class EmployerPackageController extends Controller
 
         $payment = Payment::query()
             ->where('reference', $reference)
-            ->where('employer_id', $employer->id)
+            ->where('employer_id', $employer->employerAccountId())
             ->where('method', 'yallapay')
             ->first();
 

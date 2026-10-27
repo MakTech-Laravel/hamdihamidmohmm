@@ -24,7 +24,7 @@ class UpdateAdminJobRequest extends FormRequest
         if (is_string($skills)) {
             $this->merge([
                 'skills' => collect(explode(',', $skills))
-                    ->map(fn(string $skill): string => trim($skill))
+                    ->map(fn (string $skill): string => trim($skill))
                     ->filter()
                     ->values()
                     ->all(),
@@ -33,10 +33,12 @@ class UpdateAdminJobRequest extends FormRequest
 
         $this->merge([
             'description' => SafeHtml::clean($this->input('description')),
+            'requirements' => SafeHtml::clean($this->input('requirements')),
             'country' => $this->nullableSlug('country'),
             'location' => $this->nullableSlug('location'),
             'category' => $this->nullableSlug('category'),
             'employment_type' => trim((string) $this->input('employment_type')),
+            'career_portal_url' => $this->nullableUrl('career_portal_url'),
         ]);
     }
 
@@ -80,8 +82,9 @@ class UpdateAdminJobRequest extends FormRequest
             ],
             'experience_level' => ['required', 'string', 'max:50'],
             'salary_range' => ['nullable', 'string', 'max:255'],
+            'career_portal_url' => ['nullable', 'url', 'max:2048'],
             'description' => ['nullable', 'string', 'max:20000'],
-            'requirements' => ['nullable', 'string'],
+            'requirements' => ['nullable', 'string', 'max:20000'],
             'skills' => ['nullable', 'array'],
             'skills.*' => ['string', 'max:80'],
             'expires_at' => ['nullable', 'date'],
@@ -101,6 +104,8 @@ class UpdateAdminJobRequest extends FormRequest
             'employment_type.required' => 'Please choose a job type.',
             'experience_level.required' => 'Please choose an experience level.',
             'status.required' => 'Please choose a job status.',
+            'career_portal_url.url' => 'Please enter a valid company career portal URL.',
+            'career_portal_url.max' => 'The company career portal link may not be greater than 2048 characters.',
         ];
     }
 
@@ -135,6 +140,13 @@ class UpdateAdminJobRequest extends FormRequest
     }
 
     private function nullableSlug(string $key): ?string
+    {
+        $value = trim((string) $this->input($key));
+
+        return $value !== '' ? $value : null;
+    }
+
+    private function nullableUrl(string $key): ?string
     {
         $value = trim((string) $this->input($key));
 

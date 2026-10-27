@@ -63,7 +63,10 @@ test('employers can open the post job wizard and edit an existing job', function
             ))
             ->has('options.employmentTypes')
             ->has('options.countries')
-            ->has('options.dutyStations'));
+            ->has('options.dutyStations')
+            ->where('ats.enabled', true)
+            ->where('ats.quality.show', true)
+            ->where('ats.quality.missing_skills', true));
 
     $this->actingAs($employer)
         ->get(route('employer.jobs.edit', $job))
@@ -73,7 +76,27 @@ test('employers can open the post job wizard and edit an existing job', function
             ->where('job.title', 'Backend Engineer')
             ->where('job.id', $job->id)
             ->where('job.slug', $job->slug)
-            ->where('company.name', 'Horizon Hiring Ltd'));
+            ->where('company.name', 'Horizon Hiring Ltd')
+            ->where('ats.enabled', true));
+});
+
+test('job editor ATS quality hint clears when skills and description are sufficient', function () {
+    $employer = User::factory()->employer()->create();
+    $job = JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'skills' => ['Laravel', 'React'],
+        'requirements' => str_repeat('Need strong backend and frontend experience. ', 4),
+        'description' => str_repeat('Build and ship product features with the team. ', 4),
+    ]);
+
+    $this->actingAs($employer)
+        ->get(route('employer.jobs.edit', $job))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('ats.enabled', true)
+            ->where('ats.quality.show', false)
+            ->where('ats.quality.missing_skills', false)
+            ->where('ats.quality.thin_description', false));
 });
 
 test('employers cannot save a job with a free-text category', function () {
@@ -155,7 +178,7 @@ test('employers can save a draft and later submit it for review', function () {
             'experience_level' => 'Senior',
             'salary_range' => 'SAR 18,000–25,000',
             'description' => '<p><strong>Design</strong> the portal. <span style="font-size: 18px">Impact role.</span></p><script>alert(1)</script>',
-            'requirements' => 'Figma and research.',
+            'requirements' => '<ul><li><strong>Figma</strong> and research.</li></ul><script>alert(1)</script><a href="javascript:alert(1)">bad</a>',
             'skills' => 'Figma, UX',
             'publish' => false,
         ])
@@ -169,7 +192,10 @@ test('employers can save a draft and later submit it for review', function () {
         ->and($job->skills)->toBe(['Figma', 'UX'])
         ->and($job->description)->toContain('<strong>Design</strong>')
         ->and($job->description)->toContain('font-size: 18px')
-        ->and($job->description)->not->toContain('<script>');
+        ->and($job->description)->not->toContain('<script>')
+        ->and($job->requirements)->toContain('<strong>Figma</strong>')
+        ->and($job->requirements)->not->toContain('<script>')
+        ->and($job->requirements)->not->toContain('javascript');
 
     $this->actingAs($employer)
         ->put(route('employer.jobs.update', $job), [

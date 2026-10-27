@@ -43,6 +43,7 @@ type JobDetail = {
     location?: string | null;
     experience?: string | null;
     salary?: string | null;
+    career_portal_url?: string | null;
     posted?: string | null;
     deadline?: string | null;
     vacancies?: string | null;
@@ -50,8 +51,15 @@ type JobDetail = {
     overview?: string | null;
     description?: string | null;
     responsibilities?: string[];
-    requirements?: string[];
+    requirements?: string | null;
     skills?: string[];
+    application_questions?: Array<{
+        id: string;
+        prompt: string;
+        type: 'text' | 'textarea' | 'yes_no';
+        required: boolean;
+        sort?: number;
+    }>;
     benefits?: string[];
     similar?: SimilarJob[];
 };
@@ -86,6 +94,12 @@ export default function JobShow({
     const [coverLetterError, setCoverLetterError] = useState<string | null>(
         null,
     );
+    const [questionAnswers, setQuestionAnswers] = useState<
+        Record<string, string>
+    >({});
+    const [questionErrors, setQuestionErrors] = useState<
+        Record<string, string>
+    >({});
     const [cvError, setCvError] = useState<string | null>(null);
     const defaultCvId =
         applicant_cvs.find((cv) => cv.is_default)?.id ??
@@ -121,8 +135,9 @@ export default function JobShow({
     const overview = job.overview || job.description || '';
     const similar = job.similar ?? [];
     const responsibilities = job.responsibilities ?? [];
-    const requirements = job.requirements ?? [];
+    const requirements = job.requirements?.trim() ? job.requirements : null;
     const skills = job.skills ?? [];
+    const applicationQuestions = job.application_questions ?? [];
     const benefits = job.benefits ?? [];
 
     useEffect(() => {
@@ -141,12 +156,14 @@ export default function JobShow({
         }
 
         setCoverLetterError(null);
+        setQuestionErrors({});
         setCvError(null);
         setApplying(true);
         router.post(
             job.id ? applyToJob.url(job.id) : `/jobs/${job.slug}/apply`,
             {
                 cover_letter: coverLetter.trim() || null,
+                question_answers: questionAnswers,
                 ...(selectedCvId ? { cv_id: selectedCvId } : {}),
             },
             {
@@ -159,9 +176,21 @@ export default function JobShow({
                     if (errors.cv_id) {
                         setCvError(errors.cv_id);
                     }
+
+                    const nextQuestionErrors: Record<string, string> = {};
+
+                    for (const [key, message] of Object.entries(errors)) {
+                        if (key.startsWith('question_answers.')) {
+                            nextQuestionErrors[key.replace('question_answers.', '')] =
+                                message;
+                        }
+                    }
+
+                    setQuestionErrors(nextQuestionErrors);
                 },
                 onSuccess: () => {
                     setCoverLetter('');
+                    setQuestionAnswers({});
                     setApplyModalOpen(false);
                 },
             },
@@ -389,30 +418,16 @@ export default function JobShow({
                                     </section>
                                 ) : null}
 
-                                {requirements.length > 0 ? (
+                                {requirements ? (
                                     <section className="mt-8">
                                         <h2 className="text-lg font-bold text-[#050315]">
                                             {t('job_detail.requirements')}
                                         </h2>
-                                        <ul className="mt-4 space-y-3">
-                                            {requirements.map((item) => (
-                                                <li
-                                                    key={item}
-                                                    className="flex items-start gap-3 text-sm text-[#364153]"
-                                                >
-                                                    <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[#dcfce7]">
-                                                        <img
-                                                            src="/images/job-detail/check-green.svg"
-                                                            alt=""
-                                                            className="size-3"
-                                                            width={12}
-                                                            height={12}
-                                                        />
-                                                    </span>
-                                                    {item}
-                                                </li>
-                                            ))}
-                                        </ul>
+                                        <div className="mt-4 text-sm leading-[23px] text-[#4a5565]">
+                                            <RichTextContent
+                                                html={requirements}
+                                            />
+                                        </div>
                                     </section>
                                 ) : null}
 
@@ -452,7 +467,7 @@ export default function JobShow({
                                     </section>
                                 ) : null}
 
-                                <div className="relative mt-8 flex items-center gap-3 border-t border-[#e5e7eb] pt-5">
+                                <div className="relative mt-8 flex flex-wrap items-center gap-3 border-t border-[#e5e7eb] pt-5">
                                     {is_preview ? (
                                         <span className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#fff7ed] px-6 text-sm font-bold text-[#c2410c]">
                                             {t('job_detail.preview_notice')}
@@ -477,6 +492,19 @@ export default function JobShow({
                                             {t('job_detail.apply_now')}
                                         </Link>
                                     )}
+
+                                    {job.career_portal_url ? (
+                                        <a
+                                            href={job.career_portal_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-full border-2 border-[#0057c8] bg-white px-5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#eef5ff]"
+                                        >
+                                            {t(
+                                                'job_detail.open_in_company_portal',
+                                            )}
+                                        </a>
+                                    ) : null}
 
                                     <div className="relative shrink-0" ref={shareRef}>
                                         <button
@@ -776,6 +804,112 @@ export default function JobShow({
                                     </p>
                                 )}
                             </div>
+
+                            {applicationQuestions.length > 0 ? (
+                                <div className="mt-4 w-full space-y-3 text-start">
+                                    {applicationQuestions.map((question) => (
+                                        <div key={question.id}>
+                                            <label
+                                                htmlFor={`apply-q-${question.id}`}
+                                                className="mb-1.5 block text-xs font-semibold text-[#3977a6]"
+                                            >
+                                                {question.prompt}
+                                                {question.required ? (
+                                                    <span className="text-[#b91c1c]">
+                                                        {' '}
+                                                        *
+                                                    </span>
+                                                ) : (
+                                                    <span className="font-normal text-[#94a3b8]">
+                                                        {' '}
+                                                        ({t('common.optional')})
+                                                    </span>
+                                                )}
+                                            </label>
+                                            {question.type === 'yes_no' ? (
+                                                <select
+                                                    id={`apply-q-${question.id}`}
+                                                    value={
+                                                        questionAnswers[
+                                                            question.id
+                                                        ] ?? ''
+                                                    }
+                                                    onChange={(event) =>
+                                                        setQuestionAnswers(
+                                                            (current) => ({
+                                                                ...current,
+                                                                [question.id]:
+                                                                    event.target
+                                                                        .value,
+                                                            }),
+                                                        )
+                                                    }
+                                                    className="w-full rounded-xl border border-[#dbeafe] bg-white px-3 py-2.5 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
+                                                >
+                                                    <option value="">
+                                                        {t(
+                                                            'job_detail.question_select',
+                                                        )}
+                                                    </option>
+                                                    <option value="yes">
+                                                        {t('common.yes')}
+                                                    </option>
+                                                    <option value="no">
+                                                        {t('common.no')}
+                                                    </option>
+                                                </select>
+                                            ) : question.type === 'textarea' ? (
+                                                <textarea
+                                                    id={`apply-q-${question.id}`}
+                                                    rows={3}
+                                                    value={
+                                                        questionAnswers[
+                                                            question.id
+                                                        ] ?? ''
+                                                    }
+                                                    onChange={(event) =>
+                                                        setQuestionAnswers(
+                                                            (current) => ({
+                                                                ...current,
+                                                                [question.id]:
+                                                                    event.target
+                                                                        .value,
+                                                            }),
+                                                        )
+                                                    }
+                                                    className="w-full rounded-xl border border-[#dbeafe] bg-white px-3 py-2.5 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
+                                                />
+                                            ) : (
+                                                <input
+                                                    id={`apply-q-${question.id}`}
+                                                    type="text"
+                                                    value={
+                                                        questionAnswers[
+                                                            question.id
+                                                        ] ?? ''
+                                                    }
+                                                    onChange={(event) =>
+                                                        setQuestionAnswers(
+                                                            (current) => ({
+                                                                ...current,
+                                                                [question.id]:
+                                                                    event.target
+                                                                        .value,
+                                                            }),
+                                                        )
+                                                    }
+                                                    className="w-full rounded-xl border border-[#dbeafe] bg-white px-3 py-2.5 text-sm text-[#050315] outline-none focus:border-[#0057c8]"
+                                                />
+                                            )}
+                                            {questionErrors[question.id] ? (
+                                                <p className="mt-1.5 text-xs font-medium text-[#b91c1c]">
+                                                    {questionErrors[question.id]}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : null}
                         </DialogHeader>
                     </div>
 

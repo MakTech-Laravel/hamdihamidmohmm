@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
+import { AtsMatchSection, type AtsMatch } from '@/components/employer/ats-score';
 import { getInitials } from '@/components/employer/demo-data';
 import { NativeSelect } from '@/components/ui/native-select';
 import {
@@ -41,6 +42,12 @@ export type ApplicationPreview = {
     title: string;
     status: string;
     status_value: string;
+    status_changed_by?: string | null;
+    status_history?: Array<{
+        status: string;
+        changed_by: string;
+        at: string | null;
+    }>;
     email: string;
     phone: string;
     location: string;
@@ -72,6 +79,13 @@ export type ApplicationPreview = {
         relationship: string | null;
     }>;
     cover_letter: string | null;
+    question_answers?: Array<{
+        id: string;
+        prompt: string;
+        type: string;
+        required: boolean;
+        answer: string | null;
+    }>;
     resume_name: string | null;
     resume_url: string | null;
     highest_degree_name?: string | null;
@@ -82,6 +96,8 @@ export type ApplicationPreview = {
     cover_letter_file_url?: string | null;
     avatar_url?: string | null;
     timeline: ApplicationPreviewTimelineStep[];
+    on_roster?: boolean;
+    ai?: AtsMatch | null;
 };
 
 type StatusOption = {
@@ -95,12 +111,16 @@ export function ApplicationPreviewDrawer({
     preview,
     statuses,
     onUpdateStatus,
+    onRescore,
+    onAddToRoster,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     preview: ApplicationPreview | null;
     statuses: StatusOption[];
     onUpdateStatus: (applicationId: number, status: string) => void;
+    onRescore?: (applicationId: number) => void;
+    onAddToRoster?: (applicationId: number) => void;
 }) {
     const { t } = useLocale();
 
@@ -118,6 +138,8 @@ export function ApplicationPreviewDrawer({
                         preview={preview}
                         statuses={statuses}
                         onUpdateStatus={onUpdateStatus}
+                        onRescore={onRescore}
+                        onAddToRoster={onAddToRoster}
                     />
                 ) : (
                     <div className="p-5 text-sm text-[#3977a6]">
@@ -133,10 +155,14 @@ function DrawerBody({
     preview,
     statuses,
     onUpdateStatus,
+    onRescore,
+    onAddToRoster,
 }: {
     preview: ApplicationPreview;
     statuses: StatusOption[];
     onUpdateStatus: (applicationId: number, status: string) => void;
+    onRescore?: (applicationId: number) => void;
+    onAddToRoster?: (applicationId: number) => void;
 }) {
     const { t } = useLocale();
     const [selectedStatus, setSelectedStatus] = useState(preview.status_value);
@@ -169,6 +195,13 @@ function DrawerBody({
                     <span className="mt-1 inline-flex rounded-full bg-[#fdf4ff] px-2.5 py-0.5 text-[11.52px] font-bold text-[#7e22ce]">
                         {preview.status}
                     </span>
+                    {preview.status_changed_by ? (
+                        <p className="mt-1 text-[11px] text-[#64748b]">
+                            {t('employer.applications.changed_by', {
+                                name: preview.status_changed_by,
+                            })}
+                        </p>
+                    ) : null}
                 </div>
                 <SheetClose asChild>
                     <button
@@ -182,6 +215,15 @@ function DrawerBody({
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5">
+                {preview.ai ? (
+                    <AtsMatchSection
+                        match={preview.ai}
+                        onRescore={
+                            onRescore ? () => onRescore(preview.id) : undefined
+                        }
+                    />
+                ) : null}
+
                 <Section title={t('employer.drawer.contact')}>
                     <div className="flex flex-col gap-[4.8px]">
                         <ContactRow icon={Mail} value={preview.email} />
@@ -374,6 +416,23 @@ function DrawerBody({
                     </Section>
                 ) : null}
 
+                {(preview.question_answers ?? []).length > 0 ? (
+                    <Section title={t('employer.drawer.questions')}>
+                        <div className="space-y-3">
+                            {(preview.question_answers ?? []).map((item) => (
+                                <div key={item.id}>
+                                    <p className="text-xs font-semibold text-[#64748b]">
+                                        {item.prompt}
+                                    </p>
+                                    <p className="mt-1 whitespace-pre-wrap text-[13.6px] leading-5 text-[#050315]">
+                                        {item.answer || '—'}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </Section>
+                ) : null}
+
                 <Section title={t('employer.drawer.documents')}>
                     <div className="flex flex-col gap-2">
                         <DocumentDownload
@@ -429,6 +488,35 @@ function DrawerBody({
                     </ol>
                 </Section>
 
+                {(preview.status_history?.length ?? 0) > 0 ? (
+                    <Section title={t('employer.applications.status_history')}>
+                        <ul className="space-y-2">
+                            {preview.status_history?.map((entry, index) => (
+                                <li
+                                    key={`${entry.status}-${entry.at}-${index}`}
+                                    className="rounded-lg bg-[#f8fafc] px-3 py-2 text-sm text-[#334155]"
+                                >
+                                    <span className="font-semibold">
+                                        {entry.status}
+                                    </span>
+                                    <span className="text-[#64748b]">
+                                        {' '}
+                                        ·{' '}
+                                        {t('employer.applications.changed_by', {
+                                            name: entry.changed_by,
+                                        })}
+                                    </span>
+                                    {entry.at ? (
+                                        <span className="mt-0.5 block text-xs text-[#94a3b8]">
+                                            {entry.at}
+                                        </span>
+                                    ) : null}
+                                </li>
+                            ))}
+                        </ul>
+                    </Section>
+                ) : null}
+
                 <Section title={t('employer.drawer.change_status')}>
                     <div className="flex items-center gap-2">
                         <NativeSelect
@@ -458,6 +546,28 @@ function DrawerBody({
                         </button>
                     </div>
                 </Section>
+
+                {onAddToRoster ? (
+                    <Section title={t('employer.roster.title')}>
+                        <button
+                            type="button"
+                            className={cn(
+                                'inline-flex h-[38px] w-full items-center justify-center rounded-[8px] border px-3 text-[13.6px] font-semibold',
+                                preview.on_roster
+                                    ? 'border-[#bbf7d0] bg-[#f0fdf4] text-[#15803d]'
+                                    : 'border-[#0057c8] bg-white text-[#0057c8] hover:bg-[#f8faff]',
+                            )}
+                            onClick={() => onAddToRoster(preview.id)}
+                        >
+                            {preview.on_roster
+                                ? t('employer.roster.on_roster')
+                                : t('employer.roster.add')}
+                        </button>
+                        <p className="mt-2 text-[12px] leading-[18px] text-[#64748b]">
+                            {t('employer.roster.not_shortlist_hint')}
+                        </p>
+                    </Section>
+                ) : null}
             </div>
 
             <div className="flex shrink-0 gap-2 border-t border-[#e2e8f0] p-4">

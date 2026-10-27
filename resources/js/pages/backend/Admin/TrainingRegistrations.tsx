@@ -6,6 +6,13 @@ import {
     AdminPageHeader,
     AdminPanel,
 } from '@/components/admin-portal/ui';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+    MobileListEmpty,
+} from '@/components/mobile-list-card';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
@@ -119,47 +126,134 @@ export default function TrainingRegistrations({
                         {t('admin.training.registrations.filter')}
                     </button>
                 </form>
-                <AdminPanel className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                        <thead className="text-left text-[#64748b]">
-                            <tr>
-                                <th className="px-4 py-3">{t('admin.training.registrations.col.number')}</th>
-                                <th className="px-4 py-3">{t('admin.training.registrations.col.name')}</th>
-                                <th className="px-4 py-3">{t('admin.training.registrations.col.course')}</th>
-                                <th className="px-4 py-3">{t('admin.training.registrations.col.status')}</th>
-                                <th className="px-4 py-3" />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {registrations.length === 0 ? (
-                                <tr>
-                                    <td className="px-4 py-6 text-[#64748b]" colSpan={5}>
-                                        {t('admin.training.registrations.empty')}
-                                    </td>
-                                </tr>
-                            ) : (
-                                registrations.map((registration) => (
-                                    <tr key={registration.id} className="border-t border-[#e2e8f0]">
-                                        <td className="px-4 py-3 font-semibold">{registration.number}</td>
-                                        <td className="px-4 py-3">
-                                            {registration.full_name}
-                                            <p className="text-xs text-[#64748b]">{registration.email}</p>
-                                        </td>
-                                        <td className="px-4 py-3">{registration.course}</td>
-                                        <td className="px-4 py-3">{registration.status_label}</td>
-                                        <td className="px-4 py-3 text-right">
+                <AdminPanel>
+                    {registrations.length === 0 ? (
+                        <MobileListEmpty>
+                            {t('admin.training.registrations.empty')}
+                        </MobileListEmpty>
+                    ) : (
+                        <div className="space-y-3 md:hidden">
+                            {registrations.map((registration) => (
+                                <MobileListCard key={registration.id}>
+                                    <MobileListCardHeader
+                                        title={registration.full_name}
+                                        subtitle={registration.email}
+                                        badge={
+                                            <span className="rounded-full bg-[#eff6ff] px-2 py-0.5 text-[11px] font-semibold text-[#1d4ed8]">
+                                                {registration.status_label ??
+                                                    '—'}
+                                            </span>
+                                        }
+                                    />
+                                    <MobileListCardMeta
+                                        items={[
+                                            {
+                                                label: t(
+                                                    'admin.training.registrations.col.number',
+                                                ),
+                                                value: registration.number,
+                                            },
+                                            {
+                                                label: t(
+                                                    'admin.training.registrations.col.course',
+                                                ),
+                                                value: registration.course,
+                                            },
+                                        ]}
+                                    />
+                                    <MobileListCardActions
+                                        primary={
                                             <Link
                                                 href={`/admin/training/registrations/${registration.id}`}
-                                                className="font-semibold text-[#0057c8]"
+                                                className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
                                             >
-                                                {t('admin.training.registrations.view')}
+                                                {t(
+                                                    'admin.training.registrations.view',
+                                                )}
                                             </Link>
+                                        }
+                                    />
+                                </MobileListCard>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="hidden overflow-x-auto md:block">
+                        <table className="min-w-full text-sm">
+                            <thead className="text-left text-[#64748b]">
+                                <tr>
+                                    <th className="px-4 py-3">
+                                        {t(
+                                            'admin.training.registrations.col.number',
+                                        )}
+                                    </th>
+                                    <th className="px-4 py-3">
+                                        {t(
+                                            'admin.training.registrations.col.name',
+                                        )}
+                                    </th>
+                                    <th className="px-4 py-3">
+                                        {t(
+                                            'admin.training.registrations.col.course',
+                                        )}
+                                    </th>
+                                    <th className="px-4 py-3">
+                                        {t(
+                                            'admin.training.registrations.col.status',
+                                        )}
+                                    </th>
+                                    <th className="px-4 py-3" />
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {registrations.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            className="px-4 py-6 text-[#64748b]"
+                                            colSpan={5}
+                                        >
+                                            {t(
+                                                'admin.training.registrations.empty',
+                                            )}
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : (
+                                    registrations.map((registration) => (
+                                        <tr
+                                            key={registration.id}
+                                            className="border-t border-[#e2e8f0]"
+                                        >
+                                            <td className="px-4 py-3 font-semibold">
+                                                {registration.number}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {registration.full_name}
+                                                <p className="text-xs text-[#64748b]">
+                                                    {registration.email}
+                                                </p>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {registration.course}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {registration.status_label}
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <Link
+                                                    href={`/admin/training/registrations/${registration.id}`}
+                                                    className="font-semibold text-[#0057c8]"
+                                                >
+                                                    {t(
+                                                        'admin.training.registrations.view',
+                                                    )}
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </AdminPanel>
             </div>
         </AdminPortalLayout>

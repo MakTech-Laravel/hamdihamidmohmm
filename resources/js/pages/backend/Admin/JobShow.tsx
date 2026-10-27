@@ -174,10 +174,15 @@ export default function JobShow({ job }: { job: Job }) {
                             <h2 className="text-base font-bold text-[#050315]">
                                 {t('admin.jobs.fields.requirements')}
                             </h2>
-                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#475569]">
-                                {job.requirements ||
-                                    t('admin.jobs.no_requirements')}
-                            </p>
+                            {job.requirements ? (
+                                <div className="mt-3">
+                                    <RichTextContent html={job.requirements} />
+                                </div>
+                            ) : (
+                                <p className="mt-3 text-sm leading-6 text-[#475569]">
+                                    {t('admin.jobs.no_requirements')}
+                                </p>
+                            )}
                         </AdminPanel>
 
                         <AdminPanel>

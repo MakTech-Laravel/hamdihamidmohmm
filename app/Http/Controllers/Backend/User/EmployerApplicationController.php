@@ -2,18 +2,29 @@
 
 namespace App\Http\Controllers\Backend\User;
 
+use App\Enums\AtsScoreSource;
+use App\Enums\AtsScreeningStatus;
 use App\Enums\Gender;
 use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\BulkUpdateEmployerApplicationsRequest;
+use App\Http\Requests\Backend\User\RescoreEmployerApplicationRequest;
+use App\Http\Requests\Backend\User\RescoreEmployerJobApplicationsRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerApplicationRequest;
+use App\Models\EmployerRosterEntry;
 use App\Models\JobApplication;
+use App\Models\JobApplicationStatusChange;
 use App\Models\JobPost;
 use App\Models\User;
+use App\Services\Ats\ApplicationScreeningDispatcher;
+use App\Services\Ats\AtsInputBuilder;
+use App\Services\Ats\AtsSettings;
 use App\Support\ApplicantDocumentDownloader;
 use App\Support\ApplicantProfilePreview;
 use App\Support\ApplicantQualification;
+use App\Support\EmployerJobAccess;
 use App\Support\ExperienceFilterOptions;
+use App\Support\JobApplicationQuestions;
 use App\Support\JobSeekerResume;
 use App\Support\PortalNotifier;
 use App\Support\RecruitmentReport;
@@ -31,22 +42,45 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EmployerApplicationController extends Controller
 {
+    private const AI_BANDS = ['strong', 'possible', 'weak', 'pending', 'no_cv', 'failed', 'unreadable'];
+
+    public function __construct(
+        private AtsSettings $atsSettings,
+        private AtsInputBuilder $atsInputBuilder,
+    ) {}
+
     public function index(Request $request): Response
     {
         $status = $request->string('status')->toString();
+        $shortlist = $request->boolean('shortlist');
+
+        if ($shortlist && $status === '') {
+            $status = JobApplicationStatus::Shortlisted->value;
+        }
+
         $search = $request->string('search')->toString();
         $jobId = $request->integer('job_id');
         $experience = $request->string('experience')->toString();
         $sort = $this->resolveSort($request);
         $direction = $this->resolveDirection($request);
         $gender = Gender::tryFrom($request->string('gender')->toString());
+        $atsEnabled = $this->atsSettings->enabledForEmployer($request->user());
+        $aiSort = $atsEnabled && in_array($request->string('ai_sort')->toString(), ['asc', 'desc'], true)
+            ? $request->string('ai_sort')->toString()
+            : '';
+        $aiBand = $atsEnabled && in_array($request->string('ai_band')->toString(), self::AI_BANDS, true)
+            ? $request->string('ai_band')->toString()
+            : '';
 
-        $appsQuery = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id))
+        $employer = $request->user();
+        abort_unless($employer !== null, 403);
+
+        $appsQuery = EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer)
             ->with([
                 'jobSeeker',
                 'jobSeeker.jobSeekerProfile',
-                'jobPost:id,title',
+                'jobPost:id,title,application_questions',
+                'statusChanges.changedBy:id,name',
             ]);
 
         if ($jobId > 0) {
@@ -72,18 +106,34 @@ class EmployerApplicationController extends Controller
 
         ExperienceFilterOptions::applyRange($appsQuery, $experience);
 
-        ExperienceFilterOptions::applySort($appsQuery, $sort === 'experience' ? $direction : 'desc');
-
-        $sortedApplications = $appsQuery->get();
-
-        if ($sort !== 'experience') {
-            $sortedApplications = $this->sortApplications($sortedApplications, $sort, $direction);
+        if ($aiBand !== '') {
+            $this->applyAiBand($appsQuery, $aiBand);
         }
 
-        $applications = $sortedApplications->map(fn (JobApplication $application) => $this->row($application));
+        if ($aiSort !== '') {
+            $appsQuery->orderByRaw('ai_score IS NULL')->orderBy('ai_score', $aiSort)->latest();
+            $sortedApplications = $appsQuery->get();
+        } else {
+            ExperienceFilterOptions::applySort($appsQuery, $sort === 'experience' ? $direction : 'desc');
 
-        $allForStats = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id));
+            $sortedApplications = $appsQuery->get();
+
+            if ($sort !== 'experience') {
+                $sortedApplications = $this->sortApplications($sortedApplications, $sort, $direction);
+            }
+        }
+
+        $jobHashes = $atsEnabled ? $this->jobHashes($sortedApplications->pluck('job_post_id')->unique()->all()) : [];
+        $rosterSeekerIds = EmployerRosterEntry::query()
+            ->forAccount($employer->employerAccountId())
+            ->pluck('job_seeker_id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+        $applications = $sortedApplications->map(
+            fn (JobApplication $application) => $this->row($application, $atsEnabled, $jobHashes, $rosterSeekerIds),
+        );
+
+        $allForStats = EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer);
 
         if ($jobId > 0) {
             $allForStats->where('job_post_id', $jobId);
@@ -92,9 +142,8 @@ class EmployerApplicationController extends Controller
         $jobTitle = null;
 
         if ($jobId > 0) {
-            $jobTitle = JobPost::query()
-                ->where('employer_id', $request->user()?->id)
-                ->where('id', $jobId)
+            $jobTitle = EmployerJobAccess::constrainJobQuery(JobPost::query(), $employer)
+                ->whereKey($jobId)
                 ->value('title');
         }
 
@@ -109,8 +158,11 @@ class EmployerApplicationController extends Controller
                 'sort' => $sort,
                 'direction' => $direction,
                 'gender' => $gender?->value ?? '',
-                'shortlist' => $request->boolean('shortlist'),
+                'shortlist' => $shortlist,
+                'ai_sort' => $aiSort,
+                'ai_band' => $aiBand,
             ],
+            'ats' => $this->atsProps($request, $atsEnabled, $jobId, clone $allForStats),
             'experience_options' => ExperienceFilterOptions::enabled(),
             'gender_options' => Gender::options(),
             'stats' => [
@@ -128,12 +180,19 @@ class EmployerApplicationController extends Controller
                     'label' => $item->label(),
                 ])
                 ->values(),
+            'roster_categories' => EmployerRosterEntry::categoriesForAccount(
+                $employer->employerAccountId(),
+            ),
         ]);
     }
 
     public function update(UpdateEmployerApplicationRequest $request, JobApplication $application): RedirectResponse
     {
-        $this->applyStatus($application, JobApplicationStatus::from($request->validated('status')));
+        $this->applyStatus(
+            $application,
+            JobApplicationStatus::from($request->validated('status')),
+            $request->user(),
+        );
 
         return back()->with('success', 'Application updated.');
     }
@@ -141,14 +200,15 @@ class EmployerApplicationController extends Controller
     public function bulkUpdate(BulkUpdateEmployerApplicationsRequest $request): RedirectResponse
     {
         $status = JobApplicationStatus::from($request->validated('status'));
+        $employer = $request->user();
+        abort_unless($employer !== null, 403);
 
-        $applications = JobApplication::query()
+        $applications = EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer)
             ->whereIn('id', $request->validated('ids'))
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->id))
             ->get();
 
         foreach ($applications as $application) {
-            $this->applyStatus($application, $status);
+            $this->applyStatus($application, $status, $employer);
         }
 
         return back()->with('success', 'Applications updated.');
@@ -156,12 +216,12 @@ class EmployerApplicationController extends Controller
 
     public function export(Request $request): HttpResponse
     {
-        abort_unless($request->user()?->isEmployer() === true, 403);
+        $employer = $request->user();
+        abort_unless($employer?->isEmployer() === true, 403);
 
         $jobId = $request->integer('job_id');
 
-        $applications = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()->id))
+        $applications = EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer)
             ->when($jobId > 0, fn ($query) => $query->where('job_post_id', $jobId))
             ->with(['jobSeeker.jobSeekerProfile', 'jobPost:id,title,expires_at'])
             ->latest()
@@ -179,6 +239,35 @@ class EmployerApplicationController extends Controller
                 'Content-Disposition' => 'attachment; filename="recruitment-report-'.$suffix.'-'.now()->toDateString().'.xlsx"',
             ],
         );
+    }
+
+    public function rescore(
+        RescoreEmployerApplicationRequest $request,
+        JobApplication $application,
+        ApplicationScreeningDispatcher $dispatcher,
+    ): RedirectResponse {
+        $queued = $dispatcher->dispatchOne($application, true);
+
+        return back()->with(
+            $queued ? 'success' : 'error',
+            $queued ? 'AI re-score queued.' : 'This application has no CV to score.',
+        );
+    }
+
+    public function rescoreJob(
+        RescoreEmployerJobApplicationsRequest $request,
+        JobPost $job,
+        ApplicationScreeningDispatcher $dispatcher,
+    ): RedirectResponse {
+        $queued = $dispatcher->dispatchForJob($job, $request->validated('mode'));
+
+        if ($queued === null) {
+            return back()->with('error', 'A re-score is already running for this job. Please try again shortly.');
+        }
+
+        return back()->with('success', $queued === 0
+            ? 'No applications needed re-scoring.'
+            : "Queued {$queued} application(s) for AI scoring.");
     }
 
     public function downloadResume(Request $request, JobApplication $application): StreamedResponse
@@ -248,11 +337,23 @@ class EmployerApplicationController extends Controller
         );
     }
 
-    private function applyStatus(JobApplication $application, JobApplicationStatus $status): void
+    private function applyStatus(JobApplication $application, JobApplicationStatus $status, ?User $actor = null): void
     {
+        $fromStatus = $application->status;
+
         $application->forceFill([
             'status' => $status,
         ])->save();
+
+        if ($actor instanceof User && ($fromStatus === null || $fromStatus !== $status)) {
+            JobApplicationStatusChange::query()->create([
+                'job_application_id' => $application->id,
+                'from_status' => $fromStatus?->value,
+                'to_status' => $status->value,
+                'changed_by' => $actor->id,
+                'created_at' => now(),
+            ]);
+        }
 
         $application->loadMissing(['jobSeeker', 'jobPost.employer']);
 
@@ -272,8 +373,13 @@ class EmployerApplicationController extends Controller
 
     private function employerOwnsJob(Request $request, int $jobId): bool
     {
-        return JobPost::query()
-            ->where('employer_id', $request->user()?->id)
+        $user = $request->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        return EmployerJobAccess::constrainJobQuery(JobPost::query(), $user)
             ->whereKey($jobId)
             ->exists();
     }
@@ -374,20 +480,182 @@ class EmployerApplicationController extends Controller
 
     private function authorizeEmployerApplication(Request $request, JobApplication $application): void
     {
-        abort_unless($request->user()?->isEmployer() === true, 403);
+        $user = $request->user();
+        abort_unless($user?->isEmployer() === true, 403);
 
         $application->loadMissing(['jobPost']);
 
-        abort_unless($application->jobPost?->employer_id === $request->user()?->id, 403);
+        abort_unless(
+            $application->jobPost instanceof JobPost
+            && EmployerJobAccess::canAccessJob($user, $application->jobPost),
+            403,
+        );
     }
 
     /**
+     * @param  Builder<JobApplication>  $query
+     */
+    private function applyAiBand(Builder $query, string $band): void
+    {
+        $strong = $this->atsSettings->strongThreshold();
+        $possible = $this->atsSettings->possibleThreshold();
+        $completed = AtsScreeningStatus::Completed->value;
+
+        match ($band) {
+            'strong' => $query->where('ai_status', $completed)->where('ai_score', '>=', $strong),
+            'possible' => $query->where('ai_status', $completed)->where('ai_score', '>=', $possible)->where('ai_score', '<', $strong),
+            'weak' => $query->where('ai_status', $completed)->where('ai_score', '<', $possible),
+            'no_cv' => $query->where('ai_status', AtsScreeningStatus::NoCv->value),
+            'failed' => $query->where('ai_status', AtsScreeningStatus::Failed->value),
+            'unreadable' => $query->where('ai_status', AtsScreeningStatus::Unreadable->value),
+            default => $query->where(fn (Builder $pending) => $pending
+                ->whereNull('ai_status')
+                ->orWhereIn('ai_status', [AtsScreeningStatus::Pending->value, AtsScreeningStatus::Processing->value])),
+        };
+    }
+
+    /**
+     * @param  list<int>  $jobIds
+     * @return array<int, string>
+     */
+    private function jobHashes(array $jobIds): array
+    {
+        if ($jobIds === []) {
+            return [];
+        }
+
+        return JobPost::query()
+            ->whereKey($jobIds)
+            ->get()
+            ->mapWithKeys(fn (JobPost $job): array => [
+                $job->id => $this->atsInputBuilder->jobHash($this->atsInputBuilder->jobContext($job)),
+            ])
+            ->all();
+    }
+
+    /**
+     * @param  Builder<JobApplication>  $allForEmployer
+     * @return array{
+     *     enabled: bool,
+     *     ai_enabled: bool,
+     *     has_pending: bool,
+     *     rescore_url: string|null,
+     *     thresholds: array{strong: int, possible: int},
+     *     suggested_shortlist: list<array<string, mixed>>
+     * }
+     */
+    private function atsProps(Request $request, bool $atsEnabled, int $jobId, Builder $allForEmployer): array
+    {
+        if (! $atsEnabled) {
+            return [
+                'enabled' => false,
+                'ai_enabled' => false,
+                'has_pending' => false,
+                'rescore_url' => null,
+                'thresholds' => [
+                    'strong' => $this->atsSettings->strongThreshold(),
+                    'possible' => $this->atsSettings->possibleThreshold(),
+                ],
+                'suggested_shortlist' => [],
+            ];
+        }
+
+        $shortlist = [];
+        $employer = $request->user();
+        $job = $jobId > 0 && $employer !== null
+            ? EmployerJobAccess::constrainJobQuery(JobPost::query(), $employer)->whereKey($jobId)->first()
+            : null;
+
+        if ($job instanceof JobPost) {
+            $shortlist = JobApplication::query()
+                ->where('job_post_id', $job->id)
+                ->whereIn('status', [JobApplicationStatus::Applied->value, JobApplicationStatus::UnderReview->value])
+                ->where('ai_status', AtsScreeningStatus::Completed->value)
+                ->where('ai_score', '>=', $this->atsSettings->strongThreshold())
+                ->with('jobSeeker:id,name')
+                ->orderByDesc('ai_score')
+                ->oldest()
+                ->limit($this->atsSettings->shortlistSize())
+                ->get()
+                ->map(fn (JobApplication $application): array => [
+                    'id' => $application->id,
+                    'name' => $application->jobSeeker?->name ?? 'Applicant',
+                    'ai_score' => $application->ai_score,
+                    'ai_source' => $application->ai_source?->value,
+                    'ai_summary' => $application->ai_summary,
+                    'status' => $application->status?->label(),
+                ])
+                ->values()
+                ->all();
+        }
+
+        return [
+            'enabled' => true,
+            'ai_enabled' => $this->atsSettings->aiEnabled(),
+            'has_pending' => $allForEmployer
+                ->whereIn('ai_status', [AtsScreeningStatus::Pending->value, AtsScreeningStatus::Processing->value])
+                ->exists(),
+            'rescore_url' => $job instanceof JobPost ? route('employer.jobs.applications.rescore', $job) : null,
+            'thresholds' => [
+                'strong' => $this->atsSettings->strongThreshold(),
+                'possible' => $this->atsSettings->possibleThreshold(),
+            ],
+            'suggested_shortlist' => $shortlist,
+        ];
+    }
+
+    /**
+     * @param  array<int, string>  $jobHashes
      * @return array<string, mixed>
      */
-    private function row(JobApplication $application): array
+    private function aiFields(JobApplication $application, bool $atsEnabled, array $jobHashes): array
+    {
+        $breakdown = is_array($application->ai_breakdown) ? $application->ai_breakdown : null;
+        $completed = $application->ai_status === AtsScreeningStatus::Completed;
+        $scoredJobHash = $breakdown['job_hash'] ?? null;
+        $showError = in_array($application->ai_status, [
+            AtsScreeningStatus::Failed,
+            AtsScreeningStatus::Unreadable,
+        ], true) || ($completed && $application->ai_source === AtsScoreSource::Rules && filled($application->ai_error));
+
+        return [
+            'ai_score' => $completed ? $application->ai_score : null,
+            'ai_status' => $application->ai_status?->value,
+            'ai_source' => $application->ai_source?->value,
+            'ai_recommendation' => $completed ? $application->ai_recommendation?->value : null,
+            'ai_summary' => $completed ? $application->ai_summary : null,
+            'ai_breakdown' => $completed && $breakdown !== null
+                ? collect($breakdown)->except(['job_hash', 'version', 'ai_recommendation'])->all()
+                : null,
+            'ai_scored_at' => $application->ai_scored_at?->format('M j, Y g:i A'),
+            'ai_outdated' => $atsEnabled
+                && $completed
+                && is_string($scoredJobHash)
+                && isset($jobHashes[$application->job_post_id])
+                && $jobHashes[$application->job_post_id] !== $scoredJobHash,
+            'ai_cv_name' => filled($application->resume_path)
+                ? ($application->resume_original_name ?: basename((string) $application->resume_path))
+                : null,
+            'ai_error' => $showError && filled($application->ai_error)
+                ? (string) $application->ai_error
+                : null,
+            'ai_rescore_url' => $atsEnabled
+                ? route('employer.applications.rescore', $application)
+                : null,
+        ];
+    }
+
+    /**
+     * @param  array<int, string>  $jobHashes
+     * @param  list<int>  $rosterSeekerIds
+     * @return array<string, mixed>
+     */
+    private function row(JobApplication $application, bool $atsEnabled = false, array $jobHashes = [], array $rosterSeekerIds = []): array
     {
         $next = $application->status?->next();
         $seeker = $application->jobSeeker;
+        $onRoster = $seeker instanceof User
+            && in_array((int) $seeker->id, $rosterSeekerIds, true);
 
         if (! $seeker instanceof User) {
             return [
@@ -419,6 +687,10 @@ class EmployerApplicationController extends Controller
                 'certifications' => [],
                 'references' => [],
                 'cover_letter' => $application->cover_letter,
+                'question_answers' => JobApplicationQuestions::paired(
+                    JobApplicationQuestions::normalize($application->jobPost?->application_questions),
+                    $application->question_answers,
+                ),
                 'resume_name' => null,
                 'has_resume_file' => false,
                 'highest_degree_name' => null,
@@ -432,6 +704,7 @@ class EmployerApplicationController extends Controller
                 'job_id' => $application->job_post_id,
                 'status' => $application->status?->label(),
                 'status_value' => $application->status?->value,
+                ...$this->statusChangeFields($application),
                 'date' => $application->created_at?->format('M j, Y'),
                 'resume_url' => route('employer.applications.resume', $application),
                 'timeline' => $this->formatTimeline($application->timeline()),
@@ -439,6 +712,8 @@ class EmployerApplicationController extends Controller
                 'can_move' => $next instanceof JobApplicationStatus,
                 'can_reject' => $application->status !== JobApplicationStatus::Withdrawn
                     && $application->status !== JobApplicationStatus::Rejected,
+                'on_roster' => false,
+                ...$this->aiFields($application, $atsEnabled, $jobHashes),
             ];
         }
 
@@ -457,13 +732,48 @@ class EmployerApplicationController extends Controller
             'job_id' => $application->job_post_id,
             'status' => $application->status?->label(),
             'status_value' => $application->status?->value,
+            ...$this->statusChangeFields($application),
             'date' => $application->created_at?->format('M j, Y'),
             'resume_url' => route('employer.applications.resume', $application),
+            'question_answers' => JobApplicationQuestions::paired(
+                JobApplicationQuestions::normalize($application->jobPost?->application_questions),
+                $application->question_answers,
+            ),
             'timeline' => $this->formatTimeline($application->timeline()),
             'next_status' => $next?->value,
             'can_move' => $next instanceof JobApplicationStatus,
             'can_reject' => $application->status !== JobApplicationStatus::Withdrawn
                 && $application->status !== JobApplicationStatus::Rejected,
+            'on_roster' => $onRoster,
+            ...$this->aiFields($application, $atsEnabled, $jobHashes),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     status_changed_by: string|null,
+     *     status_history: list<array{status: string, changed_by: string, at: string|null}>
+     * }
+     */
+    private function statusChangeFields(JobApplication $application): array
+    {
+        $history = ($application->relationLoaded('statusChanges')
+            ? $application->statusChanges
+            : $application->statusChanges()->with('changedBy:id,name')->get()
+        )->take(5);
+
+        $latest = $history->first();
+
+        return [
+            'status_changed_by' => $latest?->changedBy?->name,
+            'status_history' => $history
+                ->map(fn (JobApplicationStatusChange $change): array => [
+                    'status' => $change->to_status?->label() ?? (string) $change->getRawOriginal('to_status'),
+                    'changed_by' => $change->changedBy?->name ?? 'Unknown',
+                    'at' => $change->created_at?->format('M j, Y g:i A'),
+                ])
+                ->values()
+                ->all(),
         ];
     }
 

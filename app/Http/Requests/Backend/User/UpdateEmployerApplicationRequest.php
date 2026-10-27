@@ -4,6 +4,8 @@ namespace App\Http\Requests\Backend\User;
 
 use App\Enums\JobApplicationStatus;
 use App\Models\JobApplication;
+use App\Models\JobPost;
+use App\Support\EmployerJobAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,15 +14,17 @@ class UpdateEmployerApplicationRequest extends FormRequest
     public function authorize(): bool
     {
         $application = $this->route('application');
+        $user = $this->user();
 
-        if (! $application instanceof JobApplication) {
+        if (! $application instanceof JobApplication || $user === null) {
             return false;
         }
 
         $application->loadMissing('jobPost');
 
-        return $this->user()?->isEmployer() === true
-            && $application->jobPost?->employer_id === $this->user()?->id;
+        return $user->isEmployer()
+            && $application->jobPost instanceof JobPost
+            && EmployerJobAccess::canAccessJob($user, $application->jobPost);
     }
 
     /**

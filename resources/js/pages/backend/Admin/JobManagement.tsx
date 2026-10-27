@@ -14,6 +14,12 @@ import {
     AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+} from '@/components/mobile-list-card';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
@@ -251,6 +257,110 @@ export default function JobManagement({ jobs, filters, stats }: Props) {
                             t('common.created'),
                             t('common.actions'),
                         ]}
+                        mobileCards={
+                            <div className="space-y-3">
+                                {jobs.data.map((row) => (
+                                    <MobileListCard key={row.id}>
+                                        <MobileListCardHeader
+                                            title={row.title}
+                                            subtitle={row.employer}
+                                            badge={
+                                                <AdminStatusBadge
+                                                    label={row.status}
+                                                    tone={jobStatusTone(
+                                                        row.status,
+                                                    )}
+                                                />
+                                            }
+                                        />
+                                        <MobileListCardMeta
+                                            items={[
+                                                {
+                                                    label: t(
+                                                        'admin.jobs.fields.category',
+                                                    ),
+                                                    value: row.category,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'common.location',
+                                                    ),
+                                                    value: row.location,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.jobs.cols.applications',
+                                                    ),
+                                                    value: row.applications,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.jobs.fields.views',
+                                                    ),
+                                                    value: row.views,
+                                                },
+                                            ]}
+                                        />
+                                        <MobileListCardActions
+                                            primary={
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                    onClick={() =>
+                                                        router.visit(
+                                                            show.url(row.id),
+                                                        )
+                                                    }
+                                                >
+                                                    {t(
+                                                        'admin.jobs.view_details',
+                                                    )}
+                                                </button>
+                                            }
+                                            moreItems={[
+                                                {
+                                                    key: 'edit',
+                                                    label: t('admin.jobs.edit'),
+                                                    onSelect: () =>
+                                                        router.visit(
+                                                            edit.url(row.id),
+                                                        ),
+                                                },
+                                                ...(row.can_review
+                                                    ? [
+                                                          {
+                                                              key: 'approve',
+                                                              label: t(
+                                                                  'admin.jobs.approve',
+                                                              ),
+                                                              onSelect: () =>
+                                                                  router.visit(
+                                                                      show.url(
+                                                                          row.id,
+                                                                      ),
+                                                                  ),
+                                                          },
+                                                          {
+                                                              key: 'reject',
+                                                              label: t(
+                                                                  'admin.jobs.reject',
+                                                              ),
+                                                              onSelect: () =>
+                                                                  router.visit(
+                                                                      show.url(
+                                                                          row.id,
+                                                                      ),
+                                                                  ),
+                                                              destructive: true,
+                                                          },
+                                                      ]
+                                                    : []),
+                                            ]}
+                                        />
+                                    </MobileListCard>
+                                ))}
+                            </div>
+                        }
                     >
                         {jobs.data.map((row) => (
                             <tr

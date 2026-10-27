@@ -5,6 +5,7 @@ import {
     ExternalLink,
     Globe,
     LogOut,
+    Menu,
     UserRound,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -23,9 +24,11 @@ import type { SharedData } from '@/types';
 export function JobSeekerHeader({
     title,
     unreadCount = 0,
+    onToggleSidebar,
 }: {
     title: string;
     unreadCount?: number;
+    onToggleSidebar?: () => void;
 }) {
     const { auth } = usePage<SharedData>().props;
     const { locale, setLocale, t } = useLocale();
@@ -39,30 +42,48 @@ export function JobSeekerHeader({
     const showAvatar = Boolean(user.avatar_url) && !avatarFailed;
 
     return (
-        <header className="sticky top-0 z-30 flex h-[60px] shrink-0 items-center justify-between border-b border-[rgba(57,119,166,0.2)] bg-[#f8faff]/95 px-6 shadow-[0px_1px_2px_rgba(0,0,0,0.04)] backdrop-blur supports-[backdrop-filter]:bg-[#f8faff]/90">
-            <div>
-                <p className="text-sm font-bold text-[#101828]">{title}</p>
-                <p className="text-xs text-[#99a1af]">
-                    {t('app.name')} · {user.name}
-                </p>
+        <header className="sticky top-0 z-30 flex h-[60px] shrink-0 items-center justify-between gap-2 overflow-x-hidden border-b border-[rgba(57,119,166,0.2)] bg-[#f8faff]/95 px-3 shadow-[0px_1px_2px_rgba(0,0,0,0.04)] backdrop-blur supports-[backdrop-filter]:bg-[#f8faff]/90 sm:gap-4 sm:px-6">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+                {onToggleSidebar ? (
+                    <button
+                        type="button"
+                        onClick={onToggleSidebar}
+                        className="shrink-0 rounded-lg p-1.5 text-[#3977a6] hover:bg-white md:hidden"
+                        aria-label={t('common.toggle_sidebar')}
+                    >
+                        <Menu className="size-[18px]" strokeWidth={1.75} />
+                    </button>
+                ) : null}
+                <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-[#101828]">
+                        {title}
+                    </p>
+                    <p className="hidden truncate text-xs text-[#99a1af] sm:block">
+                        {t('app.name')} · {user.name}
+                    </p>
+                </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                 <Link
                     href="/"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#f8faff] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white"
+                    className="hidden items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#f8faff] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white sm:inline-flex"
                 >
                     <ExternalLink className="size-3.5" />
-                    {t('common.public_website')}
+                    <span className="hidden lg:inline">
+                        {t('common.public_website')}
+                    </span>
                 </Link>
 
                 <button
                     type="button"
                     onClick={() => setLocale(switchLocale)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#f8faff] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#f8faff] px-2 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:bg-white sm:px-3"
+                    aria-label={localeLabel}
+                    title={localeLabel}
                 >
                     <Globe className="size-3.5" />
-                    {localeLabel}
+                    <span className="hidden sm:inline">{localeLabel}</span>
                 </button>
 
                 <Link
@@ -97,10 +118,10 @@ export function JobSeekerHeader({
                                     {initials}
                                 </div>
                             )}
-                            <span className="text-sm font-semibold text-[#364153]">
+                            <span className="hidden text-sm font-semibold text-[#364153] sm:inline">
                                 {shortName}
                             </span>
-                            <ChevronDown className="size-4 text-[#99a1af]" />
+                            <ChevronDown className="hidden size-4 text-[#99a1af] sm:block" />
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent

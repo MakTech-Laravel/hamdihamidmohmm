@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\AtsRecommendation;
+use App\Enums\AtsScoreSource;
+use App\Enums\AtsScreeningStatus;
 use App\Enums\JobApplicationStatus;
 use Database\Factories\JobApplicationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JobApplication extends Model
 {
@@ -21,6 +25,7 @@ class JobApplication extends Model
         'job_seeker_id',
         'status',
         'cover_letter',
+        'question_answers',
         'resume_path',
         'resume_original_name',
     ];
@@ -32,6 +37,13 @@ class JobApplication extends Model
     {
         return [
             'status' => JobApplicationStatus::class,
+            'question_answers' => 'array',
+            'ai_status' => AtsScreeningStatus::class,
+            'ai_source' => AtsScoreSource::class,
+            'ai_recommendation' => AtsRecommendation::class,
+            'ai_breakdown' => 'array',
+            'ai_score' => 'integer',
+            'ai_scored_at' => 'datetime',
         ];
     }
 
@@ -49,6 +61,14 @@ class JobApplication extends Model
     public function jobSeeker(): BelongsTo
     {
         return $this->belongsTo(User::class, 'job_seeker_id');
+    }
+
+    /**
+     * @return HasMany<JobApplicationStatusChange, $this>
+     */
+    public function statusChanges(): HasMany
+    {
+        return $this->hasMany(JobApplicationStatusChange::class)->latest('created_at');
     }
 
     /**

@@ -2,6 +2,11 @@ import { Form, Head, usePage } from '@inertiajs/react';
 
 import { AdminIcon } from '@/components/admin-icon';
 import InputError from '@/components/input-error';
+import {
+    MobileListCard,
+    MobileListCardHeader,
+    MobileListCardMeta,
+} from '@/components/mobile-list-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -160,7 +165,31 @@ export default function AdminManagement({
                             </h2>
                         </div>
 
-                        <div className="overflow-x-auto">
+                        <div className="space-y-3 md:hidden">
+                            {admins.map((admin) => (
+                                <MobileListCard key={admin.id}>
+                                    <MobileListCardHeader
+                                        title={admin.name}
+                                        subtitle={admin.email}
+                                        badge={
+                                            <span className="rounded-full bg-[#eff6ff] px-2.5 py-1 text-xs font-semibold text-[#1d4ed8]">
+                                                {admin.role_label}
+                                            </span>
+                                        }
+                                    />
+                                    <MobileListCardMeta
+                                        items={[
+                                            {
+                                                label: t('common.created'),
+                                                value: admin.created_at,
+                                            },
+                                        ]}
+                                    />
+                                </MobileListCard>
+                            ))}
+                        </div>
+
+                        <div className="hidden overflow-x-auto md:block">
                             <table className="min-w-full text-left text-sm">
                                 <thead className="border-b border-[#e2e8f0] text-[#64748b]">
                                     <tr>

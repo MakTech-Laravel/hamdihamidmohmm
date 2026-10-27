@@ -14,6 +14,9 @@ use App\Http\Requests\Backend\User\UploadEmployerJobLogoRequest;
 use App\Models\JobPost;
 use App\Models\JobTaxonomy;
 use App\Models\User;
+use App\Services\Ats\AtsJobQuality;
+use App\Services\Ats\AtsSettings;
+use App\Support\EmployerJobAccess;
 use App\Support\EmployerPlanSnapshot;
 use App\Support\JobListingQuery;
 use App\Support\RecruitmentReport;
@@ -31,13 +34,15 @@ class EmployerJobController extends Controller
     {
         $employer = $request->user();
 
-        $jobs = JobPost::query()
-            ->where('employer_id', $employer?->id)
+        abort_unless($employer !== null, 403);
+
+        $jobs = EmployerJobAccess::constrainJobQuery(JobPost::query(), $employer)
             ->with('employer:id,name,company_name,company_logo_path')
             ->withCount([
                 'applications',
                 'applications as new_applications_count' => fn ($query) => $query->where('created_at', '>=', now()->subDays(7)),
                 'applications as shortlisted_applications_count' => fn ($query) => $query->where('status', JobApplicationStatus::Shortlisted),
+                'panelMembers as panel_members_count',
             ])
             ->latest()
             ->get()
@@ -45,7 +50,8 @@ class EmployerJobController extends Controller
 
         return Inertia::render('backend/User/EmployerJobs', [
             'jobs' => $jobs,
-            'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
+            'plan' => EmployerPlanSnapshot::for($employer),
+            'can_manage_panel' => EmployerJobAccess::canManagePanel($employer),
             'stats' => [
                 'total' => $jobs->count(),
                 'active' => $jobs->where('status_value', JobPostStatus::Active->value)->count(),
@@ -65,6 +71,7 @@ class EmployerJobController extends Controller
             'company' => $employer ? $this->companySummary($employer) : null,
             'organizationTypes' => OrganizationType::options(),
             'options' => $this->formOptions(),
+            'ats' => $this->atsFormProps($employer),
         ]);
     }
 
@@ -83,13 +90,17 @@ class EmployerJobController extends Controller
 
         $job = JobPost::query()->create([
             ...$request->safe()->except(['publish', 'featured', 'logo']),
-            'employer_id' => $employer->id,
+            'employer_id' => $employer->employerAccountId(),
             'featured' => false,
             'status' => $publish ? JobPostStatus::Pending : JobPostStatus::Draft,
             'expires_at' => $request->date('expires_at') ?? ($publish ? now()->addDays(30) : null),
         ]);
 
         $this->storeJobLogo($job, $request->file('logo'));
+
+        if (! $employer->isEmployerOwner()) {
+            EmployerJobAccess::assignMember($job, $employer, $employer);
+        }
 
         return redirect()
             ->route('employer.jobs')
@@ -115,12 +126,15 @@ class EmployerJobController extends Controller
                 'employment_type' => $job->employment_type,
                 'experience_level' => $job->experience_level,
                 'salary_range' => $job->salary_range,
+                'career_portal_url' => $job->career_portal_url,
                 'description' => $job->description,
                 'requirements' => $job->requirements,
                 'skills' => $job->skills ?? [],
+                'application_questions' => $job->application_questions ?? [],
                 'expires_at' => $job->expires_at?->toDateString(),
                 'status' => $job->effectiveStatus()->value,
             ],
+            'ats' => $this->atsFormProps($employer, $job),
             'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
             'company' => $employer ? $this->companySummary($employer) : null,
             'organizationTypes' => OrganizationType::options(),
@@ -298,6 +312,7 @@ class EmployerJobController extends Controller
             'applications' => (int) $job->applications_count,
             'new_applications' => (int) $job->new_applications_count,
             'shortlisted' => (int) $job->shortlisted_applications_count,
+            'panel_members_count' => (int) ($job->panel_members_count ?? 0),
             'views' => (int) $job->views,
             'expires_at' => $job->expires_at?->toFormattedDateString(),
             'created_at' => $job->created_at?->toFormattedDateString(),
@@ -368,7 +383,8 @@ class EmployerJobController extends Controller
 
     private function authorizeJob(Request $request, JobPost $job): void
     {
-        abort_unless($job->employer_id === $request->user()?->id, 403);
+        $user = $request->user();
+        abort_unless($user !== null && EmployerJobAccess::canAccessJob($user, $job), 403);
     }
 
     private function creditError(User $employer, bool $needsJobCredit): ?string
@@ -380,5 +396,26 @@ class EmployerJobController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Soft ATS quality hints for the job editor. Never blocks publishing.
+     *
+     * @return array{enabled: bool, quality: array{missing_skills: bool, thin_description: bool, show: bool}}
+     */
+    private function atsFormProps(?User $employer, ?JobPost $job = null): array
+    {
+        $enabled = app(AtsSettings::class)->enabledForEmployer($employer);
+
+        return [
+            'enabled' => $enabled,
+            'quality' => $enabled
+                ? AtsJobQuality::hints(
+                    $job?->skills,
+                    $job?->requirements,
+                    $job?->description,
+                )
+                : ['missing_skills' => false, 'thin_description' => false, 'show' => false],
+        ];
     }
 }

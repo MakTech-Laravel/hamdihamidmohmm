@@ -2,6 +2,15 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Check } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import { JobPanelDialog } from '@/components/employer/job-panel-dialog';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+    MobileListEmpty,
+    MobileListStack,
+} from '@/components/mobile-list-card';
 import {
     Dialog,
     DialogContent,
@@ -31,6 +40,7 @@ type JobRow = {
     applications: number;
     new_applications: number;
     shortlisted: number;
+    panel_members_count?: number;
     views: number;
     expires_at: string | null;
     created_at: string | null;
@@ -46,6 +56,7 @@ type Props = {
     jobs: JobRow[];
     stats: { total: number; active: number; draft: number; expired: number };
     plan: { credits_remaining: number; can_post_job: boolean } | null;
+    can_manage_panel?: boolean;
 };
 
 const statusTone: Record<string, string> = {
@@ -71,14 +82,23 @@ const formatJobType = (type: string | null): string => {
 const actionClass =
     'inline-flex h-7 cursor-pointer items-center justify-center rounded-lg px-2.5 text-xs font-semibold';
 
-export default function EmployerJobs({ jobs, stats, plan }: Props) {
+export default function EmployerJobs({
+    jobs,
+    stats,
+    plan,
+    can_manage_panel = false,
+}: Props) {
     const { t } = useLocale();
-    const { flash } = usePage<SharedData>().props;
+    const { flash, auth } = usePage<SharedData>().props;
+    const jobsTitle = auth.user?.is_employer_owner
+        ? t('employer.jobs.title')
+        : t('employer.jobs.title_panel');
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<FilterId>('all');
     const [submitSuccessOpen, setSubmitSuccessOpen] = useState(
         () => flash.success === 'job_submitted',
     );
+    const [panelJob, setPanelJob] = useState<JobRow | null>(null);
 
     const filters = [
         { id: 'all' as const, label: t('common.all') },
@@ -147,14 +167,14 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
     ];
 
     return (
-        <EmployerLayout title={t('employer.jobs.title')}>
-            <Head title={t('employer.jobs.title')} />
+        <EmployerLayout title={jobsTitle}>
+            <Head title={jobsTitle} />
 
             <div className="flex flex-col gap-5 px-4 py-6 sm:px-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl leading-9 font-bold text-[#050315]">
-                            {t('employer.jobs.title')}
+                            {jobsTitle}
                         </h1>
                         <p className="mt-1 text-sm leading-[21px] text-[#475569]">
                             {t('employer.jobs.subtitle')}
@@ -214,14 +234,14 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                 className="h-[41px] w-full rounded-lg border border-[#e8d5e8] bg-white py-2 pr-3.5 pl-11 text-[15px] text-[#050315] outline-none placeholder:text-[#050315]/50"
                             />
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex gap-1.5 overflow-x-auto pb-1">
                             {filters.map((item) => (
                                 <button
                                     key={item.id}
                                     type="button"
                                     onClick={() => setFilter(item.id)}
                                     className={cn(
-                                        'cursor-pointer rounded-full px-4 py-1.5 text-sm font-semibold',
+                                        'shrink-0 cursor-pointer rounded-full px-4 py-1.5 text-sm font-semibold',
                                         filter === item.id
                                             ? 'bg-[#0057c8] text-white'
                                             : 'bg-[#f1f5f9] text-[#3977a6]',
@@ -233,7 +253,222 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    {filtered.length === 0 ? (
+                        <MobileListEmpty>
+                            {t('employer.jobs.empty_cta')}
+                        </MobileListEmpty>
+                    ) : (
+                        <MobileListStack className="p-3">
+                            {filtered.map((job) => {
+                                const statusLabel =
+                                    job.status_value === 'rejected'
+                                        ? t('employer.jobs.closed')
+                                        : job.status;
+
+                                return (
+                                    <MobileListCard key={job.id}>
+                                        <MobileListCardHeader
+                                            leading={
+                                                job.logo_url ? (
+                                                    <img
+                                                        src={job.logo_url}
+                                                        alt={job.title}
+                                                        className="size-11 rounded-xl border border-[#e8d5e8] bg-[#f8faff] object-contain p-1"
+                                                    />
+                                                ) : (
+                                                    <div
+                                                        className="flex size-11 items-center justify-center rounded-xl text-xs font-bold text-white"
+                                                        style={{
+                                                            backgroundImage:
+                                                                'linear-gradient(135deg, rgb(30, 58, 138) 0%, rgb(37, 99, 235) 100%)',
+                                                        }}
+                                                    >
+                                                        {jobInitials(job.title)}
+                                                    </div>
+                                                )
+                                            }
+                                            title={job.title}
+                                            subtitle={
+                                                job.category ||
+                                                job.reference ||
+                                                undefined
+                                            }
+                                            badge={
+                                                <span
+                                                    className={cn(
+                                                        'inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold',
+                                                        statusTone[
+                                                            job.status_value
+                                                        ] ??
+                                                            'bg-[#f1f5f9] text-[#475569]',
+                                                    )}
+                                                >
+                                                    {statusLabel}
+                                                </span>
+                                            }
+                                        />
+                                        <MobileListCardMeta
+                                            items={[
+                                                {
+                                                    label: t(
+                                                        'employer.jobs.col.location_type',
+                                                    ),
+                                                    value: `${job.location || '—'} · ${formatJobType(job.type)}`,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'employer.jobs.col.applications',
+                                                    ),
+                                                    value:
+                                                        job.new_applications >
+                                                        0
+                                                            ? `${job.applications} (+${job.new_applications})`
+                                                            : String(
+                                                                  job.applications,
+                                                              ),
+                                                },
+                                                {
+                                                    label: t(
+                                                        'employer.jobs.col.shortlisted',
+                                                    ),
+                                                    value: String(
+                                                        job.shortlisted,
+                                                    ),
+                                                },
+                                                {
+                                                    label: t(
+                                                        'employer.jobs.col.closing_date',
+                                                    ),
+                                                    value:
+                                                        job.expires_at || '—',
+                                                },
+                                            ]}
+                                        />
+                                        <MobileListCardActions
+                                            primary={
+                                                <Link
+                                                    href={`/employer/applications?job_id=${job.id}`}
+                                                    className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                >
+                                                    {t(
+                                                        'employer.jobs.view_applicants',
+                                                    )}
+                                                </Link>
+                                            }
+                                            moreItems={[
+                                                {
+                                                    key: 'shortlist',
+                                                    label: t(
+                                                        'employer.jobs.make_shortlist',
+                                                    ),
+                                                    href: `/employer/applications?job_id=${job.id}&shortlist=1`,
+                                                },
+                                                ...(can_manage_panel
+                                                    ? [
+                                                          {
+                                                              key: 'panel',
+                                                              label: t(
+                                                                  'employer.jobs.panel',
+                                                              ),
+                                                              onSelect: () =>
+                                                                  setPanelJob(
+                                                                      job,
+                                                                  ),
+                                                          },
+                                                      ]
+                                                    : []),
+                                                {
+                                                    key: 'report',
+                                                    label: t(
+                                                        'employer.jobs.recruitment_report',
+                                                    ),
+                                                    href: `/employer/applications/export?job_id=${job.id}`,
+                                                },
+                                                {
+                                                    key: 'edit',
+                                                    label: t('common.edit'),
+                                                    href: `/employer/jobs/${job.id}/edit`,
+                                                },
+                                                {
+                                                    key: 'view',
+                                                    label: t('common.view'),
+                                                    href: job.slug
+                                                        ? jobShow.url(job.slug)
+                                                        : undefined,
+                                                    disabled: !job.slug,
+                                                },
+                                                {
+                                                    key: 'duplicate',
+                                                    label: t(
+                                                        'employer.jobs.duplicate',
+                                                    ),
+                                                    onSelect: () =>
+                                                        router.post(
+                                                            `/employer/jobs/${job.id}/duplicate`,
+                                                        ),
+                                                },
+                                                ...(job.status_value ===
+                                                'active'
+                                                    ? [
+                                                          {
+                                                              key: 'pause',
+                                                              label: t(
+                                                                  'employer.jobs.pause',
+                                                              ),
+                                                              onSelect: () =>
+                                                                  router.post(
+                                                                      `/employer/jobs/${job.id}/pause`,
+                                                                  ),
+                                                          },
+                                                      ]
+                                                    : []),
+                                                ...(job.status_value ===
+                                                    'draft' ||
+                                                job.status_value === 'rejected'
+                                                    ? [
+                                                          {
+                                                              key: 'publish',
+                                                              label: t(
+                                                                  'common.publish',
+                                                              ),
+                                                              onSelect: () =>
+                                                                  router.post(
+                                                                      `/employer/jobs/${job.id}/publish`,
+                                                                  ),
+                                                          },
+                                                      ]
+                                                    : []),
+                                                {
+                                                    key: 'delete',
+                                                    label: t(
+                                                        'employer.jobs.delete',
+                                                    ),
+                                                    destructive: true,
+                                                    onSelect: () => {
+                                                        if (
+                                                            !confirm(
+                                                                t(
+                                                                    'employer.jobs.delete_confirm',
+                                                                ),
+                                                            )
+                                                        ) {
+                                                            return;
+                                                        }
+
+                                                        router.delete(
+                                                            `/employer/jobs/${job.id}`,
+                                                        );
+                                                    },
+                                                },
+                                            ]}
+                                        />
+                                    </MobileListCard>
+                                );
+                            })}
+                        </MobileListStack>
+                    )}
+
+                    <div className="hidden overflow-x-auto md:block">
                         <table className="w-full min-w-[1400px] text-left">
                             <thead>
                                 <tr className="border-b border-[#d1f6ff]">
@@ -389,6 +624,22 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                                         'employer.jobs.make_shortlist',
                                                     )}
                                                 </Link>
+                                                {can_manage_panel && (
+                                                    <button
+                                                        type="button"
+                                                        className={cn(
+                                                            actionClass,
+                                                            'bg-[#fff7ed] text-[#c2410c]',
+                                                        )}
+                                                        onClick={() =>
+                                                            setPanelJob(job)
+                                                        }
+                                                    >
+                                                        {t(
+                                                            'employer.jobs.panel',
+                                                        )}
+                                                    </button>
+                                                )}
                                                 <a
                                                     href={`/employer/applications/export?job_id=${job.id}`}
                                                     className={cn(
@@ -494,7 +745,7 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                             </tbody>
                         </table>
                         {filtered.length === 0 && (
-                            <p className="px-5 py-10 text-center text-sm text-[#99a1af]">
+                            <p className="hidden px-5 py-10 text-center text-sm text-[#99a1af] md:block">
                                 {t('employer.jobs.empty_cta')}
                             </p>
                         )}
@@ -529,6 +780,17 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <JobPanelDialog
+                open={panelJob !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPanelJob(null);
+                    }
+                }}
+                jobId={panelJob?.id ?? null}
+                jobTitle={panelJob?.title}
+            />
         </EmployerLayout>
     );
 }

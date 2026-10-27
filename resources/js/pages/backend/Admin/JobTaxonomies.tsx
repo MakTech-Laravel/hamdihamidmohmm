@@ -11,6 +11,12 @@ import {
 } from '@/components/admin-portal/ui';
 import InputError from '@/components/input-error';
 import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+} from '@/components/mobile-list-card';
+import {
     Dialog,
     DialogContent,
     DialogFooter,
@@ -151,6 +157,88 @@ export default function JobTaxonomies({ items, filters, types }: Props) {
                             t('admin.taxonomies.cols.status'),
                             t('common.actions'),
                         ]}
+                        mobileCards={
+                            <div className="space-y-3">
+                                {items.map((item) => (
+                                    <MobileListCard key={item.id}>
+                                        <MobileListCardHeader
+                                            title={item.name}
+                                            subtitle={item.type_label}
+                                            badge={
+                                                <AdminStatusBadge
+                                                    label={
+                                                        item.is_active
+                                                            ? t(
+                                                                  'common.active',
+                                                              )
+                                                            : t(
+                                                                  'common.inactive',
+                                                              )
+                                                    }
+                                                    tone={
+                                                        item.is_active
+                                                            ? 'success'
+                                                            : 'neutral'
+                                                    }
+                                                />
+                                            }
+                                        />
+                                        <MobileListCardMeta
+                                            items={[
+                                                {
+                                                    label: t(
+                                                        'admin.taxonomies.cols.slug',
+                                                    ),
+                                                    value: item.slug,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.taxonomies.cols.sort',
+                                                    ),
+                                                    value: item.sort_order,
+                                                },
+                                            ]}
+                                        />
+                                        <MobileListCardActions
+                                            primary={
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                    onClick={() => {
+                                                        form.setData({
+                                                            type: item.type,
+                                                            name: item.name,
+                                                            is_active:
+                                                                item.is_active,
+                                                        });
+                                                        setEditing(item);
+                                                    }}
+                                                >
+                                                    {t('common.edit')}
+                                                </button>
+                                            }
+                                            moreItems={
+                                                item.is_active
+                                                    ? [
+                                                          {
+                                                              key: 'delete',
+                                                              label: t(
+                                                                  'common.delete',
+                                                              ),
+                                                              onSelect: () =>
+                                                                  router.delete(
+                                                                      `/admin/job-filters/${item.id}`,
+                                                                  ),
+                                                              destructive: true,
+                                                          },
+                                                      ]
+                                                    : []
+                                            }
+                                        />
+                                    </MobileListCard>
+                                ))}
+                            </div>
+                        }
                     >
                         {items.map((item) => (
                             <tr

@@ -2,6 +2,12 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 import { AdminIcon } from '@/components/admin-icon';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+} from '@/components/mobile-list-card';
 import { Input } from '@/components/ui/input';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
@@ -174,7 +180,84 @@ export default function UserManagement({
                         />
                     </div>
 
-                    <div className="overflow-x-auto">
+                    <div className="space-y-3 md:hidden">
+                        {filteredUsers.map((user) => (
+                            <MobileListCard key={user.id}>
+                                <MobileListCardHeader
+                                    title={user.name}
+                                    subtitle={user.email}
+                                    leading={
+                                        <div className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-[#0057c8] to-[#3b82f6] text-xs font-bold text-white">
+                                            {user.name.slice(0, 2).toUpperCase()}
+                                        </div>
+                                    }
+                                    badge={
+                                        <span
+                                            className={cn(
+                                                'rounded-full px-2.5 py-1 text-xs font-semibold',
+                                                roleBadgeStyles[
+                                                    user.role_name ?? ''
+                                                ] ??
+                                                    'bg-[#f1f5f9] text-[#64748b]',
+                                            )}
+                                        >
+                                            {user.role_label}
+                                        </span>
+                                    }
+                                />
+                                <MobileListCardMeta
+                                    items={[
+                                        {
+                                            label: t(
+                                                'admin.users.cols.permissions',
+                                            ),
+                                            value:
+                                                user.permissions.length > 0
+                                                    ? t(
+                                                          'admin.users.permissions_assigned',
+                                                          {
+                                                              count: user
+                                                                  .permissions
+                                                                  .length,
+                                                          },
+                                                      )
+                                                    : t(
+                                                          'admin.users.role_defaults',
+                                                      ),
+                                        },
+                                        {
+                                            label: t('common.created'),
+                                            value: user.created_at,
+                                        },
+                                    ]}
+                                />
+                                <MobileListCardActions
+                                    primary={
+                                        <Link
+                                            href={`/admin/users/${user.id}`}
+                                            className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                        >
+                                            {t('common.view')}
+                                        </Link>
+                                    }
+                                    moreItems={
+                                        canManageAdmins ||
+                                        user.role_name !== 'super-admin'
+                                            ? [
+                                                  {
+                                                      key: 'edit',
+                                                      label: t('common.edit'),
+                                                      href: `/admin/users/${user.id}/edit`,
+                                                  },
+                                              ]
+                                            : []
+                                    }
+                                />
+                            </MobileListCard>
+                        ))}
+                    </div>
+
+                    <div className="hidden overflow-x-auto md:block">
                         <table className="min-w-full text-left text-sm">
                             <thead className="border-b border-[#e2e8f0] text-[#64748b]">
                                 <tr>

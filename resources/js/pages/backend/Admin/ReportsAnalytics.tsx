@@ -7,6 +7,12 @@ import {
     AdminPrimaryButton,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
+import {
+    MobileListCard,
+    MobileListCardActions,
+    MobileListCardHeader,
+    MobileListCardMeta,
+} from '@/components/mobile-list-card';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
@@ -84,6 +90,61 @@ export default function ReportsAnalytics({ reports, modules }: Props) {
                             t('admin.reports.cols.by'),
                             t('admin.reports.cols.actions'),
                         ]}
+                        mobileCards={
+                            <div className="space-y-3">
+                                {reports.map((report) => (
+                                    <MobileListCard key={report.id}>
+                                        <MobileListCardHeader
+                                            title={report.name}
+                                            subtitle={report.module}
+                                        />
+                                        <MobileListCardMeta
+                                            items={[
+                                                {
+                                                    label: t(
+                                                        'admin.reports.cols.format',
+                                                    ),
+                                                    value: report.format.toUpperCase(),
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.reports.cols.generated',
+                                                    ),
+                                                    value: report.generated_at,
+                                                },
+                                                {
+                                                    label: t(
+                                                        'admin.reports.cols.by',
+                                                    ),
+                                                    value: report.generated_by,
+                                                },
+                                            ]}
+                                        />
+                                        <MobileListCardActions
+                                            primary={
+                                                <a
+                                                    href={`/admin/reports/${report.id}/download`}
+                                                    className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-[#0057c8] px-3 text-xs font-semibold text-white"
+                                                >
+                                                    {t('common.download')}
+                                                </a>
+                                            }
+                                            moreItems={[
+                                                {
+                                                    key: 'delete',
+                                                    label: t('common.delete'),
+                                                    onSelect: () =>
+                                                        router.delete(
+                                                            `/admin/reports/${report.id}`,
+                                                        ),
+                                                    destructive: true,
+                                                },
+                                            ]}
+                                        />
+                                    </MobileListCard>
+                                ))}
+                            </div>
+                        }
                     >
                         {reports.map((report) => (
                             <tr
