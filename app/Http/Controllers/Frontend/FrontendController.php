@@ -140,6 +140,9 @@ class FrontendController extends Controller
                 'country' => JobListingQuery::displayLabel(JobTaxonomyType::Country, $jobPost->country),
                 'experience' => $jobPost->experience_level,
                 'salary' => $this->publicSalary($jobPost->employer, $jobPost->salary_range),
+                'career_portal_url' => filled($jobPost->career_portal_url)
+                    ? $jobPost->career_portal_url
+                    : null,
                 'posted' => $jobPost->created_at?->diffForHumans(),
                 'deadline' => $jobPost->expires_at?->toDateString(),
                 'description' => $jobPost->description,

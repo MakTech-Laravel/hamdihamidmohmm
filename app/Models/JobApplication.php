@@ -10,6 +10,7 @@ use Database\Factories\JobApplicationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JobApplication extends Model
 {
@@ -60,6 +61,14 @@ class JobApplication extends Model
     public function jobSeeker(): BelongsTo
     {
         return $this->belongsTo(User::class, 'job_seeker_id');
+    }
+
+    /**
+     * @return HasMany<JobApplicationStatusChange, $this>
+     */
+    public function statusChanges(): HasMany
+    {
+        return $this->hasMany(JobApplicationStatusChange::class)->latest('created_at');
     }
 
     /**

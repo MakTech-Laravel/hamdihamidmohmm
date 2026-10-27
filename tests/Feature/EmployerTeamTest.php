@@ -6,6 +6,7 @@ use App\Enums\RoleName;
 use App\Models\JobPost;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\EmployerJobAccess;
 use App\Support\RoleAssigner;
 use Database\Seeders\RolePermissionSeeder;
 
@@ -113,9 +114,9 @@ test('team page only lists employer custom roles', function () {
             ->where('roleOptions.0.label', 'Board Member'));
 });
 
-test('manager can see owner jobs and interviewer cannot open jobs', function () {
+test('manager can see assigned owner jobs and interviewer cannot open jobs', function () {
     $owner = User::factory()->employer()->create();
-    JobPost::factory()->create([
+    $job = JobPost::factory()->create([
         'employer_id' => $owner->id,
         'title' => 'Shared Vacancy',
         'status' => JobPostStatus::Active,
@@ -131,6 +132,7 @@ test('manager can see owner jobs and interviewer cannot open jobs', function () 
 
     $manager = makeEmployerMember($owner, $managerRole->name);
     $interviewer = makeEmployerMember($owner, $interviewerRole->name);
+    EmployerJobAccess::assignMember($job, $manager, $owner);
 
     $this->actingAs($manager)
         ->get(route('employer.jobs'))
@@ -146,7 +148,8 @@ test('manager can see owner jobs and interviewer cannot open jobs', function () 
 
     $this->actingAs($interviewer)
         ->get(route('employer.applications'))
-        ->assertOk();
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('applications', 0));
 });
 
 test('interviewer cannot open settings or team', function () {

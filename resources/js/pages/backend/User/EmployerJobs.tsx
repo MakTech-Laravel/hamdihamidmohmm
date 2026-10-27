@@ -2,6 +2,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Check } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import { JobPanelDialog } from '@/components/employer/job-panel-dialog';
 import {
     MobileListCard,
     MobileListCardActions,
@@ -39,6 +40,7 @@ type JobRow = {
     applications: number;
     new_applications: number;
     shortlisted: number;
+    panel_members_count?: number;
     views: number;
     expires_at: string | null;
     created_at: string | null;
@@ -54,6 +56,7 @@ type Props = {
     jobs: JobRow[];
     stats: { total: number; active: number; draft: number; expired: number };
     plan: { credits_remaining: number; can_post_job: boolean } | null;
+    can_manage_panel?: boolean;
 };
 
 const statusTone: Record<string, string> = {
@@ -79,7 +82,12 @@ const formatJobType = (type: string | null): string => {
 const actionClass =
     'inline-flex h-7 cursor-pointer items-center justify-center rounded-lg px-2.5 text-xs font-semibold';
 
-export default function EmployerJobs({ jobs, stats, plan }: Props) {
+export default function EmployerJobs({
+    jobs,
+    stats,
+    plan,
+    can_manage_panel = false,
+}: Props) {
     const { t } = useLocale();
     const { flash } = usePage<SharedData>().props;
     const [search, setSearch] = useState('');
@@ -87,6 +95,7 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
     const [submitSuccessOpen, setSubmitSuccessOpen] = useState(
         () => flash.success === 'job_submitted',
     );
+    const [panelJob, setPanelJob] = useState<JobRow | null>(null);
 
     const filters = [
         { id: 'all' as const, label: t('common.all') },
@@ -351,6 +360,20 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                                     ),
                                                     href: `/employer/applications?job_id=${job.id}&shortlist=1`,
                                                 },
+                                                ...(can_manage_panel
+                                                    ? [
+                                                          {
+                                                              key: 'panel',
+                                                              label: t(
+                                                                  'employer.jobs.panel',
+                                                              ),
+                                                              onSelect: () =>
+                                                                  setPanelJob(
+                                                                      job,
+                                                                  ),
+                                                          },
+                                                      ]
+                                                    : []),
                                                 {
                                                     key: 'report',
                                                     label: t(
@@ -598,6 +621,22 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                                                         'employer.jobs.make_shortlist',
                                                     )}
                                                 </Link>
+                                                {can_manage_panel && (
+                                                    <button
+                                                        type="button"
+                                                        className={cn(
+                                                            actionClass,
+                                                            'bg-[#fff7ed] text-[#c2410c]',
+                                                        )}
+                                                        onClick={() =>
+                                                            setPanelJob(job)
+                                                        }
+                                                    >
+                                                        {t(
+                                                            'employer.jobs.panel',
+                                                        )}
+                                                    </button>
+                                                )}
                                                 <a
                                                     href={`/employer/applications/export?job_id=${job.id}`}
                                                     className={cn(
@@ -738,6 +777,17 @@ export default function EmployerJobs({ jobs, stats, plan }: Props) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <JobPanelDialog
+                open={panelJob !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPanelJob(null);
+                    }
+                }}
+                jobId={panelJob?.id ?? null}
+                jobTitle={panelJob?.title}
+            />
         </EmployerLayout>
     );
 }

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
@@ -34,6 +35,7 @@ class JobPost extends Model
         'employment_type',
         'experience_level',
         'salary_range',
+        'career_portal_url',
         'description',
         'requirements',
         'skills',
@@ -144,6 +146,16 @@ class JobPost extends Model
     public function applications(): HasMany
     {
         return $this->hasMany(JobApplication::class);
+    }
+
+    /**
+     * @return BelongsToMany<User, $this>
+     */
+    public function panelMembers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'job_post_panel_members')
+            ->withPivot(['assigned_by'])
+            ->withTimestamps();
     }
 
     /**

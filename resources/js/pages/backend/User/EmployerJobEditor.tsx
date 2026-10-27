@@ -55,6 +55,7 @@ type JobForm = {
     employment_type: string | null;
     experience_level: string | null;
     salary_range: string | null;
+    career_portal_url?: string | null;
     description: string | null;
     requirements: string | null;
     skills: string[];
@@ -178,6 +179,7 @@ export default function EmployerJobEditor({
         employment_type: string;
         experience_level: string;
         salary_range: string;
+        career_portal_url: string;
         description: string;
         requirements: string;
         skills: string;
@@ -194,6 +196,7 @@ export default function EmployerJobEditor({
         employment_type: job?.employment_type ?? '',
         experience_level: job?.experience_level ?? '',
         salary_range: job?.salary_range ?? '',
+        career_portal_url: job?.career_portal_url ?? '',
         description: job?.description ?? '',
         requirements: job?.requirements ?? '',
         skills: (job?.skills ?? []).join(', '),
@@ -925,6 +928,33 @@ export default function EmployerJobEditor({
                                     </NativeSelect>
                                 </Field>
                             </div>
+
+                            <Field
+                                label={t(
+                                    'employer.job_editor.field.career_portal_url',
+                                )}
+                                error={form.errors.career_portal_url}
+                            >
+                                <input
+                                    type="url"
+                                    value={form.data.career_portal_url}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'career_portal_url',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder={t(
+                                        'employer.job_editor.field.career_portal_url_placeholder',
+                                    )}
+                                    className={inputClass}
+                                />
+                                <p className="mt-1.5 text-xs text-[#94a3b8]">
+                                    {t(
+                                        'employer.job_editor.field.career_portal_url_hint',
+                                    )}
+                                </p>
+                            </Field>
 
                             <div className="rounded-2xl border border-[#e8d5e8] bg-[#f8faff] p-4">
                                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1705,6 +1735,34 @@ export default function EmployerJobEditor({
                                                     </p>
                                                 </div>
                                             ))}
+                                        {form.data.career_portal_url ? (
+                                            <div className="flex items-start gap-3 text-sm">
+                                                <span className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-[#eef5ff] text-[#0057c8]">
+                                                    <Link2 className="size-3.5" />
+                                                </span>
+                                                <p className="leading-6 text-[#334155]">
+                                                    <span className="font-semibold text-[#0f172a]">
+                                                        {t(
+                                                            'employer.job_editor.field.career_portal_url',
+                                                        )}
+                                                        :
+                                                    </span>{' '}
+                                                    <a
+                                                        href={
+                                                            form.data
+                                                                .career_portal_url
+                                                        }
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="font-normal text-[#0057c8] underline-offset-2 hover:underline"
+                                                    >
+                                                        {t(
+                                                            'job_detail.open_in_company_portal',
+                                                        )}
+                                                    </a>
+                                                </p>
+                                            </div>
+                                        ) : null}
                                     </div>
 
                                     {form.data.requirements && (

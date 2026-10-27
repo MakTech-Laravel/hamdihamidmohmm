@@ -6,6 +6,7 @@ use App\Enums\JobPostStatus;
 use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
 use App\Models\JobPost;
+use App\Support\EmployerJobAccess;
 use App\Support\EmployerPlanSnapshot;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,16 +19,12 @@ class EmployerDashboardController extends Controller
         $employer = $request->user();
         abort_unless($employer !== null, 403);
 
-        $accountId = $employer->employerAccountId();
-
-        $jobs = JobPost::query()
-            ->where('employer_id', $accountId)
+        $jobs = EmployerJobAccess::constrainJobQuery(JobPost::query(), $employer)
             ->withCount('applications')
             ->latest()
             ->get();
 
-        $applications = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $accountId))
+        $applications = EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer)
             ->with(['jobSeeker:id,name', 'jobPost:id,title'])
             ->latest()
             ->limit(4)
@@ -43,8 +40,7 @@ class EmployerDashboardController extends Controller
                 'total_jobs' => $jobs->count(),
                 'active_jobs' => $jobs->filter(fn (JobPost $job) => $job->effectiveStatus() === JobPostStatus::Active)->count(),
                 'total_applications' => $jobs->sum('applications_count'),
-                'new_this_week' => JobApplication::query()
-                    ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $accountId))
+                'new_this_week' => EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer)
                     ->where('created_at', '>=', now()->startOfWeek())
                     ->count(),
             ],

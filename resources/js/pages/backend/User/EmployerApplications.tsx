@@ -46,6 +46,12 @@ type ApplicationRow = AtsMatch & {
     job_id: number | null;
     status: string | null;
     status_value: string | null;
+    status_changed_by?: string | null;
+    status_history?: Array<{
+        status: string;
+        changed_by: string;
+        at: string | null;
+    }>;
     date: string | null;
     experience_years: string | null;
     cover_letter: string | null;
@@ -186,6 +192,8 @@ function toPreview(
             t('employer.applications.applicant'),
         status: row.status || t('employer.applications.applied'),
         status_value: row.status_value || 'applied',
+        status_changed_by: row.status_changed_by ?? null,
+        status_history: row.status_history ?? [],
         email: row.email || '—',
         phone: row.phone || '—',
         location: row.preview_location || row.location || '—',
@@ -1051,18 +1059,30 @@ export default function EmployerApplications({
                                                     title={row.name || '—'}
                                                     subtitle={row.job || undefined}
                                                     badge={
-                                                        <span
-                                                            className={cn(
-                                                                'inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
-                                                                statusTone[
-                                                                    row.status_value ??
-                                                                        ''
-                                                                ] ??
-                                                                    'bg-[#f8faff] text-[#0057c8]',
-                                                            )}
-                                                        >
-                                                            {row.status}
-                                                        </span>
+                                                        <div className="flex flex-col items-end gap-0.5">
+                                                            <span
+                                                                className={cn(
+                                                                    'inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+                                                                    statusTone[
+                                                                        row.status_value ??
+                                                                            ''
+                                                                    ] ??
+                                                                        'bg-[#f8faff] text-[#0057c8]',
+                                                                )}
+                                                            >
+                                                                {row.status}
+                                                            </span>
+                                                            {row.status_changed_by ? (
+                                                                <span className="text-[10px] font-medium text-[#64748b]">
+                                                                    {t(
+                                                                        'employer.applications.changed_by',
+                                                                        {
+                                                                            name: row.status_changed_by,
+                                                                        },
+                                                                    )}
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
                                                     }
                                                 />
                                             </div>
@@ -1265,18 +1285,30 @@ export default function EmployerApplications({
                                                 {row.job || '—'}
                                             </td>
                                             <td className="px-4 py-[13px]">
-                                                <span
-                                                    className={cn(
-                                                        'inline-flex rounded-full px-2.5 py-px text-xs font-semibold',
-                                                        statusTone[
-                                                        row.status_value ??
-                                                        ''
-                                                        ] ??
-                                                        'bg-[#f8faff] text-[#0057c8]',
-                                                    )}
-                                                >
-                                                    {row.status}
-                                                </span>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span
+                                                        className={cn(
+                                                            'inline-flex w-fit rounded-full px-2.5 py-px text-xs font-semibold',
+                                                            statusTone[
+                                                                row.status_value ??
+                                                                    ''
+                                                            ] ??
+                                                                'bg-[#f8faff] text-[#0057c8]',
+                                                        )}
+                                                    >
+                                                        {row.status}
+                                                    </span>
+                                                    {row.status_changed_by ? (
+                                                        <span className="text-[11px] text-[#64748b]">
+                                                            {t(
+                                                                'employer.applications.changed_by',
+                                                                {
+                                                                    name: row.status_changed_by,
+                                                                },
+                                                            )}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
                                             </td>
                                             <td className="px-4 py-[13px] text-sm leading-[21px] text-[#6b7280]">
                                                 {row.date || '—'}

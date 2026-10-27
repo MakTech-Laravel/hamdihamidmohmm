@@ -165,10 +165,10 @@ function RosterDrawerBody({
                         src={candidate.avatar_url ?? undefined}
                         alt={candidate.name}
                         onError={() => setAvatarFailed(true)}
-                        className="size-[52px] shrink-0 rounded-full border border-white object-cover object-top shadow-sm"
+                        className="size-24 shrink-0 rounded-full border-2 border-white object-cover object-top shadow-sm"
                     />
                 ) : (
-                    <div className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-base font-extrabold text-white">
+                    <div className="flex size-24 shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-2xl font-extrabold text-white">
                         {getInitials(candidate.name) || '—'}
                     </div>
                 )}

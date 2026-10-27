@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
+import { getInitials } from '@/components/employer/demo-data';
 import {
     RosterCandidateDrawer,
     type RosterCandidateDrawerEntry,
@@ -18,6 +19,34 @@ import {
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+
+function RosterAvatar({
+    name,
+    avatarUrl,
+}: {
+    name: string;
+    avatarUrl?: string | null;
+}) {
+    const [failed, setFailed] = useState(false);
+    const showPhoto = Boolean(avatarUrl) && !failed;
+
+    if (showPhoto) {
+        return (
+            <img
+                src={avatarUrl ?? undefined}
+                alt={name}
+                onError={() => setFailed(true)}
+                className="size-16 shrink-0 rounded-full border border-[#e2e8f0] object-cover object-top"
+            />
+        );
+    }
+
+    return (
+        <div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-lg font-bold text-white">
+            {getInitials(name || 'A')}
+        </div>
+    );
+}
 
 type RosterEntry = {
     id: number;
@@ -144,6 +173,14 @@ export default function EmployerRoster({
                         {entries.map((entry) => (
                             <MobileListCard key={entry.id}>
                                 <MobileListCardHeader
+                                    leading={
+                                        <RosterAvatar
+                                            name={entry.name || 'A'}
+                                            avatarUrl={
+                                                entry.candidate?.avatar_url
+                                            }
+                                        />
+                                    }
                                     title={entry.name || '—'}
                                     subtitle={entry.current_title || entry.email}
                                     badge={
@@ -259,14 +296,27 @@ export default function EmployerRoster({
                                         className="border-b border-[rgba(57,119,166,0.08)] last:border-0"
                                     >
                                         <td className="px-4 py-3">
-                                            <div className="font-medium text-[#050315]">
-                                                {entry.name || '—'}
-                                            </div>
-                                            {entry.current_title ? (
-                                                <div className="text-xs text-[#64748b]">
-                                                    {entry.current_title}
+                                            <div className="flex items-center gap-3">
+                                                <RosterAvatar
+                                                    name={entry.name || 'A'}
+                                                    avatarUrl={
+                                                        entry.candidate
+                                                            ?.avatar_url
+                                                    }
+                                                />
+                                                <div className="min-w-0">
+                                                    <div className="font-medium text-[#050315]">
+                                                        {entry.name || '—'}
+                                                    </div>
+                                                    {entry.current_title ? (
+                                                        <div className="text-xs text-[#64748b]">
+                                                            {
+                                                                entry.current_title
+                                                            }
+                                                        </div>
+                                                    ) : null}
                                                 </div>
-                                            ) : null}
+                                            </div>
                                         </td>
                                         <td className="px-4 py-3 text-[#475569]">
                                             <div>{entry.email || '—'}</div>

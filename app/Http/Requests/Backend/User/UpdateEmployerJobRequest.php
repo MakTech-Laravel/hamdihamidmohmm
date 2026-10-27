@@ -4,6 +4,7 @@ namespace App\Http\Requests\Backend\User;
 
 use App\Enums\JobTaxonomyType;
 use App\Models\JobPost;
+use App\Support\EmployerJobAccess;
 use App\Support\JobApplicationQuestions;
 use App\Support\SafeHtml;
 use Illuminate\Foundation\Http\FormRequest;
@@ -14,10 +15,11 @@ class UpdateEmployerJobRequest extends FormRequest
     public function authorize(): bool
     {
         $job = $this->route('jobPost') ?? $this->route('job');
+        $user = $this->user();
 
-        return $this->user()?->isEmployer() === true
+        return $user?->isEmployer() === true
             && $job instanceof JobPost
-            && $job->employer_id === $this->user()?->employerAccountId();
+            && EmployerJobAccess::canAccessJob($user, $job);
     }
 
     protected function prepareForValidation(): void
@@ -41,6 +43,7 @@ class UpdateEmployerJobRequest extends FormRequest
             'location' => $this->nullableSlug('location'),
             'category' => $this->nullableSlug('category'),
             'employment_type' => trim((string) $this->input('employment_type')),
+            'career_portal_url' => $this->nullableUrl('career_portal_url'),
             'application_questions' => JobApplicationQuestions::normalize($this->input('application_questions')),
         ];
 
@@ -93,6 +96,7 @@ class UpdateEmployerJobRequest extends FormRequest
             ],
             'experience_level' => ['required', 'string', 'max:50'],
             'salary_range' => ['nullable', 'string', 'max:255'],
+            'career_portal_url' => ['nullable', 'url', 'max:2048'],
             'description' => ['nullable', 'string', 'max:20000'],
             'requirements' => ['nullable', 'string', 'max:20000'],
             'skills' => ['nullable', 'array'],
@@ -122,10 +126,19 @@ class UpdateEmployerJobRequest extends FormRequest
             'logo.image' => 'The job logo must be an image.',
             'logo.mimes' => 'The job logo must be a JPG, PNG, or WEBP file.',
             'logo.max' => 'The job logo may not be greater than 5MB.',
+            'career_portal_url.url' => 'Please enter a valid company career portal URL.',
+            'career_portal_url.max' => 'The company career portal link may not be greater than 2048 characters.',
         ];
     }
 
     private function nullableSlug(string $key): ?string
+    {
+        $value = trim((string) $this->input($key));
+
+        return $value !== '' ? $value : null;
+    }
+
+    private function nullableUrl(string $key): ?string
     {
         $value = trim((string) $this->input($key));
 
