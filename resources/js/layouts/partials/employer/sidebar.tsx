@@ -40,6 +40,9 @@ export function EmployerSidebar({
 
     const navItems = useMemo(() => {
         const permissions = new Set(userPermissions);
+        const jobsNavTitle = user.is_employer_owner
+            ? t('employer.nav.jobs')
+            : t('employer.nav.jobs_panel');
         const items: NavItem[] = [
             {
                 title: t('employer.nav.dashboard'),
@@ -63,7 +66,7 @@ export function EmployerSidebar({
                 permission: 'employer.packages',
             },
             {
-                title: t('employer.nav.jobs'),
+                title: jobsNavTitle,
                 href: '/employer/jobs',
                 icon: '💼',
                 match: '/employer/jobs',
@@ -121,7 +124,7 @@ export function EmployerSidebar({
         ];
 
         return items.filter((item) => permissions.has(item.permission));
-    }, [userPermissions, t]);
+    }, [userPermissions, user.is_employer_owner, t]);
 
     return (
         <aside

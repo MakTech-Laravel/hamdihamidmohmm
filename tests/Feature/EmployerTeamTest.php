@@ -134,11 +134,20 @@ test('manager can see assigned owner jobs and interviewer cannot open jobs', fun
     $interviewer = makeEmployerMember($owner, $interviewerRole->name);
     EmployerJobAccess::assignMember($job, $manager, $owner);
 
+    $this->actingAs($owner)
+        ->get(route('employer.jobs'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('auth.user.is_employer_owner', true)
+            ->where('translations', fn ($translations) => ($translations['employer.nav.jobs'] ?? null) === 'My Jobs'
+                && ($translations['employer.nav.jobs_panel'] ?? null) === 'Jobs & CVs'));
+
     $this->actingAs($manager)
         ->get(route('employer.jobs'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerJobs')
+            ->where('auth.user.is_employer_owner', false)
             ->has('jobs', 1)
             ->where('jobs.0.title', 'Shared Vacancy'));
 

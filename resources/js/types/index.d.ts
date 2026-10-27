@@ -115,6 +115,7 @@ export interface User {
     role_label?: string;
     can_manage_users?: boolean;
     can_manage_admins?: boolean;
+    is_employer_owner?: boolean;
     avatar_url?: string;
     headline?: string | null;
     [key: string]: unknown;

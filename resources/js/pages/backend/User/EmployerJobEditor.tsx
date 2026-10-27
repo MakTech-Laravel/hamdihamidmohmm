@@ -156,7 +156,10 @@ export default function EmployerJobEditor({
     ats,
 }: Props) {
     const { t } = useLocale();
-    const { errors: pageErrors } = usePage<SharedData>().props;
+    const { errors: pageErrors, auth } = usePage<SharedData>().props;
+    const jobsSectionTitle = auth.user?.is_employer_owner
+        ? t('employer.jobs.title')
+        : t('employer.jobs.title_panel');
     const isEdit = job !== null;
     const [step, setStep] = useState(1);
     const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -571,7 +574,7 @@ export default function EmployerJobEditor({
     };
 
     return (
-        <EmployerLayout title={t('employer.jobs.title')}>
+        <EmployerLayout title={jobsSectionTitle}>
             <Head title={pageTitle} />
 
             <div className="space-y-6 px-4 py-6 sm:px-6">
