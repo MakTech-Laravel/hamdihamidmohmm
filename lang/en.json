@@ -1366,6 +1366,8 @@
     "employer.roster.empty": "No candidates on the roster yet. Add someone from Applications.",
     "employer.roster.add": "Add to roster",
     "employer.roster.on_roster": "On roster",
+    "employer.roster.in": "In roster",
+    "employer.roster.out": "Out roster",
     "employer.roster.add_title": "Add to roster",
     "employer.roster.add_subtitle": "Choose a category and optionally leave a comment. This does not shortlist the candidate.",
     "employer.roster.add_subtitle_named": "Add :name to the roster. This does not shortlist them.",
