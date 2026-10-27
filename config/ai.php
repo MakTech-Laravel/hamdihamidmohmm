@@ -32,6 +32,7 @@ return [
     */
 
     'chatbot' => [
+        // Prefer an explicit model. Empty = provider default from providers.*.models below.
         'model' => env('AI_CHATBOT_MODEL'),
         'history_messages' => (int) env('AI_CHATBOT_HISTORY_MESSAGES', 12),
         'public_per_minute' => (int) env('AI_CHATBOT_PUBLIC_PER_MINUTE', 8),
@@ -187,11 +188,25 @@ return [
             'driver' => 'gemini',
             'key' => env('GEMINI_API_KEY'),
             'url' => env('GEMINI_URL', 'https://generativelanguage.googleapis.com/v1beta/'),
+            'models' => [
+                'text' => [
+                    'default' => env('GEMINI_TEXT_MODEL', 'gemini-2.0-flash'),
+                    'cheapest' => env('GEMINI_TEXT_MODEL_CHEAPEST', 'gemini-2.0-flash-lite'),
+                    'smartest' => env('GEMINI_TEXT_MODEL_SMARTEST', 'gemini-2.0-flash'),
+                ],
+            ],
         ],
 
         'groq' => [
             'driver' => 'groq',
             'key' => env('GROQ_API_KEY'),
+            'models' => [
+                'text' => [
+                    'default' => env('GROQ_TEXT_MODEL', 'llama-3.3-70b-versatile'),
+                    'cheapest' => env('GROQ_TEXT_MODEL_CHEAPEST', 'llama-3.1-8b-instant'),
+                    'smartest' => env('GROQ_TEXT_MODEL_SMARTEST', 'llama-3.3-70b-versatile'),
+                ],
+            ],
         ],
 
         'jina' => [
@@ -215,6 +230,18 @@ return [
             'key' => env('OPENAI_API_KEY'),
             'url' => env('OPENAI_URL', 'https://api.openai.com/v1'),
             'store' => env('OPENAI_STORE', true),
+            // laravel/ai package defaults (gpt-5.6-*) are not public OpenAI IDs — override them.
+            'models' => [
+                'text' => [
+                    'default' => env('OPENAI_TEXT_MODEL', 'gpt-4o-mini'),
+                    'cheapest' => env('OPENAI_TEXT_MODEL_CHEAPEST', 'gpt-4o-mini'),
+                    'smartest' => env('OPENAI_TEXT_MODEL_SMARTEST', 'gpt-4o'),
+                ],
+                'embeddings' => [
+                    'default' => env('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small'),
+                    'dimensions' => (int) env('OPENAI_EMBEDDING_DIMENSIONS', 1536),
+                ],
+            ],
         ],
 
         'openai-compatible' => [

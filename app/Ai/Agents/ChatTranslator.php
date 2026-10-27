@@ -35,6 +35,13 @@ class ChatTranslator implements Agent
         PROMPT;
     }
 
+    public function provider(): ?string
+    {
+        $provider = config('ai.default');
+
+        return filled($provider) ? (string) $provider : null;
+    }
+
     public function model(): ?string
     {
         $model = config('ai.chatbot.model');

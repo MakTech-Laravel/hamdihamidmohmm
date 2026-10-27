@@ -67,7 +67,7 @@ class AiChatService
             $reply = __('chatbot.error_message');
             $fallback = true;
             $status = AiChatStatus::Failed;
-            $error = Str::limit(class_basename($exception) . ': ' . $exception->getMessage(), 250);
+            $error = $this->sanitizeError($exception);
         }
 
         AiChatLog::query()->create([
@@ -124,7 +124,7 @@ class AiChatService
     }
 
     /**
-     * Retry briefly when the provider is overloaded or rate limited.
+     * Retry briefly when the provider is overloaded, rate limited, or briefly unreachable.
      *
      * @template TResult
      *
@@ -136,9 +136,21 @@ class AiChatService
         return retry(
             max(1, (int) config('ai.chatbot.attempts', 3)),
             $callback,
-            fn(int $attempt): int => $attempt * 800,
+            fn(int $attempt): int => min(4_000, $attempt * 900),
             fn(Throwable $exception): bool => $exception instanceof FailoverableException,
         );
+    }
+
+    /**
+     * Keep admin logs useful without leaking secrets or huge provider payloads.
+     */
+    private function sanitizeError(Throwable $exception): string
+    {
+        $message = class_basename($exception) . ': ' . $exception->getMessage();
+        $message = (string) preg_replace('/sk-[a-zA-Z0-9_\-]+/', 'sk-***', $message);
+        $message = (string) preg_replace('/Bearer\s+\S+/i', 'Bearer ***', $message);
+
+        return Str::limit($message, 250);
     }
 
     private function remember(Request $request, AiChatChannel $channel, string $question, string $reply): void
