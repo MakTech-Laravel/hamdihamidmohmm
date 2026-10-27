@@ -88,6 +88,7 @@ type ApplicationRow = AtsMatch & {
     can_move: boolean;
     can_reject: boolean;
     on_roster: boolean;
+    roster_entry_id: number | null;
 };
 
 type ShortlistSuggestion = {
@@ -176,7 +177,7 @@ const statusTone: Record<string, string> = {
 };
 
 const actionClass =
-    'inline-flex h-[30px] cursor-pointer items-center justify-center rounded-[6.4px] px-2.5 text-xs font-semibold';
+    'inline-flex h-[30px] shrink-0 cursor-pointer items-center justify-center rounded-[6.4px] px-2.5 text-xs font-semibold whitespace-nowrap';
 
 function toPreview(
     row: ApplicationRow,
@@ -223,6 +224,7 @@ function toPreview(
         avatar_url: row.avatar_url ?? null,
         timeline: row.timeline ?? [],
         on_roster: row.on_roster,
+        roster_entry_id: row.roster_entry_id,
         ai:
             row.ai_score != null || row.ai_status != null
                 ? {
@@ -496,6 +498,24 @@ export default function EmployerApplications({
             { status: nextStatus },
             { preserveScroll: true },
         );
+    };
+
+    const removeFromRoster = (entryId: number): void => {
+        router.delete(`/employer/roster/${entryId}`, { preserveScroll: true });
+    };
+
+    const toggleRoster = (
+        applicationId: number,
+        onRoster: boolean,
+        entryId: number | null,
+    ): void => {
+        if (onRoster && entryId) {
+            removeFromRoster(entryId);
+
+            return;
+        }
+
+        setRosterApplicationId(applicationId);
     };
 
     return (
@@ -1147,14 +1167,16 @@ export default function EmployerApplications({
                                                     key: 'roster',
                                                     label: row.on_roster
                                                         ? t(
-                                                              'employer.roster.on_roster',
+                                                              'employer.roster.out',
                                                           )
                                                         : t(
-                                                              'employer.roster.add',
+                                                              'employer.roster.in',
                                                           ),
                                                     onSelect: () =>
-                                                        setRosterApplicationId(
+                                                        toggleRoster(
                                                             row.id,
+                                                            row.on_roster,
+                                                            row.roster_entry_id,
                                                         ),
                                                 },
                                                 {
@@ -1348,17 +1370,19 @@ export default function EmployerApplications({
                                                                 : 'border border-[#bfdbfe] bg-white text-[#0057c8]',
                                                         )}
                                                         onClick={() =>
-                                                            setRosterApplicationId(
+                                                            toggleRoster(
                                                                 row.id,
+                                                                row.on_roster,
+                                                                row.roster_entry_id,
                                                             )
                                                         }
                                                     >
                                                         {row.on_roster
                                                             ? t(
-                                                                  'employer.roster.on_roster',
+                                                                  'employer.roster.out',
                                                               )
                                                             : t(
-                                                                  'employer.roster.add',
+                                                                  'employer.roster.in',
                                                               )}
                                                     </button>
                                                     {row.can_move &&
@@ -1437,6 +1461,7 @@ export default function EmployerApplications({
                 onAddToRoster={(applicationId) =>
                     setRosterApplicationId(applicationId)
                 }
+                onRemoveFromRoster={removeFromRoster}
             />
 
             <AddToRosterDialog
