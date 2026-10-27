@@ -82,7 +82,8 @@ test('new category appears in roster options after save', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('roster_categories.0', 'Future hire')
-            ->where('applications.0.on_roster', true));
+            ->where('applications.0.on_roster', true)
+            ->where('applications.0.roster_entry_id', EmployerRosterEntry::query()->forAccount($this->owner->id)->value('id')));
 });
 
 test('re-adding the same seeker upserts instead of duplicating', function () {
