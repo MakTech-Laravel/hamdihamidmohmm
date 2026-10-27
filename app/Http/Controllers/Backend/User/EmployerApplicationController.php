@@ -124,13 +124,13 @@ class EmployerApplicationController extends Controller
         }
 
         $jobHashes = $atsEnabled ? $this->jobHashes($sortedApplications->pluck('job_post_id')->unique()->all()) : [];
-        $rosterSeekerIds = EmployerRosterEntry::query()
+        $rosterEntryIds = EmployerRosterEntry::query()
             ->forAccount($employer->employerAccountId())
-            ->pluck('job_seeker_id')
-            ->map(fn ($id): int => (int) $id)
+            ->pluck('id', 'job_seeker_id')
+            ->mapWithKeys(fn (mixed $id, mixed $seekerId): array => [(int) $seekerId => (int) $id])
             ->all();
         $applications = $sortedApplications->map(
-            fn (JobApplication $application) => $this->row($application, $atsEnabled, $jobHashes, $rosterSeekerIds),
+            fn (JobApplication $application) => $this->row($application, $atsEnabled, $jobHashes, $rosterEntryIds),
         );
 
         $allForStats = EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer);
@@ -647,15 +647,17 @@ class EmployerApplicationController extends Controller
 
     /**
      * @param  array<int, string>  $jobHashes
-     * @param  list<int>  $rosterSeekerIds
+     * @param  array<int, int>  $rosterEntryIds
      * @return array<string, mixed>
      */
-    private function row(JobApplication $application, bool $atsEnabled = false, array $jobHashes = [], array $rosterSeekerIds = []): array
+    private function row(JobApplication $application, bool $atsEnabled = false, array $jobHashes = [], array $rosterEntryIds = []): array
     {
         $next = $application->status?->next();
         $seeker = $application->jobSeeker;
-        $onRoster = $seeker instanceof User
-            && in_array((int) $seeker->id, $rosterSeekerIds, true);
+        $rosterEntryId = $seeker instanceof User
+            ? ($rosterEntryIds[(int) $seeker->id] ?? null)
+            : null;
+        $onRoster = $rosterEntryId !== null;
 
         if (! $seeker instanceof User) {
             return [
@@ -713,6 +715,7 @@ class EmployerApplicationController extends Controller
                 'can_reject' => $application->status !== JobApplicationStatus::Withdrawn
                     && $application->status !== JobApplicationStatus::Rejected,
                 'on_roster' => false,
+                'roster_entry_id' => null,
                 ...$this->aiFields($application, $atsEnabled, $jobHashes),
             ];
         }
@@ -745,6 +748,7 @@ class EmployerApplicationController extends Controller
             'can_reject' => $application->status !== JobApplicationStatus::Withdrawn
                 && $application->status !== JobApplicationStatus::Rejected,
             'on_roster' => $onRoster,
+            'roster_entry_id' => $rosterEntryId,
             ...$this->aiFields($application, $atsEnabled, $jobHashes),
         ];
     }
