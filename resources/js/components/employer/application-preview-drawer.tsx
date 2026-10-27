@@ -97,6 +97,7 @@ export type ApplicationPreview = {
     avatar_url?: string | null;
     timeline: ApplicationPreviewTimelineStep[];
     on_roster?: boolean;
+    roster_entry_id?: number | null;
     ai?: AtsMatch | null;
 };
 
@@ -113,6 +114,7 @@ export function ApplicationPreviewDrawer({
     onUpdateStatus,
     onRescore,
     onAddToRoster,
+    onRemoveFromRoster,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -121,6 +123,7 @@ export function ApplicationPreviewDrawer({
     onUpdateStatus: (applicationId: number, status: string) => void;
     onRescore?: (applicationId: number) => void;
     onAddToRoster?: (applicationId: number) => void;
+    onRemoveFromRoster?: (entryId: number) => void;
 }) {
     const { t } = useLocale();
 
@@ -140,6 +143,7 @@ export function ApplicationPreviewDrawer({
                         onUpdateStatus={onUpdateStatus}
                         onRescore={onRescore}
                         onAddToRoster={onAddToRoster}
+                        onRemoveFromRoster={onRemoveFromRoster}
                     />
                 ) : (
                     <div className="p-5 text-sm text-[#3977a6]">
@@ -157,12 +161,14 @@ function DrawerBody({
     onUpdateStatus,
     onRescore,
     onAddToRoster,
+    onRemoveFromRoster,
 }: {
     preview: ApplicationPreview;
     statuses: StatusOption[];
     onUpdateStatus: (applicationId: number, status: string) => void;
     onRescore?: (applicationId: number) => void;
     onAddToRoster?: (applicationId: number) => void;
+    onRemoveFromRoster?: (entryId: number) => void;
 }) {
     const { t } = useLocale();
     const [selectedStatus, setSelectedStatus] = useState(preview.status_value);
@@ -557,11 +563,23 @@ function DrawerBody({
                                     ? 'border-[#bbf7d0] bg-[#f0fdf4] text-[#15803d]'
                                     : 'border-[#0057c8] bg-white text-[#0057c8] hover:bg-[#f8faff]',
                             )}
-                            onClick={() => onAddToRoster(preview.id)}
+                            onClick={() => {
+                                if (
+                                    preview.on_roster &&
+                                    preview.roster_entry_id &&
+                                    onRemoveFromRoster
+                                ) {
+                                    onRemoveFromRoster(preview.roster_entry_id);
+
+                                    return;
+                                }
+
+                                onAddToRoster(preview.id);
+                            }}
                         >
                             {preview.on_roster
-                                ? t('employer.roster.on_roster')
-                                : t('employer.roster.add')}
+                                ? t('employer.roster.out')
+                                : t('employer.roster.in')}
                         </button>
                         <p className="mt-2 text-[12px] leading-[18px] text-[#64748b]">
                             {t('employer.roster.not_shortlist_hint')}
