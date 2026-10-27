@@ -4,6 +4,7 @@ namespace App\Http\Requests\Backend\User;
 
 use App\Models\JobPost;
 use App\Services\Ats\AtsSettings;
+use App\Support\EmployerJobAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,14 +15,15 @@ class RescoreEmployerJobApplicationsRequest extends FormRequest
     public function authorize(): bool
     {
         $job = $this->route('job');
+        $user = $this->user();
 
-        if (! $job instanceof JobPost) {
+        if (! $job instanceof JobPost || $user === null) {
             return false;
         }
 
-        return $this->user()?->isEmployer() === true
-            && $job->employer_id === $this->user()?->employerAccountId()
-            && app(AtsSettings::class)->enabledForEmployer($this->user());
+        return $user->isEmployer()
+            && EmployerJobAccess::canAccessJob($user, $job)
+            && app(AtsSettings::class)->enabledForEmployer($user);
     }
 
     /**

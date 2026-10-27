@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Backend\User;
 use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\JobPost;
+use App\Support\EmployerJobAccess;
 use App\Support\RecruitmentReport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,8 +18,7 @@ class EmployerReportController extends Controller
         $employer = $request->user();
         abort_unless($employer?->isEmployer() === true, 403);
 
-        $jobs = JobPost::query()
-            ->where('employer_id', $employer->employerAccountId())
+        $jobs = EmployerJobAccess::constrainJobQuery(JobPost::query(), $employer)
             ->withCount([
                 'applications as total_applications_count',
                 'applications as shortlisted_count' => fn ($query) => $query->where('status', JobApplicationStatus::Shortlisted),

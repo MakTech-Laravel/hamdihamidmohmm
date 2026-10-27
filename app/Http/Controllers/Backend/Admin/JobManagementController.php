@@ -106,6 +106,7 @@ class JobManagementController extends Controller
                 'experience_level' => $jobPost->experience_level,
                 'employment_type' => $jobPost->employment_type,
                 'salary_range' => $jobPost->salary_range,
+                'career_portal_url' => $jobPost->career_portal_url,
                 'rejection_reason' => $jobPost->rejection_reason,
                 'expires_at' => $jobPost->expires_at?->toDateString(),
                 'employer_email' => $jobPost->employer
@@ -139,6 +140,7 @@ class JobManagementController extends Controller
                 'employment_type' => $jobPost->employment_type,
                 'experience_level' => $jobPost->experience_level,
                 'salary_range' => $jobPost->salary_range,
+                'career_portal_url' => $jobPost->career_portal_url,
                 'description' => $jobPost->description,
                 'requirements' => $jobPost->requirements,
                 'skills' => array_values(array_filter(

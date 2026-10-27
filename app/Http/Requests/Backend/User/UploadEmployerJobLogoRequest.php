@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Backend\User;
 
+use App\Models\JobPost;
+use App\Support\EmployerJobAccess;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UploadEmployerJobLogoRequest extends FormRequest
@@ -9,10 +11,11 @@ class UploadEmployerJobLogoRequest extends FormRequest
     public function authorize(): bool
     {
         $job = $this->route('job');
+        $user = $this->user();
 
-        return $this->user()?->isEmployer() === true
-            && $job !== null
-            && (int) $job->employer_id === (int) $this->user()?->employerAccountId();
+        return $user?->isEmployer() === true
+            && $job instanceof JobPost
+            && EmployerJobAccess::canAccessJob($user, $job);
     }
 
     /**

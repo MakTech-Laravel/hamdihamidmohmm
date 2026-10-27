@@ -5,6 +5,7 @@ use App\Enums\RoleName;
 use App\Http\Controllers\Backend\User\EmployerApplicationController;
 use App\Http\Controllers\Backend\User\EmployerDashboardController;
 use App\Http\Controllers\Backend\User\EmployerJobController;
+use App\Http\Controllers\Backend\User\EmployerJobPanelController;
 use App\Http\Controllers\Backend\User\EmployerPackageController;
 use App\Http\Controllers\Backend\User\EmployerPortalPageController;
 use App\Http\Controllers\Backend\User\EmployerProfileController;
@@ -112,6 +113,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/jobs/{job}/pause', [EmployerJobController::class, 'pause'])->name('jobs.pause');
             Route::post('/jobs/{job}/publish', [EmployerJobController::class, 'publish'])->name('jobs.publish');
             Route::delete('/jobs/{job}', [EmployerJobController::class, 'destroy'])->name('jobs.destroy');
+            Route::get('/jobs/{job}/panel', [EmployerJobPanelController::class, 'index'])->name('jobs.panel.index');
+            Route::post('/jobs/{job}/panel', [EmployerJobPanelController::class, 'store'])->name('jobs.panel.store');
+            Route::delete('/jobs/{job}/panel/{user}', [EmployerJobPanelController::class, 'destroy'])->name('jobs.panel.destroy');
         });
 
         Route::middleware('permission:'.PermissionName::EmployerReports->value)

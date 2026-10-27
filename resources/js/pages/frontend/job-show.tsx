@@ -43,6 +43,7 @@ type JobDetail = {
     location?: string | null;
     experience?: string | null;
     salary?: string | null;
+    career_portal_url?: string | null;
     posted?: string | null;
     deadline?: string | null;
     vacancies?: string | null;
@@ -466,7 +467,7 @@ export default function JobShow({
                                     </section>
                                 ) : null}
 
-                                <div className="relative mt-8 flex items-center gap-3 border-t border-[#e5e7eb] pt-5">
+                                <div className="relative mt-8 flex flex-wrap items-center gap-3 border-t border-[#e5e7eb] pt-5">
                                     {is_preview ? (
                                         <span className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#fff7ed] px-6 text-sm font-bold text-[#c2410c]">
                                             {t('job_detail.preview_notice')}
@@ -491,6 +492,19 @@ export default function JobShow({
                                             {t('job_detail.apply_now')}
                                         </Link>
                                     )}
+
+                                    {job.career_portal_url ? (
+                                        <a
+                                            href={job.career_portal_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-full border-2 border-[#0057c8] bg-white px-5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#eef5ff]"
+                                        >
+                                            {t(
+                                                'job_detail.open_in_company_portal',
+                                            )}
+                                        </a>
+                                    ) : null}
 
                                     <div className="relative shrink-0" ref={shareRef}>
                                         <button

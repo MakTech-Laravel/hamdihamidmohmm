@@ -18,6 +18,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -434,6 +435,16 @@ class User extends Authenticatable
     public function jobPosts(): HasMany
     {
         return $this->hasMany(JobPost::class, 'employer_id');
+    }
+
+    /**
+     * @return BelongsToMany<JobPost, $this>
+     */
+    public function assignedJobPosts(): BelongsToMany
+    {
+        return $this->belongsToMany(JobPost::class, 'job_post_panel_members')
+            ->withPivot(['assigned_by'])
+            ->withTimestamps();
     }
 
     /**

@@ -13,6 +13,7 @@ use App\Http\Requests\Backend\User\RescoreEmployerJobApplicationsRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerApplicationRequest;
 use App\Models\EmployerRosterEntry;
 use App\Models\JobApplication;
+use App\Models\JobApplicationStatusChange;
 use App\Models\JobPost;
 use App\Models\User;
 use App\Services\Ats\ApplicationScreeningDispatcher;
@@ -21,6 +22,7 @@ use App\Services\Ats\AtsSettings;
 use App\Support\ApplicantDocumentDownloader;
 use App\Support\ApplicantProfilePreview;
 use App\Support\ApplicantQualification;
+use App\Support\EmployerJobAccess;
 use App\Support\ExperienceFilterOptions;
 use App\Support\JobApplicationQuestions;
 use App\Support\JobSeekerResume;
@@ -70,12 +72,15 @@ class EmployerApplicationController extends Controller
             ? $request->string('ai_band')->toString()
             : '';
 
-        $appsQuery = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->employerAccountId()))
+        $employer = $request->user();
+        abort_unless($employer !== null, 403);
+
+        $appsQuery = EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer)
             ->with([
                 'jobSeeker',
                 'jobSeeker.jobSeekerProfile',
                 'jobPost:id,title,application_questions',
+                'statusChanges.changedBy:id,name',
             ]);
 
         if ($jobId > 0) {
@@ -120,7 +125,7 @@ class EmployerApplicationController extends Controller
 
         $jobHashes = $atsEnabled ? $this->jobHashes($sortedApplications->pluck('job_post_id')->unique()->all()) : [];
         $rosterSeekerIds = EmployerRosterEntry::query()
-            ->forAccount((int) $request->user()?->employerAccountId())
+            ->forAccount($employer->employerAccountId())
             ->pluck('job_seeker_id')
             ->map(fn ($id): int => (int) $id)
             ->all();
@@ -128,8 +133,7 @@ class EmployerApplicationController extends Controller
             fn (JobApplication $application) => $this->row($application, $atsEnabled, $jobHashes, $rosterSeekerIds),
         );
 
-        $allForStats = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->employerAccountId()));
+        $allForStats = EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer);
 
         if ($jobId > 0) {
             $allForStats->where('job_post_id', $jobId);
@@ -138,9 +142,8 @@ class EmployerApplicationController extends Controller
         $jobTitle = null;
 
         if ($jobId > 0) {
-            $jobTitle = JobPost::query()
-                ->where('employer_id', $request->user()?->employerAccountId())
-                ->where('id', $jobId)
+            $jobTitle = EmployerJobAccess::constrainJobQuery(JobPost::query(), $employer)
+                ->whereKey($jobId)
                 ->value('title');
         }
 
@@ -178,14 +181,18 @@ class EmployerApplicationController extends Controller
                 ])
                 ->values(),
             'roster_categories' => EmployerRosterEntry::categoriesForAccount(
-                (int) $request->user()?->employerAccountId(),
+                $employer->employerAccountId(),
             ),
         ]);
     }
 
     public function update(UpdateEmployerApplicationRequest $request, JobApplication $application): RedirectResponse
     {
-        $this->applyStatus($application, JobApplicationStatus::from($request->validated('status')));
+        $this->applyStatus(
+            $application,
+            JobApplicationStatus::from($request->validated('status')),
+            $request->user(),
+        );
 
         return back()->with('success', 'Application updated.');
     }
@@ -193,14 +200,15 @@ class EmployerApplicationController extends Controller
     public function bulkUpdate(BulkUpdateEmployerApplicationsRequest $request): RedirectResponse
     {
         $status = JobApplicationStatus::from($request->validated('status'));
+        $employer = $request->user();
+        abort_unless($employer !== null, 403);
 
-        $applications = JobApplication::query()
+        $applications = EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer)
             ->whereIn('id', $request->validated('ids'))
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()?->employerAccountId()))
             ->get();
 
         foreach ($applications as $application) {
-            $this->applyStatus($application, $status);
+            $this->applyStatus($application, $status, $employer);
         }
 
         return back()->with('success', 'Applications updated.');
@@ -208,12 +216,12 @@ class EmployerApplicationController extends Controller
 
     public function export(Request $request): HttpResponse
     {
-        abort_unless($request->user()?->isEmployer() === true, 403);
+        $employer = $request->user();
+        abort_unless($employer?->isEmployer() === true, 403);
 
         $jobId = $request->integer('job_id');
 
-        $applications = JobApplication::query()
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $request->user()->employerAccountId()))
+        $applications = EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer)
             ->when($jobId > 0, fn ($query) => $query->where('job_post_id', $jobId))
             ->with(['jobSeeker.jobSeekerProfile', 'jobPost:id,title,expires_at'])
             ->latest()
@@ -329,11 +337,23 @@ class EmployerApplicationController extends Controller
         );
     }
 
-    private function applyStatus(JobApplication $application, JobApplicationStatus $status): void
+    private function applyStatus(JobApplication $application, JobApplicationStatus $status, ?User $actor = null): void
     {
+        $fromStatus = $application->status;
+
         $application->forceFill([
             'status' => $status,
         ])->save();
+
+        if ($actor instanceof User && ($fromStatus === null || $fromStatus !== $status)) {
+            JobApplicationStatusChange::query()->create([
+                'job_application_id' => $application->id,
+                'from_status' => $fromStatus?->value,
+                'to_status' => $status->value,
+                'changed_by' => $actor->id,
+                'created_at' => now(),
+            ]);
+        }
 
         $application->loadMissing(['jobSeeker', 'jobPost.employer']);
 
@@ -353,8 +373,13 @@ class EmployerApplicationController extends Controller
 
     private function employerOwnsJob(Request $request, int $jobId): bool
     {
-        return JobPost::query()
-            ->where('employer_id', $request->user()?->employerAccountId())
+        $user = $request->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        return EmployerJobAccess::constrainJobQuery(JobPost::query(), $user)
             ->whereKey($jobId)
             ->exists();
     }
@@ -455,11 +480,16 @@ class EmployerApplicationController extends Controller
 
     private function authorizeEmployerApplication(Request $request, JobApplication $application): void
     {
-        abort_unless($request->user()?->isEmployer() === true, 403);
+        $user = $request->user();
+        abort_unless($user?->isEmployer() === true, 403);
 
         $application->loadMissing(['jobPost']);
 
-        abort_unless($application->jobPost?->employer_id === $request->user()?->employerAccountId(), 403);
+        abort_unless(
+            $application->jobPost instanceof JobPost
+            && EmployerJobAccess::canAccessJob($user, $application->jobPost),
+            403,
+        );
     }
 
     /**
@@ -531,8 +561,9 @@ class EmployerApplicationController extends Controller
         }
 
         $shortlist = [];
-        $job = $jobId > 0
-            ? JobPost::query()->where('employer_id', $request->user()?->employerAccountId())->whereKey($jobId)->first()
+        $employer = $request->user();
+        $job = $jobId > 0 && $employer !== null
+            ? EmployerJobAccess::constrainJobQuery(JobPost::query(), $employer)->whereKey($jobId)->first()
             : null;
 
         if ($job instanceof JobPost) {
@@ -673,6 +704,7 @@ class EmployerApplicationController extends Controller
                 'job_id' => $application->job_post_id,
                 'status' => $application->status?->label(),
                 'status_value' => $application->status?->value,
+                ...$this->statusChangeFields($application),
                 'date' => $application->created_at?->format('M j, Y'),
                 'resume_url' => route('employer.applications.resume', $application),
                 'timeline' => $this->formatTimeline($application->timeline()),
@@ -700,6 +732,7 @@ class EmployerApplicationController extends Controller
             'job_id' => $application->job_post_id,
             'status' => $application->status?->label(),
             'status_value' => $application->status?->value,
+            ...$this->statusChangeFields($application),
             'date' => $application->created_at?->format('M j, Y'),
             'resume_url' => route('employer.applications.resume', $application),
             'question_answers' => JobApplicationQuestions::paired(
@@ -713,6 +746,34 @@ class EmployerApplicationController extends Controller
                 && $application->status !== JobApplicationStatus::Rejected,
             'on_roster' => $onRoster,
             ...$this->aiFields($application, $atsEnabled, $jobHashes),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     status_changed_by: string|null,
+     *     status_history: list<array{status: string, changed_by: string, at: string|null}>
+     * }
+     */
+    private function statusChangeFields(JobApplication $application): array
+    {
+        $history = ($application->relationLoaded('statusChanges')
+            ? $application->statusChanges
+            : $application->statusChanges()->with('changedBy:id,name')->get()
+        )->take(5);
+
+        $latest = $history->first();
+
+        return [
+            'status_changed_by' => $latest?->changedBy?->name,
+            'status_history' => $history
+                ->map(fn (JobApplicationStatusChange $change): array => [
+                    'status' => $change->to_status?->label() ?? (string) $change->getRawOriginal('to_status'),
+                    'changed_by' => $change->changedBy?->name ?? 'Unknown',
+                    'at' => $change->created_at?->format('M j, Y g:i A'),
+                ])
+                ->values()
+                ->all(),
         ];
     }
 

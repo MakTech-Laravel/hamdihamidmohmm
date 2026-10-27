@@ -16,6 +16,7 @@ use App\Models\JobTaxonomy;
 use App\Models\User;
 use App\Services\Ats\AtsJobQuality;
 use App\Services\Ats\AtsSettings;
+use App\Support\EmployerJobAccess;
 use App\Support\EmployerPlanSnapshot;
 use App\Support\JobListingQuery;
 use App\Support\RecruitmentReport;
@@ -33,13 +34,15 @@ class EmployerJobController extends Controller
     {
         $employer = $request->user();
 
-        $jobs = JobPost::query()
-            ->where('employer_id', $employer?->employerAccountId())
+        abort_unless($employer !== null, 403);
+
+        $jobs = EmployerJobAccess::constrainJobQuery(JobPost::query(), $employer)
             ->with('employer:id,name,company_name,company_logo_path')
             ->withCount([
                 'applications',
                 'applications as new_applications_count' => fn ($query) => $query->where('created_at', '>=', now()->subDays(7)),
                 'applications as shortlisted_applications_count' => fn ($query) => $query->where('status', JobApplicationStatus::Shortlisted),
+                'panelMembers as panel_members_count',
             ])
             ->latest()
             ->get()
@@ -47,7 +50,8 @@ class EmployerJobController extends Controller
 
         return Inertia::render('backend/User/EmployerJobs', [
             'jobs' => $jobs,
-            'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
+            'plan' => EmployerPlanSnapshot::for($employer),
+            'can_manage_panel' => EmployerJobAccess::canManagePanel($employer),
             'stats' => [
                 'total' => $jobs->count(),
                 'active' => $jobs->where('status_value', JobPostStatus::Active->value)->count(),
@@ -94,6 +98,10 @@ class EmployerJobController extends Controller
 
         $this->storeJobLogo($job, $request->file('logo'));
 
+        if (! $employer->isEmployerOwner()) {
+            EmployerJobAccess::assignMember($job, $employer, $employer);
+        }
+
         return redirect()
             ->route('employer.jobs')
             ->with('success', $publish ? 'job_submitted' : 'draft_saved');
@@ -118,6 +126,7 @@ class EmployerJobController extends Controller
                 'employment_type' => $job->employment_type,
                 'experience_level' => $job->experience_level,
                 'salary_range' => $job->salary_range,
+                'career_portal_url' => $job->career_portal_url,
                 'description' => $job->description,
                 'requirements' => $job->requirements,
                 'skills' => $job->skills ?? [],
@@ -303,6 +312,7 @@ class EmployerJobController extends Controller
             'applications' => (int) $job->applications_count,
             'new_applications' => (int) $job->new_applications_count,
             'shortlisted' => (int) $job->shortlisted_applications_count,
+            'panel_members_count' => (int) ($job->panel_members_count ?? 0),
             'views' => (int) $job->views,
             'expires_at' => $job->expires_at?->toFormattedDateString(),
             'created_at' => $job->created_at?->toFormattedDateString(),
@@ -373,7 +383,8 @@ class EmployerJobController extends Controller
 
     private function authorizeJob(Request $request, JobPost $job): void
     {
-        abort_unless($job->employer_id === $request->user()?->employerAccountId(), 403);
+        $user = $request->user();
+        abort_unless($user !== null && EmployerJobAccess::canAccessJob($user, $job), 403);
     }
 
     private function creditError(User $employer, bool $needsJobCredit): ?string

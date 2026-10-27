@@ -42,6 +42,12 @@ export type ApplicationPreview = {
     title: string;
     status: string;
     status_value: string;
+    status_changed_by?: string | null;
+    status_history?: Array<{
+        status: string;
+        changed_by: string;
+        at: string | null;
+    }>;
     email: string;
     phone: string;
     location: string;
@@ -189,6 +195,13 @@ function DrawerBody({
                     <span className="mt-1 inline-flex rounded-full bg-[#fdf4ff] px-2.5 py-0.5 text-[11.52px] font-bold text-[#7e22ce]">
                         {preview.status}
                     </span>
+                    {preview.status_changed_by ? (
+                        <p className="mt-1 text-[11px] text-[#64748b]">
+                            {t('employer.applications.changed_by', {
+                                name: preview.status_changed_by,
+                            })}
+                        </p>
+                    ) : null}
                 </div>
                 <SheetClose asChild>
                     <button
@@ -474,6 +487,35 @@ function DrawerBody({
                         ))}
                     </ol>
                 </Section>
+
+                {(preview.status_history?.length ?? 0) > 0 ? (
+                    <Section title={t('employer.applications.status_history')}>
+                        <ul className="space-y-2">
+                            {preview.status_history?.map((entry, index) => (
+                                <li
+                                    key={`${entry.status}-${entry.at}-${index}`}
+                                    className="rounded-lg bg-[#f8fafc] px-3 py-2 text-sm text-[#334155]"
+                                >
+                                    <span className="font-semibold">
+                                        {entry.status}
+                                    </span>
+                                    <span className="text-[#64748b]">
+                                        {' '}
+                                        ·{' '}
+                                        {t('employer.applications.changed_by', {
+                                            name: entry.changed_by,
+                                        })}
+                                    </span>
+                                    {entry.at ? (
+                                        <span className="mt-0.5 block text-xs text-[#94a3b8]">
+                                            {entry.at}
+                                        </span>
+                                    ) : null}
+                                </li>
+                            ))}
+                        </ul>
+                    </Section>
+                ) : null}
 
                 <Section title={t('employer.drawer.change_status')}>
                     <div className="flex items-center gap-2">
