@@ -89,7 +89,10 @@ export default function EmployerJobs({
     can_manage_panel = false,
 }: Props) {
     const { t } = useLocale();
-    const { flash } = usePage<SharedData>().props;
+    const { flash, auth } = usePage<SharedData>().props;
+    const jobsTitle = auth.user?.is_employer_owner
+        ? t('employer.jobs.title')
+        : t('employer.jobs.title_panel');
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<FilterId>('all');
     const [submitSuccessOpen, setSubmitSuccessOpen] = useState(
@@ -164,14 +167,14 @@ export default function EmployerJobs({
     ];
 
     return (
-        <EmployerLayout title={t('employer.jobs.title')}>
-            <Head title={t('employer.jobs.title')} />
+        <EmployerLayout title={jobsTitle}>
+            <Head title={jobsTitle} />
 
             <div className="flex flex-col gap-5 px-4 py-6 sm:px-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl leading-9 font-bold text-[#050315]">
-                            {t('employer.jobs.title')}
+                            {jobsTitle}
                         </h1>
                         <p className="mt-1 text-sm leading-[21px] text-[#475569]">
                             {t('employer.jobs.subtitle')}

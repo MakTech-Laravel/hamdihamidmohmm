@@ -74,6 +74,7 @@ class HandleInertiaRequests extends Middleware
                         'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
                         'can_manage_users' => $user->canManageUsers(),
                         'can_manage_admins' => $user->canManageAdmins(),
+                        'is_employer_owner' => $user->isEmployerOwner(),
                         'avatar_url' => $user->avatar_url,
                         'headline' => $seekerHeadline,
                         'dashboard_url' => route($user->dashboardRoute(), absolute: false),
