@@ -7,6 +7,7 @@ import {
     index,
     reject,
 } from '@/actions/App/Http/Controllers/Backend/Admin/JobManagementController';
+import { ToggleRow } from '@/components/admin-portal/toggle-row';
 import {
     AdminPageHeader,
     AdminPanel,
@@ -31,6 +32,8 @@ import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
 
+const actionButtonClass = 'h-10 min-h-10 px-4 py-0';
+
 type Job = {
     id: number;
     title: string;
@@ -50,6 +53,8 @@ type Job = {
     experience_level: string | null;
     employment_type: string | null;
     salary_range: string | null;
+    career_portal_url?: string | null;
+    apply_by_link?: boolean;
     rejection_reason: string | null;
     expires_at: string | null;
     can_review: boolean;
@@ -100,36 +105,40 @@ export default function JobShow({ job }: { job: Job }) {
                         .filter(Boolean)
                         .join(' · ')}
                     actions={
-                        <div className="flex flex-wrap gap-2">
-                            <Link href={index.url()}>
-                                <AdminSecondaryButton>
+                        <>
+                            <Link href={index.url()} className="inline-flex">
+                                <AdminSecondaryButton
+                                    className={actionButtonClass}
+                                >
                                     {t('common.back')}
                                 </AdminSecondaryButton>
                             </Link>
-                            <Link href={edit.url(job.id)}>
-                                <AdminPrimaryButton>
+                            <Link href={edit.url(job.id)} className="inline-flex">
+                                <AdminPrimaryButton
+                                    className={actionButtonClass}
+                                >
                                     {t('common.edit')}
                                 </AdminPrimaryButton>
                             </Link>
-                            {job.can_review && (
+                            {job.can_review ? (
                                 <>
                                     <AdminPrimaryButton
+                                        className={actionButtonClass}
                                         onClick={() =>
                                             router.post(approve.url(job.id))
                                         }
                                     >
                                         {t('common.approve')}
                                     </AdminPrimaryButton>
-                                    <Button
-                                        type="button"
-                                        className="bg-[#b91c1c] text-white hover:bg-[#991b1b]"
+                                    <AdminPrimaryButton
+                                        className={`${actionButtonClass} bg-[#b91c1c] hover:bg-[#991b1b]`}
                                         onClick={() => setRejectOpen(true)}
                                     >
                                         {t('common.reject')}
-                                    </Button>
+                                    </AdminPrimaryButton>
                                 </>
-                            )}
-                        </div>
+                            ) : null}
+                        </>
                     }
                 />
 
@@ -152,6 +161,41 @@ export default function JobShow({ job }: { job: Job }) {
                             : t('common.saved')}
                     </div>
                 )}
+
+                <AdminPanel className="w-full space-y-3">
+                    <div className="space-y-1">
+                        <p className="text-sm font-bold text-[#050315]">
+                            {t('employer.job_editor.field.career_portal_url')}
+                        </p>
+                        {job.career_portal_url ? (
+                            <a
+                                href={job.career_portal_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="break-all text-sm font-medium text-[#0057c8] underline-offset-2 hover:underline"
+                            >
+                                {job.career_portal_url}
+                            </a>
+                        ) : (
+                            <p className="text-sm text-[#94a3b8]">
+                                {t('admin.jobs.apply_by_link_url_missing')}
+                            </p>
+                        )}
+                    </div>
+                    <ToggleRow
+                        title={t('admin.jobs.fields.apply_by_link')}
+                        description={t('admin.jobs.fields.apply_by_link_hint')}
+                        checked={Boolean(job.apply_by_link)}
+                        disabled={false}
+                        onChange={(value) =>
+                            router.post(
+                                `/admin/jobs/${job.id}/apply-by-link`,
+                                { apply_by_link: value },
+                                { preserveScroll: true },
+                            )
+                        }
+                    />
+                </AdminPanel>
 
                 <div className="grid gap-4 lg:grid-cols-3">
                     <div className="space-y-4 lg:col-span-2">

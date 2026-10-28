@@ -44,6 +44,7 @@ type JobDetail = {
     experience?: string | null;
     salary?: string | null;
     career_portal_url?: string | null;
+    apply_by_link?: boolean;
     posted?: string | null;
     deadline?: string | null;
     vacancies?: string | null;
@@ -493,16 +494,16 @@ export default function JobShow({
                                         </Link>
                                     )}
 
-                                    {job.career_portal_url ? (
+                                    {!is_preview &&
+                                    job.apply_by_link &&
+                                    job.career_portal_url ? (
                                         <a
                                             href={job.career_portal_url}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-full border-2 border-[#0057c8] bg-white px-5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#eef5ff]"
                                         >
-                                            {t(
-                                                'job_detail.open_in_company_portal',
-                                            )}
+                                            {t('job_detail.apply_by_link')}
                                         </a>
                                     ) : null}
 

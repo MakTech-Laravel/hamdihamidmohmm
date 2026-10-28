@@ -126,8 +126,8 @@ class UpdateEmployerJobRequest extends FormRequest
             'logo.image' => 'The job logo must be an image.',
             'logo.mimes' => 'The job logo must be a JPG, PNG, or WEBP file.',
             'logo.max' => 'The job logo may not be greater than 5MB.',
-            'career_portal_url.url' => 'Please enter a valid company career portal URL.',
-            'career_portal_url.max' => 'The company career portal link may not be greater than 2048 characters.',
+            'career_portal_url.url' => 'Please enter a valid Apply by Link URL.',
+            'career_portal_url.max' => 'The Apply by Link URL may not be greater than 2048 characters.',
         ];
     }
 

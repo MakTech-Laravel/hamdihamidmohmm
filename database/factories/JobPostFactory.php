@@ -35,6 +35,7 @@ class JobPostFactory extends Factory
             'skills' => fake()->randomElements(['React', 'TypeScript', 'Laravel', 'PHP', 'Figma'], 3),
             'status' => JobPostStatus::Active,
             'featured' => false,
+            'apply_by_link' => false,
             'views' => fake()->numberBetween(0, 500),
             'expires_at' => now()->addDays(30),
         ];

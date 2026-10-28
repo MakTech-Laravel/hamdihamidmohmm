@@ -39,6 +39,7 @@ class UpdateAdminJobRequest extends FormRequest
             'category' => $this->nullableSlug('category'),
             'employment_type' => trim((string) $this->input('employment_type')),
             'career_portal_url' => $this->nullableUrl('career_portal_url'),
+            'apply_by_link' => $this->boolean('apply_by_link'),
         ]);
     }
 
@@ -83,6 +84,7 @@ class UpdateAdminJobRequest extends FormRequest
             'experience_level' => ['required', 'string', 'max:50'],
             'salary_range' => ['nullable', 'string', 'max:255'],
             'career_portal_url' => ['nullable', 'url', 'max:2048'],
+            'apply_by_link' => ['sometimes', 'boolean'],
             'description' => ['nullable', 'string', 'max:20000'],
             'requirements' => ['nullable', 'string', 'max:20000'],
             'skills' => ['nullable', 'array'],
@@ -104,8 +106,8 @@ class UpdateAdminJobRequest extends FormRequest
             'employment_type.required' => 'Please choose a job type.',
             'experience_level.required' => 'Please choose an experience level.',
             'status.required' => 'Please choose a job status.',
-            'career_portal_url.url' => 'Please enter a valid company career portal URL.',
-            'career_portal_url.max' => 'The company career portal link may not be greater than 2048 characters.',
+            'career_portal_url.url' => 'Please enter a valid Apply by Link URL.',
+            'career_portal_url.max' => 'The Apply by Link URL may not be greater than 2048 characters.',
         ];
     }
 

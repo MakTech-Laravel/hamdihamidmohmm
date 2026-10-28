@@ -89,7 +89,7 @@ class EmployerJobController extends Controller
         }
 
         $job = JobPost::query()->create([
-            ...$request->safe()->except(['publish', 'featured', 'logo']),
+            ...$request->safe()->except(['publish', 'featured', 'logo', 'apply_by_link']),
             'employer_id' => $employer->employerAccountId(),
             'featured' => false,
             'status' => $publish ? JobPostStatus::Pending : JobPostStatus::Draft,
@@ -159,7 +159,7 @@ class EmployerJobController extends Controller
         }
 
         $job->update([
-            ...$request->safe()->except(['publish', 'featured', 'logo']),
+            ...$request->safe()->except(['publish', 'featured', 'logo', 'apply_by_link']),
             'featured' => false,
         ]);
 

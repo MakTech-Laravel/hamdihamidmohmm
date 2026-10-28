@@ -75,6 +75,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/jobs/{jobPost}/applicants/{user}/resume', [JobManagementController::class, 'downloadApplicantResume'])->name('jobs.applicant-resume');
         Route::get('/jobs/{jobPost}/edit', [JobManagementController::class, 'edit'])->name('jobs.edit');
         Route::put('/jobs/{jobPost}', [JobManagementController::class, 'update'])->name('jobs.update');
+        Route::post('/jobs/{jobPost}/apply-by-link', [JobManagementController::class, 'toggleApplyByLink'])->name('jobs.apply-by-link');
         Route::post('/jobs/{jobPost}/logo', [JobManagementController::class, 'uploadLogo'])->name('jobs.logo.upload');
         Route::delete('/jobs/{jobPost}/logo', [JobManagementController::class, 'destroyLogo'])->name('jobs.logo.destroy');
         Route::get('/jobs/{jobPost}', [JobManagementController::class, 'show'])->name('jobs.show');

@@ -143,6 +143,7 @@ class FrontendController extends Controller
                 'career_portal_url' => filled($jobPost->career_portal_url)
                     ? $jobPost->career_portal_url
                     : null,
+                'apply_by_link' => (bool) $jobPost->apply_by_link,
                 'posted' => $jobPost->created_at?->diffForHumans(),
                 'deadline' => $jobPost->expires_at?->toDateString(),
                 'description' => $jobPost->description,
