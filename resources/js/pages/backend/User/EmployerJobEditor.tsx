@@ -1760,7 +1760,7 @@ export default function EmployerJobEditor({
                                                         className="font-normal text-[#0057c8] underline-offset-2 hover:underline"
                                                     >
                                                         {t(
-                                                            'job_detail.open_in_company_portal',
+                                                            'job_detail.apply_by_link',
                                                         )}
                                                     </a>
                                                 </p>

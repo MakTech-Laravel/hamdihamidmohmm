@@ -6,6 +6,7 @@ import {
     show,
     update,
 } from '@/actions/App/Http/Controllers/Backend/Admin/JobManagementController';
+import { ToggleRow } from '@/components/admin-portal/toggle-row';
 import {
     AdminPageHeader,
     AdminPanel,
@@ -35,6 +36,7 @@ type Job = {
     experience_level: string | null;
     salary_range: string | null;
     career_portal_url?: string | null;
+    apply_by_link?: boolean;
     description: string | null;
     requirements: string | null;
     skills: string[];
@@ -73,6 +75,7 @@ export default function JobEdit({ job, options }: Props) {
         experience_level: job.experience_level ?? '',
         salary_range: job.salary_range ?? '',
         career_portal_url: job.career_portal_url ?? '',
+        apply_by_link: Boolean(job.apply_by_link),
         description: job.description ?? '',
         requirements: job.requirements ?? '',
         skills: job.skills.join(', '),
@@ -156,7 +159,7 @@ export default function JobEdit({ job, options }: Props) {
                     </div>
                 )}
 
-                <AdminPanel className="max-w-3xl">
+                <AdminPanel className="w-full">
                     <div className="mb-6 flex flex-wrap items-start gap-4">
                         <input
                             ref={jobLogoInputRef}
@@ -468,6 +471,27 @@ export default function JobEdit({ job, options }: Props) {
                                 />
                             </div>
                             <div className="space-y-1.5">
+                                <Label htmlFor="expires_at">
+                                    {t('admin.jobs.fields.expires')}
+                                </Label>
+                                <Input
+                                    id="expires_at"
+                                    type="date"
+                                    value={form.data.expires_at}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'expires_at',
+                                            event.target.value,
+                                        )
+                                    }
+                                    className="rounded-xl"
+                                />
+                                <InputError message={form.errors.expires_at} />
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="space-y-1.5">
                                 <Label htmlFor="career_portal_url">
                                     {t(
                                         'employer.job_editor.field.career_portal_url',
@@ -486,30 +510,29 @@ export default function JobEdit({ job, options }: Props) {
                                     placeholder={t(
                                         'employer.job_editor.field.career_portal_url_placeholder',
                                     )}
-                                    className="rounded-xl"
+                                    className="w-full rounded-xl"
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    {t(
+                                        'employer.job_editor.field.career_portal_url_hint',
+                                    )}
+                                </p>
                                 <InputError
                                     message={form.errors.career_portal_url}
                                 />
                             </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="expires_at">
-                                    {t('admin.jobs.fields.expires')}
-                                </Label>
-                                <Input
-                                    id="expires_at"
-                                    type="date"
-                                    value={form.data.expires_at}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'expires_at',
-                                            event.target.value,
-                                        )
-                                    }
-                                    className="rounded-xl"
-                                />
-                                <InputError message={form.errors.expires_at} />
-                            </div>
+                            <ToggleRow
+                                title={t('admin.jobs.fields.apply_by_link')}
+                                description={t(
+                                    'admin.jobs.fields.apply_by_link_hint',
+                                )}
+                                checked={form.data.apply_by_link}
+                                disabled={form.processing}
+                                onChange={(value) =>
+                                    form.setData('apply_by_link', value)
+                                }
+                            />
+                            <InputError message={form.errors.apply_by_link} />
                         </div>
 
                         <div className="space-y-1.5">

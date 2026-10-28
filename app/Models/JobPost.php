@@ -36,6 +36,7 @@ class JobPost extends Model
         'experience_level',
         'salary_range',
         'career_portal_url',
+        'apply_by_link',
         'description',
         'requirements',
         'skills',
@@ -55,6 +56,7 @@ class JobPost extends Model
         return [
             'status' => JobPostStatus::class,
             'featured' => 'boolean',
+            'apply_by_link' => 'boolean',
             'views' => 'integer',
             'skills' => 'array',
             'application_questions' => 'array',

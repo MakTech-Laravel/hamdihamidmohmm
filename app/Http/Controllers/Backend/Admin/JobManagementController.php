@@ -6,6 +6,7 @@ use App\Enums\JobApplicationStatus;
 use App\Enums\JobPostStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\RejectJobPostRequest;
+use App\Http\Requests\Backend\Admin\ToggleAdminJobApplyByLinkRequest;
 use App\Http\Requests\Backend\Admin\UpdateAdminJobRequest;
 use App\Http\Requests\Backend\Admin\UploadAdminJobDescriptionAttachmentRequest;
 use App\Http\Requests\Backend\Admin\UploadAdminJobLogoRequest;
@@ -107,6 +108,7 @@ class JobManagementController extends Controller
                 'employment_type' => $jobPost->employment_type,
                 'salary_range' => $jobPost->salary_range,
                 'career_portal_url' => $jobPost->career_portal_url,
+                'apply_by_link' => (bool) $jobPost->apply_by_link,
                 'rejection_reason' => $jobPost->rejection_reason,
                 'expires_at' => $jobPost->expires_at?->toDateString(),
                 'employer_email' => $jobPost->employer
@@ -141,6 +143,7 @@ class JobManagementController extends Controller
                 'experience_level' => $jobPost->experience_level,
                 'salary_range' => $jobPost->salary_range,
                 'career_portal_url' => $jobPost->career_portal_url,
+                'apply_by_link' => (bool) $jobPost->apply_by_link,
                 'description' => $jobPost->description,
                 'requirements' => $jobPost->requirements,
                 'skills' => array_values(array_filter(
@@ -200,6 +203,17 @@ class JobManagementController extends Controller
             'url' => '/storage/'.$path,
             'name' => $file->getClientOriginalName(),
         ]);
+    }
+
+    public function toggleApplyByLink(ToggleAdminJobApplyByLinkRequest $request, JobPost $jobPost): RedirectResponse
+    {
+        $jobPost->forceFill([
+            'apply_by_link' => $request->boolean('apply_by_link'),
+        ])->save();
+
+        return back()->with('success', $jobPost->apply_by_link
+            ? 'Apply by Link enabled for this job.'
+            : 'Apply by Link disabled for this job.');
     }
 
     public function approve(Request $request, JobPost $jobPost): RedirectResponse
