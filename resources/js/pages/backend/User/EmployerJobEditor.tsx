@@ -1847,12 +1847,14 @@ export default function EmployerJobEditor({
                                                 </p>
                                             </div>
                                         ) : null}
-                                        {form.data.hide_on_site_apply &&
-                                        form.data.apply_by_link &&
-                                        form.data.career_portal_url ? (
+                                        {form.data.hide_on_site_apply ? (
                                             <p className="text-xs text-[#64748b]">
                                                 {t(
-                                                    'employer.job_editor.preview.hide_apply_now',
+                                                    form.data.apply_by_link &&
+                                                        form.data
+                                                            .career_portal_url
+                                                        ? 'employer.job_editor.preview.hide_apply_now'
+                                                        : 'employer.job_editor.preview.hide_all_apply',
                                                 )}
                                             </p>
                                         ) : null}

@@ -230,7 +230,7 @@ class JobManagementController extends Controller
         ])->save();
 
         return back()->with('success', $jobPost->hide_on_site_apply
-            ? 'Apply Now hidden for this job when Apply by Link is available.'
+            ? 'Apply Now hidden for this job.'
             : 'Apply Now is visible for this job.');
     }
 
