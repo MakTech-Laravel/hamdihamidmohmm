@@ -10,6 +10,8 @@ import {
 } from '@/components/mobile-list-card';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
+import { cn } from '@/lib/utils';
 
 type Member = {
     id: number;
@@ -302,10 +304,13 @@ export default function EmployerTeam({ members, roleOptions }: Props) {
                                     </td>
                                 </tr>
                             ) : (
-                                members.map((member) => (
+                                members.map((member, index) => (
                                     <tr
                                         key={member.id}
-                                        className="border-b border-[rgba(57,119,166,0.1)] last:border-0"
+                                        className={cn(
+                                            'border-b border-[rgba(57,119,166,0.1)] last:border-0',
+                                            employerListRowBg(index),
+                                        )}
                                     >
                                         <td className="px-4 py-3 font-medium text-[#050315]">
                                             {member.name}

@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
 import { cn } from '@/lib/utils';
 import { show as jobShow } from '@/routes/jobs';
 import type { SharedData } from '@/types';
@@ -483,10 +484,13 @@ export default function EmployerJobs({
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map((job) => (
+                                {filtered.map((job, index) => (
                                     <tr
                                         key={job.id}
-                                        className="border-b border-[#d1f6ff] last:border-b-0"
+                                        className={cn(
+                                            'border-b border-[#d1f6ff] last:border-b-0',
+                                            employerListRowBg(index),
+                                        )}
                                     >
                                         <td className="px-5 py-4 align-top">
                                             <div className="flex items-start gap-3.5">

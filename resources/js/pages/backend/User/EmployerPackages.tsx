@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
@@ -566,10 +567,13 @@ export default function EmployerPackages({
                                 </tr>
                             </thead>
                             <tbody>
-                                {invoices.map((invoice) => (
+                                {invoices.map((invoice, index) => (
                                     <tr
                                         key={invoice.id}
-                                        className="border-t border-[#f1f5f9]"
+                                        className={cn(
+                                            'border-t border-[#f1f5f9]',
+                                            employerListRowBg(index),
+                                        )}
                                     >
                                         <td className="py-3 font-medium text-[#050315]">
                                             {invoice.reference}

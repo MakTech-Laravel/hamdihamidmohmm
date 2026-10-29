@@ -126,6 +126,7 @@ class EmployerApplicationController extends Controller
         $jobHashes = $atsEnabled ? $this->jobHashes($sortedApplications->pluck('job_post_id')->unique()->all()) : [];
         $rosterEntryIds = EmployerRosterEntry::query()
             ->forAccount($employer->employerAccountId())
+            ->where('added_by', $employer->id)
             ->pluck('id', 'job_seeker_id')
             ->mapWithKeys(fn (mixed $id, mixed $seekerId): array => [(int) $seekerId => (int) $id])
             ->all();
@@ -183,6 +184,7 @@ class EmployerApplicationController extends Controller
             'roster_categories' => EmployerRosterEntry::categoriesForAccount(
                 $employer->employerAccountId(),
             ),
+            'is_owner' => $employer->isEmployerOwner(),
         ]);
     }
 

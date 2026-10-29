@@ -8,6 +8,7 @@ use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\EmployerJobAccess;
 use App\Support\RoleAssigner;
 use Database\Seeders\RolePermissionSeeder;
 
@@ -443,6 +444,262 @@ test('team member cannot destroy owner roster entry but can destroy own', functi
         ->assertRedirect();
 
     expect(EmployerRosterEntry::query()->whereKey($memberEntry->id)->exists())->toBeFalse();
+});
+
+test('owner and team member can both roster the same seeker', function () {
+    $member = createRosterTeamMember($this->owner);
+
+    $this->actingAs($this->owner)
+        ->post(route('employer.roster.store'), [
+            'application_id' => $this->application->id,
+            'category' => 'Owner list',
+            'comments' => 'Mine',
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($member)
+        ->post(route('employer.roster.store'), [
+            'application_id' => $this->application->id,
+            'category' => 'Member list',
+            'comments' => 'Theirs',
+        ])
+        ->assertRedirect();
+
+    $entries = EmployerRosterEntry::query()
+        ->forAccount($this->owner->id)
+        ->where('job_seeker_id', $this->seeker->id)
+        ->get();
+
+    expect($entries)->toHaveCount(2)
+        ->and($entries->pluck('added_by')->sort()->values()->all())
+        ->toBe(collect([$this->owner->id, $member->id])->sort()->values()->all());
+});
+
+test('owner all roster view shows each seeker once and filter shows that members adds', function () {
+    $member = createRosterTeamMember($this->owner);
+
+    EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $this->seeker->id,
+        'job_application_id' => $this->application->id,
+        'category' => 'Owner list',
+        'comments' => null,
+        'added_by' => $this->owner->id,
+    ]);
+
+    EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $this->seeker->id,
+        'job_application_id' => $this->application->id,
+        'category' => 'Member list',
+        'comments' => null,
+        'added_by' => $member->id,
+    ]);
+
+    $this->actingAs($this->owner)
+        ->get(route('employer.roster'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('entries', 1)
+            ->where('entries.0.name', 'Roster Candidate')
+            ->where(
+                'entries.0.category',
+                fn (string $value): bool => str_contains($value, 'Owner list')
+                    && str_contains($value, 'Member list'),
+            )
+            ->where(
+                'entries.0.added_by',
+                fn (string $value): bool => str_contains($value, $this->owner->name)
+                    && str_contains($value, $member->name),
+            ));
+
+    $this->actingAs($this->owner)
+        ->get(route('employer.roster', ['panel_member_id' => $member->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('entries', 1)
+            ->where('entries.0.category', 'Member list')
+            ->where('entries.0.added_by', $member->name));
+});
+
+test('applications on_roster is personal to the current user', function () {
+    $member = createRosterTeamMember($this->owner);
+    EmployerJobAccess::assignMember($this->job, $member, $this->owner);
+
+    EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $this->seeker->id,
+        'job_application_id' => $this->application->id,
+        'category' => 'Owner add',
+        'comments' => null,
+        'added_by' => $this->owner->id,
+    ]);
+
+    $this->actingAs($member)
+        ->get(route('employer.applications'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('applications', 1)
+            ->where('applications.0.on_roster', false)
+            ->where('applications.0.roster_entry_id', null));
+
+    $memberEntry = EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $this->seeker->id,
+        'job_application_id' => $this->application->id,
+        'category' => 'Member add',
+        'comments' => null,
+        'added_by' => $member->id,
+    ]);
+
+    $this->actingAs($member)
+        ->get(route('employer.applications'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('applications.0.on_roster', true)
+            ->where('applications.0.roster_entry_id', $memberEntry->id));
+
+    $this->actingAs($this->owner)
+        ->get(route('employer.applications'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('applications.0.on_roster', true)
+            ->where(
+                'applications.0.roster_entry_id',
+                EmployerRosterEntry::query()
+                    ->forAccount($this->owner->id)
+                    ->where('added_by', $this->owner->id)
+                    ->value('id'),
+            ));
+});
+
+test('owner destroy without purge_all removes only that entry', function () {
+    $member = createRosterTeamMember($this->owner);
+
+    $ownerEntry = EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $this->seeker->id,
+        'job_application_id' => $this->application->id,
+        'category' => 'Owner add',
+        'comments' => null,
+        'added_by' => $this->owner->id,
+    ]);
+
+    $memberEntry = EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $this->seeker->id,
+        'job_application_id' => $this->application->id,
+        'category' => 'Member add',
+        'comments' => null,
+        'added_by' => $member->id,
+    ]);
+
+    $this->actingAs($this->owner)
+        ->delete(route('employer.roster.destroy', $memberEntry))
+        ->assertRedirect();
+
+    expect(EmployerRosterEntry::query()->whereKey($memberEntry->id)->exists())->toBeFalse()
+        ->and(EmployerRosterEntry::query()->whereKey($ownerEntry->id)->exists())->toBeTrue();
+});
+
+test('owner destroy with purge_all removes every entry for that seeker', function () {
+    $member = createRosterTeamMember($this->owner);
+
+    $ownerEntry = EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $this->seeker->id,
+        'job_application_id' => $this->application->id,
+        'category' => 'Owner add',
+        'comments' => null,
+        'added_by' => $this->owner->id,
+    ]);
+
+    EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $this->seeker->id,
+        'job_application_id' => $this->application->id,
+        'category' => 'Member add',
+        'comments' => null,
+        'added_by' => $member->id,
+    ]);
+
+    $this->actingAs($this->owner)
+        ->delete(route('employer.roster.destroy', $ownerEntry), ['purge_all' => 1])
+        ->assertRedirect();
+
+    expect(EmployerRosterEntry::query()->forAccount($this->owner->id)->where('job_seeker_id', $this->seeker->id)->count())
+        ->toBe(0);
+});
+
+test('applications page exposes is_owner and owner purge clears all personal rows', function () {
+    $member = createRosterTeamMember($this->owner);
+
+    $ownerEntry = EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $this->seeker->id,
+        'job_application_id' => $this->application->id,
+        'category' => 'Owner add',
+        'comments' => null,
+        'added_by' => $this->owner->id,
+    ]);
+
+    EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $this->seeker->id,
+        'job_application_id' => $this->application->id,
+        'category' => 'Member add',
+        'comments' => null,
+        'added_by' => $member->id,
+    ]);
+
+    $this->actingAs($this->owner)
+        ->get(route('employer.applications'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('is_owner', true));
+
+    $this->actingAs($this->owner)
+        ->delete(route('employer.roster.destroy', $ownerEntry), ['purge_all' => 1])
+        ->assertRedirect();
+
+    expect(EmployerRosterEntry::query()->forAccount($this->owner->id)->where('job_seeker_id', $this->seeker->id)->count())
+        ->toBe(0);
+});
+
+test('team member roster categories only include their own adds', function () {
+    $member = createRosterTeamMember($this->owner);
+
+    EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $this->seeker->id,
+        'job_application_id' => $this->application->id,
+        'category' => 'Owner only category',
+        'comments' => null,
+        'added_by' => $this->owner->id,
+    ]);
+
+    $memberSeeker = User::factory()->jobSeeker()->create();
+    $memberApplication = JobApplication::factory()->create([
+        'job_post_id' => $this->job->id,
+        'job_seeker_id' => $memberSeeker->id,
+        'status' => JobApplicationStatus::Applied,
+    ]);
+
+    EmployerRosterEntry::query()->create([
+        'employer_owner_id' => $this->owner->id,
+        'job_seeker_id' => $memberSeeker->id,
+        'job_application_id' => $memberApplication->id,
+        'category' => 'Member only category',
+        'comments' => null,
+        'added_by' => $member->id,
+    ]);
+
+    $this->actingAs($member)
+        ->get(route('employer.roster'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('is_owner', false)
+            ->has('categories', 1)
+            ->where('categories.0', 'Member only category'));
 });
 
 function createRosterTeamMember(User $owner): User

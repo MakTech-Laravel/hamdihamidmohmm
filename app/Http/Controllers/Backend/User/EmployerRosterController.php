@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\StoreEmployerRosterEntryRequest;
 use App\Models\EmployerRosterEntry;
 use App\Models\JobApplication;
-use App\Models\JobPost;
 use App\Models\User;
 use App\Support\ApplicantDocumentDownloader;
 use App\Support\ApplicantProfilePreview;
@@ -16,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -59,13 +59,75 @@ class EmployerRosterController extends Controller
             $entriesQuery->whereRaw('0 = 1');
         }
 
-        $entries = $entriesQuery->get()->map(
-            fn (EmployerRosterEntry $entry): array => $this->entryPayload($entry, $accountId),
+        $rawEntries = $entriesQuery->get();
+        $dedupeBySeeker = $isOwner && $activePanelMemberId === null;
+
+        /** @var Collection<int, EmployerRosterEntry> $representativeEntries */
+        $representativeEntries = $dedupeBySeeker
+            ? $rawEntries
+                ->groupBy('job_seeker_id')
+                ->map(fn ($group) => $group->sortByDesc('id')->first())
+                ->sortByDesc('id')
+                ->values()
+            : $rawEntries->values();
+
+        $applicationsBySeeker = $this->applicationsForSeekers(
+            $accountId,
+            $representativeEntries
+                ->map(fn (EmployerRosterEntry $entry): int => (int) $entry->job_seeker_id)
+                ->filter(fn (int $id): bool => $id > 0)
+                ->unique()
+                ->values()
+                ->all(),
         );
+
+        if ($dedupeBySeeker) {
+            $grouped = $rawEntries->groupBy('job_seeker_id');
+
+            $entries = $representativeEntries
+                ->map(function (EmployerRosterEntry $representative) use ($accountId, $applicationsBySeeker, $grouped): array {
+                    $payload = $this->entryPayload(
+                        $representative,
+                        $accountId,
+                        $applicationsBySeeker[(int) $representative->job_seeker_id] ?? [],
+                    );
+                    $group = $grouped->get($representative->job_seeker_id);
+
+                    $payload['added_by'] = $group
+                        ->map(fn (EmployerRosterEntry $entry): ?string => $entry->addedBy?->name)
+                        ->filter()
+                        ->unique()
+                        ->values()
+                        ->implode(', ');
+
+                    $payload['category'] = $group
+                        ->map(fn (EmployerRosterEntry $entry): string => trim((string) $entry->category))
+                        ->filter()
+                        ->unique()
+                        ->values()
+                        ->implode(', ');
+
+                    return $payload;
+                })
+                ->values()
+                ->all();
+        } else {
+            $entries = $representativeEntries
+                ->map(fn (EmployerRosterEntry $entry): array => $this->entryPayload(
+                    $entry,
+                    $accountId,
+                    $applicationsBySeeker[(int) $entry->job_seeker_id] ?? [],
+                ))
+                ->values()
+                ->all();
+        }
 
         return Inertia::render('backend/User/EmployerRoster', [
             'entries' => $entries,
-            'categories' => EmployerRosterEntry::categoriesForAccount($accountId),
+            'categories' => EmployerRosterEntry::categoriesForAccount(
+                $accountId,
+                $isOwner ? null : $user->id,
+            ),
             'panel_members' => $isOwner ? $this->panelMembersForAccount($accountId) : [],
             'is_owner' => $isOwner,
             'filters' => [
@@ -94,6 +156,7 @@ class EmployerRosterController extends Controller
             [
                 'employer_owner_id' => $accountId,
                 'job_seeker_id' => $seekerId,
+                'added_by' => $user->id,
             ],
             [
                 'job_application_id' => $application->id,
@@ -101,7 +164,6 @@ class EmployerRosterController extends Controller
                 'comments' => $request->filled('comments')
                     ? $request->string('comments')->toString()
                     : null,
-                'added_by' => $user->id,
             ],
         );
 
@@ -124,7 +186,14 @@ class EmployerRosterController extends Controller
             403,
         );
 
-        $entry->delete();
+        if ($user->isEmployerOwner() && $request->boolean('purge_all')) {
+            EmployerRosterEntry::query()
+                ->forAccount($user->employerAccountId())
+                ->where('job_seeker_id', $entry->job_seeker_id)
+                ->delete();
+        } else {
+            $entry->delete();
+        }
 
         return back()->with('success', 'Candidate removed from roster.');
     }
@@ -149,13 +218,12 @@ class EmployerRosterController extends Controller
      */
     private function panelMembersForAccount(int $accountId): array
     {
-        $panelMemberIds = JobPost::query()
-            ->where('employer_id', $accountId)
-            ->with('panelMembers:id')
-            ->get()
-            ->flatMap(fn (JobPost $job) => $job->panelMembers->pluck('id'))
-            ->unique()
-            ->values();
+        $panelMemberIds = User::query()
+            ->whereHas(
+                'assignedJobPosts',
+                fn (Builder $query) => $query->where('employer_id', $accountId),
+            )
+            ->pluck('id');
 
         $rosterAdderIds = EmployerRosterEntry::query()
             ->forAccount($accountId)
@@ -188,14 +256,14 @@ class EmployerRosterController extends Controller
     }
 
     /**
+     * @param  list<array{id: int, job: string|null, job_id: int|null, status: string|null, status_value: string|null, date: string|null, applications_url: string}>  $applications
      * @return array<string, mixed>
      */
-    private function entryPayload(EmployerRosterEntry $entry, int $accountId): array
+    private function entryPayload(EmployerRosterEntry $entry, int $accountId, array $applications = []): array
     {
         $seeker = $entry->jobSeeker;
         $application = $entry->jobApplication;
         $preview = $this->candidatePreview($seeker, $application);
-        $applications = $this->applicationsForAccount($seeker, $accountId);
 
         return [
             'id' => $entry->id,
@@ -217,6 +285,41 @@ class EmployerRosterController extends Controller
             'applications' => $applications,
             'candidate' => $preview,
         ];
+    }
+
+    /**
+     * @param  list<int>  $seekerIds
+     * @return array<int, list<array{id: int, job: string|null, job_id: int|null, status: string|null, status_value: string|null, date: string|null, applications_url: string}>>
+     */
+    private function applicationsForSeekers(int $accountId, array $seekerIds): array
+    {
+        if ($seekerIds === []) {
+            return [];
+        }
+
+        return JobApplication::query()
+            ->whereIn('job_seeker_id', $seekerIds)
+            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $accountId))
+            ->with('jobPost:id,title,employer_id')
+            ->latest()
+            ->get()
+            ->groupBy('job_seeker_id')
+            ->map(fn ($applications) => $applications
+                ->map(fn (JobApplication $application): array => [
+                    'id' => $application->id,
+                    'job' => $application->jobPost?->title,
+                    'job_id' => $application->job_post_id,
+                    'status' => $application->status?->label(),
+                    'status_value' => $application->status?->value,
+                    'date' => $application->created_at?->toDateString(),
+                    'applications_url' => route('employer.applications', [
+                        'job_id' => $application->job_post_id,
+                    ]),
+                ])
+                ->values()
+                ->all())
+            ->mapWithKeys(fn (array $apps, mixed $seekerId): array => [(int) $seekerId => $apps])
+            ->all();
     }
 
     /**
@@ -295,36 +398,6 @@ class EmployerRosterController extends Controller
                 ? ($base['resume_url'] ?? route('employer.applications.resume', $application))
                 : null,
         ];
-    }
-
-    /**
-     * @return list<array{id: int, job: string|null, job_id: int|null, status: string|null, status_value: string|null, date: string|null, applications_url: string}>
-     */
-    private function applicationsForAccount(?User $seeker, int $accountId): array
-    {
-        if (! $seeker instanceof User) {
-            return [];
-        }
-
-        return JobApplication::query()
-            ->where('job_seeker_id', $seeker->id)
-            ->whereHas('jobPost', fn ($query) => $query->where('employer_id', $accountId))
-            ->with('jobPost:id,title,employer_id')
-            ->latest()
-            ->get()
-            ->map(fn (JobApplication $application): array => [
-                'id' => $application->id,
-                'job' => $application->jobPost?->title,
-                'job_id' => $application->job_post_id,
-                'status' => $application->status?->label(),
-                'status_value' => $application->status?->value,
-                'date' => $application->created_at?->toDateString(),
-                'applications_url' => route('employer.applications', [
-                    'job_id' => $application->job_post_id,
-                ]),
-            ])
-            ->values()
-            ->all();
     }
 
     /**

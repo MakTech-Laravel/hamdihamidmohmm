@@ -34,6 +34,7 @@ import {
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
 import { cn } from '@/lib/utils';
 
 type ApplicationRow = AtsMatch & {
@@ -161,6 +162,7 @@ type Props = {
     };
     statuses: Array<{ value: string; label: string }>;
     roster_categories?: string[];
+    is_owner?: boolean;
 };
 
 const statusTone: Record<string, string> = {
@@ -283,6 +285,7 @@ export default function EmployerApplications({
     statuses,
     ats,
     roster_categories = [],
+    is_owner = false,
 }: Props) {
     const { t } = useLocale();
     const atsEnabled = ats?.enabled === true;
@@ -501,7 +504,11 @@ export default function EmployerApplications({
     };
 
     const removeFromRoster = (entryId: number): void => {
-        router.delete(`/employer/roster/${entryId}`, { preserveScroll: true });
+        const url = is_owner
+            ? `/employer/roster/${entryId}?purge_all=1`
+            : `/employer/roster/${entryId}`;
+
+        router.delete(url, { preserveScroll: true });
     };
 
     const toggleRoster = (
@@ -1264,10 +1271,13 @@ export default function EmployerApplications({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filtered.map((row) => (
+                                    {filtered.map((row, index) => (
                                         <tr
                                             key={row.id}
-                                            className="border-b border-[#f3e8f3] last:border-b-0"
+                                            className={cn(
+                                                'border-b border-[#f3e8f3] last:border-b-0',
+                                                employerListRowBg(index),
+                                            )}
                                         >
                                             <td className="px-4 py-[13px]">
                                                 <input

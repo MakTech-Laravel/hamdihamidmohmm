@@ -10,6 +10,8 @@ import {
 } from '@/components/mobile-list-card';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
+import { cn } from '@/lib/utils';
 
 type RoleRow = {
     id: number;
@@ -152,10 +154,13 @@ export default function EmployerRoles({ roles }: Props) {
                                     </td>
                                 </tr>
                             ) : (
-                                roles.map((role) => (
+                                roles.map((role, index) => (
                                     <tr
                                         key={role.id}
-                                        className="border-b border-[rgba(57,119,166,0.1)] last:border-0"
+                                        className={cn(
+                                            'border-b border-[rgba(57,119,166,0.1)] last:border-0',
+                                            employerListRowBg(index),
+                                        )}
                                     >
                                         <td className="px-4 py-3">
                                             <p className="font-medium text-[#050315]">

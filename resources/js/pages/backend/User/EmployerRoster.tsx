@@ -19,6 +19,8 @@ import {
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
+import { cn } from '@/lib/utils';
 
 function RosterAvatar({
     name,
@@ -140,6 +142,21 @@ export default function EmployerRoster({
             },
             { preserveState: true, replace: true },
         );
+    };
+
+    const removeEntry = (entryId: number): void => {
+        if (!window.confirm(t('employer.roster.remove_confirm'))) {
+            return;
+        }
+
+        const url =
+            is_owner && !panelMemberId
+                ? `/employer/roster/${entryId}?purge_all=1`
+                : `/employer/roster/${entryId}`;
+
+        router.delete(url, {
+            preserveScroll: true,
+        });
     };
 
     const headings = [
@@ -304,24 +321,8 @@ export default function EmployerRoster({
                                             key: 'remove',
                                             label: t('common.remove'),
                                             destructive: true,
-                                            onSelect: () => {
-                                                if (
-                                                    !window.confirm(
-                                                        t(
-                                                            'employer.roster.remove_confirm',
-                                                        ),
-                                                    )
-                                                ) {
-                                                    return;
-                                                }
-
-                                                router.delete(
-                                                    `/employer/roster/${entry.id}`,
-                                                    {
-                                                        preserveScroll: true,
-                                                    },
-                                                );
-                                            },
+                                            onSelect: () =>
+                                                removeEntry(entry.id),
                                         },
                                     ]}
                                 />
@@ -355,10 +356,13 @@ export default function EmployerRoster({
                                     </td>
                                 </tr>
                             ) : (
-                                entries.map((entry) => (
+                                entries.map((entry, index) => (
                                     <tr
                                         key={entry.id}
-                                        className="border-b border-[rgba(57,119,166,0.08)] last:border-0"
+                                        className={cn(
+                                            'border-b border-[rgba(57,119,166,0.08)] last:border-0',
+                                            employerListRowBg(index),
+                                        )}
                                     >
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-3">
@@ -438,23 +442,9 @@ export default function EmployerRoster({
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={() => {
-                                                        if (
-                                                            window.confirm(
-                                                                t(
-                                                                    'employer.roster.remove_confirm',
-                                                                ),
-                                                            )
-                                                        ) {
-                                                            router.delete(
-                                                                `/employer/roster/${entry.id}`,
-                                                                {
-                                                                    preserveScroll:
-                                                                        true,
-                                                                },
-                                                            );
-                                                        }
-                                                    }}
+                                                    onClick={() =>
+                                                        removeEntry(entry.id)
+                                                    }
                                                     className="text-xs font-semibold text-[#b91c1c]"
                                                 >
                                                     {t('common.remove')}
