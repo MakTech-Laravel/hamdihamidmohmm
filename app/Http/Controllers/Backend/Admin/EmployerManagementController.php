@@ -386,10 +386,10 @@ class EmployerManagementController extends Controller
         return [
             'id' => $employer->id,
             'company_name' => $employer->company_name ?: $employer->name,
-            'industry' => $employer->industry ?: '—',
+            'industry' => $employer->industry ?: 'â€”',
             'contact' => $employer->contact_name ?: $employer->name,
             'email' => UserAccountLifecycle::displayEmail($employer),
-            'phone' => $employer->phone ?: '—',
+            'phone' => $employer->phone ?: 'â€”',
             'verification' => $employer->verification_status?->label() ?? 'Pending',
             'verification_value' => $employer->verification_status?->value,
             'package' => $employer->package?->label() ?? 'Starter',
