@@ -7,6 +7,8 @@ use App\Enums\JobPostStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\RejectJobPostRequest;
 use App\Http\Requests\Backend\Admin\ToggleAdminJobApplyByLinkRequest;
+use App\Http\Requests\Backend\Admin\ToggleAdminJobEmployerManageApplyRequest;
+use App\Http\Requests\Backend\Admin\ToggleAdminJobHideOnSiteApplyRequest;
 use App\Http\Requests\Backend\Admin\UpdateAdminJobRequest;
 use App\Http\Requests\Backend\Admin\UploadAdminJobDescriptionAttachmentRequest;
 use App\Http\Requests\Backend\Admin\UploadAdminJobLogoRequest;
@@ -109,6 +111,8 @@ class JobManagementController extends Controller
                 'salary_range' => $jobPost->salary_range,
                 'career_portal_url' => $jobPost->career_portal_url,
                 'apply_by_link' => (bool) $jobPost->apply_by_link,
+                'hide_on_site_apply' => (bool) $jobPost->hide_on_site_apply,
+                'employer_can_manage_apply' => (bool) $jobPost->employer_can_manage_apply,
                 'rejection_reason' => $jobPost->rejection_reason,
                 'expires_at' => $jobPost->expires_at?->toDateString(),
                 'employer_email' => $jobPost->employer
@@ -144,6 +148,8 @@ class JobManagementController extends Controller
                 'salary_range' => $jobPost->salary_range,
                 'career_portal_url' => $jobPost->career_portal_url,
                 'apply_by_link' => (bool) $jobPost->apply_by_link,
+                'hide_on_site_apply' => (bool) $jobPost->hide_on_site_apply,
+                'employer_can_manage_apply' => (bool) $jobPost->employer_can_manage_apply,
                 'description' => $jobPost->description,
                 'requirements' => $jobPost->requirements,
                 'skills' => array_values(array_filter(
@@ -214,6 +220,28 @@ class JobManagementController extends Controller
         return back()->with('success', $jobPost->apply_by_link
             ? 'Apply by Link enabled for this job.'
             : 'Apply by Link disabled for this job.');
+    }
+
+    public function toggleHideOnSiteApply(ToggleAdminJobHideOnSiteApplyRequest $request, JobPost $jobPost): RedirectResponse
+    {
+        $jobPost->forceFill([
+            'hide_on_site_apply' => $request->boolean('hide_on_site_apply'),
+        ])->save();
+
+        return back()->with('success', $jobPost->hide_on_site_apply
+            ? 'Apply Now hidden for this job when Apply by Link is available.'
+            : 'Apply Now is visible for this job.');
+    }
+
+    public function toggleEmployerManageApply(ToggleAdminJobEmployerManageApplyRequest $request, JobPost $jobPost): RedirectResponse
+    {
+        $jobPost->forceFill([
+            'employer_can_manage_apply' => $request->boolean('employer_can_manage_apply'),
+        ])->save();
+
+        return back()->with('success', $jobPost->employer_can_manage_apply
+            ? 'Employer can manage apply settings for this job.'
+            : 'Employer apply settings are locked for this job.');
     }
 
     public function approve(Request $request, JobPost $jobPost): RedirectResponse

@@ -7,10 +7,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\StoreEmployerRosterEntryRequest;
 use App\Models\EmployerRosterEntry;
 use App\Models\JobApplication;
+use App\Models\JobPost;
 use App\Models\User;
 use App\Support\ApplicantDocumentDownloader;
 use App\Support\ApplicantProfilePreview;
 use App\Support\JobApplicationQuestions;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -30,6 +32,8 @@ class EmployerRosterController extends Controller
 
         $accountId = $user->employerAccountId();
         $category = $request->string('category')->toString();
+        $panelMemberId = $request->integer('panel_member_id');
+        $isOwner = $user->isEmployerOwner();
 
         $entriesQuery = EmployerRosterEntry::query()
             ->forAccount($accountId)
@@ -44,6 +48,17 @@ class EmployerRosterController extends Controller
             $entriesQuery->where('category', $category);
         }
 
+        $activePanelMemberId = null;
+
+        if (! $isOwner) {
+            $entriesQuery->where('added_by', $user->id);
+        } elseif ($panelMemberId > 0 && $this->isAccountRosterFilterUser($accountId, $panelMemberId)) {
+            $activePanelMemberId = $panelMemberId;
+            $entriesQuery->where('added_by', $panelMemberId);
+        } elseif ($panelMemberId > 0) {
+            $entriesQuery->whereRaw('0 = 1');
+        }
+
         $entries = $entriesQuery->get()->map(
             fn (EmployerRosterEntry $entry): array => $this->entryPayload($entry, $accountId),
         );
@@ -51,8 +66,11 @@ class EmployerRosterController extends Controller
         return Inertia::render('backend/User/EmployerRoster', [
             'entries' => $entries,
             'categories' => EmployerRosterEntry::categoriesForAccount($accountId),
+            'panel_members' => $isOwner ? $this->panelMembersForAccount($accountId) : [],
+            'is_owner' => $isOwner,
             'filters' => [
                 'category' => $category,
+                'panel_member_id' => $activePanelMemberId ?? '',
             ],
         ]);
     }
@@ -101,9 +119,72 @@ class EmployerRosterController extends Controller
             403,
         );
 
+        abort_unless(
+            $user->isEmployerOwner() || (int) $entry->added_by === $user->id,
+            403,
+        );
+
         $entry->delete();
 
         return back()->with('success', 'Candidate removed from roster.');
+    }
+
+    private function isAccountRosterFilterUser(int $accountId, int $userId): bool
+    {
+        if ($userId === $accountId) {
+            return User::query()
+                ->whereKey($userId)
+                ->whereNull('employer_owner_id')
+                ->exists();
+        }
+
+        return User::query()
+            ->whereKey($userId)
+            ->where('employer_owner_id', $accountId)
+            ->exists();
+    }
+
+    /**
+     * @return list<array{id: int, name: string}>
+     */
+    private function panelMembersForAccount(int $accountId): array
+    {
+        $panelMemberIds = JobPost::query()
+            ->where('employer_id', $accountId)
+            ->with('panelMembers:id')
+            ->get()
+            ->flatMap(fn (JobPost $job) => $job->panelMembers->pluck('id'))
+            ->unique()
+            ->values();
+
+        $rosterAdderIds = EmployerRosterEntry::query()
+            ->forAccount($accountId)
+            ->whereNotNull('added_by')
+            ->distinct()
+            ->pluck('added_by');
+
+        $ids = $panelMemberIds
+            ->merge($rosterAdderIds)
+            ->push($accountId)
+            ->unique()
+            ->filter(fn (mixed $id): bool => (int) $id > 0)
+            ->values()
+            ->all();
+
+        return User::query()
+            ->whereIn('id', $ids)
+            ->where(function (Builder $query) use ($accountId): void {
+                $query->whereKey($accountId)
+                    ->orWhere('employer_owner_id', $accountId);
+            })
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (User $member): array => [
+                'id' => $member->id,
+                'name' => $member->name,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

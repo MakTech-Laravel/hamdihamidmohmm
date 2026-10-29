@@ -89,9 +89,10 @@ class EmployerJobController extends Controller
         }
 
         $job = JobPost::query()->create([
-            ...$request->safe()->except(['publish', 'featured', 'logo', 'apply_by_link']),
+            ...$request->safe()->except(['publish', 'featured', 'logo', 'employer_can_manage_apply']),
             'employer_id' => $employer->employerAccountId(),
             'featured' => false,
+            'employer_can_manage_apply' => true,
             'status' => $publish ? JobPostStatus::Pending : JobPostStatus::Draft,
             'expires_at' => $request->date('expires_at') ?? ($publish ? now()->addDays(30) : null),
         ]);
@@ -127,6 +128,9 @@ class EmployerJobController extends Controller
                 'experience_level' => $job->experience_level,
                 'salary_range' => $job->salary_range,
                 'career_portal_url' => $job->career_portal_url,
+                'apply_by_link' => (bool) $job->apply_by_link,
+                'hide_on_site_apply' => (bool) $job->hide_on_site_apply,
+                'employer_can_manage_apply' => (bool) $job->employer_can_manage_apply,
                 'description' => $job->description,
                 'requirements' => $job->requirements,
                 'skills' => $job->skills ?? [],
@@ -158,8 +162,19 @@ class EmployerJobController extends Controller
             return back()->withErrors(['title' => $creditError]);
         }
 
+        $except = ['publish', 'featured', 'logo', 'employer_can_manage_apply'];
+
+        if (! $job->employer_can_manage_apply) {
+            $except = [
+                ...$except,
+                'career_portal_url',
+                'apply_by_link',
+                'hide_on_site_apply',
+            ];
+        }
+
         $job->update([
-            ...$request->safe()->except(['publish', 'featured', 'logo', 'apply_by_link']),
+            ...$request->safe()->except($except),
             'featured' => false,
         ]);
 
@@ -314,8 +329,8 @@ class EmployerJobController extends Controller
             'shortlisted' => (int) $job->shortlisted_applications_count,
             'panel_members_count' => (int) ($job->panel_members_count ?? 0),
             'views' => (int) $job->views,
-            'expires_at' => $job->expires_at?->toFormattedDateString(),
-            'created_at' => $job->created_at?->toFormattedDateString(),
+            'expires_at' => $job->expires_at?->format('j F Y'),
+            'created_at' => $job->created_at?->format('d-m-y'),
         ];
     }
 

@@ -27,6 +27,7 @@ import {
     type ReactNode,
 } from 'react';
 
+import { ToggleRow } from '@/components/admin-portal/toggle-row';
 import { AboutCompanyCard } from '@/components/employer/about-company-card';
 import { NativeSelect } from '@/components/ui/native-select';
 import {
@@ -56,6 +57,9 @@ type JobForm = {
     experience_level: string | null;
     salary_range: string | null;
     career_portal_url?: string | null;
+    apply_by_link?: boolean;
+    hide_on_site_apply?: boolean;
+    employer_can_manage_apply?: boolean;
     description: string | null;
     requirements: string | null;
     skills: string[];
@@ -173,6 +177,7 @@ export default function EmployerJobEditor({
     const jobLogoInputRef = useRef<HTMLInputElement>(null);
     const companyLogoInputRef = useRef<HTMLInputElement>(null);
     const shareMenuRef = useRef<HTMLDivElement>(null);
+    const canManageApply = job?.employer_can_manage_apply !== false;
     const form = useForm<{
         title: string;
         subtitle: string;
@@ -183,6 +188,8 @@ export default function EmployerJobEditor({
         experience_level: string;
         salary_range: string;
         career_portal_url: string;
+        apply_by_link: boolean;
+        hide_on_site_apply: boolean;
         description: string;
         requirements: string;
         skills: string;
@@ -200,6 +207,8 @@ export default function EmployerJobEditor({
         experience_level: job?.experience_level ?? '',
         salary_range: job?.salary_range ?? '',
         career_portal_url: job?.career_portal_url ?? '',
+        apply_by_link: Boolean(job?.apply_by_link),
+        hide_on_site_apply: Boolean(job?.hide_on_site_apply),
         description: job?.description ?? '',
         requirements: job?.requirements ?? '',
         skills: (job?.skills ?? []).join(', '),
@@ -932,32 +941,76 @@ export default function EmployerJobEditor({
                                 </Field>
                             </div>
 
-                            <Field
-                                label={t(
-                                    'employer.job_editor.field.career_portal_url',
-                                )}
-                                error={form.errors.career_portal_url}
-                            >
-                                <input
-                                    type="url"
-                                    value={form.data.career_portal_url}
-                                    onChange={(event) =>
+                            <div className="space-y-3">
+                                <Field
+                                    label={t(
+                                        'employer.job_editor.field.career_portal_url',
+                                    )}
+                                    error={form.errors.career_portal_url}
+                                >
+                                    <input
+                                        type="text"
+                                        value={form.data.career_portal_url}
+                                        disabled={!canManageApply}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'career_portal_url',
+                                                event.target.value,
+                                            )
+                                        }
+                                        placeholder={t(
+                                            'employer.job_editor.field.career_portal_url_placeholder',
+                                        )}
+                                        className={cn(
+                                            inputClass,
+                                            !canManageApply &&
+                                                'cursor-not-allowed bg-[#f8fafc] opacity-80',
+                                        )}
+                                    />
+                                    <p className="mt-1.5 text-xs text-[#94a3b8]">
+                                        {canManageApply
+                                            ? t(
+                                                  'employer.job_editor.field.career_portal_url_hint',
+                                              )
+                                            : t(
+                                                  'employer.job_editor.apply_settings_locked',
+                                              )}
+                                    </p>
+                                </Field>
+                                <ToggleRow
+                                    title={t(
+                                        'employer.job_editor.field.apply_by_link',
+                                    )}
+                                    description={t(
+                                        'employer.job_editor.field.apply_by_link_hint',
+                                    )}
+                                    checked={form.data.apply_by_link}
+                                    disabled={
+                                        !canManageApply || form.processing
+                                    }
+                                    onChange={(value) =>
+                                        form.setData('apply_by_link', value)
+                                    }
+                                />
+                                <ToggleRow
+                                    title={t(
+                                        'employer.job_editor.field.hide_on_site_apply',
+                                    )}
+                                    description={t(
+                                        'employer.job_editor.field.hide_on_site_apply_hint',
+                                    )}
+                                    checked={form.data.hide_on_site_apply}
+                                    disabled={
+                                        !canManageApply || form.processing
+                                    }
+                                    onChange={(value) =>
                                         form.setData(
-                                            'career_portal_url',
-                                            event.target.value,
+                                            'hide_on_site_apply',
+                                            value,
                                         )
                                     }
-                                    placeholder={t(
-                                        'employer.job_editor.field.career_portal_url_placeholder',
-                                    )}
-                                    className={inputClass}
                                 />
-                                <p className="mt-1.5 text-xs text-[#94a3b8]">
-                                    {t(
-                                        'employer.job_editor.field.career_portal_url_hint',
-                                    )}
-                                </p>
-                            </Field>
+                            </div>
 
                             <div className="rounded-2xl border border-[#e8d5e8] bg-[#f8faff] p-4">
                                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1738,7 +1791,8 @@ export default function EmployerJobEditor({
                                                     </p>
                                                 </div>
                                             ))}
-                                        {form.data.career_portal_url ? (
+                                        {form.data.apply_by_link &&
+                                        form.data.career_portal_url ? (
                                             <div className="flex items-start gap-3 text-sm">
                                                 <span className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-[#eef5ff] text-[#0057c8]">
                                                     <Link2 className="size-3.5" />
@@ -1746,25 +1800,61 @@ export default function EmployerJobEditor({
                                                 <p className="leading-6 text-[#334155]">
                                                     <span className="font-semibold text-[#0f172a]">
                                                         {t(
-                                                            'employer.job_editor.field.career_portal_url',
+                                                            form.data.career_portal_url.includes(
+                                                                '@',
+                                                            ) &&
+                                                                !/^https?:\/\//i.test(
+                                                                    form.data
+                                                                        .career_portal_url,
+                                                                )
+                                                                ? 'job_detail.apply_by_email'
+                                                                : 'job_detail.apply_by_link',
                                                         )}
                                                         :
                                                     </span>{' '}
                                                     <a
                                                         href={
+                                                            form.data.career_portal_url.includes(
+                                                                '@',
+                                                            ) &&
+                                                            !/^https?:\/\//i.test(
+                                                                form.data
+                                                                    .career_portal_url,
+                                                            )
+                                                                ? `mailto:${form.data.career_portal_url}`
+                                                                : form.data
+                                                                      .career_portal_url
+                                                        }
+                                                        {...(form.data.career_portal_url.includes(
+                                                            '@',
+                                                        ) &&
+                                                        !/^https?:\/\//i.test(
+                                                            form.data
+                                                                .career_portal_url,
+                                                        )
+                                                            ? {}
+                                                            : {
+                                                                  target: '_blank',
+                                                                  rel: 'noopener noreferrer',
+                                                              })}
+                                                        className="font-normal text-[#0057c8] underline-offset-2 hover:underline"
+                                                    >
+                                                        {
                                                             form.data
                                                                 .career_portal_url
                                                         }
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="font-normal text-[#0057c8] underline-offset-2 hover:underline"
-                                                    >
-                                                        {t(
-                                                            'job_detail.apply_by_link',
-                                                        )}
                                                     </a>
                                                 </p>
                                             </div>
+                                        ) : null}
+                                        {form.data.hide_on_site_apply &&
+                                        form.data.apply_by_link &&
+                                        form.data.career_portal_url ? (
+                                            <p className="text-xs text-[#64748b]">
+                                                {t(
+                                                    'employer.job_editor.preview.hide_apply_now',
+                                                )}
+                                            </p>
                                         ) : null}
                                     </div>
 

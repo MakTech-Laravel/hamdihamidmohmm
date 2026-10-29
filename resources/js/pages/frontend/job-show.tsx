@@ -45,6 +45,7 @@ type JobDetail = {
     salary?: string | null;
     career_portal_url?: string | null;
     apply_by_link?: boolean;
+    hide_on_site_apply?: boolean;
     posted?: string | null;
     deadline?: string | null;
     vacancies?: string | null;
@@ -140,6 +141,20 @@ export default function JobShow({
     const skills = job.skills ?? [];
     const applicationQuestions = job.application_questions ?? [];
     const benefits = job.benefits ?? [];
+    const showApplyByLink = Boolean(
+        !is_preview && job.apply_by_link && job.career_portal_url,
+    );
+    const showApplyNow = !(
+        Boolean(job.hide_on_site_apply) && showApplyByLink
+    );
+    const applyByLinkIsEmail = Boolean(
+        job.career_portal_url &&
+            job.career_portal_url.includes('@') &&
+            !/^https?:\/\//i.test(job.career_portal_url),
+    );
+    const applyByLinkHref = applyByLinkIsEmail
+        ? `mailto:${job.career_portal_url}`
+        : (job.career_portal_url ?? undefined);
 
     useEffect(() => {
         setSelectedCvId(defaultCvId);
@@ -473,37 +488,49 @@ export default function JobShow({
                                         <span className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#fff7ed] px-6 text-sm font-bold text-[#c2410c]">
                                             {t('job_detail.preview_notice')}
                                         </span>
-                                    ) : can_apply ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => setApplyModalOpen(true)}
-                                            className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#0057c8] px-6 text-sm font-bold text-white transition hover:bg-[#0046a3]"
-                                        >
-                                            {t('job_detail.apply_now')}
-                                        </button>
-                                    ) : applied ? (
-                                        <span className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#e2e8f0] px-6 text-sm font-bold text-[#64748b]">
-                                            {t('job_seeker.dashboard.applied')}
-                                        </span>
-                                    ) : (
-                                        <Link
-                                            href={applyHref}
-                                            className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#0057c8] px-6 text-sm font-bold text-white transition hover:bg-[#0046a3]"
-                                        >
-                                            {t('job_detail.apply_now')}
-                                        </Link>
-                                    )}
+                                    ) : showApplyNow ? (
+                                        can_apply ? (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setApplyModalOpen(true)
+                                                }
+                                                className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#0057c8] px-6 text-sm font-bold text-white transition hover:bg-[#0046a3]"
+                                            >
+                                                {t('job_detail.apply_now')}
+                                            </button>
+                                        ) : applied ? (
+                                            <span className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#e2e8f0] px-6 text-sm font-bold text-[#64748b]">
+                                                {t(
+                                                    'job_seeker.dashboard.applied',
+                                                )}
+                                            </span>
+                                        ) : (
+                                            <Link
+                                                href={applyHref}
+                                                className="inline-flex h-12 min-w-0 flex-1 items-center justify-center rounded-full bg-[#0057c8] px-6 text-sm font-bold text-white transition hover:bg-[#0046a3]"
+                                            >
+                                                {t('job_detail.apply_now')}
+                                            </Link>
+                                        )
+                                    ) : null}
 
-                                    {!is_preview &&
-                                    job.apply_by_link &&
-                                    job.career_portal_url ? (
+                                    {showApplyByLink && applyByLinkHref ? (
                                         <a
-                                            href={job.career_portal_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                            href={applyByLinkHref}
+                                            {...(applyByLinkIsEmail
+                                                ? {}
+                                                : {
+                                                      target: '_blank',
+                                                      rel: 'noopener noreferrer',
+                                                  })}
                                             className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-full border-2 border-[#0057c8] bg-white px-5 text-sm font-semibold text-[#0057c8] transition hover:bg-[#eef5ff]"
                                         >
-                                            {t('job_detail.apply_by_link')}
+                                            {t(
+                                                applyByLinkIsEmail
+                                                    ? 'job_detail.apply_by_email'
+                                                    : 'job_detail.apply_by_link',
+                                            )}
                                         </a>
                                     ) : null}
 

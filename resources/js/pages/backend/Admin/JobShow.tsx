@@ -55,6 +55,8 @@ type Job = {
     salary_range: string | null;
     career_portal_url?: string | null;
     apply_by_link?: boolean;
+    hide_on_site_apply?: boolean;
+    employer_can_manage_apply?: boolean;
     rejection_reason: string | null;
     expires_at: string | null;
     can_review: boolean;
@@ -169,9 +171,19 @@ export default function JobShow({ job }: { job: Job }) {
                         </p>
                         {job.career_portal_url ? (
                             <a
-                                href={job.career_portal_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                href={
+                                    job.career_portal_url.includes('@') &&
+                                    !/^https?:\/\//i.test(job.career_portal_url)
+                                        ? `mailto:${job.career_portal_url}`
+                                        : job.career_portal_url
+                                }
+                                {...(job.career_portal_url.includes('@') &&
+                                !/^https?:\/\//i.test(job.career_portal_url)
+                                    ? {}
+                                    : {
+                                          target: '_blank',
+                                          rel: 'noopener noreferrer',
+                                      })}
                                 className="break-all text-sm font-medium text-[#0057c8] underline-offset-2 hover:underline"
                             >
                                 {job.career_portal_url}
@@ -191,6 +203,36 @@ export default function JobShow({ job }: { job: Job }) {
                             router.post(
                                 `/admin/jobs/${job.id}/apply-by-link`,
                                 { apply_by_link: value },
+                                { preserveScroll: true },
+                            )
+                        }
+                    />
+                    <ToggleRow
+                        title={t('admin.jobs.fields.hide_on_site_apply')}
+                        description={t(
+                            'admin.jobs.fields.hide_on_site_apply_hint',
+                        )}
+                        checked={Boolean(job.hide_on_site_apply)}
+                        disabled={false}
+                        onChange={(value) =>
+                            router.post(
+                                `/admin/jobs/${job.id}/hide-on-site-apply`,
+                                { hide_on_site_apply: value },
+                                { preserveScroll: true },
+                            )
+                        }
+                    />
+                    <ToggleRow
+                        title={t('admin.jobs.fields.employer_can_manage_apply')}
+                        description={t(
+                            'admin.jobs.fields.employer_can_manage_apply_hint',
+                        )}
+                        checked={job.employer_can_manage_apply !== false}
+                        disabled={false}
+                        onChange={(value) =>
+                            router.post(
+                                `/admin/jobs/${job.id}/employer-manage-apply`,
+                                { employer_can_manage_apply: value },
                                 { preserveScroll: true },
                             )
                         }

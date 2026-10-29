@@ -144,6 +144,7 @@ class FrontendController extends Controller
                     ? $jobPost->career_portal_url
                     : null,
                 'apply_by_link' => (bool) $jobPost->apply_by_link,
+                'hide_on_site_apply' => (bool) $jobPost->hide_on_site_apply,
                 'posted' => $jobPost->created_at?->diffForHumans(),
                 'deadline' => $jobPost->expires_at?->toDateString(),
                 'description' => $jobPost->description,
