@@ -2,14 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Enums\JobApplicationStatus;
 use App\Enums\JobPostStatus;
 use App\Enums\JobSeekerAccountStatus;
 use App\Enums\JobSeekerResumeStatus;
 use App\Enums\UserRole;
+use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\JobSeekerCv;
 use App\Models\JobSeekerProfile;
 use App\Models\User;
+use App\Services\Ats\ApplicationScreeningService;
 use App\Support\JobSeekerResume;
 use App\Support\RoleAssigner;
 use Illuminate\Database\Seeder;
@@ -22,7 +25,7 @@ class AtsDemoSeeder extends Seeder
     public const JOB_SLUG = 'full-stack-laravel-react-developer-ats-demo';
 
     /**
-     * Seed a job seeker with a default PDF CV and a matching job, for manually testing ATS screening.
+     * Seed a job seeker with a default PDF CV, a matching job, an application, and a completed ATS score.
      */
     public function run(): void
     {
@@ -33,7 +36,11 @@ class AtsDemoSeeder extends Seeder
             $employer = User::query()->where('email', 'employer@dev.com')->firstOrFail();
         }
 
-        JobPost::query()->updateOrCreate(
+        if ($employer->ats_enabled === false) {
+            $employer->forceFill(['ats_enabled' => true])->save();
+        }
+
+        $job = JobPost::query()->updateOrCreate(
             ['slug' => self::JOB_SLUG],
             [
                 'employer_id' => $employer->id,
@@ -104,5 +111,20 @@ class AtsDemoSeeder extends Seeder
         );
 
         $seeker->syncDefaultResumeFromCvs();
+
+        $application = JobApplication::query()->updateOrCreate(
+            [
+                'job_post_id' => $job->id,
+                'job_seeker_id' => $seeker->id,
+            ],
+            [
+                'status' => JobApplicationStatus::Applied,
+                'resume_path' => $path,
+                'resume_original_name' => $filename,
+                'cover_letter' => 'I am excited to apply for the Full-Stack Laravel & React Developer role. My background in Laravel APIs, React/TypeScript, MySQL, and Docker aligns with your requirements.',
+            ],
+        );
+
+        app(ApplicationScreeningService::class)->screen($application, force: true);
     }
 }

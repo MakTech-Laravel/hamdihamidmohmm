@@ -5,7 +5,6 @@ use App\Enums\AtsScreeningStatus;
 use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\User;
-use App\Services\Ats\ApplicationScreeningService;
 use Database\Seeders\AtsDemoSeeder;
 use Illuminate\Support\Facades\Storage;
 
@@ -32,30 +31,30 @@ test('the ATS demo seeder can run twice without duplicating records', function (
     $this->seed(AtsDemoSeeder::class);
 
     $seeker = User::query()->where('email', AtsDemoSeeder::SEEKER_EMAIL)->sole();
+    $job = JobPost::query()->where('slug', AtsDemoSeeder::JOB_SLUG)->sole();
 
     expect($seeker->jobSeekerCvs()->count())->toBe(1)
-        ->and(JobPost::query()->where('slug', AtsDemoSeeder::JOB_SLUG)->count())->toBe(1);
+        ->and(JobPost::query()->where('slug', AtsDemoSeeder::JOB_SLUG)->count())->toBe(1)
+        ->and(JobApplication::query()->where('job_post_id', $job->id)->where('job_seeker_id', $seeker->id)->count())->toBe(1);
 });
 
-test('the demo CV is readable and scores as a strong match for the demo job', function () {
+test('the ATS demo seeder creates a scored application for the matching job and CV', function () {
     $this->seed(AtsDemoSeeder::class);
 
     $seeker = User::query()->where('email', AtsDemoSeeder::SEEKER_EMAIL)->firstOrFail();
     $job = JobPost::query()->where('slug', AtsDemoSeeder::JOB_SLUG)->firstOrFail();
     $cv = $seeker->jobSeekerCvs()->sole();
 
-    $application = JobApplication::factory()->create([
-        'job_post_id' => $job->id,
-        'job_seeker_id' => $seeker->id,
-        'resume_path' => $cv->file_path,
-        'resume_original_name' => $cv->original_name,
-    ]);
+    $application = JobApplication::query()
+        ->where('job_post_id', $job->id)
+        ->where('job_seeker_id', $seeker->id)
+        ->sole();
 
-    app(ApplicationScreeningService::class)->screen($application);
-    $application->refresh();
-
-    expect($application->ai_status)->toBe(AtsScreeningStatus::Completed)
+    expect($application->resume_path)->toBe($cv->file_path)
+        ->and($application->resume_original_name)->toBe($cv->original_name)
+        ->and($application->ai_status)->toBe(AtsScreeningStatus::Completed)
         ->and($application->ai_source)->toBe(AtsScoreSource::Rules)
+        ->and($application->ai_score)->toBeGreaterThanOrEqual(30)
         ->and($application->ai_score)->toBeGreaterThanOrEqual(75)
         ->and($application->ai_breakdown['matched_skills'])->toContain('Laravel', 'React', 'Docker');
 });
