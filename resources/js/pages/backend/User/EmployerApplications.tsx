@@ -31,9 +31,14 @@ import {
     MobileListEmpty,
     MobileListStack,
 } from '@/components/mobile-list-card';
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
 import { cn } from '@/lib/utils';
 
 type ApplicationRow = AtsMatch & {
@@ -127,7 +132,7 @@ type ExperienceOption = {
 };
 
 type Props = {
-    applications: ApplicationRow[];
+    applications: PortalPaginator<ApplicationRow>;
     filters: {
         status: string;
         search: string;
@@ -161,6 +166,7 @@ type Props = {
     };
     statuses: Array<{ value: string; label: string }>;
     roster_categories?: string[];
+    is_owner?: boolean;
 };
 
 const statusTone: Record<string, string> = {
@@ -283,14 +289,14 @@ export default function EmployerApplications({
     statuses,
     ats,
     roster_categories = [],
+    is_owner = false,
 }: Props) {
     const { t } = useLocale();
+    const rows = applications.data;
     const atsEnabled = ats?.enabled === true;
     const showAtsScores =
         atsEnabled ||
-        applications.some(
-            (row) => row.ai_score != null || row.ai_status != null,
-        );
+        rows.some((row) => row.ai_score != null || row.ai_status != null);
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(
         filters.status || (filters.shortlist ? 'shortlisted' : ''),
@@ -307,9 +313,7 @@ export default function EmployerApplications({
         number | null
     >(null);
     const pageTitle = t('employer.applications.title');
-    const rosterCandidate = applications.find(
-        (row) => row.id === rosterApplicationId,
-    );
+    const rosterCandidate = rows.find((row) => row.id === rosterApplicationId);
     const [aiSort, setAiSort] = useState(filters.ai_sort ?? '');
     const [aiBand, setAiBand] = useState(filters.ai_band ?? '');
     const { start: startPolling, stop: stopPolling } = usePoll(
@@ -327,42 +331,51 @@ export default function EmployerApplications({
 
         return () => stopPolling();
     }, [atsEnabled, ats?.has_pending, startPolling, stopPolling]);
+
+    useEffect(() => {
+        setSearch(filters.search ?? '');
+        setStatus(filters.status || (filters.shortlist ? 'shortlisted' : ''));
+        setExperience(filters.experience ?? '');
+        setGender(filters.gender ?? '');
+        setSort(filters.sort || 'experience');
+        setDirection(filters.direction || 'desc');
+        setAiSort(filters.ai_sort ?? '');
+        setAiBand(filters.ai_band ?? '');
+    }, [filters]);
+
+    useEffect(() => {
+        setSelectedIds([]);
+    }, [
+        applications.current_page,
+        filters.status,
+        filters.search,
+        filters.experience,
+        filters.gender,
+        filters.sort,
+        filters.direction,
+        filters.ai_sort,
+        filters.ai_band,
+        filters.job_id,
+    ]);
+
     const [viewingId, setViewingId] = useState<number | null>(
         () =>
-            filters.job_id && applications.length === 1
-                ? applications[0].id
-                : null,
+            filters.job_id && rows.length === 1 ? rows[0].id : null,
     );
 
     useEffect(() => {
-        if (filters.job_id && applications.length === 1) {
-            setViewingId(applications[0].id);
+        if (filters.job_id && rows.length === 1) {
+            setViewingId(rows[0].id);
         }
-    }, [applications, filters.job_id]);
+    }, [rows, filters.job_id]);
 
     const viewing = useMemo(
         () =>
             viewingId === null
                 ? null
-                : (applications.find((row) => row.id === viewingId) ?? null),
-        [applications, viewingId],
+                : (rows.find((row) => row.id === viewingId) ?? null),
+        [rows, viewingId],
     );
-
-    const filtered = useMemo(() => {
-        const query = search.toLowerCase();
-
-        return applications.filter((row) => {
-            const matchesQuery =
-                query === '' ||
-                (row.name ?? '').toLowerCase().includes(query) ||
-                (row.email ?? '').toLowerCase().includes(query) ||
-                (row.job ?? '').toLowerCase().includes(query);
-
-            const matchesStatus = status === '' || row.status_value === status;
-
-            return matchesQuery && matchesStatus;
-        });
-    }, [applications, search, status]);
 
     const applyFilters = (overrides: {
         status?: string;
@@ -394,6 +407,22 @@ export default function EmployerApplications({
             { preserveState: true, preserveScroll: true },
         );
     };
+
+    useEffect(() => {
+        const handle = window.setTimeout(() => {
+            const next = search.trim();
+            const current = (filters.search ?? '').trim();
+
+            if (next === current) {
+                return;
+            }
+
+            applyFilters({ search: next });
+        }, 300);
+
+        return () => window.clearTimeout(handle);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce search only
+    }, [search]);
 
     const setAiSortFilter = (value: string): void => {
         setAiSort(value);
@@ -458,11 +487,11 @@ export default function EmployerApplications({
     };
 
     const allSelected =
-        filtered.length > 0 &&
-        filtered.every((row) => selectedIds.includes(row.id));
+        rows.length > 0 &&
+        rows.every((row) => selectedIds.includes(row.id));
 
     const toggleAll = (): void => {
-        setSelectedIds(allSelected ? [] : filtered.map((row) => row.id));
+        setSelectedIds(allSelected ? [] : rows.map((row) => row.id));
     };
 
     const toggleRow = (rowId: number): void => {
@@ -501,7 +530,11 @@ export default function EmployerApplications({
     };
 
     const removeFromRoster = (entryId: number): void => {
-        router.delete(`/employer/roster/${entryId}`, { preserveScroll: true });
+        const url = is_owner
+            ? `/employer/roster/${entryId}?purge_all=1`
+            : `/employer/roster/${entryId}`;
+
+        router.delete(url, { preserveScroll: true });
     };
 
     const toggleRoster = (
@@ -1039,7 +1072,7 @@ export default function EmployerApplications({
                             </div>
                         )}
 
-                        {filtered.length === 0 ? (
+                        {rows.length === 0 ? (
                             <MobileListEmpty>
                                 {filters.job_title
                                     ? t(
@@ -1050,7 +1083,7 @@ export default function EmployerApplications({
                             </MobileListEmpty>
                         ) : (
                             <MobileListStack className="p-3">
-                                {filtered.map((row) => (
+                                {rows.map((row) => (
                                     <MobileListCard key={row.id}>
                                         <div className="mb-2 flex items-start gap-2">
                                             <input
@@ -1264,10 +1297,13 @@ export default function EmployerApplications({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filtered.map((row) => (
+                                    {rows.map((row, index) => (
                                         <tr
                                             key={row.id}
-                                            className="border-b border-[#f3e8f3] last:border-b-0"
+                                            className={cn(
+                                                'border-b border-[#f3e8f3] last:border-b-0',
+                                                employerListRowBg(index),
+                                            )}
                                         >
                                             <td className="px-4 py-[13px]">
                                                 <input
@@ -1294,7 +1330,7 @@ export default function EmployerApplications({
                                                 </div>
                                             </td>
                                             {showAtsScores ? (
-                                                <td className="px-4 py-[13px]">
+                                                <td className="whitespace-nowrap px-4 py-[13px]">
                                                     <AtsScoreBadge
                                                         match={row}
                                                         thresholds={
@@ -1432,7 +1468,7 @@ export default function EmployerApplications({
                                     ))}
                                 </tbody>
                             </table>
-                            {filtered.length === 0 && (
+                            {rows.length === 0 && (
                                 <p className="hidden px-5 py-10 text-center text-sm text-[#99a1af] md:block">
                                     {filters.job_title
                                         ? t(
@@ -1442,6 +1478,16 @@ export default function EmployerApplications({
                                         : t('employer.applications.empty_yet')}
                                 </p>
                             )}
+                        </div>
+                        <div className="px-5 pb-4 pt-1">
+                            <PortalPagination
+                                showingLabel={t('common.showing_range', {
+                                    from: applications.from ?? 0,
+                                    to: applications.to ?? 0,
+                                    total: applications.total,
+                                })}
+                                links={applications.links}
+                            />
                         </div>
                     </div>
                 </div>

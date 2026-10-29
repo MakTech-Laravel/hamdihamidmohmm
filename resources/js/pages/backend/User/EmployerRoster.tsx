@@ -16,9 +16,15 @@ import {
     MobileListEmpty,
     MobileListStack,
 } from '@/components/mobile-list-card';
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
+import { cn } from '@/lib/utils';
 
 function RosterAvatar({
     name,
@@ -69,21 +75,35 @@ type RosterEntry = {
     candidate: RosterCandidatePreview | null;
 };
 
+type PanelMemberOption = {
+    id: number;
+    name: string;
+};
+
 type Props = {
-    entries: RosterEntry[];
+    entries: PortalPaginator<RosterEntry>;
     categories: string[];
+    panel_members?: PanelMemberOption[];
+    is_owner?: boolean;
     filters: {
         category?: string;
+        panel_member_id?: number | string;
     };
 };
 
 export default function EmployerRoster({
-    entries,
+    entries: entriesPage,
     categories,
+    panel_members = [],
+    is_owner = false,
     filters,
 }: Props) {
     const { t } = useLocale();
+    const entries = entriesPage.data;
     const [category, setCategory] = useState(filters.category ?? '');
+    const [panelMemberId, setPanelMemberId] = useState(
+        filters.panel_member_id ? String(filters.panel_member_id) : '',
+    );
     const [viewingId, setViewingId] = useState<number | null>(null);
 
     const viewing = useMemo(
@@ -103,13 +123,45 @@ export default function EmployerRoster({
           }
         : null;
 
-    const applyFilter = (nextCategory: string): void => {
+    const applyFilters = (next: {
+        category?: string;
+        panel_member_id?: string;
+    }): void => {
+        const nextCategory =
+            next.category !== undefined ? next.category : category;
+        const nextPanel =
+            next.panel_member_id !== undefined
+                ? next.panel_member_id
+                : panelMemberId;
+
         setCategory(nextCategory);
+        setPanelMemberId(nextPanel);
+
         router.get(
             '/employer/roster',
-            nextCategory ? { category: nextCategory } : {},
+            {
+                ...(nextCategory ? { category: nextCategory } : {}),
+                ...(is_owner && nextPanel
+                    ? { panel_member_id: nextPanel }
+                    : {}),
+            },
             { preserveState: true, replace: true },
         );
+    };
+
+    const removeEntry = (entryId: number): void => {
+        if (!window.confirm(t('employer.roster.remove_confirm'))) {
+            return;
+        }
+
+        const url =
+            is_owner && !panelMemberId
+                ? `/employer/roster/${entryId}?purge_all=1`
+                : `/employer/roster/${entryId}`;
+
+        router.delete(url, {
+            preserveScroll: true,
+        });
     };
 
     const headings = [
@@ -139,29 +191,64 @@ export default function EmployerRoster({
                             {t('employer.roster.subtitle')}
                         </p>
                     </div>
-                    {categories.length > 0 ? (
-                        <label className="block text-sm">
-                            <span className="mb-1 block font-medium text-[#050315]">
-                                {t('employer.roster.filter.category')}
-                            </span>
-                            <NativeSelect
-                                value={category}
-                                onChange={(event) =>
-                                    applyFilter(event.target.value)
-                                }
-                                className="h-11 min-w-[180px] rounded-xl border border-[#dbeafe] px-3"
-                            >
-                                <option value="">
-                                    {t('employer.roster.filter.all')}
-                                </option>
-                                {categories.map((item) => (
-                                    <option key={item} value={item}>
-                                        {item}
+                    <div className="flex flex-wrap items-end gap-3">
+                        {categories.length > 0 ? (
+                            <label className="block text-sm">
+                                <span className="mb-1 block font-medium text-[#050315]">
+                                    {t('employer.roster.filter.category')}
+                                </span>
+                                <NativeSelect
+                                    value={category}
+                                    onChange={(event) =>
+                                        applyFilters({
+                                            category: event.target.value,
+                                        })
+                                    }
+                                    className="h-11 min-w-[180px] rounded-xl border border-[#dbeafe] px-3"
+                                >
+                                    <option value="">
+                                        {t('employer.roster.filter.all')}
                                     </option>
-                                ))}
-                            </NativeSelect>
-                        </label>
-                    ) : null}
+                                    {categories.map((item) => (
+                                        <option key={item} value={item}>
+                                            {item}
+                                        </option>
+                                    ))}
+                                </NativeSelect>
+                            </label>
+                        ) : null}
+                        {is_owner && panel_members.length > 0 ? (
+                            <label className="block text-sm">
+                                <span className="mb-1 block font-medium text-[#050315]">
+                                    {t('employer.roster.filter.panel_member')}
+                                </span>
+                                <NativeSelect
+                                    value={panelMemberId}
+                                    onChange={(event) =>
+                                        applyFilters({
+                                            panel_member_id:
+                                                event.target.value,
+                                        })
+                                    }
+                                    className="h-11 min-w-[200px] rounded-xl border border-[#dbeafe] px-3"
+                                >
+                                    <option value="">
+                                        {t(
+                                            'employer.roster.filter.all_panel_members',
+                                        )}
+                                    </option>
+                                    {panel_members.map((member) => (
+                                        <option
+                                            key={member.id}
+                                            value={String(member.id)}
+                                        >
+                                            {member.name}
+                                        </option>
+                                    ))}
+                                </NativeSelect>
+                            </label>
+                        ) : null}
+                    </div>
                 </div>
 
                 {entries.length === 0 ? (
@@ -239,24 +326,8 @@ export default function EmployerRoster({
                                             key: 'remove',
                                             label: t('common.remove'),
                                             destructive: true,
-                                            onSelect: () => {
-                                                if (
-                                                    !window.confirm(
-                                                        t(
-                                                            'employer.roster.remove_confirm',
-                                                        ),
-                                                    )
-                                                ) {
-                                                    return;
-                                                }
-
-                                                router.delete(
-                                                    `/employer/roster/${entry.id}`,
-                                                    {
-                                                        preserveScroll: true,
-                                                    },
-                                                );
-                                            },
+                                            onSelect: () =>
+                                                removeEntry(entry.id),
                                         },
                                     ]}
                                 />
@@ -290,10 +361,13 @@ export default function EmployerRoster({
                                     </td>
                                 </tr>
                             ) : (
-                                entries.map((entry) => (
+                                entries.map((entry, index) => (
                                     <tr
                                         key={entry.id}
-                                        className="border-b border-[rgba(57,119,166,0.08)] last:border-0"
+                                        className={cn(
+                                            'border-b border-[rgba(57,119,166,0.08)] last:border-0',
+                                            employerListRowBg(index),
+                                        )}
                                     >
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-3">
@@ -373,23 +447,9 @@ export default function EmployerRoster({
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={() => {
-                                                        if (
-                                                            window.confirm(
-                                                                t(
-                                                                    'employer.roster.remove_confirm',
-                                                                ),
-                                                            )
-                                                        ) {
-                                                            router.delete(
-                                                                `/employer/roster/${entry.id}`,
-                                                                {
-                                                                    preserveScroll:
-                                                                        true,
-                                                                },
-                                                            );
-                                                        }
-                                                    }}
+                                                    onClick={() =>
+                                                        removeEntry(entry.id)
+                                                    }
                                                     className="text-xs font-semibold text-[#b91c1c]"
                                                 >
                                                     {t('common.remove')}
@@ -402,6 +462,15 @@ export default function EmployerRoster({
                         </tbody>
                     </table>
                 </div>
+
+                <PortalPagination
+                    showingLabel={t('common.showing_range', {
+                        from: entriesPage.from ?? 0,
+                        to: entriesPage.to ?? 0,
+                        total: entriesPage.total,
+                    })}
+                    links={entriesPage.links}
+                />
             </div>
 
             <RosterCandidateDrawer

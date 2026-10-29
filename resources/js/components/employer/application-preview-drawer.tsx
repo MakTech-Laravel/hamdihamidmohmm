@@ -133,7 +133,7 @@ export function ApplicationPreviewDrawer({
                 side="right"
                 showCloseButton={false}
                 overlayClassName="bg-[rgba(5,3,21,0.4)]"
-                className="w-[400px] gap-0 border-0 p-0 shadow-[-4px_0px_24px_0px_rgba(5,3,21,0.15)] sm:max-w-[400px]"
+                className="w-full max-w-full gap-0 border-0 p-0 shadow-[-4px_0px_24px_0px_rgba(5,3,21,0.15)] sm:w-[33.333vw] sm:max-w-[33.333vw]"
             >
                 {preview ? (
                     <DrawerBody
@@ -146,7 +146,7 @@ export function ApplicationPreviewDrawer({
                         onRemoveFromRoster={onRemoveFromRoster}
                     />
                 ) : (
-                    <div className="p-5 text-sm text-[#3977a6]">
+                    <div className="p-5 text-base text-[#3977a6]">
                         {t('employer.drawer.no_preview')}
                     </div>
                 )}
@@ -184,25 +184,25 @@ function DrawerBody({
                         src={preview.avatar_url ?? undefined}
                         alt={preview.name}
                         onError={() => setAvatarFailed(true)}
-                        className="size-[52px] shrink-0 rounded-full border border-white object-cover object-top shadow-sm"
+                        className="size-[56px] shrink-0 rounded-full border border-white object-cover object-top shadow-sm"
                     />
                 ) : (
-                    <div className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-base font-extrabold text-white">
+                    <div className="flex size-[56px] shrink-0 items-center justify-center rounded-full bg-[#0057c8] text-lg font-extrabold text-white">
                         {getInitials(preview.name) || '—'}
                     </div>
                 )}
                 <div className="min-w-0 flex-1">
-                    <SheetTitle className="text-base font-extrabold text-[#050315]">
+                    <SheetTitle className="text-lg font-extrabold text-[#050315]">
                         {preview.name}
                     </SheetTitle>
-                    <SheetDescription className="pt-0.5 text-[12.8px] leading-[19.2px] text-[#3977a6]">
+                    <SheetDescription className="pt-0.5 text-[14.5px] leading-[21px] text-[#3977a6]">
                         {preview.title}
                     </SheetDescription>
-                    <span className="mt-1 inline-flex rounded-full bg-[#fdf4ff] px-2.5 py-0.5 text-[11.52px] font-bold text-[#7e22ce]">
+                    <span className="mt-1 inline-flex rounded-full bg-[#fdf4ff] px-2.5 py-0.5 text-[13px] font-bold text-[#7e22ce]">
                         {preview.status}
                     </span>
                     {preview.status_changed_by ? (
-                        <p className="mt-1 text-[11px] text-[#64748b]">
+                        <p className="mt-1 text-[12.5px] text-[#64748b]">
                             {t('employer.applications.changed_by', {
                                 name: preview.status_changed_by,
                             })}
@@ -262,7 +262,7 @@ function DrawerBody({
                             {preview.availability.map((item) => (
                                 <span
                                     key={item}
-                                    className="rounded-full bg-[#dbeafe] px-2.5 py-0.5 text-[11px] font-semibold text-[#1d4ed8]"
+                                    className="rounded-full bg-[#dbeafe] px-2.5 py-0.5 text-[12.5px] font-semibold text-[#1d4ed8]"
                                 >
                                     {item}
                                 </span>
@@ -273,7 +273,7 @@ function DrawerBody({
 
                 {preview.bio ? (
                     <Section title={t('employer.drawer.about')}>
-                        <p className="text-[13.6px] leading-5 text-[#050315]">
+                        <p className="text-[15px] leading-6 text-[#050315]">
                             {preview.bio}
                         </p>
                     </Section>
@@ -308,7 +308,7 @@ function DrawerBody({
                             preview.skills.map((skill) => (
                                 <span
                                     key={skill}
-                                    className="rounded-full bg-[#eeeffe] px-[9.6px] py-[3.2px] text-xs font-semibold text-[#0057c8]"
+                                    className="rounded-full bg-[#eeeffe] px-[9.6px] py-[3.2px] text-sm font-semibold text-[#0057c8]"
                                 >
                                     {skill}
                                 </span>
@@ -338,11 +338,11 @@ function DrawerBody({
                                     key={language.name}
                                     className="flex items-center justify-between gap-2 rounded-lg border border-[#f1f5f9] px-3 py-2"
                                 >
-                                    <span className="text-[13.6px] font-semibold text-[#050315]">
+                                    <span className="text-[15px] font-semibold text-[#050315]">
                                         {language.name}
                                     </span>
                                     {language.level ? (
-                                        <span className="rounded-full bg-[#dcfce7] px-2 py-0.5 text-[11px] font-semibold text-[#15803d]">
+                                        <span className="rounded-full bg-[#dcfce7] px-2 py-0.5 text-[12.5px] font-semibold text-[#15803d]">
                                             {language.level}
                                         </span>
                                     ) : null}
@@ -361,10 +361,10 @@ function DrawerBody({
                         <div className="space-y-3">
                             {preview.certifications.map((item) => (
                                 <div key={item.name} className="space-y-1.5">
-                                    <p className="text-[13.6px] font-semibold text-[#050315]">
+                                    <p className="text-[15px] font-semibold text-[#050315]">
                                         {item.name}
                                     </p>
-                                    <p className="text-[12px] text-[#3977a6]">
+                                    <p className="text-[13.5px] text-[#3977a6]">
                                         {[item.issuer, item.date]
                                             .filter(Boolean)
                                             .join(' · ') || '—'}
@@ -375,7 +375,7 @@ function DrawerBody({
                                                 key={`${item.name}-${file.file_name}`}
                                                 href={file.download_url}
                                                 download
-                                                className="inline-flex items-center gap-1.5 text-[12.8px] font-semibold text-[#0057c8]"
+                                                className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#0057c8]"
                                             >
                                                 <Download
                                                     className="size-3.5"
@@ -400,10 +400,10 @@ function DrawerBody({
                         <div className="space-y-3">
                             {(preview.references ?? []).map((item) => (
                                 <div key={item.name} className="space-y-1">
-                                    <p className="text-[13.6px] font-semibold text-[#050315]">
+                                    <p className="text-[15px] font-semibold text-[#050315]">
                                         {item.name}
                                     </p>
-                                    <p className="text-[12px] text-[#3977a6]">
+                                    <p className="text-[13.5px] text-[#3977a6]">
                                         {[item.relationship, item.address]
                                             .filter(Boolean)
                                             .join(' · ') || '—'}
@@ -416,7 +416,7 @@ function DrawerBody({
 
                 {preview.cover_letter ? (
                     <Section title={t('employer.drawer.cover_letter')}>
-                        <p className="whitespace-pre-wrap text-[13.6px] leading-5 text-[#050315]">
+                        <p className="whitespace-pre-wrap text-[15px] leading-6 text-[#050315]">
                             {preview.cover_letter}
                         </p>
                     </Section>
@@ -427,10 +427,10 @@ function DrawerBody({
                         <div className="space-y-3">
                             {(preview.question_answers ?? []).map((item) => (
                                 <div key={item.id}>
-                                    <p className="text-xs font-semibold text-[#64748b]">
+                                    <p className="text-sm font-semibold text-[#64748b]">
                                         {item.prompt}
                                     </p>
-                                    <p className="mt-1 whitespace-pre-wrap text-[13.6px] leading-5 text-[#050315]">
+                                    <p className="mt-1 whitespace-pre-wrap text-[15px] leading-6 text-[#050315]">
                                         {item.answer || '—'}
                                     </p>
                                 </div>
@@ -500,7 +500,7 @@ function DrawerBody({
                             {preview.status_history?.map((entry, index) => (
                                 <li
                                     key={`${entry.status}-${entry.at}-${index}`}
-                                    className="rounded-lg bg-[#f8fafc] px-3 py-2 text-sm text-[#334155]"
+                                    className="rounded-lg bg-[#f8fafc] px-3 py-2 text-[15px] text-[#334155]"
                                 >
                                     <span className="font-semibold">
                                         {entry.status}
@@ -513,7 +513,7 @@ function DrawerBody({
                                         })}
                                     </span>
                                     {entry.at ? (
-                                        <span className="mt-0.5 block text-xs text-[#94a3b8]">
+                                        <span className="mt-0.5 block text-sm text-[#94a3b8]">
                                             {entry.at}
                                         </span>
                                     ) : null}
@@ -542,7 +542,7 @@ function DrawerBody({
                         </NativeSelect>
                         <button
                             type="button"
-                            className="inline-flex h-[38px] items-center justify-center gap-1.5 rounded-[8px] bg-[#0057c8] px-3 text-[13.6px] font-semibold text-white hover:bg-[#0046a3]"
+                            className="inline-flex h-[40px] items-center justify-center gap-1.5 rounded-[8px] bg-[#0057c8] px-3 text-[14.5px] font-semibold text-white hover:bg-[#0046a3]"
                             onClick={() =>
                                 onUpdateStatus(preview.id, selectedStatus)
                             }
@@ -558,7 +558,7 @@ function DrawerBody({
                         <button
                             type="button"
                             className={cn(
-                                'inline-flex h-[38px] w-full items-center justify-center rounded-[8px] border px-3 text-[13.6px] font-semibold',
+                                'inline-flex h-[40px] w-full items-center justify-center rounded-[8px] border px-3 text-[14.5px] font-semibold',
                                 preview.on_roster
                                     ? 'border-[#bbf7d0] bg-[#f0fdf4] text-[#15803d]'
                                     : 'border-[#0057c8] bg-white text-[#0057c8] hover:bg-[#f8faff]',
@@ -581,7 +581,7 @@ function DrawerBody({
                                 ? t('employer.roster.out')
                                 : t('employer.roster.in')}
                         </button>
-                        <p className="mt-2 text-[12px] leading-[18px] text-[#64748b]">
+                        <p className="mt-2 text-[13.5px] leading-[20px] text-[#64748b]">
                             {t('employer.roster.not_shortlist_hint')}
                         </p>
                     </Section>
@@ -592,7 +592,7 @@ function DrawerBody({
                 {mailto ? (
                     <a
                         href={`${mailto}?subject=${encodeURIComponent(t('employer.drawer.interview_subject'))}`}
-                        className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] text-[13.6px] font-semibold text-[#0057c8]"
+                        className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] text-[14.5px] font-semibold text-[#0057c8]"
                     >
                         <CalendarDays className="size-3.5" />
                         {t('employer.drawer.schedule_interview')}
@@ -601,7 +601,7 @@ function DrawerBody({
                     <button
                         type="button"
                         disabled
-                        className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] text-[13.6px] font-semibold text-[#0057c8] opacity-50"
+                        className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] text-[14.5px] font-semibold text-[#0057c8] opacity-50"
                     >
                         <CalendarDays className="size-3.5" />
                         {t('employer.drawer.schedule_interview')}
@@ -610,7 +610,7 @@ function DrawerBody({
                 {mailto ? (
                     <a
                         href={mailto}
-                        className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#0057c8] text-[13.6px] font-semibold text-white"
+                        className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#0057c8] text-[14.5px] font-semibold text-white"
                     >
                         <Mail className="size-3.5" />
                         {t('employer.drawer.send_message')}
@@ -619,7 +619,7 @@ function DrawerBody({
                     <button
                         type="button"
                         disabled
-                        className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#0057c8] text-[13.6px] font-semibold text-white opacity-50"
+                        className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#0057c8] text-[14.5px] font-semibold text-white opacity-50"
                     >
                         <Mail className="size-3.5" />
                         {t('employer.drawer.send_message')}
@@ -647,16 +647,16 @@ function DocumentDownload({
 
     return (
         <div className="rounded-lg border border-[#e2e8f0] px-3 py-2.5">
-            <p className="text-[11px] font-semibold text-[#64748b]">{label}</p>
+            <p className="text-[12.5px] font-semibold text-[#64748b]">{label}</p>
             {fileName ? (
-                <p className="truncate pt-0.5 text-[12.8px] text-[#3977a6]">
+                <p className="truncate pt-0.5 text-[14px] text-[#3977a6]">
                     {fileName}
                 </p>
             ) : null}
             <a
                 href={url}
                 download
-                className="mt-2 inline-flex h-[34px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3 text-[12.8px] font-semibold text-white hover:bg-[#0046a3]"
+                className="mt-2 inline-flex h-[36px] items-center justify-center gap-2 rounded-[8px] border border-[#0057c8] bg-[#0057c8] px-3 text-[14px] font-semibold text-white hover:bg-[#0046a3]"
             >
                 <Download className="size-3.5" strokeWidth={2} />
                 {buttonLabel}
@@ -674,7 +674,7 @@ function Section({
 }) {
     return (
         <section>
-            <h3 className="pb-2 text-[12.8px] font-bold tracking-[0.512px] text-[#3977a6] uppercase">
+            <h3 className="pb-2 text-[14px] font-bold tracking-[0.512px] text-[#3977a6] uppercase">
                 {title}
             </h3>
             {children}
@@ -683,7 +683,7 @@ function Section({
 }
 
 function EmptyText({ children }: { children: ReactNode }) {
-    return <p className="text-[13.6px] text-[#3977a6]">{children}</p>;
+    return <p className="text-[15px] text-[#3977a6]">{children}</p>;
 }
 
 function DetailGrid({
@@ -702,10 +702,10 @@ function DetailGrid({
         <div className="grid grid-cols-2 gap-3">
             {visible.map(([label, value]) => (
                 <div key={label}>
-                    <p className="text-[11px] font-semibold text-[#64748b]">
+                    <p className="text-[12.5px] font-semibold text-[#64748b]">
                         {label}
                     </p>
-                    <p className="pt-0.5 text-[13.6px] font-medium text-[#050315]">
+                    <p className="pt-0.5 text-[15px] font-medium text-[#050315]">
                         {value}
                     </p>
                 </div>
@@ -733,21 +733,21 @@ function EntriesSection({
                 <ol className="space-y-3">
                     {entries.map((entry, index) => (
                         <li key={`${entry.title}-${index}`}>
-                            <p className="text-[13.6px] font-semibold text-[#050315]">
+                            <p className="text-[15px] font-semibold text-[#050315]">
                                 {entry.title}
                             </p>
                             {entry.subtitle ? (
-                                <p className="text-[12.8px] text-[#3977a6]">
+                                <p className="text-[14px] text-[#3977a6]">
                                     {entry.subtitle}
                                 </p>
                             ) : null}
                             {entry.meta ? (
-                                <p className="text-[11.5px] text-[#64748b]">
+                                <p className="text-[13px] text-[#64748b]">
                                     {entry.meta}
                                 </p>
                             ) : null}
                             {entry.body ? (
-                                <p className="pt-1 text-[12.8px] text-[#374151]">
+                                <p className="pt-1 text-[14px] leading-6 text-[#374151]">
                                     {entry.body}
                                 </p>
                             ) : null}
@@ -765,7 +765,7 @@ function LinkRow({ href, label }: { href: string; label: string }) {
             href={href}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-[13.6px] font-semibold text-[#0057c8]"
+            className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#0057c8]"
         >
             <ExternalLink className="size-3.5" />
             {label}
@@ -781,8 +781,8 @@ function ContactRow({
     value: string;
 }) {
     return (
-        <p className="flex items-center gap-2 text-[13.6px] leading-[20.4px] text-[#3977a6]">
-            <Icon className="size-3.5 shrink-0" strokeWidth={1.75} />
+        <p className="flex items-center gap-2 text-[15px] leading-[22px] text-[#3977a6]">
+            <Icon className="size-4 shrink-0" strokeWidth={1.75} />
             <span className="min-w-0 truncate">{value}</span>
         </p>
     );
@@ -819,7 +819,7 @@ function TimelineStep({
             <div className={cn('min-w-0 pb-4', isLast && 'pb-0')}>
                 <p
                     className={cn(
-                        'text-[13.6px] font-semibold',
+                        'text-[15px] font-semibold',
                         isCurrent || isDone
                             ? 'text-[#050315]'
                             : 'text-[#94a3b8]',
@@ -828,7 +828,7 @@ function TimelineStep({
                     {step.label}
                 </p>
                 {step.date ? (
-                    <p className="text-[11.5px] text-[#64748b]">{step.date}</p>
+                    <p className="text-[13px] text-[#64748b]">{step.date}</p>
                 ) : null}
             </div>
         </li>

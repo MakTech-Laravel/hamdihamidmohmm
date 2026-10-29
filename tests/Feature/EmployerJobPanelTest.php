@@ -138,16 +138,16 @@ test('assigned member only sees their assigned job and applications', function (
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerJobs')
-            ->has('jobs', 1)
-            ->where('jobs.0.title', 'Assigned Role')
+            ->has('jobs.data', 1)
+            ->where('jobs.data.0.title', 'Assigned Role')
             ->where('can_manage_panel', false));
 
     $this->actingAs($member)
         ->get(route('employer.applications'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('applications', 1)
-            ->where('applications.0.id', $assignedApp->id));
+            ->has('applications.data', 1)
+            ->where('applications.data.0.id', $assignedApp->id));
 
     $this->actingAs($member)
         ->get(route('employer.jobs.edit', $otherJob))
@@ -175,7 +175,7 @@ test('unassigned member with jobs permission sees an empty job list', function (
     $this->actingAs($member)
         ->get(route('employer.jobs'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->has('jobs', 0));
+        ->assertInertia(fn ($page) => $page->has('jobs.data', 0));
 });
 
 test('member shortlist is visible to owner with status change actor', function () {
@@ -220,9 +220,9 @@ test('member shortlist is visible to owner with status change actor', function (
         ->get(route('employer.applications'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('applications.0.status_value', JobApplicationStatus::Shortlisted->value)
-            ->where('applications.0.status_changed_by', 'Panel Sara')
-            ->where('applications.0.status_history.0.changed_by', 'Panel Sara'));
+            ->where('applications.data.0.status_value', JobApplicationStatus::Shortlisted->value)
+            ->where('applications.data.0.status_changed_by', 'Panel Sara')
+            ->where('applications.data.0.status_history.0.changed_by', 'Panel Sara'));
 });
 
 test('team member cannot manage job panel assignments', function () {
@@ -273,6 +273,6 @@ test('owner still sees all jobs when members are assigned to some', function () 
         ->get(route('employer.jobs'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('jobs', 2)
+            ->has('jobs.data', 2)
             ->where('can_manage_panel', true));
 });

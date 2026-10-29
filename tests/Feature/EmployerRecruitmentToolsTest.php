@@ -42,9 +42,9 @@ test('applications default to the most experienced candidates first', function (
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('filters.sort', 'experience')
-            ->where('applications.0.name', 'Senior')
-            ->where('applications.1.name', 'Mid')
-            ->where('applications.2.name', 'Junior'));
+            ->where('applications.data.0.name', 'Senior')
+            ->where('applications.data.1.name', 'Mid')
+            ->where('applications.data.2.name', 'Junior'));
 });
 
 test('applications can be sorted by qualification and certificates', function () {
@@ -60,14 +60,14 @@ test('applications can be sorted by qualification and certificates', function ()
     $this->actingAs($this->employer)
         ->get(route('employer.applications', ['sort' => 'qualification']))
         ->assertInertia(fn ($page) => $page
-            ->where('applications.0.name', 'Master Holder')
-            ->where('applications.0.qualification', 'MSc Computer Science'));
+            ->where('applications.data.0.name', 'Master Holder')
+            ->where('applications.data.0.qualification', 'MSc Computer Science'));
 
     $this->actingAs($this->employer)
         ->get(route('employer.applications', ['sort' => 'certificates']))
         ->assertInertia(fn ($page) => $page
-            ->where('applications.0.name', 'Diploma Holder')
-            ->where('applications.0.certificate_count', 3));
+            ->where('applications.data.0.name', 'Diploma Holder')
+            ->where('applications.data.0.certificate_count', 3));
 });
 
 test('applications expose gender statistics and status counts', function () {
@@ -165,9 +165,9 @@ test('employer jobs list exposes job reference, closing date and shortlist count
     $this->actingAs($this->employer)
         ->get(route('employer.jobs'))
         ->assertInertia(fn ($page) => $page
-            ->where('jobs.0.reference', 'JOB-'.str_pad((string) $this->job->id, 5, '0', STR_PAD_LEFT))
-            ->where('jobs.0.shortlisted', 1)
-            ->has('jobs.0.expires_at'));
+            ->where('jobs.data.0.reference', 'JOB-'.str_pad((string) $this->job->id, 5, '0', STR_PAD_LEFT))
+            ->where('jobs.data.0.shortlisted', 1)
+            ->has('jobs.data.0.expires_at'));
 });
 
 test('shortlist query shows only shortlisted applications', function () {
@@ -180,8 +180,8 @@ test('shortlist query shows only shortlisted applications', function () {
         ->assertInertia(fn ($page) => $page
             ->where('filters.shortlist', true)
             ->where('filters.status', JobApplicationStatus::Shortlisted->value)
-            ->has('applications', 1)
-            ->where('applications.0.name', 'Shortlisted Candidate'));
+            ->has('applications.data', 1)
+            ->where('applications.data.0.name', 'Shortlisted Candidate'));
 });
 
 test('applications without shortlist still list every status', function () {
@@ -194,5 +194,43 @@ test('applications without shortlist still list every status', function () {
         ->assertInertia(fn ($page) => $page
             ->where('filters.shortlist', false)
             ->where('filters.status', '')
-            ->has('applications', 2));
+            ->has('applications.data', 2));
+});
+
+test('applications index paginates thirty rows per page', function () {
+    foreach (range(1, 31) as $index) {
+        applyToJob($this->job, "Candidate {$index}", ['experience_years' => (string) $index]);
+    }
+
+    $this->actingAs($this->employer)
+        ->get(route('employer.applications'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('applications.per_page', 30)
+            ->where('applications.total', 31)
+            ->has('applications.data', 30)
+            ->where('applications.data.0.name', 'Candidate 31'));
+
+    $this->actingAs($this->employer)
+        ->get(route('employer.applications', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('applications.data', 1)
+            ->where('applications.data.0.name', 'Candidate 1'));
+});
+
+test('applications search matches job title on the server', function () {
+    $otherJob = JobPost::factory()->for($this->employer, 'employer')->create([
+        'title' => 'Backend Engineer',
+    ]);
+    applyToJob($this->job, 'Frontend Person', []);
+    applyToJob($otherJob, 'Backend Person', []);
+
+    $this->actingAs($this->employer)
+        ->get(route('employer.applications', ['search' => 'Backend Engineer']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('applications.data', 1)
+            ->where('applications.data.0.name', 'Backend Person')
+            ->where('applications.data.0.job', 'Backend Engineer'));
 });

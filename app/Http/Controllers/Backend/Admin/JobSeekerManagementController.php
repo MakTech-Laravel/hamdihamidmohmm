@@ -13,6 +13,7 @@ use App\Http\Requests\Backend\Admin\StoreJobSeekerRequest;
 use App\Http\Requests\Backend\Admin\UpdateJobSeekerRequest;
 use App\Models\User;
 use App\Support\ActivityLogger;
+use App\Support\ListPageSize;
 use App\Support\RoleAssigner;
 use App\Support\UserAccountLifecycle;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,7 +36,7 @@ class JobSeekerManagementController extends Controller
         $seekersQuery = $this->filteredQuery($statusFilter, $locationFilter, $search);
 
         $seekers = $seekersQuery
-            ->paginate(12)
+            ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
             ->through(fn (User $seeker) => $this->seekerRow($seeker));
 

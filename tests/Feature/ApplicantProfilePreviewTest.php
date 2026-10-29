@@ -132,16 +132,16 @@ test('employer and admin drawers receive the full seeker profile from live appli
         ->get(route('employer.applications'))
         ->assertOk()
         ->assertInertia(fn($page) => $page
-            ->where('applications.0.headline', 'UX Designer')
-            ->where('applications.0.current_title', 'Product Designer')
-            ->where('applications.0.experience_years', '4 years')
-            ->where('applications.0.industry', 'Design')
-            ->where('applications.0.skills', ['Figma', 'Research'])
-            ->where('applications.0.education.0.title', 'BA Design')
-            ->where('applications.0.experience.0.subtitle', 'Studio')
-            ->where('applications.0.languages.0.name', 'English')
-            ->where('applications.0.certifications.0.name', 'NN/g UX')
-            ->where('applications.0.cover_letter', 'Design systems are my passion.'));
+            ->where('applications.data.0.headline', 'UX Designer')
+            ->where('applications.data.0.current_title', 'Product Designer')
+            ->where('applications.data.0.experience_years', '4 years')
+            ->where('applications.data.0.industry', 'Design')
+            ->where('applications.data.0.skills', ['Figma', 'Research'])
+            ->where('applications.data.0.education.0.title', 'BA Design')
+            ->where('applications.data.0.experience.0.subtitle', 'Studio')
+            ->where('applications.data.0.languages.0.name', 'English')
+            ->where('applications.data.0.certifications.0.name', 'NN/g UX')
+            ->where('applications.data.0.cover_letter', 'Design systems are my passion.'));
 
     $this->actingAs($admin)
         ->get(route('admin.jobs.index'))

@@ -19,7 +19,9 @@ use App\Services\Ats\AtsSettings;
 use App\Support\EmployerJobAccess;
 use App\Support\EmployerPlanSnapshot;
 use App\Support\JobListingQuery;
+use App\Support\ListPageSize;
 use App\Support\RecruitmentReport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,13 +32,25 @@ use Inertia\Response;
 
 class EmployerJobController extends Controller
 {
+    /**
+     * @var list<string>
+     */
+    private const JOB_FILTERS = ['all', 'active', 'draft', 'expired', 'closed'];
+
     public function index(Request $request): Response
     {
         $employer = $request->user();
 
         abort_unless($employer !== null, 403);
 
-        $jobs = EmployerJobAccess::constrainJobQuery(JobPost::query(), $employer)
+        $search = trim($request->string('search')->toString());
+        $filter = $request->string('filter')->toString();
+
+        if (! in_array($filter, self::JOB_FILTERS, true)) {
+            $filter = 'all';
+        }
+
+        $jobsQuery = EmployerJobAccess::constrainJobQuery(JobPost::query(), $employer)
             ->with('employer:id,name,company_name,company_logo_path')
             ->withCount([
                 'applications',
@@ -44,21 +58,76 @@ class EmployerJobController extends Controller
                 'applications as shortlisted_applications_count' => fn ($query) => $query->where('status', JobApplicationStatus::Shortlisted),
                 'panelMembers as panel_members_count',
             ])
-            ->latest()
-            ->get()
-            ->map(fn (JobPost $job) => $this->listRow($job));
+            ->latest();
+
+        $this->applyListFilter($jobsQuery, $filter);
+
+        if ($search !== '') {
+            $jobsQuery->where(function (Builder $query) use ($search): void {
+                $like = '%'.addcslashes($search, '\\%_').'%';
+
+                $query->where('title', 'like', $like)
+                    ->orWhere('category', 'like', $like)
+                    ->orWhere('location', 'like', $like);
+            });
+        }
+
+        $jobs = $jobsQuery
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (JobPost $job): array => $this->listRow($job));
 
         return Inertia::render('backend/User/EmployerJobs', [
             'jobs' => $jobs,
             'plan' => EmployerPlanSnapshot::for($employer),
             'can_manage_panel' => EmployerJobAccess::canManagePanel($employer),
-            'stats' => [
-                'total' => $jobs->count(),
-                'active' => $jobs->where('status_value', JobPostStatus::Active->value)->count(),
-                'draft' => $jobs->whereIn('status_value', [JobPostStatus::Draft->value, JobPostStatus::Pending->value])->count(),
-                'expired' => $jobs->where('status_value', JobPostStatus::Expired->value)->count(),
+            'stats' => $this->listStats($employer),
+            'filters' => [
+                'search' => $search,
+                'filter' => $filter,
             ],
         ]);
+    }
+
+    /**
+     * @param  Builder<JobPost>  $query
+     */
+    private function applyListFilter(Builder $query, string $filter): void
+    {
+        match ($filter) {
+            'active' => $query->active(),
+            'draft' => $query->whereIn('status', [JobPostStatus::Draft, JobPostStatus::Pending]),
+            'closed' => $query->where('status', JobPostStatus::Rejected),
+            'expired' => $query->where(function (Builder $expired): void {
+                $expired->where('status', JobPostStatus::Expired)
+                    ->orWhere(function (Builder $ended): void {
+                        $ended->where('status', JobPostStatus::Active)
+                            ->whereNotNull('expires_at')
+                            ->where('expires_at', '<', now()->startOfDay());
+                    });
+            }),
+            default => null,
+        };
+    }
+
+    /**
+     * @return array{total: int, active: int, draft: int, expired: int}
+     */
+    private function listStats(User $employer): array
+    {
+        $scoped = fn (): Builder => EmployerJobAccess::constrainJobQuery(JobPost::query(), $employer);
+
+        $total = $scoped()->count();
+        $active = $scoped()->active()->count();
+        $draft = $scoped()->whereIn('status', [JobPostStatus::Draft, JobPostStatus::Pending])->count();
+        $expired = $scoped()->tap(fn (Builder $query) => $this->applyListFilter($query, 'expired'))->count();
+
+        return [
+            'total' => $total,
+            'active' => $active,
+            'draft' => $draft,
+            'expired' => $expired,
+        ];
     }
 
     public function create(Request $request): Response
@@ -89,9 +158,10 @@ class EmployerJobController extends Controller
         }
 
         $job = JobPost::query()->create([
-            ...$request->safe()->except(['publish', 'featured', 'logo', 'apply_by_link']),
+            ...$request->safe()->except(['publish', 'featured', 'logo', 'employer_can_manage_apply']),
             'employer_id' => $employer->employerAccountId(),
             'featured' => false,
+            'employer_can_manage_apply' => true,
             'status' => $publish ? JobPostStatus::Pending : JobPostStatus::Draft,
             'expires_at' => $request->date('expires_at') ?? ($publish ? now()->addDays(30) : null),
         ]);
@@ -127,6 +197,9 @@ class EmployerJobController extends Controller
                 'experience_level' => $job->experience_level,
                 'salary_range' => $job->salary_range,
                 'career_portal_url' => $job->career_portal_url,
+                'apply_by_link' => (bool) $job->apply_by_link,
+                'hide_on_site_apply' => (bool) $job->hide_on_site_apply,
+                'employer_can_manage_apply' => (bool) $job->employer_can_manage_apply,
                 'description' => $job->description,
                 'requirements' => $job->requirements,
                 'skills' => $job->skills ?? [],
@@ -158,8 +231,19 @@ class EmployerJobController extends Controller
             return back()->withErrors(['title' => $creditError]);
         }
 
+        $except = ['publish', 'featured', 'logo', 'employer_can_manage_apply'];
+
+        if (! $job->employer_can_manage_apply) {
+            $except = [
+                ...$except,
+                'career_portal_url',
+                'apply_by_link',
+                'hide_on_site_apply',
+            ];
+        }
+
         $job->update([
-            ...$request->safe()->except(['publish', 'featured', 'logo', 'apply_by_link']),
+            ...$request->safe()->except($except),
             'featured' => false,
         ]);
 
@@ -314,8 +398,8 @@ class EmployerJobController extends Controller
             'shortlisted' => (int) $job->shortlisted_applications_count,
             'panel_members_count' => (int) ($job->panel_members_count ?? 0),
             'views' => (int) $job->views,
-            'expires_at' => $job->expires_at?->toFormattedDateString(),
-            'created_at' => $job->created_at?->toFormattedDateString(),
+            'expires_at' => $job->expires_at?->format('j F Y'),
+            'created_at' => $job->created_at?->format('d-m-y'),
         ];
     }
 

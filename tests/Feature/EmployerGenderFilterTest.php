@@ -43,9 +43,9 @@ test('employers can filter applicants by gender', function () {
         ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerApplications')
             ->where('filters.gender', Gender::Female->value)
-            ->has('applications', 1)
-            ->where('applications.0.name', 'Sara Ali')
-            ->where('applications.0.gender', Gender::Female->value)
-            ->where('applications.0.gender_label', 'Female')
+            ->has('applications.data', 1)
+            ->where('applications.data.0.name', 'Sara Ali')
+            ->where('applications.data.0.gender', Gender::Female->value)
+            ->where('applications.data.0.gender_label', 'Female')
             ->has('gender_options', 2));
 });

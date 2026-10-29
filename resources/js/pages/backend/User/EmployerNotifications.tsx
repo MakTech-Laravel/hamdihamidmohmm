@@ -1,6 +1,9 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
 
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { cn } from '@/lib/utils';
@@ -17,12 +20,7 @@ type NotificationRow = {
 };
 
 type FilterId =
-    | 'all'
-    | 'unread'
-    | 'applications'
-    | 'jobs'
-    | 'billing'
-    | 'system';
+    'all' | 'unread' | 'applications' | 'jobs' | 'billing' | 'system';
 
 const categoryStyle: Record<
     string,
@@ -59,48 +57,27 @@ const actionClass =
     'inline-flex h-[31px] cursor-pointer items-center justify-center rounded-lg px-3 text-xs font-semibold';
 
 export default function EmployerNotifications({
-    notifications,
+    notifications: notificationsPage,
+    filter,
+    counts,
     unread,
 }: {
-    notifications: NotificationRow[];
+    notifications: PortalPaginator<NotificationRow>;
+    filter: FilterId;
+    counts: Record<FilterId, number>;
     unread: number;
 }) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
-    const [filter, setFilter] = useState<FilterId>('all');
+    const notifications = notificationsPage.data;
 
-    const counts = useMemo(
-        () => ({
-            all: notifications.length,
-            unread: notifications.filter((item) => !item.read).length,
-            applications: notifications.filter(
-                (item) => item.category_key === 'applications',
-            ).length,
-            jobs: notifications.filter((item) => item.category_key === 'jobs')
-                .length,
-            billing: notifications.filter(
-                (item) => item.category_key === 'billing',
-            ).length,
-            system: notifications.filter(
-                (item) => item.category_key === 'system',
-            ).length,
-        }),
-        [notifications],
-    );
-
-    const filtered = useMemo(() => {
-        return notifications.filter((item) => {
-            if (filter === 'all') {
-                return true;
-            }
-
-            if (filter === 'unread') {
-                return !item.read;
-            }
-
-            return item.category_key === filter;
-        });
-    }, [notifications, filter]);
+    const changeFilter = (next: FilterId): void => {
+        router.get(
+            '/employer/notifications',
+            next === 'all' ? {} : { filter: next },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
 
     const filters: { id: FilterId; label: string; count: number }[] = [
         {
@@ -197,7 +174,7 @@ export default function EmployerNotifications({
                             <button
                                 key={item.id}
                                 type="button"
-                                onClick={() => setFilter(item.id)}
+                                onClick={() => changeFilter(item.id)}
                                 className={cn(
                                     'inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-[12.48px] font-semibold',
                                     active
@@ -222,7 +199,7 @@ export default function EmployerNotifications({
                 </div>
 
                 <div className="flex flex-col gap-2 pt-4">
-                    {filtered.map((item) => {
+                    {notifications.map((item) => {
                         const style =
                             categoryStyle[item.category_key] ??
                             categoryStyle.system;
@@ -308,12 +285,20 @@ export default function EmployerNotifications({
                             </div>
                         );
                     })}
-                    {filtered.length === 0 && (
+                    {notifications.length === 0 && (
                         <p className="rounded-2xl border border-dashed p-10 text-center text-sm text-[#99a1af]">
                             {t('employer.notifications.empty')}
                         </p>
                     )}
                 </div>
+                <PortalPagination
+                    showingLabel={t('common.showing_range', {
+                        from: notificationsPage.from ?? 0,
+                        to: notificationsPage.to ?? 0,
+                        total: notificationsPage.total,
+                    })}
+                    links={notificationsPage.links}
+                />
             </div>
         </EmployerLayout>
     );

@@ -37,6 +37,8 @@ type Job = {
     salary_range: string | null;
     career_portal_url?: string | null;
     apply_by_link?: boolean;
+    hide_on_site_apply?: boolean;
+    employer_can_manage_apply?: boolean;
     description: string | null;
     requirements: string | null;
     skills: string[];
@@ -76,6 +78,8 @@ export default function JobEdit({ job, options }: Props) {
         salary_range: job.salary_range ?? '',
         career_portal_url: job.career_portal_url ?? '',
         apply_by_link: Boolean(job.apply_by_link),
+        hide_on_site_apply: Boolean(job.hide_on_site_apply),
+        employer_can_manage_apply: job.employer_can_manage_apply !== false,
         description: job.description ?? '',
         requirements: job.requirements ?? '',
         skills: job.skills.join(', '),
@@ -499,7 +503,7 @@ export default function JobEdit({ job, options }: Props) {
                                 </Label>
                                 <Input
                                     id="career_portal_url"
-                                    type="url"
+                                    type="text"
                                     value={form.data.career_portal_url}
                                     onChange={(event) =>
                                         form.setData(
@@ -533,6 +537,39 @@ export default function JobEdit({ job, options }: Props) {
                                 }
                             />
                             <InputError message={form.errors.apply_by_link} />
+                            <ToggleRow
+                                title={t('admin.jobs.fields.hide_on_site_apply')}
+                                description={t(
+                                    'admin.jobs.fields.hide_on_site_apply_hint',
+                                )}
+                                checked={form.data.hide_on_site_apply}
+                                disabled={form.processing}
+                                onChange={(value) =>
+                                    form.setData('hide_on_site_apply', value)
+                                }
+                            />
+                            <InputError
+                                message={form.errors.hide_on_site_apply}
+                            />
+                            <ToggleRow
+                                title={t(
+                                    'admin.jobs.fields.employer_can_manage_apply',
+                                )}
+                                description={t(
+                                    'admin.jobs.fields.employer_can_manage_apply_hint',
+                                )}
+                                checked={form.data.employer_can_manage_apply}
+                                disabled={form.processing}
+                                onChange={(value) =>
+                                    form.setData(
+                                        'employer_can_manage_apply',
+                                        value,
+                                    )
+                                }
+                            />
+                            <InputError
+                                message={form.errors.employer_can_manage_apply}
+                            />
                         </div>
 
                         <div className="space-y-1.5">

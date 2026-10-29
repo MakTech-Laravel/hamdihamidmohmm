@@ -10,7 +10,9 @@ use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\JobSeekerCv;
 use App\Services\Ats\ApplicationScreeningDispatcher;
+use App\Support\ListPageSize;
 use App\Support\PortalNotifier;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -22,25 +24,40 @@ class JobSeekerApplicationsController extends Controller
 {
     public function index(Request $request): Response
     {
+        $seekerId = $request->user()?->id;
+        $statusFilter = JobApplicationStatus::tryFrom($request->string('status')->toString());
+
+        $statusCounts = JobApplication::query()
+            ->toBase()
+            ->where('job_seeker_id', $seekerId)
+            ->selectRaw('status, count(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status')
+            ->map(fn (mixed $count): int => (int) $count);
+
+        $total = $statusCounts->sum();
+
         $applications = JobApplication::query()
-            ->where('job_seeker_id', $request->user()?->id)
+            ->where('job_seeker_id', $seekerId)
+            ->when($statusFilter !== null, fn (Builder $query) => $query->where('status', $statusFilter))
             ->with(['jobPost:id,title,location,employment_type,salary_range,slug,employer_id', 'jobPost.employer:id,name,company_name'])
             ->latest()
-            ->get()
-            ->map(fn (JobApplication $application) => $this->row($application));
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (JobApplication $application) => $this->row($application));
 
         return Inertia::render('backend/User/JobSeekerApplications', [
             'applications' => $applications,
             'stats' => [
-                'total' => $applications->count(),
-                'active' => $applications->whereNotIn('status_value', [
-                    JobApplicationStatus::Rejected->value,
-                    JobApplicationStatus::Withdrawn->value,
-                    JobApplicationStatus::Hired->value,
-                ])->count(),
-                'interviews' => $applications->where('status_value', JobApplicationStatus::Interview->value)->count(),
-                'offers' => $applications->where('status_value', JobApplicationStatus::Offer->value)->count(),
+                'total' => $total,
+                'active' => $total
+                    - (int) $statusCounts->get(JobApplicationStatus::Rejected->value, 0)
+                    - (int) $statusCounts->get(JobApplicationStatus::Withdrawn->value, 0)
+                    - (int) $statusCounts->get(JobApplicationStatus::Hired->value, 0),
+                'interviews' => (int) $statusCounts->get(JobApplicationStatus::Interview->value, 0),
+                'offers' => (int) $statusCounts->get(JobApplicationStatus::Offer->value, 0),
             ],
+            'selectedStatus' => $statusFilter?->value ?? 'all',
             'filters' => collect([
                 JobApplicationStatus::Applied,
                 JobApplicationStatus::UnderReview,
@@ -53,7 +70,7 @@ class JobSeekerApplicationsController extends Controller
             ])->map(fn (JobApplicationStatus $status) => [
                 'value' => $status->value,
                 'label' => $status->label(),
-                'count' => $applications->where('status_value', $status->value)->count(),
+                'count' => (int) $statusCounts->get($status->value, 0),
             ])->values(),
         ]);
     }

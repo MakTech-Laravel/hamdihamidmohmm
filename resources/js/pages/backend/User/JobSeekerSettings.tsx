@@ -2,6 +2,10 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Globe, Lock, Mail, UserRound } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,9 +17,21 @@ import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
 const tabs = [
-    { id: 'personal', labelKey: 'job_seeker.settings.tab.personal', icon: UserRound },
-    { id: 'security', labelKey: 'job_seeker.settings.tab.security', icon: Lock },
-    { id: 'language', labelKey: 'job_seeker.settings.tab.language', icon: Globe },
+    {
+        id: 'personal',
+        labelKey: 'job_seeker.settings.tab.personal',
+        icon: UserRound,
+    },
+    {
+        id: 'security',
+        labelKey: 'job_seeker.settings.tab.security',
+        icon: Lock,
+    },
+    {
+        id: 'language',
+        labelKey: 'job_seeker.settings.tab.language',
+        icon: Globe,
+    },
     { id: 'email', labelKey: 'job_seeker.settings.tab.email', icon: Mail },
 ] as const;
 
@@ -48,15 +64,16 @@ type Props = {
         };
     };
     two_factor_enabled: boolean;
-    sessions: SessionRow[];
+    sessions: PortalPaginator<SessionRow>;
 };
 
 export default function JobSeekerSettings({
     user,
     preferences,
     two_factor_enabled,
-    sessions,
+    sessions: sessionsPage,
 }: Props) {
+    const sessions = sessionsPage.data;
     const { flash } = usePage<SharedData>().props;
     const { locale, setLocale, t } = useLocale();
     const [tab, setTab] = useState<TabId>('personal');
@@ -395,6 +412,15 @@ export default function JobSeekerSettings({
                                         ))
                                     )}
                                 </div>
+                                <PortalPagination
+                                    align="start"
+                                    showingLabel={t('common.showing_range', {
+                                        from: sessionsPage.from ?? 0,
+                                        to: sessionsPage.to ?? 0,
+                                        total: sessionsPage.total,
+                                    })}
+                                    links={sessionsPage.links}
+                                />
                                 <button
                                     type="button"
                                     onClick={() =>

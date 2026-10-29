@@ -19,12 +19,78 @@ test('employers see live notifications with category keys', function () {
     $this->actingAs($employer)
         ->get(route('employer.notifications'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerNotifications')
             ->where('unread', 2)
-            ->has('notifications', 2)
-            ->where('notifications.0.category_key', 'applications')
-            ->where('notifications.0.read', false));
+            ->has('notifications.data', 2)
+            ->where('notifications.data.0.category_key', 'applications')
+            ->where('notifications.data.0.read', false)
+            ->where('filter', 'all')
+            ->where('counts.all', 2)
+            ->where('counts.applications', 1)
+            ->where('counts.billing', 1)
+            ->where('counts.unread', 2));
+});
+
+test('employer notifications are filtered and paginated on the server', function () {
+    $employer = User::factory()->employer()->create();
+
+    foreach (range(1, 31) as $index) {
+        $employer->notifyNow(new PortalNotification("Billing {$index}", 'Invoice ready.', 'Billing'));
+    }
+
+    $employer->notifyNow(new PortalNotification('New applicant', 'Someone applied.', 'Application'));
+    $employer->notifyNow(new PortalNotification('Policy update', 'Terms changed.', 'Policy'));
+    $employer->notifyNow(new PortalNotification('Unknown', 'No category.', 'Custom'));
+    $employer->notifications()->where('data->category', 'Application')->first()?->markAsRead();
+
+    $this->actingAs($employer)
+        ->get(route('employer.notifications'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('notifications.data', 30)
+            ->where('notifications.total', 34)
+            ->where('notifications.per_page', 30)
+            ->where('counts.all', 34)
+            ->where('counts.unread', 33)
+            ->where('counts.billing', 31)
+            ->where('counts.applications', 1)
+            ->where('counts.system', 2));
+
+    $this->actingAs($employer)
+        ->get(route('employer.notifications', ['filter' => 'billing', 'page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filter', 'billing')
+            ->has('notifications.data', 1)
+            ->where('notifications.total', 31)
+            ->where('notifications.data.0.category_key', 'billing'));
+
+    $this->actingAs($employer)
+        ->get(route('employer.notifications', ['filter' => 'applications']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('notifications.data', 1)
+            ->where('notifications.data.0.category_key', 'applications'));
+
+    $this->actingAs($employer)
+        ->get(route('employer.notifications', ['filter' => 'system']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('notifications.data', 2));
+
+    $this->actingAs($employer)
+        ->get(route('employer.notifications', ['filter' => 'unread']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('notifications.total', 33));
+
+    $this->actingAs($employer)
+        ->get(route('employer.notifications', ['filter' => 'bogus']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filter', 'all')
+            ->where('notifications.total', 34));
 });
 
 test('employers can mark a notification as read and delete it', function () {
@@ -71,7 +137,7 @@ test('employer settings receive contact details', function () {
     $this->actingAs($employer)
         ->get(route('employer.settings'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerSettings')
             ->where('profile.name', 'Fatima Al-Zahrani')
             ->where('profile.contact_name', 'Fatima Al-Zahrani')

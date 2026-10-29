@@ -1,12 +1,14 @@
 import { Form, Head, Link, router, usePage } from '@inertiajs/react';
 
 import { AdminIcon } from '@/components/admin-icon';
+import { AdminPagination } from '@/components/admin-portal/ui';
 import {
     MobileListCard,
     MobileListCardActions,
     MobileListCardHeader,
     MobileListCardMeta,
 } from '@/components/mobile-list-card';
+import type { PortalPaginator } from '@/components/portal-pagination';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
@@ -34,7 +36,7 @@ type PermissionMatrixRow = {
 };
 
 type Props = {
-    roles: RoleCard[];
+    roles: PortalPaginator<RoleCard>;
     permissionMatrix: PermissionMatrixRow[];
     canManageAdmins: boolean;
 };
@@ -47,12 +49,13 @@ const roleBadgeStyles: Record<string, string> = {
 };
 
 export default function RolePermissions({
-    roles,
+    roles: rolesPage,
     permissionMatrix,
     canManageAdmins,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const roles = rolesPage.data;
 
     return (
         <AdminPortalLayout>
@@ -295,6 +298,15 @@ export default function RolePermissions({
                             </tbody>
                         </table>
                     </div>
+
+                    <AdminPagination
+                        showingLabel={t('common.showing_range', {
+                            from: rolesPage.from ?? 0,
+                            to: rolesPage.to ?? 0,
+                            total: rolesPage.total,
+                        })}
+                        links={rolesPage.links}
+                    />
                 </div>
 
                 <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">

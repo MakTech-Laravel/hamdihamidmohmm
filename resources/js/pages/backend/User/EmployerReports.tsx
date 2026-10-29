@@ -8,8 +8,14 @@ import {
     MobileListEmpty,
     MobileListStack,
 } from '@/components/mobile-list-card';
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
+import { cn } from '@/lib/utils';
 
 type JobReportRow = {
     id: number;
@@ -28,11 +34,12 @@ type JobReportRow = {
 };
 
 type Props = {
-    jobs: JobReportRow[];
+    jobs: PortalPaginator<JobReportRow>;
 };
 
-export default function EmployerReports({ jobs }: Props) {
+export default function EmployerReports({ jobs: jobsPage }: Props) {
     const { t } = useLocale();
+    const jobs = jobsPage.data;
 
     const headings = [
         t('employer.reports.col.job'),
@@ -156,10 +163,13 @@ export default function EmployerReports({ jobs }: Props) {
                                     </td>
                                 </tr>
                             ) : (
-                                jobs.map((job) => (
+                                jobs.map((job, index) => (
                                     <tr
                                         key={job.id}
-                                        className="border-b border-[rgba(57,119,166,0.1)] last:border-0"
+                                        className={cn(
+                                            'border-b border-[rgba(57,119,166,0.1)] last:border-0',
+                                            employerListRowBg(index),
+                                        )}
                                     >
                                         <td className="px-4 py-3 font-medium text-[#050315]">
                                             {job.title}
@@ -170,14 +180,18 @@ export default function EmployerReports({ jobs }: Props) {
                                         <td className="px-4 py-3 text-[#475569]">
                                             {job.status}
                                         </td>
-                                        <td className="px-4 py-3">{job.total}</td>
+                                        <td className="px-4 py-3">
+                                            {job.total}
+                                        </td>
                                         <td className="px-4 py-3">
                                             {job.shortlisted}
                                         </td>
                                         <td className="px-4 py-3">
                                             {job.interview}
                                         </td>
-                                        <td className="px-4 py-3">{job.hired}</td>
+                                        <td className="px-4 py-3">
+                                            {job.hired}
+                                        </td>
                                         <td className="px-4 py-3">
                                             {job.rejected}
                                         </td>
@@ -207,6 +221,15 @@ export default function EmployerReports({ jobs }: Props) {
                         </tbody>
                     </table>
                 </div>
+
+                <PortalPagination
+                    showingLabel={t('common.showing_range', {
+                        from: jobsPage.from ?? 0,
+                        to: jobsPage.to ?? 0,
+                        total: jobsPage.total,
+                    })}
+                    links={jobsPage.links}
+                />
             </div>
         </EmployerLayout>
     );

@@ -8,8 +8,14 @@ import {
     MobileListEmpty,
     MobileListStack,
 } from '@/components/mobile-list-card';
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
+import { cn } from '@/lib/utils';
 
 type RoleRow = {
     id: number;
@@ -22,11 +28,12 @@ type RoleRow = {
 };
 
 type Props = {
-    roles: RoleRow[];
+    roles: PortalPaginator<RoleRow>;
 };
 
-export default function EmployerRoles({ roles }: Props) {
+export default function EmployerRoles({ roles: rolesPage }: Props) {
     const { t } = useLocale();
+    const roles = rolesPage.data;
 
     return (
         <EmployerLayout title={t('employer.roles.title')}>
@@ -94,9 +101,7 @@ export default function EmployerRoles({ roles }: Props) {
                                             ? [
                                                   {
                                                       key: 'delete',
-                                                      label: t(
-                                                          'common.delete',
-                                                      ),
+                                                      label: t('common.delete'),
                                                       destructive: true,
                                                       onSelect: () => {
                                                           if (
@@ -152,10 +157,13 @@ export default function EmployerRoles({ roles }: Props) {
                                     </td>
                                 </tr>
                             ) : (
-                                roles.map((role) => (
+                                roles.map((role, index) => (
                                     <tr
                                         key={role.id}
-                                        className="border-b border-[rgba(57,119,166,0.1)] last:border-0"
+                                        className={cn(
+                                            'border-b border-[rgba(57,119,166,0.1)] last:border-0',
+                                            employerListRowBg(index),
+                                        )}
                                     >
                                         <td className="px-4 py-3">
                                             <p className="font-medium text-[#050315]">
@@ -210,6 +218,15 @@ export default function EmployerRoles({ roles }: Props) {
                         </tbody>
                     </table>
                 </div>
+
+                <PortalPagination
+                    showingLabel={t('common.showing_range', {
+                        from: rolesPage.from ?? 0,
+                        to: rolesPage.to ?? 0,
+                        total: rolesPage.total,
+                    })}
+                    links={rolesPage.links}
+                />
             </div>
         </EmployerLayout>
     );

@@ -11,6 +11,7 @@ use App\Models\JobTaxonomy;
 use App\Models\Package;
 use App\Models\User;
 use App\Support\JobListingQuery;
+use App\Support\ListPageSize;
 use App\Support\PortalPreferences;
 use App\Support\TrainingMedia;
 use Illuminate\Http\Request;
@@ -70,7 +71,7 @@ class FrontendController extends Controller
             $country,
         )
             ->latest()
-            ->paginate(30)
+            ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
             ->through(fn (JobPost $job) => [
                 'id' => $job->id,
@@ -144,6 +145,7 @@ class FrontendController extends Controller
                     ? $jobPost->career_portal_url
                     : null,
                 'apply_by_link' => (bool) $jobPost->apply_by_link,
+                'hide_on_site_apply' => (bool) $jobPost->hide_on_site_apply,
                 'posted' => $jobPost->created_at?->diffForHumans(),
                 'deadline' => $jobPost->expires_at?->toDateString(),
                 'description' => $jobPost->description,

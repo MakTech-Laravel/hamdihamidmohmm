@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import {
     AdminPageHeader,
+    AdminPagination,
     AdminPanel,
     AdminPrimaryButton,
     AdminStatusBadge,
@@ -16,6 +17,7 @@ import {
     MobileListCardHeader,
     MobileListCardMeta,
 } from '@/components/mobile-list-card';
+import type { PortalPaginator } from '@/components/portal-pagination';
 import {
     Dialog,
     DialogContent,
@@ -46,7 +48,7 @@ type TypeOption = {
 };
 
 type Props = {
-    items: TaxonomyRow[];
+    items: PortalPaginator<TaxonomyRow>;
     filters: {
         type: string;
     };
@@ -59,9 +61,14 @@ const emptyForm = {
     is_active: true,
 };
 
-export default function JobTaxonomies({ items, filters, types }: Props) {
+export default function JobTaxonomies({
+    items: itemsPage,
+    filters,
+    types,
+}: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const items = itemsPage.data;
     const [editing, setEditing] = useState<TaxonomyRow | null>(null);
     const [creating, setCreating] = useState(false);
     const form = useForm(emptyForm);
@@ -304,6 +311,14 @@ export default function JobTaxonomies({ items, filters, types }: Props) {
                             {t('admin.taxonomies.empty')}
                         </p>
                     )}
+                    <AdminPagination
+                        showingLabel={t('common.showing_range', {
+                            from: itemsPage.from ?? 0,
+                            to: itemsPage.to ?? 0,
+                            total: itemsPage.total,
+                        })}
+                        links={itemsPage.links}
+                    />
                 </AdminPanel>
             </div>
 

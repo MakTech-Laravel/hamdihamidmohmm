@@ -16,6 +16,7 @@ use App\Http\Requests\Backend\Admin\ToggleEmployerAtsRequest;
 use App\Http\Requests\Backend\Admin\UpdateEmployerRequest;
 use App\Models\User;
 use App\Support\ActivityLogger;
+use App\Support\ListPageSize;
 use App\Support\PortalNotifier;
 use App\Support\RoleAssigner;
 use App\Support\UserAccountLifecycle;
@@ -57,7 +58,7 @@ class EmployerManagementController extends Controller
         }
 
         $employers = $employersQuery
-            ->paginate(12)
+            ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
             ->through(fn (User $employer) => $this->employerRow($employer));
 

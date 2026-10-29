@@ -3,9 +3,11 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     AdminFilterChip,
     AdminPageHeader,
+    AdminPagination,
     AdminPanel,
     AdminPrimaryButton,
 } from '@/components/admin-portal/ui';
+import type { PortalPaginator } from '@/components/portal-pagination';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -25,18 +27,19 @@ type NotificationRow = {
 };
 
 type Props = {
-    notifications: NotificationRow[];
+    notifications: PortalPaginator<NotificationRow>;
     unread: number;
     tab: string;
 };
 
 export default function AdminNotifications({
-    notifications,
+    notifications: notificationsPage,
     unread,
     tab,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const notifications = notificationsPage.data;
     const form = useForm({
         audience: 'all',
         category: 'System',
@@ -204,6 +207,14 @@ export default function AdminNotifications({
                                 </p>
                             )}
                         </div>
+                        <AdminPagination
+                            showingLabel={t('common.showing_range', {
+                                from: notificationsPage.from ?? 0,
+                                to: notificationsPage.to ?? 0,
+                                total: notificationsPage.total,
+                            })}
+                            links={notificationsPage.links}
+                        />
                     </AdminPanel>
                 </div>
             </div>

@@ -98,8 +98,8 @@ test('employer jobs list includes job logo urls', function () {
         ->assertOk()
         ->assertInertia(fn($page) => $page
             ->component('backend/User/EmployerJobs')
-            ->where('jobs.0.logo_url', '/storage/' . $logoPath)
-            ->where('jobs.0.slug', $job->slug));
+            ->where('jobs.data.0.logo_url', '/storage/' . $logoPath)
+            ->where('jobs.data.0.slug', $job->slug));
 });
 
 test('employers can remove a job logo', function () {

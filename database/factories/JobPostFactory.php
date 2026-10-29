@@ -36,6 +36,8 @@ class JobPostFactory extends Factory
             'status' => JobPostStatus::Active,
             'featured' => false,
             'apply_by_link' => false,
+            'hide_on_site_apply' => false,
+            'employer_can_manage_apply' => true,
             'views' => fake()->numberBetween(0, 500),
             'expires_at' => now()->addDays(30),
         ];

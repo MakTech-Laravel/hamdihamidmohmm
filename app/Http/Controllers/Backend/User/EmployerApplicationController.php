@@ -26,6 +26,7 @@ use App\Support\EmployerJobAccess;
 use App\Support\ExperienceFilterOptions;
 use App\Support\JobApplicationQuestions;
 use App\Support\JobSeekerResume;
+use App\Support\ListPageSize;
 use App\Support\PortalNotifier;
 use App\Support\RecruitmentReport;
 use App\Support\XlsxWriter;
@@ -33,7 +34,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -92,9 +92,13 @@ class EmployerApplicationController extends Controller
         }
 
         if ($search !== '') {
-            $appsQuery->whereHas('jobSeeker', function ($query) use ($search): void {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+            $appsQuery->where(function (Builder $query) use ($search): void {
+                $query->whereHas('jobSeeker', function (Builder $seekerQuery) use ($search): void {
+                    $seekerQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                })->orWhereHas('jobPost', function (Builder $jobQuery) use ($search): void {
+                    $jobQuery->where('title', 'like', "%{$search}%");
+                });
             });
         }
 
@@ -112,25 +116,31 @@ class EmployerApplicationController extends Controller
 
         if ($aiSort !== '') {
             $appsQuery->orderByRaw('ai_score IS NULL')->orderBy('ai_score', $aiSort)->latest();
-            $sortedApplications = $appsQuery->get();
         } else {
-            ExperienceFilterOptions::applySort($appsQuery, $sort === 'experience' ? $direction : 'desc');
-
-            $sortedApplications = $appsQuery->get();
-
-            if ($sort !== 'experience') {
-                $sortedApplications = $this->sortApplications($sortedApplications, $sort, $direction);
-            }
+            $this->applyListSort($appsQuery, $sort, $direction);
         }
 
-        $jobHashes = $atsEnabled ? $this->jobHashes($sortedApplications->pluck('job_post_id')->unique()->all()) : [];
         $rosterEntryIds = EmployerRosterEntry::query()
             ->forAccount($employer->employerAccountId())
+            ->where('added_by', $employer->id)
             ->pluck('id', 'job_seeker_id')
             ->mapWithKeys(fn (mixed $id, mixed $seekerId): array => [(int) $seekerId => (int) $id])
             ->all();
-        $applications = $sortedApplications->map(
-            fn (JobApplication $application) => $this->row($application, $atsEnabled, $jobHashes, $rosterEntryIds),
+
+        $applications = $appsQuery->paginate(ListPageSize::DEFAULT)->withQueryString();
+        $pageApplications = $applications->getCollection();
+        $jobHashes = $atsEnabled
+            ? $this->jobHashes($pageApplications->pluck('job_post_id')->unique()->all())
+            : [];
+        $applications->setCollection(
+            $pageApplications
+                ->map(fn (JobApplication $application): array => $this->row(
+                    $application,
+                    $atsEnabled,
+                    $jobHashes,
+                    $rosterEntryIds,
+                ))
+                ->values(),
         );
 
         $allForStats = EmployerJobAccess::constrainApplicationQuery(JobApplication::query(), $employer);
@@ -183,6 +193,7 @@ class EmployerApplicationController extends Controller
             'roster_categories' => EmployerRosterEntry::categoriesForAccount(
                 $employer->employerAccountId(),
             ),
+            'is_owner' => $employer->isEmployerOwner(),
         ]);
     }
 
@@ -408,26 +419,54 @@ class EmployerApplicationController extends Controller
     }
 
     /**
-     * Experience is already ordered in SQL, so this stable sort breaks ties by experience (high to low).
-     *
-     * @param  Collection<int, JobApplication>  $applications
-     * @return Collection<int, JobApplication>
+     * @param  Builder<JobApplication>  $query
      */
-    private function sortApplications(Collection $applications, string $sort, string $direction): Collection
+    private function applyListSort(Builder $query, string $sort, string $direction): void
     {
-        $key = fn (JobApplication $application): int => match ($sort) {
-            'qualification' => ApplicantQualification::rank($application->jobSeeker?->jobSeekerProfile),
-            'certificates' => ApplicantQualification::certificateCount($application->jobSeeker?->jobSeekerProfile),
-            default => match ($application->jobSeeker?->jobSeekerProfile?->gender) {
-                Gender::Female => 2,
-                Gender::Male => 1,
-                default => 0,
-            },
-        };
+        $direction = $direction === 'asc' ? 'asc' : 'desc';
 
-        return $applications
-            ->sortBy($key, SORT_REGULAR, $direction === 'desc')
-            ->values();
+        if ($sort === 'experience') {
+            ExperienceFilterOptions::applySort($query, $direction);
+
+            return;
+        }
+
+        if ($sort === 'qualification') {
+            $query->orderByRaw(
+                "(SELECT COALESCE(job_seeker_profiles.qualification_rank, 0)
+                  FROM job_seeker_profiles
+                  WHERE job_seeker_profiles.user_id = job_applications.job_seeker_id
+                  LIMIT 1) {$direction}"
+            )->latest();
+
+            return;
+        }
+
+        if ($sort === 'certificates') {
+            $query->orderByRaw(
+                "(SELECT COALESCE(job_seeker_profiles.certificate_count, 0)
+                  FROM job_seeker_profiles
+                  WHERE job_seeker_profiles.user_id = job_applications.job_seeker_id
+                  LIMIT 1) {$direction}"
+            )->latest();
+
+            return;
+        }
+
+        $female = Gender::Female->value;
+        $male = Gender::Male->value;
+
+        $query->orderByRaw(
+            "(SELECT CASE job_seeker_profiles.gender
+                WHEN ? THEN 2
+                WHEN ? THEN 1
+                ELSE 0
+              END
+              FROM job_seeker_profiles
+              WHERE job_seeker_profiles.user_id = job_applications.job_seeker_id
+              LIMIT 1) {$direction}",
+            [$female, $male],
+        )->latest();
     }
 
     /**
@@ -729,7 +768,8 @@ class EmployerApplicationController extends Controller
         return [
             ...$preview,
             'qualification' => ApplicantQualification::label($seeker->jobSeekerProfile) ?: null,
-            'certificate_count' => ApplicantQualification::certificateCount($seeker->jobSeekerProfile),
+            'certificate_count' => (int) ($seeker->jobSeekerProfile?->certificate_count
+                ?? ApplicantQualification::certificateCount($seeker->jobSeekerProfile)),
             'id' => $application->id,
             'job' => $application->jobPost?->title,
             'job_id' => $application->job_post_id,

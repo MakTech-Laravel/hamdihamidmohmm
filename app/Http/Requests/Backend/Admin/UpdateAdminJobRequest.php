@@ -6,6 +6,7 @@ use App\Enums\JobPostStatus;
 use App\Enums\JobTaxonomyType;
 use App\Models\JobPost;
 use App\Models\JobTaxonomy;
+use App\Support\ExternalApplyDestination;
 use App\Support\SafeHtml;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -38,8 +39,10 @@ class UpdateAdminJobRequest extends FormRequest
             'location' => $this->nullableSlug('location'),
             'category' => $this->nullableSlug('category'),
             'employment_type' => trim((string) $this->input('employment_type')),
-            'career_portal_url' => $this->nullableUrl('career_portal_url'),
+            'career_portal_url' => ExternalApplyDestination::prepare($this->input('career_portal_url')),
             'apply_by_link' => $this->boolean('apply_by_link'),
+            'hide_on_site_apply' => $this->boolean('hide_on_site_apply'),
+            'employer_can_manage_apply' => $this->boolean('employer_can_manage_apply'),
         ]);
     }
 
@@ -83,8 +86,10 @@ class UpdateAdminJobRequest extends FormRequest
             ],
             'experience_level' => ['required', 'string', 'max:50'],
             'salary_range' => ['nullable', 'string', 'max:255'],
-            'career_portal_url' => ['nullable', 'url', 'max:2048'],
+            'career_portal_url' => ExternalApplyDestination::rules(),
             'apply_by_link' => ['sometimes', 'boolean'],
+            'hide_on_site_apply' => ['sometimes', 'boolean'],
+            'employer_can_manage_apply' => ['sometimes', 'boolean'],
             'description' => ['nullable', 'string', 'max:20000'],
             'requirements' => ['nullable', 'string', 'max:20000'],
             'skills' => ['nullable', 'array'],
@@ -106,8 +111,7 @@ class UpdateAdminJobRequest extends FormRequest
             'employment_type.required' => 'Please choose a job type.',
             'experience_level.required' => 'Please choose an experience level.',
             'status.required' => 'Please choose a job status.',
-            'career_portal_url.url' => 'Please enter a valid Apply by Link URL.',
-            'career_portal_url.max' => 'The Apply by Link URL may not be greater than 2048 characters.',
+            ...ExternalApplyDestination::messages(),
         ];
     }
 
@@ -142,13 +146,6 @@ class UpdateAdminJobRequest extends FormRequest
     }
 
     private function nullableSlug(string $key): ?string
-    {
-        $value = trim((string) $this->input($key));
-
-        return $value !== '' ? $value : null;
-    }
-
-    private function nullableUrl(string $key): ?string
     {
         $value = trim((string) $this->input($key));
 

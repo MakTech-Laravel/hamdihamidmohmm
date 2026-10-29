@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Backend\User;
 
 use App\Enums\JobTaxonomyType;
+use App\Support\ExternalApplyDestination;
 use App\Support\JobApplicationQuestions;
 use App\Support\SafeHtml;
 use Illuminate\Foundation\Http\FormRequest;
@@ -37,7 +38,9 @@ class StoreEmployerJobRequest extends FormRequest
             'location' => $this->nullableSlug('location'),
             'category' => $this->nullableSlug('category'),
             'employment_type' => trim((string) $this->input('employment_type')),
-            'career_portal_url' => $this->nullableUrl('career_portal_url'),
+            'career_portal_url' => ExternalApplyDestination::prepare($this->input('career_portal_url')),
+            'apply_by_link' => $this->boolean('apply_by_link'),
+            'hide_on_site_apply' => $this->boolean('hide_on_site_apply'),
             'application_questions' => JobApplicationQuestions::normalize($this->input('application_questions')),
         ]);
     }
@@ -84,7 +87,9 @@ class StoreEmployerJobRequest extends FormRequest
             ],
             'experience_level' => ['required', 'string', 'max:50'],
             'salary_range' => ['nullable', 'string', 'max:255'],
-            'career_portal_url' => ['nullable', 'url', 'max:2048'],
+            'career_portal_url' => ExternalApplyDestination::rules(),
+            'apply_by_link' => ['sometimes', 'boolean'],
+            'hide_on_site_apply' => ['sometimes', 'boolean'],
             'description' => ['nullable', 'string', 'max:20000'],
             'requirements' => ['nullable', 'string', 'max:20000'],
             'skills' => ['nullable', 'array'],
@@ -114,19 +119,11 @@ class StoreEmployerJobRequest extends FormRequest
             'logo.image' => 'The job logo must be an image.',
             'logo.mimes' => 'The job logo must be a JPG, PNG, or WEBP file.',
             'logo.max' => 'The job logo may not be greater than 5MB.',
-            'career_portal_url.url' => 'Please enter a valid Apply by Link URL.',
-            'career_portal_url.max' => 'The Apply by Link URL may not be greater than 2048 characters.',
+            ...ExternalApplyDestination::messages(),
         ];
     }
 
     private function nullableSlug(string $key): ?string
-    {
-        $value = trim((string) $this->input($key));
-
-        return $value !== '' ? $value : null;
-    }
-
-    private function nullableUrl(string $key): ?string
     {
         $value = trim((string) $this->input($key));
 

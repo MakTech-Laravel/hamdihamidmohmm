@@ -2,6 +2,10 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { BellRing, Pencil, Plus, Trash2 } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,7 +34,7 @@ type AlertRow = {
 };
 
 type Props = {
-    alerts: AlertRow[];
+    alerts: PortalPaginator<AlertRow>;
     filterOptions: {
         countries: TaxonomyOption[];
         dutyStations: TaxonomyOption[];
@@ -71,11 +75,15 @@ function fromAlert(alert: AlertRow): AlertForm {
     };
 }
 
-export default function JobSeekerJobAlerts({ alerts, filterOptions }: Props) {
+export default function JobSeekerJobAlerts({
+    alerts: alertsPage,
+    filterOptions,
+}: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const alerts = alertsPage.data;
     const [editingId, setEditingId] = useState<number | null>(null);
-    const [showForm, setShowForm] = useState(alerts.length === 0);
+    const [showForm, setShowForm] = useState(alertsPage.total === 0);
     const form = useForm<AlertForm>(emptyForm());
 
     const openCreate = () => {
@@ -134,10 +142,10 @@ export default function JobSeekerJobAlerts({ alerts, filterOptions }: Props) {
     };
 
     return (
-        <JobSeekerLayout>
+        <JobSeekerLayout title={t('job_seeker.alerts.title')}>
             <Head title={t('job_seeker.alerts.title')} />
 
-            <div className="space-y-6">
+            <div className="space-y-6 p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-[#050315]">
@@ -405,6 +413,16 @@ export default function JobSeekerJobAlerts({ alerts, filterOptions }: Props) {
                         ))}
                     </div>
                 )}
+                <PortalPagination
+                    align="start"
+                    className="pb-2 pe-14"
+                    showingLabel={t('common.showing_range', {
+                        from: alertsPage.from ?? 0,
+                        to: alertsPage.to ?? 0,
+                        total: alertsPage.total,
+                    })}
+                    links={alertsPage.links}
+                />
             </div>
         </JobSeekerLayout>
     );

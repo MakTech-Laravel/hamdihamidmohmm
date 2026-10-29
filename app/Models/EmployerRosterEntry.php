@@ -69,10 +69,14 @@ class EmployerRosterEntry extends Model
     /**
      * @return list<string>
      */
-    public static function categoriesForAccount(int $employerOwnerId): array
+    public static function categoriesForAccount(int $employerOwnerId, ?int $addedBy = null): array
     {
         return static::query()
             ->forAccount($employerOwnerId)
+            ->when(
+                $addedBy !== null,
+                fn (Builder $query) => $query->where('added_by', $addedBy),
+            )
             ->whereNotNull('category')
             ->where('category', '!=', '')
             ->distinct()

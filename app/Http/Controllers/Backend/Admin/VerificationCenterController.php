@@ -6,6 +6,7 @@ use App\Enums\EmployerVerificationStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\ListPageSize;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -22,8 +23,9 @@ class VerificationCenterController extends Controller
             ->where('role', UserRole::Employer)
             ->where('verification_status', EmployerVerificationStatus::Pending)
             ->latest()
-            ->get()
-            ->map(function (User $employer) {
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(function (User $employer) {
                 $hasDocument = $employer->hasVerificationDocument();
 
                 return [

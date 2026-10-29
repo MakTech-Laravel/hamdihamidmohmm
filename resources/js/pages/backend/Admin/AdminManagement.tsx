@@ -1,12 +1,14 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 
 import { AdminIcon } from '@/components/admin-icon';
+import { AdminPagination } from '@/components/admin-portal/ui';
 import InputError from '@/components/input-error';
 import {
     MobileListCard,
     MobileListCardHeader,
     MobileListCardMeta,
 } from '@/components/mobile-list-card';
+import type { PortalPaginator } from '@/components/portal-pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,13 +27,14 @@ type AdminRow = {
 };
 
 export default function AdminManagement({
-    admins,
+    admins: adminsPage,
 }: {
-    admins: AdminRow[];
+    admins: PortalPaginator<AdminRow>;
     canCreateAdmins: boolean;
 }) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const admins = adminsPage.data;
 
     return (
         <AdminPortalLayout>
@@ -232,6 +235,15 @@ export default function AdminManagement({
                                 </tbody>
                             </table>
                         </div>
+
+                        <AdminPagination
+                            showingLabel={t('common.showing_range', {
+                                from: adminsPage.from ?? 0,
+                                to: adminsPage.to ?? 0,
+                                total: adminsPage.total,
+                            })}
+                            links={adminsPage.links}
+                        />
                     </div>
                 </div>
             </div>

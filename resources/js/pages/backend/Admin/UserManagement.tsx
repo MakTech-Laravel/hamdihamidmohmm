@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { AdminIcon } from '@/components/admin-icon';
 import {
@@ -8,6 +8,7 @@ import {
     MobileListCardHeader,
     MobileListCardMeta,
 } from '@/components/mobile-list-card';
+import { PortalPagination } from '@/components/portal-pagination';
 import { Input } from '@/components/ui/input';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
@@ -34,11 +35,14 @@ type ManagedUser = {
 type PaginatedUsers = {
     data: ManagedUser[];
     links: Array<{ url: string | null; label: string; active: boolean }>;
+    from: number | null;
+    to: number | null;
+    total: number;
 };
 
 type Props = {
     users: PaginatedUsers;
-    filters: { role: string };
+    filters: { role: string; search?: string };
     roleCounts: Record<string, number>;
     roles: RoleOption[];
     canManageAdmins: boolean;
@@ -59,22 +63,33 @@ export default function UserManagement({
 }: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
-    const [search, setSearch] = useState('');
+    const [search, setSearch] = useState(filters.search ?? '');
 
-    const filteredUsers = useMemo(() => {
-        const query = search.trim().toLowerCase();
+    useEffect(() => {
+        setSearch(filters.search ?? '');
+    }, [filters.search]);
 
-        if (query === '') {
-            return users.data;
-        }
+    useEffect(() => {
+        const handle = window.setTimeout(() => {
+            const next = search.trim();
+            const current = (filters.search ?? '').trim();
 
-        return users.data.filter(
-            (user) =>
-                user.name.toLowerCase().includes(query) ||
-                user.email.toLowerCase().includes(query) ||
-                user.role_label.toLowerCase().includes(query),
-        );
-    }, [search, users.data]);
+            if (next === current) {
+                return;
+            }
+
+            router.get(
+                '/admin/users',
+                {
+                    ...(filters.role ? { role: filters.role } : {}),
+                    ...(next !== '' ? { search: next } : {}),
+                },
+                { preserveState: true, replace: true },
+            );
+        }, 300);
+
+        return () => window.clearTimeout(handle);
+    }, [search, filters.role, filters.search]);
 
     return (
         <AdminPortalLayout>
@@ -138,7 +153,12 @@ export default function UserManagement({
                             onClick={() =>
                                 router.get(
                                     '/admin/users',
-                                    key === 'all' ? {} : { role: key },
+                                    {
+                                        ...(key === 'all' ? {} : { role: key }),
+                                        ...((filters.search ?? '').trim() !== ''
+                                            ? { search: filters.search }
+                                            : {}),
+                                    },
                                     { preserveState: true, replace: true },
                                 )
                             }
@@ -181,7 +201,7 @@ export default function UserManagement({
                     </div>
 
                     <div className="space-y-3 md:hidden">
-                        {filteredUsers.map((user) => (
+                        {users.data.map((user) => (
                             <MobileListCard key={user.id}>
                                 <MobileListCardHeader
                                     title={user.name}
@@ -282,7 +302,7 @@ export default function UserManagement({
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredUsers.map((user) => (
+                                {users.data.map((user) => (
                                     <tr
                                         key={user.id}
                                         className="border-b border-[#f1f5f9]"
@@ -361,31 +381,14 @@ export default function UserManagement({
                         </table>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                        {users.links.map((link, index) => (
-                            <button
-                                key={`${link.label}-${index}`}
-                                type="button"
-                                disabled={!link.url}
-                                onClick={() =>
-                                    link.url &&
-                                    router.get(
-                                        link.url,
-                                        {},
-                                        { preserveState: true },
-                                    )
-                                }
-                                className={cn(
-                                    'rounded-lg px-3 py-1.5 text-xs font-semibold',
-                                    link.active
-                                        ? 'bg-[#0057c8] text-white'
-                                        : 'bg-[#f8faff] text-[#64748b]',
-                                    !link.url && 'opacity-40',
-                                )}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                            />
-                        ))}
-                    </div>
+                    <PortalPagination
+                        showingLabel={t('common.showing_range', {
+                            from: users.from ?? 0,
+                            to: users.to ?? 0,
+                            total: users.total,
+                        })}
+                        links={users.links}
+                    />
                 </div>
             </div>
         </AdminPortalLayout>

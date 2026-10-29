@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react';
 import { TrainingSectionNav } from '@/components/admin-portal/training-section-nav';
 import {
     AdminPageHeader,
+    AdminPagination,
     AdminPanel,
 } from '@/components/admin-portal/ui';
 import {
@@ -13,6 +14,7 @@ import {
     MobileListCardMeta,
     MobileListEmpty,
 } from '@/components/mobile-list-card';
+import type { PortalPaginator } from '@/components/portal-pagination';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
@@ -31,18 +33,19 @@ type Option = { value: string; label: string };
 type CourseOption = { id: number; title: string };
 
 export default function TrainingRegistrations({
-    registrations,
+    registrations: registrationsPage,
     filters,
     courses,
     statuses,
 }: {
-    registrations: RegistrationRow[];
+    registrations: PortalPaginator<RegistrationRow>;
     filters: { course: number; status: string; search: string };
     courses: CourseOption[];
     statuses: Option[];
 }) {
     const { t } = useLocale();
     const { flash } = usePage<SharedData>().props;
+    const registrations = registrationsPage.data;
     const [search, setSearch] = useState(filters.search);
     const [course, setCourse] = useState(String(filters.course || ''));
     const [status, setStatus] = useState(filters.status);
@@ -254,6 +257,14 @@ export default function TrainingRegistrations({
                             </tbody>
                         </table>
                     </div>
+                    <AdminPagination
+                        showingLabel={t('common.showing_range', {
+                            from: registrationsPage.from ?? 0,
+                            to: registrationsPage.to ?? 0,
+                            total: registrationsPage.total,
+                        })}
+                        links={registrationsPage.links}
+                    />
                 </AdminPanel>
             </div>
         </AdminPortalLayout>

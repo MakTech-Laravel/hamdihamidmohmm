@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import {
     AdminPageHeader,
+    AdminPagination,
     AdminPanel,
     AdminPrimaryButton,
     AdminStatusBadge,
@@ -15,6 +16,7 @@ import {
     MobileListCardHeader,
     MobileListCardMeta,
 } from '@/components/mobile-list-card';
+import type { PortalPaginator } from '@/components/portal-pagination';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -51,9 +53,14 @@ const emptyForm = {
     status: 'draft',
 };
 
-export default function ContentManagement({ pages }: { pages: PageRow[] }) {
+export default function ContentManagement({
+    pages: pagesPage,
+}: {
+    pages: PortalPaginator<PageRow>;
+}) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const pages = pagesPage.data;
     const [editing, setEditing] = useState<PageRow | null>(null);
     const [creating, setCreating] = useState(false);
     const form = useForm(emptyForm);
@@ -255,6 +262,14 @@ export default function ContentManagement({ pages }: { pages: PageRow[] }) {
                             {t('admin.content.empty')}
                         </p>
                     )}
+                    <AdminPagination
+                        showingLabel={t('common.showing_range', {
+                            from: pagesPage.from ?? 0,
+                            to: pagesPage.to ?? 0,
+                            total: pagesPage.total,
+                        })}
+                        links={pagesPage.links}
+                    />
                 </AdminPanel>
             </div>
 

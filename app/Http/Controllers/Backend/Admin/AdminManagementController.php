@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\StoreAdminRequest;
 use App\Models\User;
 use App\Support\ActivityLogger;
+use App\Support\ListPageSize;
 use App\Support\RoleAssigner;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -22,8 +23,10 @@ class AdminManagementController extends Controller
         $admins = User::query()
             ->role([UserRole::Admin->spatieName(), UserRole::SuperAdmin->spatieName()])
             ->latest()
-            ->get(['id', 'name', 'email', 'role', 'created_at'])
-            ->map(fn (User $admin) => [
+            ->select(['id', 'name', 'email', 'role', 'created_at'])
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (User $admin) => [
                 'id' => $admin->id,
                 'name' => $admin->name,
                 'email' => $admin->email,

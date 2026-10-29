@@ -3,6 +3,7 @@ import { Download, FileSpreadsheet, Trash2 } from 'lucide-react';
 
 import {
     AdminPageHeader,
+    AdminPagination,
     AdminPanel,
     AdminPrimaryButton,
     AdminTableShell,
@@ -13,6 +14,7 @@ import {
     MobileListCardHeader,
     MobileListCardMeta,
 } from '@/components/mobile-list-card';
+import type { PortalPaginator } from '@/components/portal-pagination';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
@@ -28,13 +30,17 @@ type ReportRow = {
 };
 
 type Props = {
-    reports: ReportRow[];
+    reports: PortalPaginator<ReportRow>;
     modules: string[];
 };
 
-export default function ReportsAnalytics({ reports, modules }: Props) {
+export default function ReportsAnalytics({
+    reports: reportsPage,
+    modules,
+}: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const reports = reportsPage.data;
     const form = useForm({ module: modules[0] ?? 'users' });
 
     return (
@@ -195,6 +201,14 @@ export default function ReportsAnalytics({ reports, modules }: Props) {
                             {t('admin.reports.empty')}
                         </p>
                     )}
+                    <AdminPagination
+                        showingLabel={t('common.showing_range', {
+                            from: reportsPage.from ?? 0,
+                            to: reportsPage.to ?? 0,
+                            total: reportsPage.total,
+                        })}
+                        links={reportsPage.links}
+                    />
                 </AdminPanel>
             </div>
         </AdminPortalLayout>

@@ -92,8 +92,8 @@ test('a seeker can apply once, see employer status updates, and withdraw', funct
         ->get(route('job-seeker.applications'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('applications.0.status_value', JobApplicationStatus::Interview->value)
-            ->where('applications.0.can_withdraw', true));
+            ->where('applications.data.0.status_value', JobApplicationStatus::Interview->value)
+            ->where('applications.data.0.can_withdraw', true));
 
     $this->actingAs($seeker)
         ->post(route('job-seeker.applications.withdraw', $application))

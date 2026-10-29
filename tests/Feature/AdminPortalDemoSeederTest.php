@@ -105,26 +105,26 @@ test('admins can see the demo records on portal module pages', function () {
         ->assertOk()
         ->assertInertia(fn($page) => $page
             ->component('backend/Admin/VerificationCenter')
-            ->has('pending', 2));
+            ->has('pending.data', 2));
 
     $this->actingAs($admin)
         ->get(route('admin.content.index'))
         ->assertOk()
         ->assertInertia(fn($page) => $page
             ->component('backend/Admin/ContentManagement')
-            ->has('pages', 2));
+            ->has('pages.data', 2));
 
     $this->actingAs($admin)
         ->get(route('admin.reports.index'))
         ->assertOk()
         ->assertInertia(fn($page) => $page
             ->component('backend/Admin/ReportsAnalytics')
-            ->has('reports', 2));
+            ->has('reports.data', 2));
 
     $this->actingAs($admin)
         ->get(route('admin.notifications.index'))
         ->assertOk()
         ->assertInertia(fn($page) => $page
             ->component('backend/Admin/AdminNotifications')
-            ->has('notifications', 2));
+            ->has('notifications.data', 2));
 });

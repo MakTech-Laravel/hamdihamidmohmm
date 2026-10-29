@@ -8,8 +8,14 @@ import {
     MobileListEmpty,
     MobileListStack,
 } from '@/components/mobile-list-card';
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
+import { cn } from '@/lib/utils';
 
 type Member = {
     id: number;
@@ -26,12 +32,16 @@ type RoleOption = {
 };
 
 type Props = {
-    members: Member[];
+    members: PortalPaginator<Member>;
     roleOptions: RoleOption[];
 };
 
-export default function EmployerTeam({ members, roleOptions }: Props) {
+export default function EmployerTeam({
+    members: membersPage,
+    roleOptions,
+}: Props) {
     const { t } = useLocale();
+    const members = membersPage.data;
     const [showInvite, setShowInvite] = useState(false);
     const form = useForm({
         name: '',
@@ -105,7 +115,10 @@ export default function EmployerTeam({ members, roleOptions }: Props) {
                                     type="email"
                                     value={form.data.email}
                                     onChange={(event) =>
-                                        form.setData('email', event.target.value)
+                                        form.setData(
+                                            'email',
+                                            event.target.value,
+                                        )
                                     }
                                     className="h-11 w-full rounded-xl border border-[#dbeafe] px-3"
                                 />
@@ -302,10 +315,13 @@ export default function EmployerTeam({ members, roleOptions }: Props) {
                                     </td>
                                 </tr>
                             ) : (
-                                members.map((member) => (
+                                members.map((member, index) => (
                                     <tr
                                         key={member.id}
-                                        className="border-b border-[rgba(57,119,166,0.1)] last:border-0"
+                                        className={cn(
+                                            'border-b border-[rgba(57,119,166,0.1)] last:border-0',
+                                            employerListRowBg(index),
+                                        )}
                                     >
                                         <td className="px-4 py-3 font-medium text-[#050315]">
                                             {member.name}
@@ -324,8 +340,7 @@ export default function EmployerTeam({ members, roleOptions }: Props) {
                                                                 .value,
                                                         },
                                                         {
-                                                            preserveScroll:
-                                                                true,
+                                                            preserveScroll: true,
                                                         },
                                                     )
                                                 }
@@ -355,8 +370,7 @@ export default function EmployerTeam({ members, roleOptions }: Props) {
                                                         router.delete(
                                                             `/employer/team/${member.id}`,
                                                             {
-                                                                preserveScroll:
-                                                                    true,
+                                                                preserveScroll: true,
                                                             },
                                                         );
                                                     }
@@ -372,6 +386,15 @@ export default function EmployerTeam({ members, roleOptions }: Props) {
                         </tbody>
                     </table>
                 </div>
+
+                <PortalPagination
+                    showingLabel={t('common.showing_range', {
+                        from: membersPage.from ?? 0,
+                        to: membersPage.to ?? 0,
+                        total: membersPage.total,
+                    })}
+                    links={membersPage.links}
+                />
             </div>
         </EmployerLayout>
     );

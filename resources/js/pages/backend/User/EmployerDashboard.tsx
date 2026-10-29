@@ -7,6 +7,7 @@ import {
 } from '@/components/employer/demo-data';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
+import { employerListRowBg } from '@/lib/employer-list-row';
 import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
@@ -356,10 +357,13 @@ export default function EmployerDashboard({
                         </Link>
                     </div>
                     <div className="mt-4 flex flex-col gap-3">
-                        {active_jobs.map((job) => (
+                        {active_jobs.map((job, index) => (
                             <div
                                 key={job.id}
-                                className="flex flex-col gap-3 rounded-xl border border-[#f0e8f0] bg-[#fafafa] p-4 lg:flex-row lg:items-center lg:justify-between"
+                                className={cn(
+                                    'flex flex-col gap-3 rounded-xl border border-[#f0e8f0] p-4 lg:flex-row lg:items-center lg:justify-between',
+                                    employerListRowBg(index),
+                                )}
                             >
                                 <div className="min-w-0">
                                     <p className="text-[15.2px] leading-[22.8px] font-bold text-[#050315]">
@@ -444,7 +448,10 @@ export default function EmployerDashboard({
                             return (
                                 <div
                                     key={application.id}
-                                    className="flex flex-wrap items-center gap-3 rounded-xl border border-[#f0e8f0] bg-[#fafafa] p-3"
+                                    className={cn(
+                                        'flex flex-wrap items-center gap-3 rounded-xl border border-[#f0e8f0] p-3',
+                                        employerListRowBg(index),
+                                    )}
                                 >
                                     <div
                                         className={cn(
