@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\StoreManagedRoleRequest;
 use App\Http\Requests\Backend\Admin\UpdateManagedRoleRequest;
 use App\Models\Role;
+use App\Support\ListPageSize;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -22,11 +24,15 @@ class RolePermissionController extends Controller
     {
         abort_unless($request->user()?->canManageUsers(), 403);
 
-        $roles = $this->roleModels();
+        $roles = $this->roleModels()
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString();
+
+        $pageRoles = collect($roles->items());
 
         return Inertia::render('backend/Admin/RolePermissions', [
-            'roles' => $roles->map(fn (Role $role) => $this->roleCard($role))->values(),
-            'permissionMatrix' => $this->permissionMatrix($roles),
+            'roles' => $roles->through(fn (Role $role) => $this->roleCard($role)),
+            'permissionMatrix' => $this->permissionMatrix($pageRoles),
             'permissionGroups' => PermissionName::inertiaGroups(),
             'canManageAdmins' => $request->user()?->canManageAdmins() === true,
         ]);
@@ -128,9 +134,9 @@ class RolePermissionController extends Controller
     }
 
     /**
-     * @return Collection<int, Role>
+     * @return Builder<Role>
      */
-    private function roleModels()
+    private function roleModels(): Builder
     {
         return Role::query()
             ->web()
@@ -138,8 +144,7 @@ class RolePermissionController extends Controller
             ->with('permissions')
             ->withCount('users')
             ->orderBy('is_system', 'desc')
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
     }
 
     /**

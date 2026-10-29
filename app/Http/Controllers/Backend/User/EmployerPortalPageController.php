@@ -9,21 +9,41 @@ use App\Http\Requests\Backend\User\DeleteEmployerAccountRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerAccountRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerNotificationPreferencesRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerPrivacyPreferencesRequest;
+use App\Support\ListPageSize;
 use App\Support\PortalPreferences;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class EmployerPortalPageController extends Controller
 {
+    private const NOTIFICATION_FILTERS = ['all', 'unread', 'applications', 'jobs', 'billing', 'system'];
+
+    /**
+     * @var array<string, list<string>>
+     */
+    private const CATEGORY_FILTER_VALUES = [
+        'applications' => ['application', 'applications'],
+        'jobs' => ['job', 'jobs'],
+        'billing' => ['billing'],
+    ];
+
     public function notifications(Request $request): Response
     {
         $user = $request->user();
+        abort_unless($user !== null, 403);
 
-        return Inertia::render('backend/User/EmployerNotifications', [
-            'notifications' => $user?->notifications()->latest()->get()->map(fn($notification) => [
+        $filter = $this->notificationFilter($request);
+
+        $notifications = $this->applyNotificationFilter($user->notifications()->getQuery(), $filter)
+            ->latest()
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (DatabaseNotification $notification): array => [
                 'id' => $notification->id,
                 'title' => $notification->data['title'] ?? 'Notification',
                 'message' => $notification->data['message'] ?? '',
@@ -31,8 +51,19 @@ class EmployerPortalPageController extends Controller
                 'category_key' => $this->categoryKey($notification->data['category'] ?? 'System'),
                 'read' => $notification->read_at !== null,
                 'created_at' => $notification->created_at?->diffForHumans(),
-            ]),
-            'unread' => $user?->unreadNotifications()->count() ?? 0,
+            ]);
+
+        $counts = [];
+
+        foreach (self::NOTIFICATION_FILTERS as $filterId) {
+            $counts[$filterId] = $this->applyNotificationFilter($user->notifications()->getQuery(), $filterId)->count();
+        }
+
+        return Inertia::render('backend/User/EmployerNotifications', [
+            'notifications' => $notifications,
+            'filter' => $filter,
+            'counts' => $counts,
+            'unread' => $user->unreadNotifications()->count(),
         ]);
     }
 
@@ -73,7 +104,7 @@ class EmployerPortalPageController extends Controller
                 'personal_initials' => collect(explode(' ', (string) ($user?->name ?? '')))
                     ->filter()
                     ->take(2)
-                    ->map(fn(string $part): string => strtoupper(substr($part, 0, 1)))
+                    ->map(fn (string $part): string => strtoupper(substr($part, 0, 1)))
                     ->implode(''),
             ],
             'preferences' => [
@@ -146,6 +177,63 @@ class EmployerPortalPageController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/')->with('success', 'Your employer account has been deleted.');
+    }
+
+    private function notificationFilter(Request $request): string
+    {
+        $filter = $request->string('filter')->toString();
+
+        return in_array($filter, self::NOTIFICATION_FILTERS, true) ? $filter : 'all';
+    }
+
+    /**
+     * @param  Builder<DatabaseNotification>  $query
+     * @return Builder<DatabaseNotification>
+     */
+    private function applyNotificationFilter(Builder $query, string $filter): Builder
+    {
+        if ($filter === 'unread') {
+            return $query->whereNull('read_at');
+        }
+
+        if ($filter === 'system') {
+            return $query->where(function (Builder $builder): void {
+                $builder->whereNull('data->category')
+                    ->orWhereNotIn('data->category', $this->knownCategoryValues());
+            });
+        }
+
+        if (isset(self::CATEGORY_FILTER_VALUES[$filter])) {
+            return $query->whereIn('data->category', $this->categoryValueVariants(self::CATEGORY_FILTER_VALUES[$filter]));
+        }
+
+        return $query;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function knownCategoryValues(): array
+    {
+        return $this->categoryValueVariants([
+            ...self::CATEGORY_FILTER_VALUES['applications'],
+            ...self::CATEGORY_FILTER_VALUES['jobs'],
+            ...self::CATEGORY_FILTER_VALUES['billing'],
+            'verification',
+        ]);
+    }
+
+    /**
+     * @param  list<string>  $values
+     * @return list<string>
+     */
+    private function categoryValueVariants(array $values): array
+    {
+        return collect($values)
+            ->flatMap(fn (string $value): array => [$value, ucfirst($value), strtoupper($value)])
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function categoryKey(mixed $category): string

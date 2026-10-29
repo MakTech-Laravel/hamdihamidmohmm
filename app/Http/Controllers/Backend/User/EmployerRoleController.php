@@ -8,6 +8,7 @@ use App\Http\Requests\Backend\User\StoreEmployerRoleRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerRoleRequest;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\ListPageSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -29,9 +30,9 @@ class EmployerRoleController extends Controller
             ->withCount('users')
             ->orderBy('label')
             ->orderBy('id')
-            ->get()
-            ->map(fn (Role $role): array => $this->roleCard($role))
-            ->values();
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (Role $role): array => $this->roleCard($role));
 
         return Inertia::render('backend/User/EmployerRoles', [
             'roles' => $roles,

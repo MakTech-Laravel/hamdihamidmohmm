@@ -35,12 +35,12 @@ test('employer reports lists own jobs with application summaries', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerReports')
-            ->has('jobs', 1)
-            ->where('jobs.0.title', 'Reported Role')
-            ->where('jobs.0.total', 2)
-            ->where('jobs.0.shortlisted', 1)
-            ->where('jobs.0.interview', 1)
-            ->where('jobs.0.reference', 'JOB-'.str_pad((string) $job->id, 5, '0', STR_PAD_LEFT)));
+            ->has('jobs.data', 1)
+            ->where('jobs.data.0.title', 'Reported Role')
+            ->where('jobs.data.0.total', 2)
+            ->where('jobs.data.0.shortlisted', 1)
+            ->where('jobs.data.0.interview', 1)
+            ->where('jobs.data.0.reference', 'JOB-'.str_pad((string) $job->id, 5, '0', STR_PAD_LEFT)));
 });
 
 test('guests cannot open employer reports', function () {
@@ -53,4 +53,25 @@ test('job seekers cannot open employer reports', function () {
     $this->actingAs($seeker)
         ->get(route('employer.reports'))
         ->assertForbidden();
+});
+
+test('employer reports paginates jobs at the default page size', function () {
+    $employer = User::factory()->employer()->create();
+    JobPost::factory()->count(31)->create([
+        'employer_id' => $employer->id,
+        'status' => JobPostStatus::Active,
+    ]);
+
+    $this->actingAs($employer)
+        ->get(route('employer.reports'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('jobs.data', 30)
+            ->where('jobs.total', 31)
+            ->where('jobs.per_page', 30));
+
+    $this->actingAs($employer)
+        ->get(route('employer.reports', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('jobs.data', 1));
 });

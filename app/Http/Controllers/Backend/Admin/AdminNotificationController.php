@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\SendNotificationRequest;
 use App\Models\User;
 use App\Notifications\PortalNotification;
+use App\Support\ListPageSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
@@ -22,18 +23,23 @@ class AdminNotificationController extends Controller
         $user = $request->user();
         $tab = $request->string('tab')->toString() ?: 'all';
 
-        $notifications = $user->notifications()->latest()->get()->map(fn ($notification) => [
-            'id' => $notification->id,
-            'title' => $notification->data['title'] ?? 'Notification',
-            'message' => $notification->data['message'] ?? '',
-            'category' => $notification->data['category'] ?? 'System',
-            'read' => $notification->read_at !== null,
-            'created_at' => $notification->created_at?->diffForHumans(),
-        ]);
+        $notificationsQuery = $user->notifications()->latest();
 
         if ($tab === 'unread') {
-            $notifications = $notifications->where('read', false)->values();
+            $notificationsQuery->whereNull('read_at');
         }
+
+        $notifications = $notificationsQuery
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn ($notification) => [
+                'id' => $notification->id,
+                'title' => $notification->data['title'] ?? 'Notification',
+                'message' => $notification->data['message'] ?? '',
+                'category' => $notification->data['category'] ?? 'System',
+                'read' => $notification->read_at !== null,
+                'created_at' => $notification->created_at?->diffForHumans(),
+            ]);
 
         return Inertia::render('backend/Admin/AdminNotifications', [
             'notifications' => $notifications,

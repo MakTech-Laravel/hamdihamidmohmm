@@ -68,7 +68,7 @@ test('job seeker settings page exposes sessions and two factor status', function
             ->component('backend/User/JobSeekerSettings')
             ->where('user.bio', 'Seeking roles')
             ->where('two_factor_enabled', true)
-            ->has('sessions')
+            ->has('sessions.data')
             ->has('preferences.email_preferences'));
 });
 
@@ -103,4 +103,30 @@ test('job seekers can revoke other sessions', function () {
         ->assertRedirect(route('job-seeker.settings'));
 
     expect(DB::table('sessions')->where('user_id', $seeker->id)->where('id', '!=', $currentId)->count())->toBe(0);
+});
+
+test('job seeker settings paginates sessions', function () {
+    $seeker = User::factory()->jobSeeker()->create();
+
+    DB::table('sessions')->insert(collect(range(1, 31))->map(fn (int $index): array => [
+        'id' => 'paged-session-'.$index,
+        'user_id' => $seeker->id,
+        'ip_address' => '1.1.1.'.$index,
+        'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0',
+        'payload' => 'payload',
+        'last_activity' => now()->subMinutes($index)->timestamp,
+    ])->all());
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.settings'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('sessions.data', 30)
+            ->where('sessions.total', 31)
+            ->where('sessions.per_page', 30));
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.settings', ['sessions_page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('sessions.data', 1));
 });

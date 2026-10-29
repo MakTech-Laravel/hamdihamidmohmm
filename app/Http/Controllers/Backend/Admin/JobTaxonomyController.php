@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\StoreJobTaxonomyRequest;
 use App\Http\Requests\Backend\Admin\UpdateJobTaxonomyRequest;
 use App\Models\JobTaxonomy;
+use App\Support\ListPageSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -30,8 +31,9 @@ class JobTaxonomyController extends Controller
             ->orderBy('type')
             ->orderBy('sort_order')
             ->orderBy('name')
-            ->get()
-            ->map(fn (JobTaxonomy $item) => [
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (JobTaxonomy $item) => [
                 'id' => $item->id,
                 'type' => $item->type?->value,
                 'type_label' => $item->type?->label(),

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContactMessage;
+use App\Support\ListPageSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,7 +24,7 @@ class ContactMessageController extends Controller
             $query->whereNull('read_at');
         }
 
-        $messages = $query->get()->map(fn (ContactMessage $message): array => [
+        $messages = $query->paginate(ListPageSize::DEFAULT)->withQueryString()->through(fn (ContactMessage $message): array => [
             'id' => $message->id,
             'name' => $message->name,
             'email' => $message->email,

@@ -4,11 +4,13 @@ import { CheckCheck, MailOpen, Trash2 } from 'lucide-react';
 import {
     AdminFilterChip,
     AdminPageHeader,
+    AdminPagination,
     AdminPanel,
     AdminPrimaryButton,
     AdminSecondaryButton,
     AdminStatusBadge,
 } from '@/components/admin-portal/ui';
+import type { PortalPaginator } from '@/components/portal-pagination';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import { cn } from '@/lib/utils';
@@ -26,14 +28,19 @@ type ContactMessageRow = {
 };
 
 type Props = {
-    messages: ContactMessageRow[];
+    messages: PortalPaginator<ContactMessageRow>;
     unread: number;
     tab: string;
 };
 
-export default function ContactMessages({ messages, unread, tab }: Props) {
+export default function ContactMessages({
+    messages: messagesPage,
+    unread,
+    tab,
+}: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const messages = messagesPage.data;
 
     return (
         <AdminPortalLayout>
@@ -185,6 +192,15 @@ export default function ContactMessages({ messages, unread, tab }: Props) {
                         ))
                     )}
                 </div>
+
+                <AdminPagination
+                    showingLabel={t('common.showing_range', {
+                        from: messagesPage.from ?? 0,
+                        to: messagesPage.to ?? 0,
+                        total: messagesPage.total,
+                    })}
+                    links={messagesPage.links}
+                />
             </div>
         </AdminPortalLayout>
     );

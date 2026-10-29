@@ -8,6 +8,10 @@ import {
     MobileListEmpty,
     MobileListStack,
 } from '@/components/mobile-list-card';
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
 import { employerListRowBg } from '@/lib/employer-list-row';
@@ -28,12 +32,16 @@ type RoleOption = {
 };
 
 type Props = {
-    members: Member[];
+    members: PortalPaginator<Member>;
     roleOptions: RoleOption[];
 };
 
-export default function EmployerTeam({ members, roleOptions }: Props) {
+export default function EmployerTeam({
+    members: membersPage,
+    roleOptions,
+}: Props) {
     const { t } = useLocale();
+    const members = membersPage.data;
     const [showInvite, setShowInvite] = useState(false);
     const form = useForm({
         name: '',
@@ -107,7 +115,10 @@ export default function EmployerTeam({ members, roleOptions }: Props) {
                                     type="email"
                                     value={form.data.email}
                                     onChange={(event) =>
-                                        form.setData('email', event.target.value)
+                                        form.setData(
+                                            'email',
+                                            event.target.value,
+                                        )
                                     }
                                     className="h-11 w-full rounded-xl border border-[#dbeafe] px-3"
                                 />
@@ -329,8 +340,7 @@ export default function EmployerTeam({ members, roleOptions }: Props) {
                                                                 .value,
                                                         },
                                                         {
-                                                            preserveScroll:
-                                                                true,
+                                                            preserveScroll: true,
                                                         },
                                                     )
                                                 }
@@ -360,8 +370,7 @@ export default function EmployerTeam({ members, roleOptions }: Props) {
                                                         router.delete(
                                                             `/employer/team/${member.id}`,
                                                             {
-                                                                preserveScroll:
-                                                                    true,
+                                                                preserveScroll: true,
                                                             },
                                                         );
                                                     }
@@ -377,6 +386,15 @@ export default function EmployerTeam({ members, roleOptions }: Props) {
                         </tbody>
                     </table>
                 </div>
+
+                <PortalPagination
+                    showingLabel={t('common.showing_range', {
+                        from: membersPage.from ?? 0,
+                        to: membersPage.to ?? 0,
+                        total: membersPage.total,
+                    })}
+                    links={membersPage.links}
+                />
             </div>
         </EmployerLayout>
     );

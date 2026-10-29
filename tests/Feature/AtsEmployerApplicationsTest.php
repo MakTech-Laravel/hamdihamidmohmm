@@ -49,15 +49,15 @@ test('employers see AI score fields and the ats prop on the applications page', 
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerApplications')
-            ->where('applications.0.ai_status', 'completed')
-            ->where('applications.0.ai_source', 'rules')
-            ->where('applications.0.ai_score', 88)
-            ->where('applications.0.ai_recommendation', 'strong_match')
-            ->where('applications.0.ai_outdated', false)
-            ->where('applications.0.ai_cv_name', 'john-carter-cv.docx')
-            ->where('applications.0.ai_breakdown.matched_skills', ['React', 'TypeScript', 'Laravel'])
-            ->missing('applications.0.ai_breakdown.job_hash')
-            ->where('applications.0.ai_rescore_url', route('employer.applications.rescore', $application))
+            ->where('applications.data.0.ai_status', 'completed')
+            ->where('applications.data.0.ai_source', 'rules')
+            ->where('applications.data.0.ai_score', 88)
+            ->where('applications.data.0.ai_recommendation', 'strong_match')
+            ->where('applications.data.0.ai_outdated', false)
+            ->where('applications.data.0.ai_cv_name', 'john-carter-cv.docx')
+            ->where('applications.data.0.ai_breakdown.matched_skills', ['React', 'TypeScript', 'Laravel'])
+            ->missing('applications.data.0.ai_breakdown.job_hash')
+            ->where('applications.data.0.ai_rescore_url', route('employer.applications.rescore', $application))
             ->where('ats.enabled', true)
             ->where('ats.has_pending', false)
             ->where('ats.suggested_shortlist', [])
@@ -73,7 +73,7 @@ test('scores are marked outdated after the job requirements change', function ()
 
     $this->actingAs($application->jobPost->employer)
         ->get(route('employer.applications'))
-        ->assertInertia(fn ($page) => $page->where('applications.0.ai_outdated', true));
+        ->assertInertia(fn ($page) => $page->where('applications.data.0.ai_outdated', true));
 });
 
 test('employers can sort by AI score with unscored applications last', function () {
@@ -87,16 +87,16 @@ test('employers can sort by AI score with unscored applications last', function 
         ->get(route('employer.applications', ['ai_sort' => 'desc']))
         ->assertInertia(fn ($page) => $page
             ->where('filters.ai_sort', 'desc')
-            ->where('applications.0.id', $high->id)
-            ->where('applications.1.id', $low->id)
-            ->where('applications.2.id', $unscored->id));
+            ->where('applications.data.0.id', $high->id)
+            ->where('applications.data.1.id', $low->id)
+            ->where('applications.data.2.id', $unscored->id));
 
     $this->actingAs($employer)
         ->get(route('employer.applications', ['ai_sort' => 'asc']))
         ->assertInertia(fn ($page) => $page
-            ->where('applications.0.id', $low->id)
-            ->where('applications.1.id', $high->id)
-            ->where('applications.2.id', $unscored->id));
+            ->where('applications.data.0.id', $low->id)
+            ->where('applications.data.1.id', $high->id)
+            ->where('applications.data.2.id', $unscored->id));
 });
 
 test('employers can filter applications by AI score band', function (string $band, array $expectedScores) {
@@ -112,7 +112,7 @@ test('employers can filter applications by AI score band', function (string $ban
         ->get(route('employer.applications', ['ai_band' => $band, 'ai_sort' => 'desc']))
         ->assertInertia(fn ($page) => $page
             ->where('filters.ai_band', $band)
-            ->where('applications', fn ($applications): bool => collect($applications)->pluck('ai_score')->all() === $expectedScores));
+            ->where('applications.data', fn ($applications): bool => collect($applications)->pluck('ai_score')->all() === $expectedScores));
 })->with([
     'strong' => ['strong', [90]],
     'possible' => ['possible', [60]],
@@ -137,16 +137,16 @@ test('employers can filter failed and unreadable applications and see ai_error',
     $this->actingAs($employer)
         ->get(route('employer.applications', ['ai_band' => 'failed']))
         ->assertInertia(fn ($page) => $page
-            ->has('applications', 1)
-            ->where('applications.0.id', $failed->id)
-            ->where('applications.0.ai_error', 'Provider timed out'));
+            ->has('applications.data', 1)
+            ->where('applications.data.0.id', $failed->id)
+            ->where('applications.data.0.ai_error', 'Provider timed out'));
 
     $this->actingAs($employer)
         ->get(route('employer.applications', ['ai_band' => 'unreadable']))
         ->assertInertia(fn ($page) => $page
-            ->has('applications', 1)
-            ->where('applications.0.ai_status', 'unreadable')
-            ->where('applications.0.ai_error', 'Could not extract CV text'));
+            ->has('applications.data', 1)
+            ->where('applications.data.0.ai_status', 'unreadable')
+            ->where('applications.data.0.ai_error', 'Could not extract CV text'));
 });
 
 test('employers can bulk upgrade rule-scored applications', function () {
@@ -193,7 +193,7 @@ test('the page reports pending screening so it can poll', function () {
         ->get(route('employer.applications'))
         ->assertInertia(fn ($page) => $page
             ->where('ats.has_pending', true)
-            ->where('applications.0.ai_status', 'pending'));
+            ->where('applications.data.0.ai_status', 'pending'));
 });
 
 test('employers with screening disabled still see prior scores but cannot use interactive ATS', function () {
@@ -207,9 +207,9 @@ test('employers with screening disabled still see prior scores but cannot use in
             ->where('ats.enabled', false)
             ->where('filters.ai_sort', '')
             ->where('filters.ai_band', '')
-            ->where('applications.0.ai_score', 90)
-            ->where('applications.0.ai_summary', 'Scored 90')
-            ->where('applications.0.ai_rescore_url', null));
+            ->where('applications.data.0.ai_score', 90)
+            ->where('applications.data.0.ai_summary', 'Scored 90')
+            ->where('applications.data.0.ai_rescore_url', null));
 });
 
 test('employers can re-score one of their applications', function () {

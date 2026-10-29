@@ -6,6 +6,7 @@ use App\Enums\JobApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\JobPost;
 use App\Support\EmployerJobAccess;
+use App\Support\ListPageSize;
 use App\Support\RecruitmentReport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,8 +28,9 @@ class EmployerReportController extends Controller
                 'applications as rejected_count' => fn ($query) => $query->where('status', JobApplicationStatus::Rejected),
             ])
             ->latest()
-            ->get()
-            ->map(fn (JobPost $job): array => [
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (JobPost $job): array => [
                 'id' => $job->id,
                 'reference' => RecruitmentReport::jobReference($job),
                 'title' => $job->title,

@@ -1,6 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Check } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { JobPanelDialog } from '@/components/employer/job-panel-dialog';
 import {
@@ -11,6 +11,10 @@ import {
     MobileListEmpty,
     MobileListStack,
 } from '@/components/mobile-list-card';
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import {
     Dialog,
     DialogContent,
@@ -54,10 +58,11 @@ const jobInitials = (title: string): string => {
 };
 
 type Props = {
-    jobs: JobRow[];
+    jobs: PortalPaginator<JobRow>;
     stats: { total: number; active: number; draft: number; expired: number };
     plan: { credits_remaining: number; can_post_job: boolean } | null;
     can_manage_panel?: boolean;
+    filters: { search?: string; filter?: string };
 };
 
 const statusTone: Record<string, string> = {
@@ -88,14 +93,16 @@ export default function EmployerJobs({
     stats,
     plan,
     can_manage_panel = false,
+    filters: serverFilters,
 }: Props) {
     const { t } = useLocale();
     const { flash, auth } = usePage<SharedData>().props;
     const jobsTitle = auth.user?.is_employer_owner
         ? t('employer.jobs.title')
         : t('employer.jobs.title_panel');
-    const [search, setSearch] = useState('');
-    const [filter, setFilter] = useState<FilterId>('all');
+    const [search, setSearch] = useState(serverFilters.search ?? '');
+    const filter = (serverFilters.filter ?? 'all') as FilterId;
+    const lastSubmittedSearch = useRef(serverFilters.search ?? '');
     const [submitSuccessOpen, setSubmitSuccessOpen] = useState(
         () => flash.success === 'job_submitted',
     );
@@ -109,26 +116,35 @@ export default function EmployerJobs({
         { id: 'closed' as const, label: t('employer.jobs.filter.closed') },
     ];
 
-    const filtered = useMemo(() => {
-        const query = search.toLowerCase();
+    const applyFilters = (next: { search?: string; filter?: FilterId }) => {
+        const nextSearch = (next.search ?? search).trim();
+        const nextFilter = next.filter ?? filter;
 
-        return jobs.filter((job) => {
-            const matchesQuery =
-                query === '' ||
-                job.title.toLowerCase().includes(query) ||
-                (job.category ?? '').toLowerCase().includes(query) ||
-                (job.location ?? '').toLowerCase().includes(query);
+        router.get(
+            '/employer/jobs',
+            {
+                ...(nextSearch ? { search: nextSearch } : {}),
+                ...(nextFilter !== 'all' ? { filter: nextFilter } : {}),
+            },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
 
-            const matchesFilter =
-                filter === 'all' ||
-                (filter === 'draft' &&
-                    ['draft', 'pending'].includes(job.status_value)) ||
-                (filter === 'closed' && job.status_value === 'rejected') ||
-                job.status_value === filter;
+    useEffect(() => {
+        const trimmed = search.trim();
 
-            return matchesQuery && matchesFilter;
-        });
-    }, [jobs, search, filter]);
+        if (trimmed === lastSubmittedSearch.current) {
+            return;
+        }
+
+        const timeout = window.setTimeout(() => {
+            lastSubmittedSearch.current = trimmed;
+            applyFilters({ search: trimmed });
+        }, 300);
+
+        return () => window.clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search]);
 
     const statCards = [
         {
@@ -240,7 +256,7 @@ export default function EmployerJobs({
                                 <button
                                     key={item.id}
                                     type="button"
-                                    onClick={() => setFilter(item.id)}
+                                    onClick={() => applyFilters({ filter: item.id })}
                                     className={cn(
                                         'shrink-0 cursor-pointer rounded-full px-4 py-1.5 text-sm font-semibold',
                                         filter === item.id
@@ -254,13 +270,13 @@ export default function EmployerJobs({
                         </div>
                     </div>
 
-                    {filtered.length === 0 ? (
+                    {jobs.data.length === 0 ? (
                         <MobileListEmpty>
                             {t('employer.jobs.empty_cta')}
                         </MobileListEmpty>
                     ) : (
                         <MobileListStack className="p-3">
-                            {filtered.map((job) => {
+                            {jobs.data.map((job) => {
                                 const statusLabel =
                                     job.status_value === 'rejected'
                                         ? t('employer.jobs.closed')
@@ -484,7 +500,7 @@ export default function EmployerJobs({
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map((job, index) => (
+                                {jobs.data.map((job, index) => (
                                     <tr
                                         key={job.id}
                                         className={cn(
@@ -748,11 +764,21 @@ export default function EmployerJobs({
                                 ))}
                             </tbody>
                         </table>
-                        {filtered.length === 0 && (
+                        {jobs.data.length === 0 && (
                             <p className="hidden px-5 py-10 text-center text-sm text-[#99a1af] md:block">
                                 {t('employer.jobs.empty_cta')}
                             </p>
                         )}
+                    </div>
+                    <div className="px-5 pb-4">
+                        <PortalPagination
+                            showingLabel={t('common.showing_range', {
+                                from: jobs.from ?? 0,
+                                to: jobs.to ?? 0,
+                                total: jobs.total,
+                            })}
+                            links={jobs.links}
+                        />
                     </div>
                 </div>
             </div>

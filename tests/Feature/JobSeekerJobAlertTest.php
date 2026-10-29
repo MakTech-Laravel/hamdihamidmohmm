@@ -50,10 +50,10 @@ test('job seekers can manage job alerts', function () {
     $this->actingAs($seeker)
         ->get(route('job-seeker.alerts.index'))
         ->assertOk()
-        ->assertInertia(fn($page) => $page
+        ->assertInertia(fn ($page) => $page
             ->component('backend/User/JobSeekerJobAlerts')
-            ->has('alerts', 1)
-            ->where('alerts.0.display_name', 'IT Systems'));
+            ->has('alerts.data', 1)
+            ->where('alerts.data.0.display_name', 'IT Systems'));
 
     $this->actingAs($seeker)
         ->delete(route('job-seeker.alerts.destroy', $alert))
@@ -175,4 +175,23 @@ test('other seekers cannot update someone else alerts', function () {
             'keyword' => 'Hacked',
         ])
         ->assertForbidden();
+});
+
+test('job alerts are paginated at the default page size', function () {
+    $seeker = User::factory()->jobSeeker()->create();
+    JobAlert::factory()->count(31)->create(['user_id' => $seeker->id]);
+    JobAlert::factory()->create();
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.alerts.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('alerts.data', 30)
+            ->where('alerts.total', 31)
+            ->where('alerts.per_page', 30));
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.alerts.index', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('alerts.data', 1));
 });

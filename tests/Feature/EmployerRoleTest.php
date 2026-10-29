@@ -154,3 +154,31 @@ test('cannot delete a custom role while users are assigned', function () {
 
     expect(Role::query()->whereKey($role->id)->exists())->toBeTrue();
 });
+
+test('employer roles index paginates roles', function () {
+    $owner = User::factory()->employer()->create();
+
+    foreach (range(1, 31) as $index) {
+        Role::query()->create([
+            'name' => 'emp-'.$owner->id.'-bulk-'.$index,
+            'guard_name' => 'web',
+            'label' => 'Bulk Role '.str_pad((string) $index, 2, '0', STR_PAD_LEFT),
+            'is_system' => false,
+            'is_locked' => false,
+            'employer_owner_id' => $owner->id,
+        ]);
+    }
+
+    $this->actingAs($owner)
+        ->get(route('employer.roles'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('roles.data', 30)
+            ->where('roles.total', 31)
+            ->where('roles.per_page', 30));
+
+    $this->actingAs($owner)
+        ->get(route('employer.roles', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('roles.data', 1));
+});

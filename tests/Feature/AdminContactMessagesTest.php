@@ -71,8 +71,9 @@ test('admins can view contact messages inbox', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/ContactMessages')
-            ->where('messages.0.name', 'Omar Ali')
-            ->where('messages.0.email', 'omar@example.com')
+            ->where('messages.data.0.name', 'Omar Ali')
+            ->where('messages.data.0.email', 'omar@example.com')
+            ->where('messages.total', 1)
             ->where('unread', 1));
 });
 

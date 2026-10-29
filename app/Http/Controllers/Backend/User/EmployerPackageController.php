@@ -14,6 +14,7 @@ use App\Services\EmployerPlanActivator;
 use App\Services\YallaPay\YallaPayPackageCheckoutService;
 use App\Support\EmployerPlanChange;
 use App\Support\EmployerPlanSnapshot;
+use App\Support\ListPageSize;
 use App\Support\PortalNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -76,8 +77,9 @@ class EmployerPackageController extends Controller
             ->where('employer_id', $employer->employerAccountId())
             ->with('package:id,name,currency')
             ->latest()
-            ->get()
-            ->map(fn (Payment $payment) => [
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (Payment $payment) => [
                 'id' => $payment->id,
                 'reference' => $payment->reference,
                 'package' => $payment->package?->name ?? '—',

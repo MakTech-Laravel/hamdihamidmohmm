@@ -9,6 +9,7 @@ use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\Payment;
 use App\Models\User;
+use App\Support\ListPageSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -25,8 +26,9 @@ class ReportController extends Controller
         $reports = GeneratedReport::query()
             ->with('generator:id,name')
             ->latest()
-            ->get()
-            ->map(fn (GeneratedReport $report) => [
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (GeneratedReport $report) => [
                 'id' => $report->id,
                 'name' => $report->name,
                 'module' => $report->module,

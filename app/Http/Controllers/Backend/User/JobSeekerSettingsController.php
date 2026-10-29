@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\UpdateJobSeekerEmailPreferencesRequest;
 use App\Http\Requests\Backend\User\UpdateJobSeekerSettingsRequest;
 use App\Models\JobSeekerProfile;
+use App\Support\ListPageSize;
 use App\Support\PortalPreferences;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,8 +29,9 @@ class JobSeekerSettingsController extends Controller
         $sessions = DB::table('sessions')
             ->where('user_id', $user->id)
             ->orderByDesc('last_activity')
-            ->get()
-            ->map(function ($session) use ($currentSessionId) {
+            ->paginate(ListPageSize::DEFAULT, ['*'], 'sessions_page')
+            ->withQueryString()
+            ->through(function ($session) use ($currentSessionId) {
                 $agent = (string) ($session->user_agent ?? '');
 
                 return [
@@ -41,8 +43,7 @@ class JobSeekerSettingsController extends Controller
                         ? Carbon::createFromTimestamp($session->last_activity)->diffForHumans()
                         : null,
                 ];
-            })
-            ->values();
+            });
 
         return Inertia::render('backend/User/JobSeekerSettings', [
             'user' => [

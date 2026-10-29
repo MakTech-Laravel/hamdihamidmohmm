@@ -129,3 +129,58 @@ test('job seekers can search jobs in the portal', function () {
             ->where('jobs.data.0.title', 'React Engineer')
             ->where('filters.search', 'React'));
 });
+
+test('job seeker jobs paginate thirty per page', function () {
+    $seeker = User::factory()->jobSeeker()->create();
+
+    foreach (range(1, 31) as $index) {
+        JobPost::factory()->create([
+            'title' => "Open Role {$index}",
+            'status' => JobPostStatus::Active,
+        ]);
+    }
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.jobs'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('jobs.per_page', 30)
+            ->where('jobs.total', 31)
+            ->has('jobs.data', 30));
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.jobs', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('jobs.data', 1));
+});
+
+test('job seekers can sort portal jobs by salary on the server', function () {
+    $seeker = User::factory()->jobSeeker()->create();
+    $employer = User::factory()->employer()->create();
+    $employer->forceFill([
+        'portal_preferences' => [
+            'privacy' => ['show_salary' => true],
+        ],
+    ])->save();
+
+    $low = JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Lower Salary Role',
+        'status' => JobPostStatus::Active,
+        'salary_range' => 'AAA 1,000',
+    ]);
+    $high = JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Higher Salary Role',
+        'status' => JobPostStatus::Active,
+        'salary_range' => 'ZZZ 9,000',
+    ]);
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.jobs', ['sort' => 'salary']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filters.sort', 'salary')
+            ->where('jobs.data.0.id', $high->id)
+            ->where('jobs.data.1.id', $low->id));
+});

@@ -148,8 +148,8 @@ test('manager can see assigned owner jobs and interviewer cannot open jobs', fun
         ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerJobs')
             ->where('auth.user.is_employer_owner', false)
-            ->has('jobs', 1)
-            ->where('jobs.0.title', 'Shared Vacancy'));
+            ->has('jobs.data', 1)
+            ->where('jobs.data.0.title', 'Shared Vacancy'));
 
     $this->actingAs($interviewer)
         ->get(route('employer.jobs'))
@@ -158,7 +158,7 @@ test('manager can see assigned owner jobs and interviewer cannot open jobs', fun
     $this->actingAs($interviewer)
         ->get(route('employer.applications'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->has('applications', 0));
+        ->assertInertia(fn ($page) => $page->has('applications.data', 0));
 });
 
 test('interviewer cannot open settings or team', function () {
@@ -194,7 +194,7 @@ test('team members cannot access another employer account jobs', function () {
     $this->actingAs($manager)
         ->get(route('employer.jobs'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->has('jobs', 0));
+        ->assertInertia(fn ($page) => $page->has('jobs.data', 0));
 });
 
 test('owner can remove a team member', function () {
@@ -209,4 +209,28 @@ test('owner can remove a team member', function () {
         ->assertRedirect();
 
     expect(User::query()->whereKey($member->id)->exists())->toBeFalse();
+});
+
+test('team page paginates members', function () {
+    $owner = User::factory()->employer()->create();
+    $role = makeEmployerScopedRole($owner, 'bulk', [
+        PermissionName::EmployerApplications->value,
+    ], 'Bulk Member');
+
+    foreach (range(1, 31) as $ignored) {
+        makeEmployerMember($owner, $role->name);
+    }
+
+    $this->actingAs($owner)
+        ->get(route('employer.team'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('members.data', 30)
+            ->where('members.total', 31)
+            ->where('members.per_page', 30));
+
+    $this->actingAs($owner)
+        ->get(route('employer.team', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('members.data', 1));
 });

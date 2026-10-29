@@ -217,7 +217,82 @@ test('job seeker applications page includes filter counts and job urls', functio
             ->where('stats.interviews', 1)
             ->where('filters.3.value', 'interview')
             ->where('filters.3.count', 1)
-            ->where('applications.0.slug', 'ux-designer-demo')
-            ->where('applications.0.job_url', route('jobs.show', 'ux-designer-demo'))
-            ->where('applications.0.progress', 4));
+            ->where('applications.data.0.slug', 'ux-designer-demo')
+            ->where('applications.data.0.job_url', route('jobs.show', 'ux-designer-demo'))
+            ->where('applications.data.0.progress', 4));
+});
+
+test('job seeker applications are filtered and paginated on the server', function () {
+    $seeker = User::factory()->jobSeeker()->create();
+
+    JobApplication::factory()->count(31)->create([
+        'job_seeker_id' => $seeker->id,
+        'status' => JobApplicationStatus::Applied,
+    ]);
+    JobApplication::factory()->count(2)->create([
+        'job_seeker_id' => $seeker->id,
+        'status' => JobApplicationStatus::Interview,
+    ]);
+    JobApplication::factory()->create([
+        'job_seeker_id' => $seeker->id,
+        'status' => JobApplicationStatus::Rejected,
+    ]);
+    JobApplication::factory()->create(['status' => JobApplicationStatus::Interview]);
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.applications'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('applications.data', 30)
+            ->where('applications.total', 34)
+            ->where('selectedStatus', 'all')
+            ->where('stats.total', 34)
+            ->where('stats.active', 33)
+            ->where('stats.interviews', 2)
+            ->where('filters.0.value', 'applied')
+            ->where('filters.0.count', 31));
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.applications', ['status' => 'interview']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('applications.data', 2)
+            ->where('applications.total', 2)
+            ->where('selectedStatus', 'interview')
+            ->where('stats.total', 34)
+            ->where('applications.data.0.status_value', 'interview'));
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.applications', ['status' => 'applied', 'page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('applications.data', 1));
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.applications', ['status' => 'nonsense']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('selectedStatus', 'all')
+            ->where('applications.total', 34));
+});
+
+test('job seeker notifications are paginated at the default page size', function () {
+    $seeker = User::factory()->jobSeeker()->create();
+
+    foreach (range(1, 31) as $index) {
+        $seeker->notifyNow(new PortalNotification("Notice {$index}", 'Message', 'System'));
+    }
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.notifications'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('backend/User/JobSeekerNotifications')
+            ->has('notifications.data', 30)
+            ->where('notifications.total', 31)
+            ->where('unread', 31));
+
+    $this->actingAs($seeker)
+        ->get(route('job-seeker.notifications', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('notifications.data', 1));
 });

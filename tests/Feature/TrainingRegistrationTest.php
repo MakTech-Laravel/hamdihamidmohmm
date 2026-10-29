@@ -419,8 +419,8 @@ test('admins can manage courses, filter registrations, export them, and protect 
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/TrainingRegistrations')
-            ->has('registrations', 1)
-            ->where('registrations.0.number', $pending->registration_number));
+            ->has('registrations.data', 1)
+            ->where('registrations.data.0.number', $pending->registration_number));
 
     $export = $this->actingAs($admin)
         ->get(route('admin.training.registrations.export', ['course' => $course->id]));

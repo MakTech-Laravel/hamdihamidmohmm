@@ -9,6 +9,7 @@ use App\Models\JobPost;
 use App\Models\JobTaxonomy;
 use App\Models\User;
 use App\Support\JobListingQuery;
+use App\Support\ListPageSize;
 use App\Support\PortalPreferences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -29,13 +30,14 @@ class JobSeekerJobsController extends Controller
             ->filter()
             ->values()
             ->all();
+        $sort = $request->string('sort')->toString() === 'salary' ? 'salary' : 'latest';
 
         $appliedJobIds = JobApplication::query()
             ->where('job_seeker_id', $user?->id)
             ->pluck('job_post_id')
             ->all();
 
-        $jobs = JobListingQuery::apply(
+        $jobsQuery = JobListingQuery::apply(
             JobPost::query()
                 ->active()
                 ->with('employer:id,name,company_name,company_logo_path,portal_preferences'),
@@ -44,9 +46,18 @@ class JobSeekerJobsController extends Controller
             $category,
             $types,
             $country,
-        )
-            ->latest()
-            ->paginate(30)
+        );
+
+        if ($sort === 'salary') {
+            $jobsQuery->orderByRaw("CASE WHEN salary_range IS NULL OR salary_range = '' THEN 1 ELSE 0 END")
+                ->orderByDesc('salary_range')
+                ->orderByDesc('id');
+        } else {
+            $jobsQuery->latest();
+        }
+
+        $jobs = $jobsQuery
+            ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
             ->through(function (JobPost $job) use ($appliedJobIds) {
                 $company = $job->employer?->company_name ?: $job->employer?->name;
@@ -77,6 +88,7 @@ class JobSeekerJobsController extends Controller
                 'location' => $location,
                 'category' => $category,
                 'types' => $types,
+                'sort' => $sort,
             ],
             'filterOptions' => JobTaxonomy::filterOptions(),
         ]);

@@ -16,6 +16,10 @@ import {
     MobileListEmpty,
     MobileListStack,
 } from '@/components/mobile-list-card';
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import EmployerLayout from '@/layouts/employer-layout';
@@ -77,7 +81,7 @@ type PanelMemberOption = {
 };
 
 type Props = {
-    entries: RosterEntry[];
+    entries: PortalPaginator<RosterEntry>;
     categories: string[];
     panel_members?: PanelMemberOption[];
     is_owner?: boolean;
@@ -88,13 +92,14 @@ type Props = {
 };
 
 export default function EmployerRoster({
-    entries,
+    entries: entriesPage,
     categories,
     panel_members = [],
     is_owner = false,
     filters,
 }: Props) {
     const { t } = useLocale();
+    const entries = entriesPage.data;
     const [category, setCategory] = useState(filters.category ?? '');
     const [panelMemberId, setPanelMemberId] = useState(
         filters.panel_member_id ? String(filters.panel_member_id) : '',
@@ -457,6 +462,15 @@ export default function EmployerRoster({
                         </tbody>
                     </table>
                 </div>
+
+                <PortalPagination
+                    showingLabel={t('common.showing_range', {
+                        from: entriesPage.from ?? 0,
+                        to: entriesPage.to ?? 0,
+                        total: entriesPage.total,
+                    })}
+                    links={entriesPage.links}
+                />
             </div>
 
             <RosterCandidateDrawer

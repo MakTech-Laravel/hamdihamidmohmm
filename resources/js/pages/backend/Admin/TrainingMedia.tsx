@@ -5,11 +5,13 @@ import { type FormEvent, useRef } from 'react';
 import { TrainingSectionNav } from '@/components/admin-portal/training-section-nav';
 import {
     AdminPageHeader,
+    AdminPagination,
     AdminPanel,
     AdminPrimaryButton,
     AdminSecondaryButton,
 } from '@/components/admin-portal/ui';
 import InputError from '@/components/input-error';
+import type { PortalPaginator } from '@/components/portal-pagination';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLocale } from '@/hooks/use-locale';
@@ -26,9 +28,9 @@ type TrainingMediaItem = {
 };
 
 type Props = {
-    videos?: TrainingMediaItem[];
+    videos?: PortalPaginator<TrainingMediaItem>;
     heroVideoUrl: string | null;
-    documents: TrainingMediaItem[];
+    documents: PortalPaginator<TrainingMediaItem>;
     maxVideos?: number;
 };
 
@@ -49,13 +51,15 @@ function formatBytes(bytes: number | null): string {
 }
 
 export default function TrainingMedia({
-    videos = [],
+    videos: videosPage,
     heroVideoUrl,
-    documents,
+    documents: documentsPage,
     maxVideos = 12,
 }: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const videos = videosPage?.data ?? [];
+    const documents = documentsPage.data;
     const videoInputRef = useRef<HTMLInputElement>(null);
     const documentInputRef = useRef<HTMLInputElement>(null);
     const slides =
@@ -73,7 +77,10 @@ export default function TrainingMedia({
                     },
                 ]
               : [];
-    const remainingSlots = Math.max(0, maxVideos - slides.length);
+    const remainingSlots = Math.max(
+        0,
+        maxVideos - Math.max(videosPage?.total ?? 0, slides.length),
+    );
     const videoForm = useForm<{ videos: File[]; name: string }>({
         videos: [],
         name: '',
@@ -207,6 +214,17 @@ export default function TrainingMedia({
                         <div className="flex aspect-video items-center justify-center rounded-2xl border border-dashed border-[#cbd5e1] bg-[#f8faff] text-sm font-medium text-[#94a3b8]">
                             {t('admin.training.no_video')}
                         </div>
+                    )}
+
+                    {videosPage && videosPage.total > 0 && (
+                        <AdminPagination
+                            showingLabel={t('common.showing_range', {
+                                from: videosPage.from ?? 0,
+                                to: videosPage.to ?? 0,
+                                total: videosPage.total,
+                            })}
+                            links={videosPage.links}
+                        />
                     )}
 
                     <form onSubmit={onVideoSubmit} className="space-y-4">
@@ -343,6 +361,17 @@ export default function TrainingMedia({
                         <div className="rounded-2xl border border-dashed border-[#cbd5e1] bg-[#f8faff] px-4 py-8 text-center text-sm font-medium text-[#94a3b8]">
                             {t('admin.training.no_documents')}
                         </div>
+                    )}
+
+                    {documentsPage.total > 0 && (
+                        <AdminPagination
+                            showingLabel={t('common.showing_range', {
+                                from: documentsPage.from ?? 0,
+                                to: documentsPage.to ?? 0,
+                                total: documentsPage.total,
+                            })}
+                            links={documentsPage.links}
+                        />
                     )}
 
                     <form onSubmit={onDocumentSubmit} className="space-y-4">

@@ -11,6 +11,7 @@ use App\Http\Requests\Backend\User\StoreEmployerTeamMemberRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerTeamMemberRequest;
 use App\Models\User;
 use App\Support\EmployerAssignableRoles;
+use App\Support\ListPageSize;
 use App\Support\RoleAssigner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,8 +33,9 @@ class EmployerTeamController extends Controller
         $members = User::query()
             ->where('employer_owner_id', $owner->id)
             ->orderBy('name')
-            ->get()
-            ->map(fn (User $member): array => [
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (User $member): array => [
                 'id' => $member->id,
                 'name' => $member->name,
                 'email' => $member->email,

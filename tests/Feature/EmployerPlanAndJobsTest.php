@@ -280,7 +280,7 @@ test('employers can view the designed my jobs table with live stats', function (
             ->where('stats.total', 2)
             ->where('stats.active', 1)
             ->where('stats.draft', 1)
-            ->has('jobs', 2));
+            ->has('jobs.data', 2));
 });
 
 test('employers can duplicate pause and republish jobs they own', function () {
@@ -390,7 +390,7 @@ test('employers can select a public plan via manual payment approval', function 
             ->where('plan.slug', EmployerPackage::Premium->value)
             ->where('plan.job_credits', 15)
             ->has('packages')
-            ->has('invoices'));
+            ->has('invoices.data'));
 
     expect(Payment::query()->where('employer_id', $employer->id)->latest('id')->first())
         ->status->toBe(PaymentStatus::Completed)
@@ -430,4 +430,113 @@ test('employers can update company profile sections used by the dashboard', func
             ->where('profile.company_name', 'TechCorp Solutions')
             ->where('completion.sections.social', true)
             ->has('completion.percent'));
+});
+
+test('employer jobs index paginates and computes stats from the whole employer scope', function () {
+    $employer = User::factory()->employer()->create();
+    JobPost::factory()->count(31)->create([
+        'employer_id' => $employer->id,
+        'status' => JobPostStatus::Active,
+        'expires_at' => now()->addMonth(),
+    ]);
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'status' => JobPostStatus::Active,
+        'expires_at' => now()->subWeek(),
+    ]);
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'status' => JobPostStatus::Pending,
+    ]);
+    JobPost::factory()->create(['status' => JobPostStatus::Active]);
+
+    $this->actingAs($employer)
+        ->get(route('employer.jobs'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('jobs.data', 30)
+            ->where('jobs.total', 33)
+            ->where('jobs.last_page', 2)
+            ->where('stats.total', 33)
+            ->where('stats.active', 31)
+            ->where('stats.draft', 1)
+            ->where('stats.expired', 1));
+
+    $this->actingAs($employer)
+        ->get(route('employer.jobs', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('jobs.data', 3)
+            ->where('stats.total', 33));
+});
+
+test('employer jobs index filters by search and status on the server', function () {
+    $employer = User::factory()->employer()->create();
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Nurse Lead',
+        'status' => JobPostStatus::Active,
+        'expires_at' => now()->addWeek(),
+    ]);
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Draft Engineer',
+        'status' => JobPostStatus::Draft,
+    ]);
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Closed Clerk',
+        'status' => JobPostStatus::Rejected,
+    ]);
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Old Listing',
+        'status' => JobPostStatus::Active,
+        'expires_at' => now()->subWeek(),
+    ]);
+
+    $titlesFor = function (array $query) use ($employer): array {
+        $titles = [];
+
+        $this->actingAs($employer)
+            ->get(route('employer.jobs', $query))
+            ->assertOk()
+            ->assertInertia(function ($page) use (&$titles) {
+                $titles = collect($page->toArray()['props']['jobs']['data'])->pluck('title')->sort()->values()->all();
+
+                return $page->where('stats.total', 4);
+            });
+
+        return $titles;
+    };
+
+    expect($titlesFor(['search' => 'nurse']))->toBe(['Nurse Lead'])
+        ->and($titlesFor(['filter' => 'active']))->toBe(['Nurse Lead'])
+        ->and($titlesFor(['filter' => 'draft']))->toBe(['Draft Engineer'])
+        ->and($titlesFor(['filter' => 'closed']))->toBe(['Closed Clerk'])
+        ->and($titlesFor(['filter' => 'expired']))->toBe(['Old Listing'])
+        ->and($titlesFor(['filter' => 'bogus']))->toHaveCount(4);
+});
+
+test('employer packages paginates invoices but keeps the full package catalog', function () {
+    $employer = User::factory()->employer()->create();
+    $package = Package::factory()->create();
+    Payment::factory()->count(31)->create([
+        'employer_id' => $employer->id,
+        'package_id' => $package->id,
+    ]);
+
+    $this->actingAs($employer)
+        ->get(route('employer.packages'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('invoices.data', 30)
+            ->where('invoices.total', 31)
+            ->where('invoices.per_page', 30)
+            ->where('packages', fn ($packages): bool => ! isset($packages['data'])));
+
+    $this->actingAs($employer)
+        ->get(route('employer.packages', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('invoices.data', 1));
 });

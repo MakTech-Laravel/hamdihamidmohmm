@@ -30,14 +30,14 @@ test('verification center lists document flags for pending employers', function 
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/VerificationCenter')
-            ->has('pending', 2)
-            ->where('pending.0.company_name', 'No Doc Corp')
-            ->where('pending.0.has_document', false)
-            ->where('pending.0.document_name', null)
-            ->where('pending.1.company_name', 'Doc Corp')
-            ->where('pending.1.has_document', true)
-            ->where('pending.1.document_name', 'cr.pdf')
-            ->where('pending.1.document_url', route('admin.verifications.document', $withDoc)));
+            ->has('pending.data', 2)
+            ->where('pending.data.0.company_name', 'No Doc Corp')
+            ->where('pending.data.0.has_document', false)
+            ->where('pending.data.0.document_name', null)
+            ->where('pending.data.1.company_name', 'Doc Corp')
+            ->where('pending.data.1.has_document', true)
+            ->where('pending.data.1.document_name', 'cr.pdf')
+            ->where('pending.data.1.document_url', route('admin.verifications.document', $withDoc)));
 
     $this->actingAs($admin)
         ->get(route('admin.verifications.document', $withDoc))

@@ -19,6 +19,7 @@ use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Services\Ai\AiChatService;
 use App\Services\Ats\AtsSettings;
+use App\Support\ListPageSize;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -45,7 +46,7 @@ class AiAssistantController extends Controller
                     ->orWhere('answer', 'like', "%{$search}%");
             }))
             ->latest()
-            ->paginate(20)
+            ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
             ->through(fn (AiChatLog $log): array => [
                 'id' => $log->id,

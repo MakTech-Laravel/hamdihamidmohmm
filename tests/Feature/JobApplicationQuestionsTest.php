@@ -123,9 +123,9 @@ test('application answers are stored and visible to the employer', function () {
         ->get(route('employer.applications', ['job_id' => $job->id]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('applications.0.name', 'Answer Seeker')
-            ->where('applications.0.question_answers.0.prompt', 'Years with React?')
-            ->where('applications.0.question_answers.0.answer', '5 years'));
+            ->where('applications.data.0.name', 'Answer Seeker')
+            ->where('applications.data.0.question_answers.0.prompt', 'Years with React?')
+            ->where('applications.data.0.question_answers.0.answer', '5 years'));
 });
 
 test('jobs without questions still accept applications', function () {

@@ -16,6 +16,7 @@ use App\Http\Requests\Backend\Admin\ToggleEmployerAtsRequest;
 use App\Http\Requests\Backend\Admin\UpdateEmployerRequest;
 use App\Models\User;
 use App\Support\ActivityLogger;
+use App\Support\ListPageSize;
 use App\Support\PortalNotifier;
 use App\Support\RoleAssigner;
 use App\Support\UserAccountLifecycle;
@@ -57,7 +58,7 @@ class EmployerManagementController extends Controller
         }
 
         $employers = $employersQuery
-            ->paginate(12)
+            ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
             ->through(fn (User $employer) => $this->employerRow($employer));
 
@@ -385,10 +386,10 @@ class EmployerManagementController extends Controller
         return [
             'id' => $employer->id,
             'company_name' => $employer->company_name ?: $employer->name,
-            'industry' => $employer->industry ?: 'â€”',
+            'industry' => $employer->industry ?: '—',
             'contact' => $employer->contact_name ?: $employer->name,
             'email' => UserAccountLifecycle::displayEmail($employer),
-            'phone' => $employer->phone ?: 'â€”',
+            'phone' => $employer->phone ?: '—',
             'verification' => $employer->verification_status?->label() ?? 'Pending',
             'verification_value' => $employer->verification_status?->value,
             'package' => $employer->package?->label() ?? 'Starter',

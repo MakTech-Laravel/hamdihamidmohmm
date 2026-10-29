@@ -35,7 +35,7 @@ test('employer owner can open roster board', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerRoster')
-            ->has('entries', 0)
+            ->has('entries.data', 0)
             ->has('categories', 0)
             ->where('is_owner', true)
             ->has('panel_members')
@@ -78,16 +78,16 @@ test('new category appears in roster options after save', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('categories.0', 'Future hire')
-            ->has('entries', 1)
-            ->where('entries.0.category', 'Future hire'));
+            ->has('entries.data', 1)
+            ->where('entries.data.0.category', 'Future hire'));
 
     $this->actingAs($this->owner)
         ->get(route('employer.applications'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('roster_categories.0', 'Future hire')
-            ->where('applications.0.on_roster', true)
-            ->where('applications.0.roster_entry_id', EmployerRosterEntry::query()->forAccount($this->owner->id)->value('id')));
+            ->where('applications.data.0.on_roster', true)
+            ->where('applications.data.0.roster_entry_id', EmployerRosterEntry::query()->forAccount($this->owner->id)->value('id')));
 });
 
 test('re-adding the same seeker upserts instead of duplicating', function () {
@@ -182,7 +182,7 @@ test('team member with applications permission can add and remove roster entries
     $this->actingAs($member)
         ->get(route('employer.roster'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->has('entries', 1));
+        ->assertInertia(fn ($page) => $page->has('entries.data', 1));
 
     $this->actingAs($member)
         ->delete(route('employer.roster.destroy', $entry))
@@ -224,9 +224,9 @@ test('roster index only lists the current employer account entries', function ()
         ->get(route('employer.roster'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('entries', 1)
-            ->where('entries.0.category', 'Ours')
-            ->where('entries.0.name', 'Roster Candidate'));
+            ->has('entries.data', 1)
+            ->where('entries.data.0.category', 'Ours')
+            ->where('entries.data.0.name', 'Roster Candidate'));
 });
 
 test('roster entries include candidate preview and account applications', function () {
@@ -254,16 +254,16 @@ test('roster entries include candidate preview and account applications', functi
         ->get(route('employer.roster'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('entries', 1)
-            ->where('entries.0.name', 'Roster Candidate')
-            ->where('entries.0.job', 'Backend Engineer')
-            ->where('entries.0.application_status_value', JobApplicationStatus::Applied->value)
-            ->where('entries.0.applications_count', 2)
-            ->has('entries.0.applications', 2)
-            ->has('entries.0.candidate')
-            ->where('entries.0.candidate.name', 'Roster Candidate')
-            ->where('entries.0.candidate.job', 'Backend Engineer')
-            ->where('entries.0.candidate.email', $this->seeker->email));
+            ->has('entries.data', 1)
+            ->where('entries.data.0.name', 'Roster Candidate')
+            ->where('entries.data.0.job', 'Backend Engineer')
+            ->where('entries.data.0.application_status_value', JobApplicationStatus::Applied->value)
+            ->where('entries.data.0.applications_count', 2)
+            ->has('entries.data.0.applications', 2)
+            ->has('entries.data.0.candidate')
+            ->where('entries.data.0.candidate.name', 'Roster Candidate')
+            ->where('entries.data.0.candidate.job', 'Backend Engineer')
+            ->where('entries.data.0.candidate.email', $this->seeker->email));
 });
 
 test('cannot destroy another employers roster entry', function () {
@@ -325,7 +325,7 @@ test('owner sees roster entries added by self and by team members', function () 
         ->get(route('employer.roster'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('entries', 2)
+            ->has('entries.data', 2)
             ->where('is_owner', true)
             ->has('panel_members', 2));
 });
@@ -362,8 +362,8 @@ test('owner can filter roster by panel member added_by', function () {
         ->get(route('employer.roster', ['panel_member_id' => $member->id]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('entries', 1)
-            ->where('entries.0.category', 'Member add')
+            ->has('entries.data', 1)
+            ->where('entries.data.0.category', 'Member add')
             ->where('filters.panel_member_id', $member->id));
 });
 
@@ -399,8 +399,8 @@ test('team member only sees roster entries they added', function () {
         ->get(route('employer.roster'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('entries', 1)
-            ->where('entries.0.category', 'Member add')
+            ->has('entries.data', 1)
+            ->where('entries.data.0.category', 'Member add')
             ->where('is_owner', false)
             ->has('panel_members', 0));
 });
@@ -500,15 +500,15 @@ test('owner all roster view shows each seeker once and filter shows that members
         ->get(route('employer.roster'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('entries', 1)
-            ->where('entries.0.name', 'Roster Candidate')
+            ->has('entries.data', 1)
+            ->where('entries.data.0.name', 'Roster Candidate')
             ->where(
-                'entries.0.category',
+                'entries.data.0.category',
                 fn (string $value): bool => str_contains($value, 'Owner list')
                     && str_contains($value, 'Member list'),
             )
             ->where(
-                'entries.0.added_by',
+                'entries.data.0.added_by',
                 fn (string $value): bool => str_contains($value, $this->owner->name)
                     && str_contains($value, $member->name),
             ));
@@ -517,9 +517,9 @@ test('owner all roster view shows each seeker once and filter shows that members
         ->get(route('employer.roster', ['panel_member_id' => $member->id]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('entries', 1)
-            ->where('entries.0.category', 'Member list')
-            ->where('entries.0.added_by', $member->name));
+            ->has('entries.data', 1)
+            ->where('entries.data.0.category', 'Member list')
+            ->where('entries.data.0.added_by', $member->name));
 });
 
 test('applications on_roster is personal to the current user', function () {
@@ -539,9 +539,9 @@ test('applications on_roster is personal to the current user', function () {
         ->get(route('employer.applications'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('applications', 1)
-            ->where('applications.0.on_roster', false)
-            ->where('applications.0.roster_entry_id', null));
+            ->has('applications.data', 1)
+            ->where('applications.data.0.on_roster', false)
+            ->where('applications.data.0.roster_entry_id', null));
 
     $memberEntry = EmployerRosterEntry::query()->create([
         'employer_owner_id' => $this->owner->id,
@@ -556,16 +556,16 @@ test('applications on_roster is personal to the current user', function () {
         ->get(route('employer.applications'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('applications.0.on_roster', true)
-            ->where('applications.0.roster_entry_id', $memberEntry->id));
+            ->where('applications.data.0.on_roster', true)
+            ->where('applications.data.0.roster_entry_id', $memberEntry->id));
 
     $this->actingAs($this->owner)
         ->get(route('employer.applications'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('applications.0.on_roster', true)
+            ->where('applications.data.0.on_roster', true)
             ->where(
-                'applications.0.roster_entry_id',
+                'applications.data.0.roster_entry_id',
                 EmployerRosterEntry::query()
                     ->forAccount($this->owner->id)
                     ->where('added_by', $this->owner->id)
@@ -724,3 +724,78 @@ function createRosterTeamMember(User $owner): User
 
     return $member;
 }
+
+test('roster paginates thirty entries per page', function () {
+    $seekers = User::factory()->jobSeeker()->count(31)->create();
+
+    foreach ($seekers as $seeker) {
+        EmployerRosterEntry::query()->create([
+            'employer_owner_id' => $this->owner->id,
+            'job_seeker_id' => $seeker->id,
+            'job_application_id' => $this->application->id,
+            'category' => 'Bulk',
+            'comments' => null,
+            'added_by' => $this->owner->id,
+        ]);
+    }
+
+    $this->actingAs($this->owner)
+        ->get(route('employer.roster'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('entries.data', 30)
+            ->where('entries.total', 31)
+            ->where('entries.per_page', 30)
+            ->where('entries.last_page', 2));
+
+    $this->actingAs($this->owner)
+        ->get(route('employer.roster', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('entries.data', 1));
+});
+
+test('owner roster pagination dedupes by seeker and merges all rows for page seekers', function () {
+    $member = createRosterTeamMember($this->owner);
+
+    foreach ([$this->owner, $member] as $adder) {
+        EmployerRosterEntry::query()->create([
+            'employer_owner_id' => $this->owner->id,
+            'job_seeker_id' => $this->seeker->id,
+            'job_application_id' => $this->application->id,
+            'category' => 'List '.$adder->id,
+            'comments' => null,
+            'added_by' => $adder->id,
+        ]);
+    }
+
+    $otherSeekers = User::factory()->jobSeeker()->count(30)->create();
+
+    foreach ($otherSeekers as $other) {
+        EmployerRosterEntry::query()->create([
+            'employer_owner_id' => $this->owner->id,
+            'job_seeker_id' => $other->id,
+            'job_application_id' => $this->application->id,
+            'category' => 'Other',
+            'comments' => null,
+            'added_by' => $this->owner->id,
+        ]);
+    }
+
+    $this->actingAs($this->owner)
+        ->get(route('employer.roster', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('entries.total', 31)
+            ->has('entries.data', 1)
+            ->where('entries.data.0.name', 'Roster Candidate')
+            ->where(
+                'entries.data.0.added_by',
+                fn (string $value): bool => str_contains($value, $this->owner->name)
+                    && str_contains($value, $member->name),
+            )
+            ->where(
+                'entries.data.0.category',
+                fn (string $value): bool => str_contains($value, 'List '.$this->owner->id)
+                    && str_contains($value, 'List '.$member->id),
+            ));
+});

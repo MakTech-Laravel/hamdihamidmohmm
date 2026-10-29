@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\UpdateTrainingRegistrationStatusRequest;
 use App\Models\TrainingCourse;
 use App\Models\TrainingRegistration;
+use App\Support\ListPageSize;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,8 +23,9 @@ class TrainingRegistrationController extends Controller
 
         $registrations = $this->filteredQuery($request)
             ->latest()
-            ->get()
-            ->map(fn (TrainingRegistration $registration): array => [
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (TrainingRegistration $registration): array => [
                 'id' => $registration->id,
                 'number' => $registration->registration_number,
                 'full_name' => $registration->full_name,

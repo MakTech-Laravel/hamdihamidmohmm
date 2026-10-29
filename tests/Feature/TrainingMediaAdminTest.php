@@ -15,8 +15,8 @@ test('admins can view the training media page', function () {
         ->assertInertia(fn($page) => $page
             ->component('backend/Admin/TrainingMedia')
             ->where('heroVideoUrl', null)
-            ->where('videos', [])
-            ->where('documents', [])
+            ->where('videos.data', [])
+            ->where('documents.data', [])
             ->where('maxVideos', 12));
 });
 
@@ -60,8 +60,8 @@ test('admins can upload multiple training videos for the public slider', functio
         ->get(route('admin.training.index'))
         ->assertOk()
         ->assertInertia(fn($page) => $page
-            ->has('videos', 2)
-            ->where('videos.0.name', 'Getting started'));
+            ->has('videos.data', 2)
+            ->where('videos.data.0.name', 'Getting started'));
 
     $this->actingAs($admin)
         ->delete(route('admin.training.videos.destroy', $videos[0]['id']))
@@ -154,8 +154,8 @@ test('admins can upload and remove training documents without clearing the video
         ->assertOk()
         ->assertInertia(fn($page) => $page
             ->component('backend/Admin/TrainingMedia')
-            ->has('documents', 1)
-            ->where('documents.0.name', 'Application Guide'));
+            ->has('documents.data', 1)
+            ->where('documents.data.0.name', 'Application Guide'));
 
     $this->actingAs($admin)
         ->delete(route('admin.training.documents.destroy', $documents[0]['id']))

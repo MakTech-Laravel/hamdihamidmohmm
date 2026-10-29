@@ -85,9 +85,9 @@ test('view applicants can be filtered to a single job', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('backend/User/EmployerApplications')
-            ->has('applications', 1)
-            ->where('applications.0.name', 'Sara Applicant')
-            ->where('applications.0.job', 'CVA Officer')
+            ->has('applications.data', 1)
+            ->where('applications.data.0.name', 'Sara Applicant')
+            ->where('applications.data.0.job', 'CVA Officer')
             ->where('filters.job_id', $role->id)
             ->where('filters.job_title', 'CVA Officer'));
 });

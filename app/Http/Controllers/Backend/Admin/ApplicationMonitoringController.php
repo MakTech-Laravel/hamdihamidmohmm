@@ -11,6 +11,7 @@ use App\Support\ApplicantDocumentDownloader;
 use App\Support\ApplicantProfilePreview;
 use App\Support\ExperienceFilterOptions;
 use App\Support\JobSeekerResume;
+use App\Support\ListPageSize;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -49,7 +50,7 @@ class ApplicationMonitoringController extends Controller
         }
 
         $applications = $appsQuery
-            ->paginate(12)
+            ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
             ->through(fn (JobApplication $application) => $this->row($application));
 

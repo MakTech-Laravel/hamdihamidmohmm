@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Backend\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\UploadTrainingDocumentRequest;
 use App\Http\Requests\Backend\Admin\UploadTrainingVideoRequest;
+use App\Support\ListPageSize;
 use App\Support\TrainingMedia;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,9 +21,9 @@ class TrainingMediaController extends Controller
         abort_unless($request->user()?->canManageCms(), 403);
 
         return Inertia::render('backend/Admin/TrainingMedia', [
-            'videos' => TrainingMedia::videos(),
+            'videos' => $this->paginateItems(TrainingMedia::videos(), $request, 'videos_page'),
             'heroVideoUrl' => TrainingMedia::heroVideoUrl(),
-            'documents' => TrainingMedia::documents(),
+            'documents' => $this->paginateItems(TrainingMedia::documents(), $request, 'documents_page'),
             'maxVideos' => TrainingMedia::MAX_VIDEOS,
         ]);
     }
@@ -96,6 +98,24 @@ class TrainingMediaController extends Controller
     }
 
     /**
+     * @param  list<array<string, mixed>>  $items
+     * @return LengthAwarePaginator<int, array<string, mixed>>
+     */
+    private function paginateItems(array $items, Request $request, string $pageName): LengthAwarePaginator
+    {
+        $perPage = ListPageSize::DEFAULT;
+        $page = max(1, $request->integer($pageName, 1));
+
+        return (new LengthAwarePaginator(
+            array_slice($items, ($page - 1) * $perPage, $perPage),
+            count($items),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'pageName' => $pageName],
+        ))->withQueryString();
+    }
+
+    /**
      * @return list<UploadedFile>
      */
     private function uploadedVideos(UploadTrainingVideoRequest $request): array
@@ -105,7 +125,7 @@ class TrainingMediaController extends Controller
         if (is_array($videos)) {
             return array_values(array_filter(
                 $videos,
-                fn(mixed $file): bool => $file instanceof UploadedFile,
+                fn (mixed $file): bool => $file instanceof UploadedFile,
             ));
         }
 

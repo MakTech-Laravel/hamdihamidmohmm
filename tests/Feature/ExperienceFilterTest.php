@@ -39,8 +39,8 @@ test('employers can filter and sort applications by experience ranges', function
         ->get(route('employer.applications', ['experience' => '3-5']))
         ->assertOk()
         ->assertInertia(fn($page) => $page
-            ->has('applications', 1)
-            ->where('applications.0.name', 'Mid')
+            ->has('applications.data', 1)
+            ->where('applications.data.0.name', 'Mid')
             ->where('filters.experience', '3-5')
             ->has('experience_options'));
 
@@ -48,8 +48,8 @@ test('employers can filter and sort applications by experience ranges', function
         ->get(route('employer.applications', ['experience_sort' => 'desc']))
         ->assertOk()
         ->assertInertia(fn($page) => $page
-            ->where('applications.0.name', 'Senior')
-            ->where('applications.2.name', 'Junior'));
+            ->where('applications.data.0.name', 'Senior')
+            ->where('applications.data.2.name', 'Junior'));
 });
 
 test('admins can configure experience filter ranges used by employers', function () {
@@ -115,5 +115,5 @@ test('disabled experience ranges are ignored when filtering', function () {
     $this->actingAs($employer)
         ->get(route('employer.applications', ['experience' => '3-5']))
         ->assertOk()
-        ->assertInertia(fn($page) => $page->has('applications', 1));
+        ->assertInertia(fn($page) => $page->has('applications.data', 1));
 });

@@ -10,6 +10,7 @@ use App\Models\Package;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\EmployerPlanActivator;
+use App\Support\ListPageSize;
 use App\Support\PortalNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class PaymentManagementController extends Controller
         }
 
         $payments = $paymentsQuery
-            ->paginate(12)
+            ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
             ->through(fn (Payment $payment) => $this->row($payment));
 

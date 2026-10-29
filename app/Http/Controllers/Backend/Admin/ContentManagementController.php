@@ -10,6 +10,7 @@ use App\Http\Requests\Backend\Admin\UpdateContentPageRequest;
 use App\Models\ContentPage;
 use App\Models\User;
 use App\Notifications\PolicyUpdatedNotification;
+use App\Support\ListPageSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
@@ -22,7 +23,7 @@ class ContentManagementController extends Controller
     {
         abort_unless($request->user()?->canManageCms(), 403);
 
-        $pages = ContentPage::query()->latest()->get()->map(fn(ContentPage $page) => [
+        $pages = ContentPage::query()->latest()->paginate(ListPageSize::DEFAULT)->withQueryString()->through(fn (ContentPage $page) => [
             'id' => $page->id,
             'title' => $page->title,
             'slug' => $page->slug,
@@ -94,7 +95,7 @@ class ContentManagementController extends Controller
         $seekers = User::query()
             ->where(function ($query): void {
                 $query->where('role', UserRole::JobSeeker)
-                    ->orWhereHas('roles', fn($roleQuery) => $roleQuery->where('name', 'job-seeker'));
+                    ->orWhereHas('roles', fn ($roleQuery) => $roleQuery->where('name', 'job-seeker'));
             })
             ->get();
 
@@ -106,7 +107,7 @@ class ContentManagementController extends Controller
             $seekers,
             new PolicyUpdatedNotification(
                 (string) $page->title,
-                url('/' . $page->slug),
+                url('/'.$page->slug),
             ),
         );
     }

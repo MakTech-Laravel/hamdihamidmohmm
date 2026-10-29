@@ -9,6 +9,7 @@ use App\Http\Requests\Backend\Admin\UpdateManagedUserRequest;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\ActivityLogger;
+use App\Support\ListPageSize;
 use App\Support\RoleAssigner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ class UserManagementController extends Controller
         abort_unless($request->user()?->canManageUsers(), 403);
 
         $roleFilter = $request->string('role')->toString();
+        $search = trim($request->string('search')->toString());
 
         $usersQuery = User::query()->with('roles')->latest();
 
@@ -30,8 +32,15 @@ class UserManagementController extends Controller
             $usersQuery->role($roleFilter);
         }
 
+        if ($search !== '') {
+            $usersQuery->where(function ($query) use ($search): void {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
         $users = $usersQuery
-            ->paginate(12)
+            ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
             ->through(fn (User $user) => [
                 'id' => $user->id,
@@ -57,6 +66,7 @@ class UserManagementController extends Controller
             'users' => $users,
             'filters' => [
                 'role' => $roleFilter,
+                'search' => $search,
             ],
             'roleCounts' => $roleCounts,
             'roles' => $this->roleOptions(),

@@ -1,8 +1,12 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { FormEvent, useMemo, useState } from 'react';
+import { Head, router } from '@inertiajs/react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { JobListingCard } from '@/components/frontend/job-listing-card';
 import { JobSearchForm } from '@/components/frontend/job-search-form';
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
@@ -27,19 +31,14 @@ type JobRow = {
 };
 
 type Props = {
-    jobs: {
-        data: JobRow[];
-        links: Array<{ url: string | null; label: string; active: boolean }>;
-        total: number;
-        current_page: number;
-        last_page: number;
-    };
+    jobs: PortalPaginator<JobRow>;
     filters: {
         search: string;
         country?: string;
         location: string;
         category?: string;
         types?: string[];
+        sort?: string;
     };
     filterOptions?: {
         countries: TaxonomyOption[];
@@ -55,6 +54,7 @@ export default function JobSeekerJobs({ jobs, filters, filterOptions }: Props) {
     const dutyStations = filterOptions?.dutyStations ?? [];
     const positionAreas = filterOptions?.positionAreas ?? [];
     const employmentTypes = filterOptions?.employmentTypes ?? [];
+    const rows = jobs.data;
 
     const [keyword, setKeyword] = useState(filters.search ?? '');
     const [country, setCountry] = useState(filters.country ?? '');
@@ -64,10 +64,25 @@ export default function JobSeekerJobs({ jobs, filters, filterOptions }: Props) {
             ? filters.category
             : 'all',
     );
-    const [sort, setSort] = useState('latest');
+    const [sort, setSort] = useState(
+        filters.sort === 'salary' ? 'salary' : 'latest',
+    );
     const [selectedTypes, setSelectedTypes] = useState<string[]>(
         () => filters.types ?? [],
     );
+
+    useEffect(() => {
+        setKeyword(filters.search ?? '');
+        setCountry(filters.country ?? '');
+        setLocation(filters.location ?? '');
+        setCategory(
+            filters.category && filters.category !== ''
+                ? filters.category
+                : 'all',
+        );
+        setSort(filters.sort === 'salary' ? 'salary' : 'latest');
+        setSelectedTypes(filters.types ?? []);
+    }, [filters]);
 
     const locationOptions = useMemo(
         () => [
@@ -83,12 +98,14 @@ export default function JobSeekerJobs({ jobs, filters, filterOptions }: Props) {
         location?: string;
         category?: string;
         types?: string[];
+        sort?: string;
     } = {}): void => {
         const nextSearch = overrides.search ?? keyword;
         const nextCountry = overrides.country ?? country;
         const nextLocation = overrides.location ?? location;
         const nextCategory = overrides.category ?? category;
         const nextTypes = overrides.types ?? selectedTypes;
+        const nextSort = overrides.sort ?? sort;
 
         router.get(
             '/job-seeker/jobs',
@@ -101,22 +118,11 @@ export default function JobSeekerJobs({ jobs, filters, filterOptions }: Props) {
                         ? nextCategory
                         : undefined,
                 types: nextTypes.length > 0 ? nextTypes : undefined,
+                sort: nextSort === 'salary' ? 'salary' : undefined,
             },
             { preserveState: true, replace: true },
         );
     };
-
-    const displayedJobs = useMemo(() => {
-        const rows = [...jobs.data];
-
-        if (sort === 'salary') {
-            return rows.sort((a, b) =>
-                (b.salary ?? '').localeCompare(a.salary ?? ''),
-            );
-        }
-
-        return rows;
-    }, [jobs.data, sort]);
 
     const handleCountryChange = (value: string): void => {
         setCountry(value);
@@ -131,6 +137,11 @@ export default function JobSeekerJobs({ jobs, filters, filterOptions }: Props) {
     const handleCategoryChange = (value: string): void => {
         setCategory(value);
         applyFilters({ category: value });
+    };
+
+    const handleSortChange = (value: string): void => {
+        setSort(value);
+        applyFilters({ sort: value });
     };
 
     const toggleType = (type: string): void => {
@@ -148,6 +159,7 @@ export default function JobSeekerJobs({ jobs, filters, filterOptions }: Props) {
         setCategory('all');
         setSelectedTypes([]);
         setKeyword('');
+        setSort('latest');
         router.get('/job-seeker/jobs');
     };
 
@@ -330,7 +342,7 @@ export default function JobSeekerJobs({ jobs, filters, filterOptions }: Props) {
                                     className="min-w-[140px]"
                                     value={sort}
                                     onChange={(event) =>
-                                        setSort(event.target.value)
+                                        handleSortChange(event.target.value)
                                     }
                                     aria-label={t('jobs_page.sort_by')}
                                 >
@@ -345,7 +357,7 @@ export default function JobSeekerJobs({ jobs, filters, filterOptions }: Props) {
                         </div>
 
                         <div className="mt-5 space-y-4">
-                            {displayedJobs.map((job) => (
+                            {rows.map((job) => (
                                 <JobListingCard
                                     key={job.id}
                                     job={job}
@@ -355,7 +367,7 @@ export default function JobSeekerJobs({ jobs, filters, filterOptions }: Props) {
                             ))}
                         </div>
 
-                        {displayedJobs.length === 0 ? (
+                        {rows.length === 0 ? (
                             <div className="mt-10 rounded-2xl border border-dashed border-[#e2e8f0] bg-white px-6 py-16 text-center">
                                 <p className="text-base font-semibold text-[#101828]">
                                     {t('jobs_page.empty_title')}
@@ -373,23 +385,16 @@ export default function JobSeekerJobs({ jobs, filters, filterOptions }: Props) {
                             </div>
                         ) : null}
 
-                        {displayedJobs.length > 0 && jobs.last_page > 1 ? (
-                            <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-                                {jobs.links.map((link) => (
-                                    <Link
-                                        key={link.label}
-                                        href={link.url ?? ''}
-                                        className={`inline-flex min-w-9 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold ${
-                                            link.active
-                                                ? 'bg-[#0057c8] text-white'
-                                                : 'bg-white text-[#364153] hover:bg-[#f1f5f9]'
-                                        } ${link.url ? '' : 'pointer-events-none opacity-40'}`}
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                ))}
-                            </div>
+                        {rows.length > 0 ? (
+                            <PortalPagination
+                                align="start"
+                                showingLabel={t('common.showing_range', {
+                                    from: jobs.from ?? 0,
+                                    to: jobs.to ?? 0,
+                                    total: jobs.total,
+                                })}
+                                links={jobs.links}
+                            />
                         ) : null}
                     </div>
                 </div>

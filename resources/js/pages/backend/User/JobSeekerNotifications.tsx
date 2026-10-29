@@ -1,5 +1,9 @@
 import { Head, router, usePage } from '@inertiajs/react';
 
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { useLocale } from '@/hooks/use-locale';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { cn } from '@/lib/utils';
@@ -15,14 +19,15 @@ type NotificationRow = {
 };
 
 export default function JobSeekerNotifications({
-    notifications,
+    notifications: notificationsPage,
     unread,
 }: {
-    notifications: NotificationRow[];
+    notifications: PortalPaginator<NotificationRow>;
     unread: number;
 }) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const notifications = notificationsPage.data;
 
     return (
         <JobSeekerLayout
@@ -63,8 +68,8 @@ export default function JobSeekerNotifications({
                             key={item.id}
                             type="button"
                             className={cn(
-                                'w-full rounded-2xl border p-4 text-left',
-                                item.read ? 'bg-white' : 'bg-[#eff6ff]',
+                                'w-full rounded-2xl border border-[#e2e8f0] bg-white p-4 text-left shadow-[0px_1px_3px_rgba(0,0,0,0.06)]',
+                                !item.read && 'ring-1 ring-[#bfdbfe]',
                             )}
                             onClick={() => {
                                 if (!item.read) {
@@ -74,21 +79,41 @@ export default function JobSeekerNotifications({
                                 }
                             }}
                         >
-                            <p className="font-semibold">{item.title}</p>
-                            <p className="text-sm text-[#64748b]">
-                                {item.message}
-                            </p>
-                            <p className="mt-1 text-xs text-[#99a1af]">
-                                {item.category} · {item.created_at}
-                            </p>
+                            <div className="flex items-start gap-2">
+                                {!item.read ? (
+                                    <span className="mt-1.5 size-2 shrink-0 rounded-full bg-[#0057c8]" />
+                                ) : null}
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-semibold text-[#050315]">
+                                        {item.title}
+                                    </p>
+                                    <p className="text-sm text-[#64748b]">
+                                        {item.message}
+                                    </p>
+                                    <p className="mt-1 text-xs text-[#99a1af]">
+                                        {item.category} · {item.created_at}
+                                    </p>
+                                </div>
+                            </div>
                         </button>
                     ))}
                     {notifications.length === 0 && (
-                        <p className="text-center text-sm text-[#99a1af]">
-                            {t('job_seeker.notifications.empty')}
-                        </p>
+                        <div className="rounded-2xl border border-dashed border-[#e2e8f0] bg-white px-6 py-10 text-center shadow-[0px_1px_3px_rgba(0,0,0,0.06)]">
+                            <p className="text-sm text-[#99a1af]">
+                                {t('job_seeker.notifications.empty')}
+                            </p>
+                        </div>
                     )}
                 </div>
+                <PortalPagination
+                    align="start"
+                    showingLabel={t('common.showing_range', {
+                        from: notificationsPage.from ?? 0,
+                        to: notificationsPage.to ?? 0,
+                        total: notificationsPage.total,
+                    })}
+                    links={notificationsPage.links}
+                />
             </div>
         </JobSeekerLayout>
     );

@@ -18,6 +18,7 @@ use App\Models\JobTaxonomy;
 use App\Models\User;
 use App\Support\ApplicantProfilePreview;
 use App\Support\JobSeekerResume;
+use App\Support\ListPageSize;
 use App\Support\PortalNotifier;
 use App\Support\UserAccountLifecycle;
 use Illuminate\Http\JsonResponse;
@@ -78,7 +79,7 @@ class JobManagementController extends Controller
         }
 
         $jobs = $jobsQuery
-            ->paginate(12)
+            ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
             ->through(fn (JobPost $job) => $this->row($job));
 
@@ -354,8 +355,8 @@ class JobManagementController extends Controller
             'subtitle' => $job->subtitle,
             'slug' => $job->slug,
             'employer' => $job->employer?->company_name ?: $job->employer?->name,
-            'category' => $job->category ?: 'â€”',
-            'location' => $job->location ?: 'â€”',
+            'category' => $job->category ?: '—',
+            'location' => $job->location ?: '—',
             'applications' => $job->applications_count ?? $job->applications()->count(),
             'views' => $job->views,
             'status' => $status->label(),
@@ -450,14 +451,14 @@ class JobManagementController extends Controller
             'title' => $job->employer?->company_name ?: $job->employer?->name ?: 'Employer',
             'headline' => null,
             'current_title' => null,
-            'experience_years' => 'â€”',
+            'experience_years' => '—',
             'status' => $job->effectiveStatus()->label(),
             'email' => $job->employer
                 ? UserAccountLifecycle::displayEmail($job->employer)
-                : 'â€”',
-            'phone' => $job->employer?->phone ?: 'â€”',
-            'location' => $job->location ?: 'â€”',
-            'preview_location' => $job->location ?: 'â€”',
+                : '—',
+            'phone' => $job->employer?->phone ?: '—',
+            'location' => $job->location ?: '—',
+            'preview_location' => $job->location ?: '—',
             'bio' => null,
             'linkedin_url' => null,
             'github_url' => null,

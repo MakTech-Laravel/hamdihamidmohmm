@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\StoreTrainingCourseRequest;
 use App\Http\Requests\Backend\Admin\UpdateTrainingCourseRequest;
 use App\Models\TrainingCourse;
+use App\Support\ListPageSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -24,8 +25,9 @@ class TrainingCourseController extends Controller
             ->withOccupiedSeats()
             ->withCount('registrations')
             ->latest()
-            ->get()
-            ->map(fn (TrainingCourse $course): array => [
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (TrainingCourse $course): array => [
                 'id' => $course->id,
                 'title' => $course->title,
                 'starts_on' => $course->starts_on?->format('M j, Y'),

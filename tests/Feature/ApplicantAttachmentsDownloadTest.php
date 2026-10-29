@@ -59,18 +59,18 @@ test('employers can download applicant certificate attachments and credentials',
         ->get(route('employer.applications'))
         ->assertOk()
         ->assertInertia(fn($page) => $page
-            ->where('applications.0.highest_degree_name', 'degree.pdf')
+            ->where('applications.data.0.highest_degree_name', 'degree.pdf')
             ->where(
-                'applications.0.highest_degree_url',
+                'applications.data.0.highest_degree_url',
                 route('employer.applications.highest-degree', $application),
             )
-            ->where('applications.0.other_document_name', 'portfolio.pdf')
+            ->where('applications.data.0.other_document_name', 'portfolio.pdf')
             ->where(
-                'applications.0.certifications.0.attachments.0.file_name',
+                'applications.data.0.certifications.0.attachments.0.file_name',
                 'aws.pdf',
             )
             ->where(
-                'applications.0.certifications.0.attachments.0.download_url',
+                'applications.data.0.certifications.0.attachments.0.download_url',
                 route('employer.applications.certifications', [
                     'application' => $application,
                     'index' => 0,

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Gender;
+use App\Support\ApplicantQualification;
 use Database\Factories\JobSeekerProfileFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -35,7 +36,17 @@ class JobSeekerProfile extends Model
         'languages',
         'certifications',
         'references',
+        'qualification_rank',
+        'certificate_count',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (JobSeekerProfile $profile): void {
+            $profile->qualification_rank = ApplicantQualification::rank($profile);
+            $profile->certificate_count = ApplicantQualification::certificateCount($profile);
+        });
+    }
 
     /**
      * @return array<string, string>
@@ -51,6 +62,8 @@ class JobSeekerProfile extends Model
             'languages' => 'array',
             'certifications' => 'array',
             'references' => 'array',
+            'qualification_rank' => 'integer',
+            'certificate_count' => 'integer',
         ];
     }
 

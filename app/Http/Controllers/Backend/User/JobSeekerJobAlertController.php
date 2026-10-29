@@ -8,6 +8,7 @@ use App\Http\Requests\Backend\User\StoreJobAlertRequest;
 use App\Http\Requests\Backend\User\UpdateJobAlertRequest;
 use App\Models\JobAlert;
 use App\Models\JobTaxonomy;
+use App\Support\ListPageSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,8 +21,9 @@ class JobSeekerJobAlertController extends Controller
         $alerts = JobAlert::query()
             ->where('user_id', $request->user()?->id)
             ->latest()
-            ->get()
-            ->map(fn (JobAlert $alert): array => $this->payload($alert));
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString()
+            ->through(fn (JobAlert $alert): array => $this->payload($alert));
 
         return Inertia::render('backend/User/JobSeekerJobAlerts', [
             'alerts' => $alerts,

@@ -11,6 +11,7 @@ use App\Models\JobTaxonomy;
 use App\Models\Package;
 use App\Models\User;
 use App\Support\JobListingQuery;
+use App\Support\ListPageSize;
 use App\Support\PortalPreferences;
 use App\Support\TrainingMedia;
 use Illuminate\Http\Request;
@@ -70,7 +71,7 @@ class FrontendController extends Controller
             $country,
         )
             ->latest()
-            ->paginate(30)
+            ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
             ->through(fn (JobPost $job) => [
                 'id' => $job->id,

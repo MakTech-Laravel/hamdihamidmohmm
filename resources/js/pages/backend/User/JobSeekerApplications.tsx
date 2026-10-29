@@ -1,10 +1,14 @@
 import { Head, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { ApplicationDetailDrawer } from '@/components/job-seeker/application-detail-drawer';
-import { getInitials } from '@/components/job-seeker/demo-data';
 import type { ApplicationStatus } from '@/components/job-seeker/demo-data';
+import { getInitials } from '@/components/job-seeker/demo-data';
 import { StatusBadge } from '@/components/job-seeker/status-badge';
+import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
 import { useLocale } from '@/hooks/use-locale';
 import JobSeekerLayout from '@/layouts/job-seeker-layout';
 import { cn } from '@/lib/utils';
@@ -27,7 +31,7 @@ type ApplicationRow = {
 };
 
 type Props = {
-    applications: ApplicationRow[];
+    applications: PortalPaginator<ApplicationRow>;
     stats: {
         total: number;
         active: number;
@@ -35,26 +39,26 @@ type Props = {
         offers: number;
     };
     filters: Array<{ value: string; label: string; count: number }>;
+    selectedStatus: string;
 };
 
 export default function JobSeekerApplications({
-    applications,
+    applications: applicationsPage,
     stats,
     filters,
+    selectedStatus,
 }: Props) {
     const { t } = useLocale();
-    const [statusFilter, setStatusFilter] = useState('all');
+    const applications = applicationsPage.data;
     const [viewing, setViewing] = useState<ApplicationRow | null>(null);
 
-    const filtered = useMemo(() => {
-        if (statusFilter === 'all') {
-            return applications;
-        }
-
-        return applications.filter(
-            (row) => row.status_value === statusFilter,
+    const changeStatus = (status: string): void => {
+        router.get(
+            '/job-seeker/applications',
+            status === 'all' ? {} : { status },
+            { preserveState: true, preserveScroll: true, replace: true },
         );
-    }, [applications, statusFilter]);
+    };
 
     const filterChips = [
         { value: 'all', label: t('common.all'), count: stats.total },
@@ -116,13 +120,13 @@ export default function JobSeekerApplications({
 
                 <div className="flex flex-wrap gap-2">
                     {filterChips.map((chip) => {
-                        const active = statusFilter === chip.value;
+                        const active = selectedStatus === chip.value;
 
                         return (
                             <button
                                 key={chip.value}
                                 type="button"
-                                onClick={() => setStatusFilter(chip.value)}
+                                onClick={() => changeStatus(chip.value)}
                                 className={cn(
                                     'cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-semibold',
                                     active
@@ -137,7 +141,7 @@ export default function JobSeekerApplications({
                 </div>
 
                 <div className="space-y-4">
-                    {filtered.map((application) => (
+                    {applications.map((application) => (
                         <div
                             key={application.id}
                             className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.06)]"
@@ -160,7 +164,9 @@ export default function JobSeekerApplications({
                                                 : ''}
                                         </p>
                                         <p className="pt-1 text-xs text-[#99a1af]">
-                                            {t('job_seeker.applications.applied')}
+                                            {t(
+                                                'job_seeker.applications.applied',
+                                            )}
                                             : {application.applied_at}
                                             {application.salary
                                                 ? ` · ${application.salary}`
@@ -214,12 +220,21 @@ export default function JobSeekerApplications({
                             </div>
                         </div>
                     ))}
-                    {filtered.length === 0 && (
+                    {applications.length === 0 && (
                         <p className="rounded-2xl border border-[#e2e8f0] bg-white py-10 text-center text-sm text-[#99a1af]">
                             {t('job_seeker.applications.empty')}
                         </p>
                     )}
                 </div>
+                <PortalPagination
+                    align="start"
+                    showingLabel={t('common.showing_range', {
+                        from: applicationsPage.from ?? 0,
+                        to: applicationsPage.to ?? 0,
+                        total: applicationsPage.total,
+                    })}
+                    links={applicationsPage.links}
+                />
             </div>
 
             <ApplicationDetailDrawer

@@ -11,6 +11,10 @@ import {
     MobileListStack,
 } from '@/components/mobile-list-card';
 import {
+    PortalPagination,
+    type PortalPaginator,
+} from '@/components/portal-pagination';
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -81,7 +85,7 @@ type BankDetails = {
 type Props = {
     plan: Plan;
     packages: PackageRow[];
-    invoices: Invoice[];
+    invoices: PortalPaginator<Invoice>;
     billing: {
         enabled: boolean;
         provider?: string | null;
@@ -139,7 +143,7 @@ function planButtonLabel(
 export default function EmployerPackages({
     plan,
     packages,
-    invoices,
+    invoices: invoicesPage,
     billing,
     bankDetails = {
         bank_name: '',
@@ -150,6 +154,7 @@ export default function EmployerPackages({
     },
 }: Props) {
     const { t } = useLocale();
+    const invoices = invoicesPage.data;
     const { flash } = usePage<SharedData>().props;
     const [selectingPackageId, setSelectingPackageId] = useState<number | null>(
         null,
@@ -161,18 +166,24 @@ export default function EmployerPackages({
     });
     const usagePercent =
         plan.job_credits > 0
-            ? Math.min(100, Math.round((plan.jobs_posted / plan.job_credits) * 100))
+            ? Math.min(
+                  100,
+                  Math.round((plan.jobs_posted / plan.job_credits) * 100),
+              )
             : 0;
     const jobsPercent =
         plan.job_credits > 0
-            ? Math.min(100, Math.round((plan.jobs_posted / plan.job_credits) * 100))
+            ? Math.min(
+                  100,
+                  Math.round((plan.jobs_posted / plan.job_credits) * 100),
+              )
             : 0;
     const remainingPercent =
         plan.job_credits > 0
             ? Math.min(
-                100,
-                Math.round((plan.credits_remaining / plan.job_credits) * 100),
-            )
+                  100,
+                  Math.round((plan.credits_remaining / plan.job_credits) * 100),
+              )
             : 0;
 
     const openPackageAction = (item: PackageRow): void => {
@@ -355,7 +366,10 @@ export default function EmployerPackages({
                                 </div>
                                 <div className="h-2 overflow-hidden rounded-full bg-[#f1f5f9]">
                                     <div
-                                        className={cn('h-full rounded-full', bar)}
+                                        className={cn(
+                                            'h-full rounded-full',
+                                            bar,
+                                        )}
                                         style={{ width: `${percent}%` }}
                                     />
                                 </div>
@@ -390,7 +404,8 @@ export default function EmployerPackages({
                                     {item.name}
                                 </h3>
                                 <p className="mt-1 text-2xl font-extrabold text-[#050315]">
-                                    {item.currency} {item.price.toLocaleString()}
+                                    {item.currency}{' '}
+                                    {item.price.toLocaleString()}
                                     <span className="text-sm font-medium text-[#64748b]">
                                         {' '}
                                         / {item.billing_period}
@@ -625,6 +640,14 @@ export default function EmployerPackages({
                             </p>
                         )}
                     </div>
+                    <PortalPagination
+                        showingLabel={t('common.showing_range', {
+                            from: invoicesPage.from ?? 0,
+                            to: invoicesPage.to ?? 0,
+                            total: invoicesPage.total,
+                        })}
+                        links={invoicesPage.links}
+                    />
                 </section>
             </div>
 
@@ -703,9 +726,7 @@ export default function EmployerPackages({
                                 {bankDetails.bank_iban ? (
                                     <div className="flex justify-between gap-3">
                                         <dt className="text-[#64748b]">
-                                            {t(
-                                                'employer.packages.manual.iban',
-                                            )}
+                                            {t('employer.packages.manual.iban')}
                                         </dt>
                                         <dd className="font-medium text-[#050315]">
                                             {bankDetails.bank_iban}

@@ -4,9 +4,11 @@ import { useState } from 'react';
 
 import {
     AdminPageHeader,
+    AdminPagination,
     AdminPanel,
     AdminStatCard,
 } from '@/components/admin-portal/ui';
+import type { PortalPaginator } from '@/components/portal-pagination';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -36,7 +38,7 @@ type PendingEmployer = {
 };
 
 type Props = {
-    pending: PendingEmployer[];
+    pending: PortalPaginator<PendingEmployer>;
     stats: {
         pending: number;
         approved: number;
@@ -45,9 +47,13 @@ type Props = {
     };
 };
 
-export default function VerificationCenter({ pending, stats }: Props) {
+export default function VerificationCenter({
+    pending: pendingPage,
+    stats,
+}: Props) {
     const { flash } = usePage<SharedData>().props;
     const { t } = useLocale();
+    const pending = pendingPage.data;
     const [rejecting, setRejecting] = useState<PendingEmployer | null>(null);
     const [reason, setReason] = useState('');
 
@@ -164,6 +170,15 @@ export default function VerificationCenter({ pending, stats }: Props) {
                         </p>
                     )}
                 </div>
+
+                <AdminPagination
+                    showingLabel={t('common.showing_range', {
+                        from: pendingPage.from ?? 0,
+                        to: pendingPage.to ?? 0,
+                        total: pendingPage.total,
+                    })}
+                    links={pendingPage.links}
+                />
             </div>
 
             <Dialog

@@ -1,10 +1,11 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 
+import { TrainingSectionNav } from '@/components/admin-portal/training-section-nav';
 import {
     AdminPageHeader,
+    AdminPagination,
     AdminPanel,
 } from '@/components/admin-portal/ui';
-import { TrainingSectionNav } from '@/components/admin-portal/training-section-nav';
 import {
     MobileListCard,
     MobileListCardActions,
@@ -12,6 +13,7 @@ import {
     MobileListCardMeta,
     MobileListEmpty,
 } from '@/components/mobile-list-card';
+import type { PortalPaginator } from '@/components/portal-pagination';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
 import type { SharedData } from '@/types';
@@ -27,9 +29,14 @@ type CourseRow = {
     is_published: boolean;
 };
 
-export default function TrainingCourses({ courses }: { courses: CourseRow[] }) {
+export default function TrainingCourses({
+    courses: coursesPage,
+}: {
+    courses: PortalPaginator<CourseRow>;
+}) {
     const { t } = useLocale();
     const { flash } = usePage<SharedData>().props;
+    const courses = coursesPage.data;
 
     return (
         <AdminPortalLayout>
@@ -198,6 +205,14 @@ export default function TrainingCourses({ courses }: { courses: CourseRow[] }) {
                             </tbody>
                         </table>
                     </div>
+                    <AdminPagination
+                        showingLabel={t('common.showing_range', {
+                            from: coursesPage.from ?? 0,
+                            to: coursesPage.to ?? 0,
+                            total: coursesPage.total,
+                        })}
+                        links={coursesPage.links}
+                    />
                 </AdminPanel>
             </div>
         </AdminPortalLayout>

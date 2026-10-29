@@ -11,9 +11,11 @@ use App\Models\User;
 use App\Support\ApplicantDocumentDownloader;
 use App\Support\ApplicantProfilePreview;
 use App\Support\JobApplicationQuestions;
+use App\Support\ListPageSize;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -35,92 +37,97 @@ class EmployerRosterController extends Controller
         $panelMemberId = $request->integer('panel_member_id');
         $isOwner = $user->isEmployerOwner();
 
-        $entriesQuery = EmployerRosterEntry::query()
-            ->forAccount($accountId)
+        $activePanelMemberId = null;
+
+        if ($isOwner && $panelMemberId > 0 && $this->isAccountRosterFilterUser($accountId, $panelMemberId)) {
+            $activePanelMemberId = $panelMemberId;
+        }
+
+        $filteredQuery = function () use ($accountId, $category, $user, $isOwner, $panelMemberId, $activePanelMemberId): Builder {
+            $query = EmployerRosterEntry::query()->forAccount($accountId);
+
+            if ($category !== '') {
+                $query->where('category', $category);
+            }
+
+            if (! $isOwner) {
+                $query->where('added_by', $user->id);
+            } elseif ($activePanelMemberId !== null) {
+                $query->where('added_by', $activePanelMemberId);
+            } elseif ($panelMemberId > 0) {
+                $query->whereRaw('0 = 1');
+            }
+
+            return $query;
+        };
+
+        $dedupeBySeeker = $isOwner && $activePanelMemberId === null;
+
+        $pageQuery = $dedupeBySeeker
+            ? EmployerRosterEntry::query()->whereIn(
+                'id',
+                $filteredQuery()->selectRaw('MAX(id)')->groupBy('job_seeker_id'),
+            )->orderByDesc('id')
+            : $filteredQuery()->latest()->orderByDesc('id');
+
+        /** @var LengthAwarePaginator<int, EmployerRosterEntry> $paginator */
+        $paginator = $pageQuery
             ->with([
                 'jobSeeker.jobSeekerProfile',
                 'jobApplication.jobPost:id,title,employer_id,application_questions',
                 'addedBy:id,name',
             ])
-            ->latest();
+            ->paginate(ListPageSize::DEFAULT)
+            ->withQueryString();
 
-        if ($category !== '') {
-            $entriesQuery->where('category', $category);
-        }
+        $pageSeekerIds = $paginator->getCollection()
+            ->map(fn (EmployerRosterEntry $entry): int => (int) $entry->job_seeker_id)
+            ->filter(fn (int $id): bool => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
 
-        $activePanelMemberId = null;
+        $applicationsBySeeker = $this->applicationsForSeekers($accountId, $pageSeekerIds);
 
-        if (! $isOwner) {
-            $entriesQuery->where('added_by', $user->id);
-        } elseif ($panelMemberId > 0 && $this->isAccountRosterFilterUser($accountId, $panelMemberId)) {
-            $activePanelMemberId = $panelMemberId;
-            $entriesQuery->where('added_by', $panelMemberId);
-        } elseif ($panelMemberId > 0) {
-            $entriesQuery->whereRaw('0 = 1');
-        }
-
-        $rawEntries = $entriesQuery->get();
-        $dedupeBySeeker = $isOwner && $activePanelMemberId === null;
-
-        /** @var Collection<int, EmployerRosterEntry> $representativeEntries */
-        $representativeEntries = $dedupeBySeeker
-            ? $rawEntries
+        /** @var Collection<int|string, Collection<int, EmployerRosterEntry>> $grouped */
+        $grouped = $dedupeBySeeker
+            ? $filteredQuery()
+                ->whereIn('job_seeker_id', $paginator->getCollection()->pluck('job_seeker_id')->unique()->values()->all())
+                ->with('addedBy:id,name')
+                ->latest()
+                ->get()
                 ->groupBy('job_seeker_id')
-                ->map(fn ($group) => $group->sortByDesc('id')->first())
-                ->sortByDesc('id')
-                ->values()
-            : $rawEntries->values();
+            : collect();
 
-        $applicationsBySeeker = $this->applicationsForSeekers(
-            $accountId,
-            $representativeEntries
-                ->map(fn (EmployerRosterEntry $entry): int => (int) $entry->job_seeker_id)
-                ->filter(fn (int $id): bool => $id > 0)
+        $entries = $paginator->through(function (EmployerRosterEntry $entry) use ($accountId, $applicationsBySeeker, $dedupeBySeeker, $grouped): array {
+            $payload = $this->entryPayload(
+                $entry,
+                $accountId,
+                $applicationsBySeeker[(int) $entry->job_seeker_id] ?? [],
+            );
+
+            if (! $dedupeBySeeker) {
+                return $payload;
+            }
+
+            $group = $grouped->get($entry->job_seeker_id, collect([$entry]));
+
+            $payload['added_by'] = $group
+                ->map(fn (EmployerRosterEntry $groupEntry): ?string => $groupEntry->addedBy?->name)
+                ->filter()
                 ->unique()
                 ->values()
-                ->all(),
-        );
+                ->implode(', ');
 
-        if ($dedupeBySeeker) {
-            $grouped = $rawEntries->groupBy('job_seeker_id');
-
-            $entries = $representativeEntries
-                ->map(function (EmployerRosterEntry $representative) use ($accountId, $applicationsBySeeker, $grouped): array {
-                    $payload = $this->entryPayload(
-                        $representative,
-                        $accountId,
-                        $applicationsBySeeker[(int) $representative->job_seeker_id] ?? [],
-                    );
-                    $group = $grouped->get($representative->job_seeker_id);
-
-                    $payload['added_by'] = $group
-                        ->map(fn (EmployerRosterEntry $entry): ?string => $entry->addedBy?->name)
-                        ->filter()
-                        ->unique()
-                        ->values()
-                        ->implode(', ');
-
-                    $payload['category'] = $group
-                        ->map(fn (EmployerRosterEntry $entry): string => trim((string) $entry->category))
-                        ->filter()
-                        ->unique()
-                        ->values()
-                        ->implode(', ');
-
-                    return $payload;
-                })
+            $payload['category'] = $group
+                ->map(fn (EmployerRosterEntry $groupEntry): string => trim((string) $groupEntry->category))
+                ->filter()
+                ->unique()
                 ->values()
-                ->all();
-        } else {
-            $entries = $representativeEntries
-                ->map(fn (EmployerRosterEntry $entry): array => $this->entryPayload(
-                    $entry,
-                    $accountId,
-                    $applicationsBySeeker[(int) $entry->job_seeker_id] ?? [],
-                ))
-                ->values()
-                ->all();
-        }
+                ->implode(', ');
+
+            return $payload;
+        });
 
         return Inertia::render('backend/User/EmployerRoster', [
             'entries' => $entries,
