@@ -144,9 +144,7 @@ export default function JobShow({
     const showApplyByLink = Boolean(
         !is_preview && job.apply_by_link && job.career_portal_url,
     );
-    const showApplyNow = !(
-        Boolean(job.hide_on_site_apply) && showApplyByLink
-    );
+    const showApplyNow = !Boolean(job.hide_on_site_apply);
     const applyByLinkIsEmail = Boolean(
         job.career_portal_url &&
             job.career_portal_url.includes('@') &&

@@ -314,7 +314,7 @@ test('admin job show includes apply settings props', function () {
             ->where('job.employer_can_manage_apply', false));
 });
 
-test('public job show keeps on-site apply when url is set but apply by link is disabled', function () {
+test('public job show hides on-site apply independently when apply by link is disabled', function () {
     $job = JobPost::factory()->create([
         'slug' => 'url-without-apply-by-link',
         'status' => JobPostStatus::Active,
@@ -328,6 +328,24 @@ test('public job show keeps on-site apply when url is set but apply by link is d
         ->assertInertia(fn ($page) => $page
             ->component('frontend/job-show')
             ->where('job.career_portal_url', 'https://careers.example.com/jobs/public')
+            ->where('job.apply_by_link', false)
+            ->where('job.hide_on_site_apply', true));
+});
+
+test('public job show can hide both apply buttons', function () {
+    $job = JobPost::factory()->create([
+        'slug' => 'no-apply-buttons-role',
+        'status' => JobPostStatus::Active,
+        'career_portal_url' => null,
+        'apply_by_link' => false,
+        'hide_on_site_apply' => true,
+    ]);
+
+    $this->get(route('jobs.show', $job->slug))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('frontend/job-show')
+            ->where('job.career_portal_url', null)
             ->where('job.apply_by_link', false)
             ->where('job.hide_on_site_apply', true));
 });
