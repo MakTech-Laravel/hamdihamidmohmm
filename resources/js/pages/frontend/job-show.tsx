@@ -399,7 +399,7 @@ export default function JobShow({
                                         <h2 className="text-lg font-bold text-[#050315]">
                                             {t('job_detail.overview')}
                                         </h2>
-                                        <div className="mt-3 text-sm leading-[23px] text-[#4a5565]">
+                                        <div className="mt-3 min-w-0 max-w-full text-sm leading-[23px] text-[#4a5565]">
                                             <RichTextContent html={overview} />
                                         </div>
                                     </section>
@@ -437,7 +437,7 @@ export default function JobShow({
                                         <h2 className="text-lg font-bold text-[#050315]">
                                             {t('job_detail.requirements')}
                                         </h2>
-                                        <div className="mt-4 text-sm leading-[23px] text-[#4a5565]">
+                                        <div className="mt-4 min-w-0 max-w-full text-sm leading-[23px] text-[#4a5565]">
                                             <RichTextContent
                                                 html={requirements}
                                             />
