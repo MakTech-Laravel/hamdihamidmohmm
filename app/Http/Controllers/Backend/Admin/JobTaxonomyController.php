@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Backend\Admin;
 use App\Enums\JobTaxonomyType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\StoreJobTaxonomyRequest;
+use App\Http\Requests\Backend\Admin\ToggleJobTaxonomyActiveRequest;
 use App\Http\Requests\Backend\Admin\UpdateJobTaxonomyRequest;
 use App\Models\JobTaxonomy;
 use App\Support\ListPageSize;
@@ -70,6 +71,18 @@ class JobTaxonomyController extends Controller
         $jobTaxonomy->update($request->validated());
 
         return back()->with('success', 'Filter option updated.');
+    }
+
+    public function toggleActive(ToggleJobTaxonomyActiveRequest $request, JobTaxonomy $jobTaxonomy): RedirectResponse
+    {
+        $isActive = $request->boolean('is_active');
+
+        $jobTaxonomy->forceFill(['is_active' => $isActive])->save();
+
+        return back()->with(
+            'success',
+            $isActive ? 'Filter option activated.' : 'Filter option deactivated.',
+        );
     }
 
     public function destroy(Request $request, JobTaxonomy $jobTaxonomy): RedirectResponse
