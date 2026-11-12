@@ -30,4 +30,4 @@ config.bat
 .env 
 
 .env.example
-.env.backup
+.env.backup.gitignore

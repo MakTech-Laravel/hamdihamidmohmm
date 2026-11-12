@@ -292,6 +292,7 @@ export default function EmployerJobEditor({
             'employment_type',
             'location',
             'experience_level',
+            'career_portal_url',
         ],
         2: [],
         3: [],
@@ -301,6 +302,18 @@ export default function EmployerJobEditor({
     const fieldErrorMessage = (
         field: keyof typeof form.data,
     ): string | null => {
+        if (field === 'career_portal_url') {
+            if (!form.data.apply_by_link) {
+                return null;
+            }
+
+            if (String(form.data.career_portal_url ?? '').trim() !== '') {
+                return null;
+            }
+
+            return t('employer.job_editor.validation.career_portal_url');
+        }
+
         const value = String(form.data[field] ?? '').trim();
 
         if (value !== '') {
@@ -943,9 +956,9 @@ export default function EmployerJobEditor({
 
                             <div className="space-y-3">
                                 <Field
-                                    label={t(
+                                    label={`${t(
                                         'employer.job_editor.field.career_portal_url',
-                                    )}
+                                    )}${form.data.apply_by_link ? ' *' : ''}`}
                                     error={form.errors.career_portal_url}
                                 >
                                     <input
@@ -988,9 +1001,15 @@ export default function EmployerJobEditor({
                                     disabled={
                                         !canManageApply || form.processing
                                     }
-                                    onChange={(value) =>
-                                        form.setData('apply_by_link', value)
-                                    }
+                                    onChange={(value) => {
+                                        form.setData('apply_by_link', value);
+
+                                        if (!value) {
+                                            form.clearErrors(
+                                                'career_portal_url',
+                                            );
+                                        }
+                                    }}
                                 />
                                 <ToggleRow
                                     title={t(

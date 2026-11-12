@@ -87,6 +87,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/job-filters', [JobTaxonomyController::class, 'index'])->name('job-filters.index');
         Route::post('/job-filters', [JobTaxonomyController::class, 'store'])->name('job-filters.store');
         Route::put('/job-filters/{jobTaxonomy}', [JobTaxonomyController::class, 'update'])->name('job-filters.update');
+        Route::post('/job-filters/{jobTaxonomy}/toggle-active', [JobTaxonomyController::class, 'toggleActive'])->name('job-filters.toggle-active');
         Route::delete('/job-filters/{jobTaxonomy}', [JobTaxonomyController::class, 'destroy'])->name('job-filters.destroy');
 
         Route::get('/applications/export', [ApplicationMonitoringController::class, 'export'])->name('applications.export');

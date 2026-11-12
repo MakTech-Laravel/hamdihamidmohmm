@@ -27,9 +27,16 @@ final class SafeHtml
         'h3',
         'h4',
         'span',
+        'mark',
         'a',
         'div',
         'iframe',
+        'table',
+        'thead',
+        'tbody',
+        'tr',
+        'th',
+        'td',
     ];
 
     /**
@@ -41,6 +48,8 @@ final class SafeHtml
         'font-style',
         'text-align',
         'text-decoration',
+        'color',
+        'background-color',
     ];
 
     /**
@@ -52,8 +61,73 @@ final class SafeHtml
         'underline',
         'youtube-embed',
         'rich-text-attachment',
+        'rich-text-icon',
+        'rich-text-table-wrap',
+        'rich-text-table',
         'text-[#0057c8]',
         'underline',
+    ];
+
+    /**
+     * Curated Lucide icon names that may be embedded in rich text.
+     *
+     * @var list<string>
+     */
+    public const ALLOWED_RICH_ICONS = [
+        'check',
+        'circle-check',
+        'star',
+        'map-pin',
+        'mail',
+        'phone',
+        'briefcase',
+        'building-2',
+        'users',
+        'clock',
+        'calendar',
+        'globe',
+        'link',
+        'file-text',
+        'award',
+        'heart',
+        'shield',
+        'zap',
+        'target',
+        'sparkles',
+        'thumbs-up',
+        'message-circle',
+        'home',
+        'info',
+        'alert-circle',
+        'arrow-right',
+        'plus',
+        'minus',
+        'x',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const TABLE_RADIUS_CLASSES = [
+        'rounded-none',
+        'rounded-sm',
+        'rounded-md',
+        'rounded-lg',
+        'rounded-xl',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const TABLE_BORDER_CLASSES = [
+        'border',
+        'border-0',
+        'border-[#e2e8f0]',
+        'border-[#cbd5e1]',
+        'border-[#94a3b8]',
+        'border-[#0057c8]',
+        'border-[#0f766e]',
+        'border-[#b45309]',
     ];
 
     public static function clean(?string $html): ?string
@@ -141,7 +215,12 @@ final class SafeHtml
 
         $textOnly = trim(strip_tags($clean));
 
-        if ($textOnly === '' && ! str_contains($clean, '<iframe')) {
+        if (
+            $textOnly === ''
+            && ! str_contains($clean, '<iframe')
+            && ! str_contains($clean, '<table')
+            && ! str_contains($clean, 'data-rich-icon')
+        ) {
             return null;
         }
 
@@ -151,6 +230,15 @@ final class SafeHtml
     public static function isEmpty(?string $html): bool
     {
         return self::clean($html) === null;
+    }
+
+    public static function isAllowedRichIcon(?string $name): bool
+    {
+        if ($name === null || $name === '') {
+            return false;
+        }
+
+        return in_array($name, self::ALLOWED_RICH_ICONS, true);
     }
 
     private static function isAllowedAnchor(DOMElement $element): bool
@@ -169,7 +257,8 @@ final class SafeHtml
         $class = (string) $element->getAttribute('class');
 
         return str_contains($class, 'youtube-embed')
-            || str_contains($class, 'rich-text-attachment');
+            || str_contains($class, 'rich-text-attachment')
+            || str_contains($class, 'rich-text-table-wrap');
     }
 
     private static function isAllowedYoutubeIframe(DOMElement $element): bool
@@ -230,7 +319,13 @@ final class SafeHtml
         $allowed = [];
 
         if ($element->hasAttribute('style')) {
-            $style = self::sanitizeStyle((string) $element->getAttribute('style'));
+            $style = match (true) {
+                in_array($tag, ['td', 'th'], true) => self::sanitizeTableCellStyle(
+                    (string) $element->getAttribute('style'),
+                ),
+                in_array($tag, ['table', 'thead', 'tbody', 'tr'], true) => null,
+                default => self::sanitizeStyle((string) $element->getAttribute('style')),
+            };
 
             if ($style !== null) {
                 $allowed['style'] = $style;
@@ -255,8 +350,47 @@ final class SafeHtml
             }
         }
 
+        if ($tag === 'span') {
+            $icon = trim((string) $element->getAttribute('data-rich-icon'));
+
+            if (self::isAllowedRichIcon($icon)) {
+                $allowed['data-rich-icon'] = $icon;
+                $allowed['aria-hidden'] = 'true';
+                $class = $allowed['class'] ?? '';
+                $tokens = array_filter(preg_split('/\s+/', $class) ?: []);
+
+                if (! in_array('rich-text-icon', $tokens, true)) {
+                    $tokens[] = 'rich-text-icon';
+                }
+
+                $allowed['class'] = implode(' ', $tokens);
+            }
+        }
+
         if ($tag === 'div' && $element->hasAttribute('data-youtube-video')) {
             $allowed['data-youtube-video'] = '';
+        }
+
+        if (in_array($tag, ['td', 'th'], true)) {
+            foreach (['colspan', 'rowspan'] as $attr) {
+                $value = trim((string) $element->getAttribute($attr));
+
+                if (preg_match('/^[1-9]\d{0,1}$/', $value) === 1) {
+                    $allowed[$attr] = $value;
+                }
+            }
+
+            $background = self::normalizeHexColor(
+                (string) $element->getAttribute('data-background-color'),
+            );
+
+            if ($background !== null) {
+                $allowed['data-background-color'] = $background;
+
+                if (! isset($allowed['style'])) {
+                    $allowed['style'] = 'background-color: '.$background;
+                }
+            }
         }
 
         if ($tag === 'iframe') {
@@ -287,23 +421,40 @@ final class SafeHtml
     private static function sanitizeClass(string $class): ?string
     {
         $kept = collect(preg_split('/\s+/', trim($class)) ?: [])
-            ->filter(fn (string $token): bool => in_array($token, self::ALLOWED_CLASSES, true)
-                || str_starts_with($token, 'aspect-')
-                || str_starts_with($token, 'w-')
-                || str_starts_with($token, 'my-')
-                || str_starts_with($token, 'rounded')
-                || str_starts_with($token, 'overflow-')
-                || str_starts_with($token, 'border')
-                || str_starts_with($token, 'bg-')
-                || str_starts_with($token, 'text-')
-                || str_starts_with($token, 'inline-')
-                || str_starts_with($token, 'font-')
-                || str_starts_with($token, 'gap-')
-                || str_starts_with($token, 'px-')
-                || str_starts_with($token, 'py-')
-                || str_starts_with($token, 'items-')
-                || $token === 'youtube-embed'
-                || $token === 'rich-text-attachment')
+            ->filter(function (string $token): bool {
+                if (in_array($token, self::ALLOWED_CLASSES, true)
+                    || in_array($token, self::TABLE_RADIUS_CLASSES, true)
+                    || in_array($token, self::TABLE_BORDER_CLASSES, true)
+                    || $token === 'youtube-embed'
+                    || $token === 'rich-text-attachment'
+                    || $token === 'rich-text-icon'
+                    || $token === 'rich-text-table-wrap'
+                    || $token === 'rich-text-table'
+                    || $token === 'overflow-x-auto'
+                    || $token === 'w-full'
+                    || $token === 'min-w-full'
+                    || $token === 'border-collapse'
+                    || $token === 'text-left'
+                    || $token === 'align-middle'
+                ) {
+                    return true;
+                }
+
+                return str_starts_with($token, 'aspect-')
+                    || str_starts_with($token, 'w-')
+                    || str_starts_with($token, 'my-')
+                    || str_starts_with($token, 'rounded')
+                    || str_starts_with($token, 'overflow-')
+                    || str_starts_with($token, 'border')
+                    || str_starts_with($token, 'bg-')
+                    || str_starts_with($token, 'text-')
+                    || str_starts_with($token, 'inline-')
+                    || str_starts_with($token, 'font-')
+                    || str_starts_with($token, 'gap-')
+                    || str_starts_with($token, 'px-')
+                    || str_starts_with($token, 'py-')
+                    || str_starts_with($token, 'items-');
+            })
             ->unique()
             ->values()
             ->all();
@@ -347,10 +498,80 @@ final class SafeHtml
                 continue;
             }
 
+            if (in_array($property, ['color', 'background-color'], true)) {
+                $hex = self::normalizeHexColor($value);
+
+                if ($hex === null) {
+                    continue;
+                }
+
+                $value = $hex;
+            }
+
             $parts[] = $property.': '.$value;
         }
 
         return $parts === [] ? null : implode('; ', $parts);
+    }
+
+    private static function sanitizeTableCellStyle(string $style): ?string
+    {
+        $parts = [];
+
+        foreach (explode(';', $style) as $declaration) {
+            if (! str_contains($declaration, ':')) {
+                continue;
+            }
+
+            [$property, $value] = array_map('trim', explode(':', $declaration, 2));
+            $property = strtolower($property);
+
+            if ($property !== 'background-color' || $value === '') {
+                continue;
+            }
+
+            $hex = self::normalizeHexColor($value);
+
+            if ($hex === null) {
+                continue;
+            }
+
+            $parts[] = 'background-color: '.$hex;
+        }
+
+        return $parts === [] ? null : implode('; ', $parts);
+    }
+
+    private static function isSafeHexColor(string $value): bool
+    {
+        return self::normalizeHexColor($value) !== null;
+    }
+
+    private static function normalizeHexColor(string $value): ?string
+    {
+        $trimmed = trim($value);
+
+        if (preg_match('/^#[0-9a-fA-F]{6}$/', $trimmed) === 1) {
+            return strtolower($trimmed);
+        }
+
+        if (preg_match('/^#[0-9a-fA-F]{3}$/', $trimmed) === 1) {
+            $chars = str_split(substr($trimmed, 1));
+
+            return '#'.strtolower($chars[0].$chars[0].$chars[1].$chars[1].$chars[2].$chars[2]);
+        }
+
+        if (preg_match('/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i', $trimmed, $matches) === 1) {
+            $channels = array_map(static fn (string $channel): int => max(0, min(255, (int) $channel)), [
+                $matches[1],
+                $matches[2],
+                $matches[3],
+            ]);
+
+            return sprintf('#%02x%02x%02x', $channels[0], $channels[1], $channels[2]);
+        }
+
+        return null;
     }
 
     private static function unwrap(DOMElement $element): void

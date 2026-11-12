@@ -118,6 +118,39 @@ class JobTaxonomy extends Model
         ];
     }
 
+    /**
+     * @param  list<array{value: string, label: string}>  $options
+     * @return list<array{value: string, label: string}>
+     */
+    public static function withCurrentOption(
+        array $options,
+        ?string $current,
+        JobTaxonomyType|string|null $type = null,
+    ): array {
+        if ($current === null || trim($current) === '') {
+            return $options;
+        }
+
+        $current = trim($current);
+
+        $exists = collect($options)->contains(
+            fn (array $option): bool => $option['value'] === $current,
+        );
+
+        if ($exists) {
+            return $options;
+        }
+
+        $label = $type !== null
+            ? (self::labelFor($type, $current) ?? $current)
+            : $current;
+
+        return [
+            ['value' => $current, 'label' => $label.' (current)'],
+            ...$options,
+        ];
+    }
+
     public static function labelFor(JobTaxonomyType|string $type, ?string $slugOrName): ?string
     {
         if ($slugOrName === null || trim($slugOrName) === '') {

@@ -2,10 +2,12 @@
 
 use App\Enums\EmployerPackage;
 use App\Enums\JobPostStatus;
+use App\Enums\JobTaxonomyType;
 use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionStatus;
 use App\Models\JobApplication;
 use App\Models\JobPost;
+use App\Models\JobTaxonomy;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\User;
@@ -163,6 +165,137 @@ test('employers can save a job with taxonomy selects', function () {
         ->and($job->country)->toBe('sudan')
         ->and($job->subtitle)->toBe('Lead patient operations across clinics')
         ->and($job->status)->toBe(JobPostStatus::Draft);
+});
+
+test('employers cannot create a job with inactive taxonomy options', function () {
+    $employer = User::factory()->employer()->create();
+
+    JobTaxonomy::query()
+        ->where('type', JobTaxonomyType::PositionArea->value)
+        ->where('slug', 'healthcare')
+        ->update(['is_active' => false]);
+
+    JobTaxonomy::forgetOptionsCache();
+
+    $this->actingAs($employer)
+        ->post(route('employer.jobs.store'), [
+            'title' => 'Hospital Administrator',
+            'category' => 'healthcare',
+            'location' => 'khartoum',
+            'country' => 'sudan',
+            'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
+            'publish' => false,
+        ])
+        ->assertSessionHasErrors('category');
+});
+
+test('employer job edit keeps inactive current taxonomies and blocks switching to other inactive ones', function () {
+    $employer = User::factory()->employer()->create();
+
+    $inactiveArea = JobTaxonomy::factory()->positionArea()->create([
+        'name' => 'Legacy Healthcare',
+        'slug' => 'legacy-healthcare',
+        'is_active' => false,
+    ]);
+    $otherInactiveArea = JobTaxonomy::factory()->positionArea()->inactive()->create([
+        'name' => 'Retired Ops',
+        'slug' => 'retired-ops',
+    ]);
+    $activeArea = JobTaxonomy::query()
+        ->where('type', JobTaxonomyType::PositionArea->value)
+        ->where('slug', 'technology')
+        ->firstOrFail();
+
+    JobTaxonomy::forgetOptionsCache();
+
+    $job = JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Legacy Role',
+        'category' => $inactiveArea->slug,
+        'location' => 'khartoum',
+        'country' => 'sudan',
+        'employment_type' => 'full_time',
+        'experience_level' => 'Mid Level',
+        'status' => JobPostStatus::Draft,
+    ]);
+
+    $this->actingAs($employer)
+        ->get(route('employer.jobs.edit', $job))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('job.category', 'legacy-healthcare')
+            ->where('options.positionAreas', fn ($areas) => collect($areas)->contains(
+                fn ($item) => ($item['value'] ?? null) === 'legacy-healthcare'
+            ) && collect($areas)->doesntContain(
+                fn ($item) => ($item['value'] ?? null) === 'retired-ops'
+            )));
+
+    $this->actingAs($employer)
+        ->put(route('employer.jobs.update', $job), [
+            'title' => 'Legacy Role Updated',
+            'category' => 'legacy-healthcare',
+            'location' => 'khartoum',
+            'country' => 'sudan',
+            'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
+            'publish' => false,
+        ])
+        ->assertRedirect(route('employer.jobs'));
+
+    expect($job->fresh()->category)->toBe('legacy-healthcare')
+        ->and($job->fresh()->title)->toBe('Legacy Role Updated');
+
+    $this->actingAs($employer)
+        ->from(route('employer.jobs.edit', $job))
+        ->put(route('employer.jobs.update', $job), [
+            'title' => 'Legacy Role Updated',
+            'category' => $otherInactiveArea->slug,
+            'location' => 'khartoum',
+            'country' => 'sudan',
+            'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
+            'publish' => false,
+        ])
+        ->assertRedirect(route('employer.jobs.edit', $job))
+        ->assertSessionHasErrors('category');
+
+    $this->actingAs($employer)
+        ->put(route('employer.jobs.update', $job), [
+            'title' => 'Moved Role',
+            'category' => $activeArea->slug,
+            'location' => 'khartoum',
+            'country' => 'sudan',
+            'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
+            'publish' => false,
+        ])
+        ->assertRedirect(route('employer.jobs'));
+
+    expect($job->fresh()->category)->toBe('technology');
+
+    $this->actingAs($employer)
+        ->get(route('employer.jobs.edit', $job))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('job.category', 'technology')
+            ->where('options.positionAreas', fn ($areas) => collect($areas)->doesntContain(
+                fn ($item) => ($item['value'] ?? null) === 'legacy-healthcare'
+            )));
+
+    $this->actingAs($employer)
+        ->from(route('employer.jobs.edit', $job))
+        ->put(route('employer.jobs.update', $job), [
+            'title' => 'Moved Role',
+            'category' => 'legacy-healthcare',
+            'location' => 'khartoum',
+            'country' => 'sudan',
+            'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
+            'publish' => false,
+        ])
+        ->assertRedirect(route('employer.jobs.edit', $job))
+        ->assertSessionHasErrors('category');
 });
 
 test('employers can save a draft and later submit it for review', function () {

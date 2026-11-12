@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\JobPost;
 use App\Models\User;
 use App\Support\SafeHtml;
+use Database\Seeders\JobTaxonomySeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -61,4 +63,37 @@ test('job seekers cannot upload job description attachments', function () {
             'file' => $file,
         ])
         ->assertRedirect();
+});
+
+test('employers can save colored text curated icons and responsive tables in descriptions', function () {
+    $this->seed(JobTaxonomySeeder::class);
+
+    $employer = User::factory()->employer()->create();
+
+    $description = <<<'HTML'
+<p><span style="color: #0057c8">Blue role</span> <span class="rich-text-icon" data-rich-icon="check"></span></p>
+<div class="rich-text-table-wrap overflow-x-auto"><table class="rich-text-table w-full border border-[#e2e8f0] rounded-lg"><tbody><tr><td>Shift</td><td>Day</td></tr></tbody></table></div>
+HTML;
+
+    $this->actingAs($employer)
+        ->post(route('employer.jobs.store'), [
+            'title' => 'Colored Role',
+            'category' => 'technology',
+            'location' => 'khartoum',
+            'country' => 'sudan',
+            'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
+            'description' => $description,
+            'publish' => false,
+        ])
+        ->assertRedirect(route('employer.jobs'));
+
+    $job = JobPost::query()->first();
+
+    expect($job)->not->toBeNull()
+        ->and($job->description)->toContain('color: #0057c8')
+        ->and($job->description)->toContain('data-rich-icon="check"')
+        ->and($job->description)->toContain('<table')
+        ->and($job->description)->toContain('rich-text-table-wrap')
+        ->and($job->description)->toContain('Day');
 });
