@@ -73,10 +73,10 @@ class ExternalApplyDestination
     /**
      * @return list<string|\Closure(string, mixed, \Closure): void>
      */
-    public static function rules(): array
+    public static function rules(bool $required = false): array
     {
         return [
-            'nullable',
+            $required ? 'required' : 'nullable',
             'string',
             'max:'.self::MAX_LENGTH,
             function (string $attribute, mixed $value, \Closure $fail): void {
@@ -97,6 +97,7 @@ class ExternalApplyDestination
     public static function messages(string $attribute = 'career_portal_url'): array
     {
         return [
+            "{$attribute}.required" => 'Please enter an Apply by Link URL or email when Apply by Link is enabled.',
             "{$attribute}.max" => 'The Apply by Link destination may not be greater than '.self::MAX_LENGTH.' characters.',
         ];
     }

@@ -113,6 +113,36 @@ test('employers cannot save an invalid apply by link destination', function () {
         ->assertSessionHasErrors('career_portal_url');
 });
 
+test('employers can create a job without an apply by link url when apply by link is disabled', function () {
+    $employer = User::factory()->employer()->create();
+
+    $this->actingAs($employer)
+        ->post(route('employer.jobs.store'), applyByLinkEmployerPayload([
+            'career_portal_url' => '',
+            'apply_by_link' => false,
+        ]))
+        ->assertRedirect(route('employer.jobs'));
+
+    $job = JobPost::query()->first();
+
+    expect($job)->not->toBeNull()
+        ->and($job->career_portal_url)->toBeNull()
+        ->and($job->apply_by_link)->toBeFalse();
+});
+
+test('employers must provide an apply by link url when apply by link is enabled', function () {
+    $employer = User::factory()->employer()->create();
+
+    $this->actingAs($employer)
+        ->post(route('employer.jobs.store'), applyByLinkEmployerPayload([
+            'career_portal_url' => '',
+            'apply_by_link' => true,
+        ]))
+        ->assertSessionHasErrors('career_portal_url');
+
+    expect(JobPost::query()->count())->toBe(0);
+});
+
 test('employers cannot set employer_can_manage_apply', function () {
     $employer = User::factory()->employer()->create();
 

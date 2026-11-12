@@ -43,13 +43,13 @@ export function AboutCompanyCard({
     return (
         <article
             className={cn(
-                'min-w-0 overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]',
+                'min-w-0 rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0px_1px_1.5px_rgba(0,0,0,0.06)]',
                 className,
             )}
         >
             <h2 className="text-lg font-bold text-[#050315]">{title}</h2>
 
-            <div className="mt-4 flex items-center gap-4">
+            <div className="mt-4 flex min-w-0 items-center gap-4">
                 {logoUrl ? (
                     <img
                         src={logoUrl}
@@ -67,7 +67,7 @@ export function AboutCompanyCard({
                         {initials}
                     </div>
                 )}
-                <div className="min-w-0">
+                <div className="min-w-0 overflow-hidden">
                     <p className="truncate text-base font-semibold text-[#050315]">
                         {companyName}
                     </p>
@@ -80,16 +80,18 @@ export function AboutCompanyCard({
             </div>
 
             {about ? (
-                <div className="mt-4 min-w-0 overflow-hidden">
+                <div className="mt-4 min-w-0 max-w-full">
                     {needsSeeMore && !expanded ? (
                         <p className="break-words text-sm leading-6 text-[#4a5565] [overflow-wrap:anywhere]">
                             {previewPlain}
                         </p>
                     ) : (
-                        <RichTextContent
-                            html={about}
-                            className="break-words text-[#4a5565] [overflow-wrap:anywhere]"
-                        />
+                        <div className="min-w-0 max-w-full overflow-x-auto">
+                            <RichTextContent
+                                html={about}
+                                className="break-words text-[#4a5565] [overflow-wrap:anywhere]"
+                            />
+                        </div>
                     )}
                     {needsSeeMore ? (
                         <button

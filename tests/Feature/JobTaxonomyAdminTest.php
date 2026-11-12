@@ -91,6 +91,31 @@ test('taxonomy slug and sort order are generated automatically from the name', f
     expect(JobTaxonomy::query()->where('slug', 'port-sudan-2')->exists())->toBeTrue();
 });
 
+test('admins can toggle a taxonomy option active and inactive from the list', function () {
+    $admin = User::factory()->admin()->create();
+    $item = JobTaxonomy::factory()->dutyStation()->create([
+        'name' => 'Atbara',
+        'slug' => 'atbara',
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('admin.job-filters.toggle-active', $item), [
+            'is_active' => false,
+        ])
+        ->assertRedirect();
+
+    expect($item->fresh()?->is_active)->toBeFalse();
+
+    $this->actingAs($admin)
+        ->post(route('admin.job-filters.toggle-active', $item), [
+            'is_active' => true,
+        ])
+        ->assertRedirect();
+
+    expect($item->fresh()?->is_active)->toBeTrue();
+});
+
 test('non admins cannot manage job filters', function () {
     $employer = User::factory()->employer()->create();
 

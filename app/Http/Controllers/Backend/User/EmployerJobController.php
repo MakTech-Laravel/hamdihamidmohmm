@@ -211,7 +211,7 @@ class EmployerJobController extends Controller
             'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
             'company' => $employer ? $this->companySummary($employer) : null,
             'organizationTypes' => OrganizationType::options(),
-            'options' => $this->formOptions(),
+            'options' => $this->formOptions($job),
         ]);
     }
 
@@ -412,10 +412,35 @@ class EmployerJobController extends Controller
      *     experience_levels: list<string>
      * }
      */
-    private function formOptions(): array
+    private function formOptions(?JobPost $job = null): array
     {
+        $options = JobTaxonomy::filterOptions();
+
+        if ($job !== null) {
+            $options['positionAreas'] = JobTaxonomy::withCurrentOption(
+                $options['positionAreas'],
+                $job->category,
+                JobTaxonomyType::PositionArea,
+            );
+            $options['dutyStations'] = JobTaxonomy::withCurrentOption(
+                $options['dutyStations'],
+                $job->location,
+                JobTaxonomyType::DutyStation,
+            );
+            $options['countries'] = JobTaxonomy::withCurrentOption(
+                $options['countries'],
+                $job->country,
+                JobTaxonomyType::Country,
+            );
+            $options['employmentTypes'] = JobTaxonomy::withCurrentOption(
+                $options['employmentTypes'],
+                $job->employment_type,
+                JobTaxonomyType::EmploymentType,
+            );
+        }
+
         return [
-            ...JobTaxonomy::filterOptions(),
+            ...$options,
             'experience_levels' => ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'],
         ];
     }

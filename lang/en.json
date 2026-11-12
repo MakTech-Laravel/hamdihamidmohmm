@@ -1281,6 +1281,7 @@
     "employer.job_editor.subtitle": "Fill in the details to attract the right candidates",
     "employer.job_editor.title_create": "Post a New Job",
     "employer.job_editor.title_edit": "Edit Job",
+    "employer.job_editor.validation.career_portal_url": "Please enter an Apply by Link URL or email when Apply by Link is enabled.",
     "employer.job_editor.validation.category": "Please choose a position area.",
     "employer.job_editor.validation.employment_type": "Please choose a job type.",
     "employer.job_editor.validation.experience_level": "Please choose an experience level.",

@@ -86,7 +86,7 @@ class UpdateAdminJobRequest extends FormRequest
             ],
             'experience_level' => ['required', 'string', 'max:50'],
             'salary_range' => ['nullable', 'string', 'max:255'],
-            'career_portal_url' => ExternalApplyDestination::rules(),
+            'career_portal_url' => ExternalApplyDestination::rules($this->boolean('apply_by_link')),
             'apply_by_link' => ['sometimes', 'boolean'],
             'hide_on_site_apply' => ['sometimes', 'boolean'],
             'employer_can_manage_apply' => ['sometimes', 'boolean'],

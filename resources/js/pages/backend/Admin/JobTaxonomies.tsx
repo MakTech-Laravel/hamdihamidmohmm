@@ -1,5 +1,5 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -7,7 +7,6 @@ import {
     AdminPagination,
     AdminPanel,
     AdminPrimaryButton,
-    AdminStatusBadge,
     AdminTableShell,
 } from '@/components/admin-portal/ui';
 import InputError from '@/components/input-error';
@@ -30,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useLocale } from '@/hooks/use-locale';
 import AdminPortalLayout from '@/layouts/admin-portal-layout';
+import { cn } from '@/lib/utils';
 import type { SharedData } from '@/types';
 
 type TaxonomyRow = {
@@ -82,6 +82,14 @@ export default function JobTaxonomies({
 
         return types.find((type) => type.value === typeFilter)?.label ?? typeFilter;
     }, [typeFilter, types, t]);
+
+    const toggleActive = (item: TaxonomyRow, value: boolean) => {
+        router.post(
+            `/admin/job-filters/${item.id}/toggle-active`,
+            { is_active: value },
+            { preserveScroll: true },
+        );
+    };
 
     return (
         <AdminPortalLayout>
@@ -172,20 +180,20 @@ export default function JobTaxonomies({
                                             title={item.name}
                                             subtitle={item.type_label}
                                             badge={
-                                                <AdminStatusBadge
+                                                <ActiveToggle
+                                                    checked={item.is_active}
                                                     label={
                                                         item.is_active
-                                                            ? t(
-                                                                  'common.active',
-                                                              )
+                                                            ? t('common.active')
                                                             : t(
                                                                   'common.inactive',
                                                               )
                                                     }
-                                                    tone={
-                                                        item.is_active
-                                                            ? 'success'
-                                                            : 'neutral'
+                                                    onChange={(value) =>
+                                                        toggleActive(
+                                                            item,
+                                                            value,
+                                                        )
                                                     }
                                                 />
                                             }
@@ -224,23 +232,6 @@ export default function JobTaxonomies({
                                                     {t('common.edit')}
                                                 </button>
                                             }
-                                            moreItems={
-                                                item.is_active
-                                                    ? [
-                                                          {
-                                                              key: 'delete',
-                                                              label: t(
-                                                                  'common.delete',
-                                                              ),
-                                                              onSelect: () =>
-                                                                  router.delete(
-                                                                      `/admin/job-filters/${item.id}`,
-                                                                  ),
-                                                              destructive: true,
-                                                          },
-                                                      ]
-                                                    : []
-                                            }
                                         />
                                     </MobileListCard>
                                 ))}
@@ -263,13 +254,16 @@ export default function JobTaxonomies({
                                     {item.sort_order}
                                 </td>
                                 <td className="px-3 py-3">
-                                    <AdminStatusBadge
+                                    <ActiveToggle
+                                        checked={item.is_active}
                                         label={
                                             item.is_active
                                                 ? t('common.active')
                                                 : t('common.inactive')
                                         }
-                                        tone={item.is_active ? 'success' : 'neutral'}
+                                        onChange={(value) =>
+                                            toggleActive(item, value)
+                                        }
                                     />
                                 </td>
                                 <td className="px-3 py-3">
@@ -288,19 +282,6 @@ export default function JobTaxonomies({
                                         >
                                             <Pencil className="size-4" />
                                         </button>
-                                        {item.is_active ? (
-                                            <button
-                                                type="button"
-                                                className="flex size-8 items-center justify-center rounded-lg border border-[#fee2e2] text-[#991b1b]"
-                                                onClick={() =>
-                                                    router.delete(
-                                                        `/admin/job-filters/${item.id}`,
-                                                    )
-                                                }
-                                            >
-                                                <Trash2 className="size-4" />
-                                            </button>
-                                        ) : null}
                                     </div>
                                 </td>
                             </tr>
@@ -409,5 +390,38 @@ export default function JobTaxonomies({
                 </DialogContent>
             </Dialog>
         </AdminPortalLayout>
+    );
+}
+
+function ActiveToggle({
+    checked,
+    label,
+    onChange,
+}: {
+    checked: boolean;
+    label: string;
+    onChange: (value: boolean) => void;
+}) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            aria-label={label}
+            onClick={() => onChange(!checked)}
+            className={cn(
+                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors',
+                checked ? 'bg-[#0057c8]' : 'bg-[#cbd5e1]',
+            )}
+        >
+            <span
+                className={cn(
+                    'inline-block size-5 rounded-full bg-white shadow transition-transform',
+                    checked
+                        ? 'translate-x-5.5 rtl:-translate-x-5.5'
+                        : 'translate-x-0.5 rtl:-translate-x-0.5',
+                )}
+            />
+        </button>
     );
 }

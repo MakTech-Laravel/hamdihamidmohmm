@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend\Admin;
 
 use App\Enums\JobApplicationStatus;
 use App\Enums\JobPostStatus;
+use App\Enums\JobTaxonomyType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\Admin\RejectJobPostRequest;
 use App\Http\Requests\Backend\Admin\ToggleAdminJobApplyByLinkRequest;
@@ -580,10 +581,26 @@ class JobManagementController extends Controller
     {
         $options = JobTaxonomy::filterOptions();
 
-        $options['positionAreas'] = $this->withCurrentOption($options['positionAreas'], $jobPost->category);
-        $options['dutyStations'] = $this->withCurrentOption($options['dutyStations'], $jobPost->location);
-        $options['countries'] = $this->withCurrentOption($options['countries'], $jobPost->country);
-        $options['employmentTypes'] = $this->withCurrentOption($options['employmentTypes'], $jobPost->employment_type);
+        $options['positionAreas'] = JobTaxonomy::withCurrentOption(
+            $options['positionAreas'],
+            $jobPost->category,
+            JobTaxonomyType::PositionArea,
+        );
+        $options['dutyStations'] = JobTaxonomy::withCurrentOption(
+            $options['dutyStations'],
+            $jobPost->location,
+            JobTaxonomyType::DutyStation,
+        );
+        $options['countries'] = JobTaxonomy::withCurrentOption(
+            $options['countries'],
+            $jobPost->country,
+            JobTaxonomyType::Country,
+        );
+        $options['employmentTypes'] = JobTaxonomy::withCurrentOption(
+            $options['employmentTypes'],
+            $jobPost->employment_type,
+            JobTaxonomyType::EmploymentType,
+        );
 
         $experienceLevels = ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'];
         if (filled($jobPost->experience_level) && ! in_array($jobPost->experience_level, $experienceLevels, true)) {
@@ -597,30 +614,6 @@ class JobManagementController extends Controller
                 'value' => $status->value,
                 'label' => $status->label(),
             ])->values()->all(),
-        ];
-    }
-
-    /**
-     * @param  list<array{value: string, label: string}>  $options
-     * @return list<array{value: string, label: string}>
-     */
-    private function withCurrentOption(array $options, ?string $current): array
-    {
-        if ($current === null || trim($current) === '') {
-            return $options;
-        }
-
-        $exists = collect($options)->contains(
-            fn (array $option): bool => $option['value'] === $current,
-        );
-
-        if ($exists) {
-            return $options;
-        }
-
-        return [
-            ['value' => $current, 'label' => $current.' (current)'],
-            ...$options,
         ];
     }
 

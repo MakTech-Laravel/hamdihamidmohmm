@@ -1263,6 +1263,7 @@
     "employer.job_editor.subtitle": "أدخل التفاصيل لجذب المرشحين المناسبين",
     "employer.job_editor.title_create": "نشر وظيفة جديدة",
     "employer.job_editor.title_edit": "تعديل الوظيفة",
+    "employer.job_editor.validation.career_portal_url": "يرجى إدخال رابط أو بريد إلكتروني للتقديم عبر الرابط عند تفعيل التقديم عبر الرابط.",
     "employer.job_editor.validation.category": "يرجى اختيار مجال المنصب.",
     "employer.job_editor.validation.employment_type": "يرجى اختيار نوع الوظيفة.",
     "employer.job_editor.validation.experience_level": "يرجى اختيار مستوى الخبرة.",
