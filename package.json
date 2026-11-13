@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node init && vite build",
-    "build:ssr": "vite build && vite build --ssr",
+    "build:ssr": "node init && vite build && vite build --ssr",
     "dev": "node init && vite",
     "format": "prettier --write resources/",
     "format:check": "prettier --check resources/",
