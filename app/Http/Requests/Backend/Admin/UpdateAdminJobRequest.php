@@ -39,6 +39,7 @@ class UpdateAdminJobRequest extends FormRequest
             'location' => $this->nullableSlug('location'),
             'category' => $this->nullableSlug('category'),
             'employment_type' => trim((string) $this->input('employment_type')),
+            'experience_level' => trim((string) $this->input('experience_level')),
             'career_portal_url' => ExternalApplyDestination::prepare($this->input('career_portal_url')),
             'apply_by_link' => $this->boolean('apply_by_link'),
             'hide_on_site_apply' => $this->boolean('hide_on_site_apply'),
@@ -56,6 +57,7 @@ class UpdateAdminJobRequest extends FormRequest
         $currentLocation = $job instanceof JobPost ? $job->location : null;
         $currentCountry = $job instanceof JobPost ? $job->country : null;
         $currentEmploymentType = $job instanceof JobPost ? $job->employment_type : null;
+        $currentExperienceLevel = $job instanceof JobPost ? $job->experience_level : null;
 
         return [
             'title' => ['required', 'string', 'max:255'],
@@ -84,7 +86,12 @@ class UpdateAdminJobRequest extends FormRequest
                 'max:100',
                 $this->taxonomyOrCurrentRule(JobTaxonomyType::EmploymentType, $currentEmploymentType),
             ],
-            'experience_level' => ['required', 'string', 'max:50'],
+            'experience_level' => [
+                'required',
+                'string',
+                'max:100',
+                $this->taxonomyOrCurrentRule(JobTaxonomyType::ExperienceLevel, $currentExperienceLevel),
+            ],
             'salary_range' => ['nullable', 'string', 'max:255'],
             'career_portal_url' => ExternalApplyDestination::rules($this->boolean('apply_by_link')),
             'apply_by_link' => ['sometimes', 'boolean'],

@@ -2,7 +2,8 @@
 
 namespace App\Http\Requests\Backend\User;
 
-use App\Enums\OrganizationType;
+use App\Enums\JobTaxonomyType;
+use App\Models\JobTaxonomy;
 use App\Support\SafeHtml;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,6 +28,10 @@ class UpdateEmployerProfileRequest extends FormRequest
                 'about' => SafeHtml::clean($this->input('about')),
             ]);
         }
+
+        $this->merge([
+            'organization_type' => trim((string) $this->input('organization_type')),
+        ]);
     }
 
     /**
@@ -34,9 +39,18 @@ class UpdateEmployerProfileRequest extends FormRequest
      */
     public function rules(): array
     {
+        $currentOrganizationType = $this->user()?->organization_type;
+
         return [
             'company_name' => ['required', 'string', 'max:255'],
-            'organization_type' => ['required', Rule::enum(OrganizationType::class)],
+            'organization_type' => [
+                'required',
+                'string',
+                'max:100',
+                $this->organizationTypeOrCurrentRule(
+                    is_string($currentOrganizationType) ? $currentOrganizationType : null,
+                ),
+            ],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:255'],
             'company_size' => ['nullable', 'string', 'max:50'],
@@ -60,8 +74,30 @@ class UpdateEmployerProfileRequest extends FormRequest
         return [
             'company_name.required' => 'Please enter your organization name.',
             'organization_type.required' => 'Please select your organization type.',
-            'organization_type.enum' => 'Please select a valid organization type.',
             'email.required' => 'Please enter a contact email.',
         ];
+    }
+
+    private function organizationTypeOrCurrentRule(?string $current): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($current): void {
+            $slug = is_string($value) ? trim($value) : '';
+
+            if ($slug === '') {
+                $fail('Please select a valid organization type.');
+
+                return;
+            }
+
+            if ($current !== null && $slug === $current) {
+                return;
+            }
+
+            if (JobTaxonomy::isValidSlug(JobTaxonomyType::OrganizationType, $slug)) {
+                return;
+            }
+
+            $fail('Please select a valid organization type.');
+        };
     }
 }

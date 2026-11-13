@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Backend\User;
 use App\Enums\JobApplicationStatus;
 use App\Enums\JobPostStatus;
 use App\Enums\JobTaxonomyType;
-use App\Enums\OrganizationType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\StoreEmployerJobRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerJobRequest;
@@ -138,7 +137,9 @@ class EmployerJobController extends Controller
             'job' => null,
             'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
             'company' => $employer ? $this->companySummary($employer) : null,
-            'organizationTypes' => OrganizationType::options(),
+            'organizationTypes' => JobTaxonomy::organizationTypeOptions(
+                $employer?->organization_type,
+            ),
             'options' => $this->formOptions(),
             'ats' => $this->atsFormProps($employer),
         ]);
@@ -210,7 +211,9 @@ class EmployerJobController extends Controller
             'ats' => $this->atsFormProps($employer, $job),
             'plan' => $employer ? EmployerPlanSnapshot::for($employer) : null,
             'company' => $employer ? $this->companySummary($employer) : null,
-            'organizationTypes' => OrganizationType::options(),
+            'organizationTypes' => JobTaxonomy::organizationTypeOptions(
+                $employer?->organization_type,
+            ),
             'options' => $this->formOptions($job),
         ]);
     }
@@ -409,7 +412,8 @@ class EmployerJobController extends Controller
      *     dutyStations: list<array{value: string, label: string}>,
      *     positionAreas: list<array{value: string, label: string}>,
      *     employmentTypes: list<array{value: string, label: string}>,
-     *     experience_levels: list<string>
+     *     experienceLevels: list<array{value: string, label: string}>,
+     *     organizationTypes: list<array{value: string, label: string}>
      * }
      */
     private function formOptions(?JobPost $job = null): array
@@ -437,12 +441,14 @@ class EmployerJobController extends Controller
                 $job->employment_type,
                 JobTaxonomyType::EmploymentType,
             );
+            $options['experienceLevels'] = JobTaxonomy::withCurrentOption(
+                $options['experienceLevels'],
+                $job->experience_level,
+                JobTaxonomyType::ExperienceLevel,
+            );
         }
 
-        return [
-            ...$options,
-            'experience_levels' => ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'],
-        ];
+        return $options;
     }
 
     /**
@@ -458,11 +464,12 @@ class EmployerJobController extends Controller
     private function companySummary(User $employer): array
     {
         $name = (string) ($employer->company_name ?: $employer->name ?: 'Organization');
-        $organizationType = $employer->organization_type ?? OrganizationType::PrivateCompany;
 
         return [
             'name' => $name,
-            'organization_type' => $organizationType->value,
+            'organization_type' => filled($employer->organization_type)
+                ? (string) $employer->organization_type
+                : 'private_company',
             'industry' => $employer->industry,
             'about' => $employer->about,
             'website' => $employer->website,

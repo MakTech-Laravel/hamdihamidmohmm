@@ -2,6 +2,11 @@
 
 use App\Enums\OrganizationType;
 use App\Models\User;
+use Database\Seeders\JobTaxonomySeeder;
+
+beforeEach(function () {
+    $this->seed(JobTaxonomySeeder::class);
+});
 
 test('employers can update the public about company fields', function () {
     $employer = User::factory()->employer()->create([
@@ -24,7 +29,7 @@ test('employers can update the public about company fields', function () {
     $employer->refresh();
 
     expect($employer->company_name)->toBe('Gulf Tech Solutions')
-        ->and($employer->organization_type)->toBe(OrganizationType::PrivateCompany)
+        ->and($employer->organization_type)->toBe(OrganizationType::PrivateCompany->value)
         ->and($employer->industry)->toBe('Technology')
         ->and($employer->about)->toContain('<strong>Cloud</strong>')
         ->and($employer->about)->not->toContain('<script>')

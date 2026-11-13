@@ -139,7 +139,7 @@ class FrontendController extends Controller
                 'type' => JobListingQuery::displayLabel(JobTaxonomyType::EmploymentType, $jobPost->employment_type),
                 'category' => JobListingQuery::displayLabel(JobTaxonomyType::PositionArea, $jobPost->category),
                 'country' => JobListingQuery::displayLabel(JobTaxonomyType::Country, $jobPost->country),
-                'experience' => $jobPost->experience_level,
+                'experience' => JobListingQuery::displayLabel(JobTaxonomyType::ExperienceLevel, $jobPost->experience_level),
                 'salary' => $this->publicSalary($jobPost->employer, $jobPost->salary_range),
                 'career_portal_url' => filled($jobPost->career_portal_url)
                     ? $jobPost->career_portal_url
@@ -257,7 +257,7 @@ class FrontendController extends Controller
             'type' => JobListingQuery::displayLabel(JobTaxonomyType::EmploymentType, $job->employment_type) ?: 'Full-time',
             'location' => JobListingQuery::displayLabel(JobTaxonomyType::DutyStation, $job->location) ?: '—',
             'country' => JobListingQuery::displayLabel(JobTaxonomyType::Country, $job->country) ?: null,
-            'experience' => $job->experience_level ?: '—',
+            'experience' => JobListingQuery::displayLabel(JobTaxonomyType::ExperienceLevel, $job->experience_level) ?: '—',
             'posted' => $job->created_at?->diffForHumans() ?: '—',
             'salary' => $this->publicSalary($job->employer, $job->salary_range) ?: '—',
         ];

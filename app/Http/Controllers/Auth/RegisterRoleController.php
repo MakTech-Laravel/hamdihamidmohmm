@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Models\JobTaxonomy;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,6 +28,9 @@ class RegisterRoleController extends Controller
             'role' => $normalizedRole->value,
             'roleLabel' => $normalizedRole->label(),
             'isEmployer' => $normalizedRole === UserRole::Employer,
+            'organizationTypes' => $normalizedRole === UserRole::Employer
+                ? JobTaxonomy::organizationTypeOptions()
+                : [],
         ]);
     }
 }

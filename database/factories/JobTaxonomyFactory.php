@@ -48,6 +48,16 @@ class JobTaxonomyFactory extends Factory
         return $this->state(fn (): array => ['type' => JobTaxonomyType::EmploymentType]);
     }
 
+    public function experienceLevel(): static
+    {
+        return $this->state(fn (): array => ['type' => JobTaxonomyType::ExperienceLevel]);
+    }
+
+    public function organizationType(): static
+    {
+        return $this->state(fn (): array => ['type' => JobTaxonomyType::OrganizationType]);
+    }
+
     public function inactive(): static
     {
         return $this->state(fn (): array => ['is_active' => false]);

@@ -112,7 +112,7 @@ function atsApplication(
         'employer_id' => $employer->id,
         'title' => 'Full Stack Developer',
         'skills' => ['React', 'TypeScript', 'Laravel', 'Docker'],
-        'experience_level' => 'Mid Level',
+        'experience_level' => 'mid-level',
         'requirements' => "<p>Bachelor's degree in Computer Science.</p><p>3+ years building web applications.</p>",
         'description' => '<p>Join our product team to build customer portals.</p>',
         'status' => JobPostStatus::Active,

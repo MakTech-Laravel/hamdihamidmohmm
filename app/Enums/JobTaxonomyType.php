@@ -8,6 +8,8 @@ enum JobTaxonomyType: string
     case DutyStation = 'duty_station';
     case PositionArea = 'position_area';
     case EmploymentType = 'employment_type';
+    case ExperienceLevel = 'experience_level';
+    case OrganizationType = 'organization_type';
 
     public function label(): string
     {
@@ -16,6 +18,8 @@ enum JobTaxonomyType: string
             self::DutyStation => 'Duty Station',
             self::PositionArea => 'Position Area',
             self::EmploymentType => 'Job Type',
+            self::ExperienceLevel => 'Experience Level',
+            self::OrganizationType => 'Organization Type',
         };
     }
 }

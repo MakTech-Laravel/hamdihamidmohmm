@@ -601,7 +601,7 @@
     "admin.taxonomies.empty": "لا توجد خيارات فلتر بعد.",
     "admin.taxonomies.new": "إضافة خيار",
     "admin.taxonomies.showing": "المعروض",
-    "admin.taxonomies.subtitle": "إدارة خيارات الدولة ومحطة العمل ومجال المنصب ونوع الوظيفة المستخدمة في البحث ونماذج الوظائف.",
+    "admin.taxonomies.subtitle": "إدارة خيارات الدولة ومحطة العمل ومجال المنصب ونوع الوظيفة ومستوى الخبرة ونوع المنظمة المستخدمة في البحث ونماذج الوظائف.",
     "admin.taxonomies.title": "فلاتر الوظائف",
     "admin.training.document_name": "اسم العرض (اختياري)",
     "admin.training.document_name_placeholder": "مثال: دليل التقديم",

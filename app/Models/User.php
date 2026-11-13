@@ -7,7 +7,6 @@ use App\Enums\EmployerAccountStatus;
 use App\Enums\EmployerPackage;
 use App\Enums\EmployerVerificationStatus;
 use App\Enums\JobSeekerResumeStatus;
-use App\Enums\OrganizationType;
 use App\Enums\PermissionName;
 use App\Enums\RoleName;
 use App\Enums\SubscriptionStatus;
@@ -120,7 +119,6 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'role' => UserRole::class,
-            'organization_type' => OrganizationType::class,
             'verification_status' => EmployerVerificationStatus::class,
             'account_status' => AccountStatusCast::class,
             'resume_status' => JobSeekerResumeStatus::class,

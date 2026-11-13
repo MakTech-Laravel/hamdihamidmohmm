@@ -11,7 +11,7 @@ use App\Enums\EmployerVerificationStatus;
 use App\Enums\Gender;
 use App\Enums\JobSeekerAccountStatus;
 use App\Enums\JobSeekerResumeStatus;
-use App\Enums\OrganizationType;
+use App\Enums\JobTaxonomyType;
 use App\Enums\UserRole;
 use App\Models\JobSeekerProfile;
 use App\Models\User;
@@ -51,13 +51,22 @@ class CreateNewUser implements CreatesNewUsers
             'password_confirmation' => $this->profilePasswordConfirmationRules(),
             'role' => ['required', 'integer', Rule::in(UserRole::registrableValues())],
             'company_name' => [$isEmployer ? 'required' : 'nullable', 'string', 'max:255'],
-            'organization_type' => ['nullable', Rule::enum(OrganizationType::class)],
+            'organization_type' => [
+                $isEmployer ? 'nullable' : 'prohibited',
+                'string',
+                'max:100',
+                Rule::exists('job_taxonomies', 'slug')->where(
+                    fn ($query) => $query
+                        ->where('type', JobTaxonomyType::OrganizationType->value)
+                        ->where('is_active', true)
+                ),
+            ],
             'terms' => ['accepted'],
         ], [
             'role.required' => 'Please select whether you are a job seeker or an employer.',
             'role.in' => 'Please select a valid account type.',
             'company_name.required' => 'Please enter your company or organization name.',
-            'organization_type.enum' => 'Please select a valid organization type.',
+            'organization_type.exists' => 'Please select a valid organization type.',
             'phone.required' => 'Please enter your phone number.',
             'gender.required' => 'Please select your gender.',
             'gender.enum' => 'Please select a valid gender.',
@@ -72,8 +81,8 @@ class CreateNewUser implements CreatesNewUsers
 
         if ($isEmployer) {
             $organizationType = filled($input['organization_type'] ?? null)
-                ? OrganizationType::from((string) $input['organization_type'])
-                : OrganizationType::PrivateCompany;
+                ? trim((string) $input['organization_type'])
+                : 'private_company';
         }
 
         $user = User::create([

@@ -122,7 +122,8 @@ type Props = {
         dutyStations: TaxonomyOption[];
         positionAreas: TaxonomyOption[];
         employmentTypes: TaxonomyOption[];
-        experience_levels: string[];
+        experienceLevels: TaxonomyOption[];
+        organizationTypes?: TaxonomyOption[];
     };
     ats?: AtsFormProps;
 };
@@ -255,7 +256,15 @@ export default function EmployerJobEditor({
     ): string | null => {
         const option = organizationTypes.find((item) => item.value === value);
 
-        return option ? t(option.translation_key) : null;
+        if (!option) {
+            return null;
+        }
+
+        const translated = t(option.translation_key);
+
+        return translated === option.translation_key
+            ? option.label
+            : translated;
     };
 
     const organizationIndustryLine = [
@@ -943,10 +952,13 @@ export default function EmployerJobEditor({
                                                 'employer.job_editor.field.select_level',
                                             )}
                                         </option>
-                                        {options.experience_levels.map(
+                                        {options.experienceLevels.map(
                                             (item) => (
-                                                <option key={item} value={item}>
-                                                    {item}
+                                                <option
+                                                    key={item.value}
+                                                    value={item.value}
+                                                >
+                                                    {item.label}
                                                 </option>
                                             ),
                                         )}
@@ -1183,16 +1195,27 @@ export default function EmployerJobEditor({
                                                 className={inputClass}
                                             >
                                                 {organizationTypes.map(
-                                                    (option) => (
-                                                        <option
-                                                            key={option.value}
-                                                            value={option.value}
-                                                        >
-                                                            {t(
-                                                                option.translation_key,
-                                                            )}
-                                                        </option>
-                                                    ),
+                                                    (option) => {
+                                                        const translated = t(
+                                                            option.translation_key,
+                                                        );
+
+                                                        return (
+                                                            <option
+                                                                key={
+                                                                    option.value
+                                                                }
+                                                                value={
+                                                                    option.value
+                                                                }
+                                                            >
+                                                                {translated ===
+                                                                option.translation_key
+                                                                    ? option.label
+                                                                    : translated}
+                                                            </option>
+                                                        );
+                                                    },
                                                 )}
                                             </select>
                                         </Field>

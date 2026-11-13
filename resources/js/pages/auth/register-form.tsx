@@ -12,16 +12,24 @@ import AuthLayout from '@/layouts/auth-layout';
 import { login, register } from '@/routes';
 import { store } from '@/routes/register';
 
+type OrganizationTypeOption = {
+    value: string;
+    label: string;
+    translation_key: string;
+};
+
 type RegisterFormProps = {
     role: number;
     roleLabel: string;
     isEmployer: boolean;
+    organizationTypes?: OrganizationTypeOption[];
 };
 
 export default function RegisterForm({
     role,
     roleLabel,
     isEmployer,
+    organizationTypes = [],
 }: RegisterFormProps) {
     const { t } = useLocale();
     const accent = isEmployer ? '#e57124' : '#0057c8';
@@ -101,31 +109,23 @@ export default function RegisterForm({
                                         required
                                         className="h-[46px] w-full rounded-xl border border-[#e2e8f0] bg-[#f9fafb] px-4 text-sm text-[#374151] outline-none focus:border-[#e57124] focus:ring-[#e57124]/30"
                                     >
-                                        <option value="private_company">
-                                            {t(
-                                                'employer.profile.organization_type.private_company',
-                                            )}
-                                        </option>
-                                        <option value="non_profit">
-                                            {t(
-                                                'employer.profile.organization_type.non_profit',
-                                            )}
-                                        </option>
-                                        <option value="ngo">
-                                            {t(
-                                                'employer.profile.organization_type.ngo',
-                                            )}
-                                        </option>
-                                        <option value="institute">
-                                            {t(
-                                                'employer.profile.organization_type.institute',
-                                            )}
-                                        </option>
-                                        <option value="public_sector">
-                                            {t(
-                                                'employer.profile.organization_type.public_sector',
-                                            )}
-                                        </option>
+                                        {organizationTypes.map((option) => {
+                                            const translated = t(
+                                                option.translation_key,
+                                            );
+
+                                            return (
+                                                <option
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {translated ===
+                                                    option.translation_key
+                                                        ? option.label
+                                                        : translated}
+                                                </option>
+                                            );
+                                        })}
                                     </select>
                                     <InputError
                                         message={errors.organization_type}

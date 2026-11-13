@@ -2,10 +2,15 @@
 
 use App\Enums\OrganizationType;
 use App\Models\User;
+use Database\Seeders\JobTaxonomySeeder;
+
+beforeEach(function () {
+    $this->seed(JobTaxonomySeeder::class);
+});
 
 test('organization profile page includes organization type options', function () {
     $employer = User::factory()->employer()->create([
-        'organization_type' => OrganizationType::Ngo,
+        'organization_type' => OrganizationType::Ngo->value,
     ]);
 
     $this->actingAs($employer)
@@ -15,13 +20,13 @@ test('organization profile page includes organization type options', function ()
             ->component('backend/User/EmployerCompanyProfile')
             ->where('profile.organization_type', OrganizationType::Ngo->value)
             ->where('profile.organization_type_label', 'NGO')
-            ->has('organizationTypes', count(OrganizationType::cases()))
+            ->has('organizationTypes', 5)
             ->where('organizationTypes.0.value', OrganizationType::PrivateCompany->value));
 });
 
 test('employers can save non-profit organization profile details', function () {
     $employer = User::factory()->employer()->create([
-        'organization_type' => OrganizationType::PrivateCompany,
+        'organization_type' => OrganizationType::PrivateCompany->value,
     ]);
 
     $this->actingAs($employer)
@@ -44,7 +49,7 @@ test('employers can save non-profit organization profile details', function () {
     $employer->refresh();
 
     expect($employer->company_name)->toBe('Gulf Relief Foundation')
-        ->and($employer->organization_type)->toBe(OrganizationType::NonProfit)
+        ->and($employer->organization_type)->toBe(OrganizationType::NonProfit->value)
         ->and($employer->industry)->toBe('Humanitarian Aid');
 });
 
@@ -64,7 +69,7 @@ test('public about update accepts public sector organization type', function () 
     $employer->refresh();
 
     expect($employer->company_name)->toBe('National Skills Institute')
-        ->and($employer->organization_type)->toBe(OrganizationType::PublicSector);
+        ->and($employer->organization_type)->toBe(OrganizationType::PublicSector->value);
 });
 
 test('organization profile update rejects invalid organization type', function () {

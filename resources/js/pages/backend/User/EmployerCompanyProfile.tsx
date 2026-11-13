@@ -93,7 +93,11 @@ export default function EmployerCompanyProfile({
             return profile.organization_type_label || '—';
         }
 
-        return t(option.translation_key);
+        const translated = t(option.translation_key);
+
+        return translated === option.translation_key
+            ? option.label
+            : translated;
     };
 
     const save = () => {
@@ -381,14 +385,23 @@ export default function EmployerCompanyProfile({
                                         )
                                     }
                                 >
-                                    {organizationTypes.map((option) => (
-                                        <option
-                                            key={option.value}
-                                            value={option.value}
-                                        >
-                                            {t(option.translation_key)}
-                                        </option>
-                                    ))}
+                                    {organizationTypes.map((option) => {
+                                        const translated = t(
+                                            option.translation_key,
+                                        );
+
+                                        return (
+                                            <option
+                                                key={option.value}
+                                                value={option.value}
+                                            >
+                                                {translated ===
+                                                option.translation_key
+                                                    ? option.label
+                                                    : translated}
+                                            </option>
+                                        );
+                                    })}
                                 </select>
                             </div>
                             <div>
@@ -497,14 +510,23 @@ export default function EmployerCompanyProfile({
                                         )
                                     }
                                 >
-                                    {organizationTypes.map((option) => (
-                                        <option
-                                            key={option.value}
-                                            value={option.value}
-                                        >
-                                            {t(option.translation_key)}
-                                        </option>
-                                    ))}
+                                    {organizationTypes.map((option) => {
+                                        const translated = t(
+                                            option.translation_key,
+                                        );
+
+                                        return (
+                                            <option
+                                                key={option.value}
+                                                value={option.value}
+                                            >
+                                                {translated ===
+                                                option.translation_key
+                                                    ? option.label
+                                                    : translated}
+                                            </option>
+                                        );
+                                    })}
                                 </select>
                             </div>
                             <div>
