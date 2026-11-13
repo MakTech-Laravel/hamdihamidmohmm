@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build",
+    "build": "node init && vite build",
     "build:ssr": "vite build && vite build --ssr",
-    "dev": "vite",
+    "dev": "node init && vite",
     "format": "prettier --write resources/",
     "format:check": "prettier --check resources/",
     "lint": "eslint . --fix",
