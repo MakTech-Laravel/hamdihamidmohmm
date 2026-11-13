@@ -53,7 +53,8 @@ type Props = {
         dutyStations: Option[];
         positionAreas: Option[];
         employmentTypes: Option[];
-        experience_levels: string[];
+        experienceLevels: Option[];
+        organizationTypes?: Option[];
         statuses: Option[];
     };
 };
@@ -416,9 +417,12 @@ export default function JobEdit({ job, options }: Props) {
                                     }
                                     className="h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm"
                                 >
-                                    {options.experience_levels.map((level) => (
-                                        <option key={level} value={level}>
-                                            {level}
+                                    {options.experienceLevels.map((level) => (
+                                        <option
+                                            key={level.value}
+                                            value={level.value}
+                                        >
+                                            {level.label}
                                         </option>
                                     ))}
                                 </NativeSelect>

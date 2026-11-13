@@ -98,7 +98,7 @@ test('employer job create accepts active taxonomy slugs', function () {
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => false,
         ])
         ->assertRedirect(route('employer.jobs'));

@@ -66,6 +66,10 @@ test('employers can open the post job wizard and edit an existing job', function
             ->has('options.employmentTypes')
             ->has('options.countries')
             ->has('options.dutyStations')
+            ->has('options.experienceLevels')
+            ->where('options.experienceLevels', fn ($levels) => collect($levels)->contains(
+                fn ($item) => ($item['value'] ?? null) === 'mid-level'
+            ))
             ->where('ats.enabled', true)
             ->where('ats.quality.show', true)
             ->where('ats.quality.missing_skills', true));
@@ -111,7 +115,7 @@ test('employers cannot save a job with a free-text category', function () {
             'category' => 'Hospitality Management',
             'location' => 'Khartoum',
             'employment_type' => 'Full-time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => false,
         ])
         ->assertSessionHasErrors(['category', 'location', 'employment_type']);
@@ -152,7 +156,7 @@ test('employers can save a job with taxonomy selects', function () {
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => false,
         ])
         ->assertRedirect(route('employer.jobs'));
@@ -184,7 +188,7 @@ test('employers cannot create a job with inactive taxonomy options', function ()
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => false,
         ])
         ->assertSessionHasErrors('category');
@@ -216,7 +220,7 @@ test('employer job edit keeps inactive current taxonomies and blocks switching t
         'location' => 'khartoum',
         'country' => 'sudan',
         'employment_type' => 'full_time',
-        'experience_level' => 'Mid Level',
+        'experience_level' => 'mid-level',
         'status' => JobPostStatus::Draft,
     ]);
 
@@ -238,7 +242,7 @@ test('employer job edit keeps inactive current taxonomies and blocks switching t
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => false,
         ])
         ->assertRedirect(route('employer.jobs'));
@@ -254,7 +258,7 @@ test('employer job edit keeps inactive current taxonomies and blocks switching t
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => false,
         ])
         ->assertRedirect(route('employer.jobs.edit', $job))
@@ -267,7 +271,7 @@ test('employer job edit keeps inactive current taxonomies and blocks switching t
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => false,
         ])
         ->assertRedirect(route('employer.jobs'));
@@ -291,11 +295,49 @@ test('employer job edit keeps inactive current taxonomies and blocks switching t
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => false,
         ])
         ->assertRedirect(route('employer.jobs.edit', $job))
         ->assertSessionHasErrors('category');
+});
+
+test('employer job edit keeps legacy experience level labels as current options', function () {
+    $employer = User::factory()->employer()->create();
+
+    $job = JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'title' => 'Legacy Experience Role',
+        'category' => 'technology',
+        'location' => 'khartoum',
+        'country' => 'sudan',
+        'employment_type' => 'full_time',
+        'experience_level' => 'Mid Level',
+        'status' => JobPostStatus::Draft,
+    ]);
+
+    $this->actingAs($employer)
+        ->get(route('employer.jobs.edit', $job))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('job.experience_level', 'Mid Level')
+            ->where('options.experienceLevels', fn ($levels) => collect($levels)->contains(
+                fn ($item) => ($item['value'] ?? null) === 'Mid Level'
+            )));
+
+    $this->actingAs($employer)
+        ->put(route('employer.jobs.update', $job), [
+            'title' => 'Legacy Experience Role Updated',
+            'category' => 'technology',
+            'location' => 'khartoum',
+            'country' => 'sudan',
+            'employment_type' => 'full_time',
+            'experience_level' => 'Mid Level',
+            'publish' => false,
+        ])
+        ->assertRedirect(route('employer.jobs'));
+
+    expect($job->fresh()->experience_level)->toBe('Mid Level');
 });
 
 test('employers can save a draft and later submit it for review', function () {
@@ -308,7 +350,7 @@ test('employers can save a draft and later submit it for review', function () {
             'location' => 'remote',
             'country' => 'remote',
             'employment_type' => 'full_time',
-            'experience_level' => 'Senior',
+            'experience_level' => 'senior',
             'salary_range' => 'SAR 18,000–25,000',
             'description' => '<p><strong>Design</strong> the portal. <span style="font-size: 18px">Impact role.</span></p><script>alert(1)</script>',
             'requirements' => '<ul><li><strong>Figma</strong> and research.</li></ul><script>alert(1)</script><a href="javascript:alert(1)">bad</a>',
@@ -337,7 +379,7 @@ test('employers can save a draft and later submit it for review', function () {
             'location' => 'remote',
             'country' => 'remote',
             'employment_type' => 'full_time',
-            'experience_level' => 'Senior',
+            'experience_level' => 'senior',
             'description' => 'Design the portal.',
             'publish' => true,
         ])
@@ -370,7 +412,7 @@ test('publishing is blocked when the current public plan has no remaining credit
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => true,
         ])
         ->assertSessionHasErrors('title');
@@ -382,7 +424,7 @@ test('publishing is blocked when the current public plan has no remaining credit
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => false,
         ])
         ->assertRedirect(route('employer.jobs'));

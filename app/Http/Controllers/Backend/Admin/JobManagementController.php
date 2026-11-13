@@ -18,6 +18,7 @@ use App\Models\JobPost;
 use App\Models\JobTaxonomy;
 use App\Models\User;
 use App\Support\ApplicantProfilePreview;
+use App\Support\JobListingQuery;
 use App\Support\JobSeekerResume;
 use App\Support\ListPageSize;
 use App\Support\PortalNotifier;
@@ -108,8 +109,14 @@ class JobManagementController extends Controller
                     is_array($jobPost->skills) ? $jobPost->skills : [],
                     fn (mixed $skill): bool => filled($skill),
                 )),
-                'experience_level' => $jobPost->experience_level,
-                'employment_type' => $jobPost->employment_type,
+                'experience_level' => JobListingQuery::displayLabel(
+                    JobTaxonomyType::ExperienceLevel,
+                    $jobPost->experience_level,
+                ),
+                'employment_type' => JobListingQuery::displayLabel(
+                    JobTaxonomyType::EmploymentType,
+                    $jobPost->employment_type,
+                ),
                 'salary_range' => $jobPost->salary_range,
                 'career_portal_url' => $jobPost->career_portal_url,
                 'apply_by_link' => (bool) $jobPost->apply_by_link,
@@ -573,7 +580,8 @@ class JobManagementController extends Controller
      *     dutyStations: list<array{value: string, label: string}>,
      *     positionAreas: list<array{value: string, label: string}>,
      *     employmentTypes: list<array{value: string, label: string}>,
-     *     experience_levels: list<string>,
+     *     experienceLevels: list<array{value: string, label: string}>,
+     *     organizationTypes: list<array{value: string, label: string}>,
      *     statuses: list<array{value: string, label: string}>
      * }
      */
@@ -601,15 +609,14 @@ class JobManagementController extends Controller
             $jobPost->employment_type,
             JobTaxonomyType::EmploymentType,
         );
-
-        $experienceLevels = ['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Director'];
-        if (filled($jobPost->experience_level) && ! in_array($jobPost->experience_level, $experienceLevels, true)) {
-            array_unshift($experienceLevels, (string) $jobPost->experience_level);
-        }
+        $options['experienceLevels'] = JobTaxonomy::withCurrentOption(
+            $options['experienceLevels'],
+            $jobPost->experience_level,
+            JobTaxonomyType::ExperienceLevel,
+        );
 
         return [
             ...$options,
-            'experience_levels' => $experienceLevels,
             'statuses' => collect(JobPostStatus::cases())->map(fn (JobPostStatus $status) => [
                 'value' => $status->value,
                 'label' => $status->label(),

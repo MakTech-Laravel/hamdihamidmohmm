@@ -617,7 +617,7 @@
     "admin.taxonomies.empty": "No filter options yet.",
     "admin.taxonomies.new": "Add option",
     "admin.taxonomies.showing": "Showing",
-    "admin.taxonomies.subtitle": "Manage Country, Duty Station, Position Area, and Job Type options used across search and job forms.",
+    "admin.taxonomies.subtitle": "Manage Country, Duty Station, Position Area, Job Type, Experience Level, and Organization Type options used across search and job forms.",
     "admin.taxonomies.title": "Job Filters",
     "admin.training.document_name": "Display name (optional)",
     "admin.training.document_name_placeholder": "e.g. Application guide",

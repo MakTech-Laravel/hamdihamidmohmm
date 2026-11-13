@@ -44,7 +44,7 @@ test('employers can attach a job logo while creating a job', function () {
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => false,
             'logo' => $logo,
         ])

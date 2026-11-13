@@ -105,7 +105,9 @@ class JobTaxonomy extends Model
      *     countries: list<array{value: string, label: string}>,
      *     dutyStations: list<array{value: string, label: string}>,
      *     positionAreas: list<array{value: string, label: string}>,
-     *     employmentTypes: list<array{value: string, label: string}>
+     *     employmentTypes: list<array{value: string, label: string}>,
+     *     experienceLevels: list<array{value: string, label: string}>,
+     *     organizationTypes: list<array{value: string, label: string}>
      * }
      */
     public static function filterOptions(): array
@@ -115,7 +117,30 @@ class JobTaxonomy extends Model
             'dutyStations' => self::optionsFor(JobTaxonomyType::DutyStation),
             'positionAreas' => self::optionsFor(JobTaxonomyType::PositionArea),
             'employmentTypes' => self::optionsFor(JobTaxonomyType::EmploymentType),
+            'experienceLevels' => self::optionsFor(JobTaxonomyType::ExperienceLevel),
+            'organizationTypes' => self::optionsFor(JobTaxonomyType::OrganizationType),
         ];
+    }
+
+    /**
+     * @return list<array{value: string, label: string, translation_key: string}>
+     */
+    public static function organizationTypeOptions(?string $current = null): array
+    {
+        $options = self::withCurrentOption(
+            self::optionsFor(JobTaxonomyType::OrganizationType),
+            $current,
+            JobTaxonomyType::OrganizationType,
+        );
+
+        return array_map(
+            fn (array $option): array => [
+                'value' => $option['value'],
+                'label' => $option['label'],
+                'translation_key' => 'employer.profile.organization_type.'.$option['value'],
+            ],
+            $options,
+        );
     }
 
     /**

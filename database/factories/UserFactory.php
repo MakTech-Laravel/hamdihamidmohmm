@@ -72,7 +72,7 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'role' => UserRole::Employer,
             'company_name' => fake()->company(),
-            'organization_type' => fake()->randomElement(OrganizationType::cases()),
+            'organization_type' => fake()->randomElement(OrganizationType::values()),
             'name' => fake()->name(),
             'contact_name' => fake()->name(),
             'industry' => fake()->randomElement([

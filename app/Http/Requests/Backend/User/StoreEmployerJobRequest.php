@@ -38,6 +38,7 @@ class StoreEmployerJobRequest extends FormRequest
             'location' => $this->nullableSlug('location'),
             'category' => $this->nullableSlug('category'),
             'employment_type' => trim((string) $this->input('employment_type')),
+            'experience_level' => trim((string) $this->input('experience_level')),
             'career_portal_url' => ExternalApplyDestination::prepare($this->input('career_portal_url')),
             'apply_by_link' => $this->boolean('apply_by_link'),
             'hide_on_site_apply' => $this->boolean('hide_on_site_apply'),
@@ -85,7 +86,14 @@ class StoreEmployerJobRequest extends FormRequest
                     fn ($query) => $query->where('type', JobTaxonomyType::EmploymentType->value)->where('is_active', true)
                 ),
             ],
-            'experience_level' => ['required', 'string', 'max:50'],
+            'experience_level' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::exists('job_taxonomies', 'slug')->where(
+                    fn ($query) => $query->where('type', JobTaxonomyType::ExperienceLevel->value)->where('is_active', true)
+                ),
+            ],
             'salary_range' => ['nullable', 'string', 'max:255'],
             'career_portal_url' => ExternalApplyDestination::rules($this->boolean('apply_by_link')),
             'apply_by_link' => ['sometimes', 'boolean'],
@@ -115,6 +123,7 @@ class StoreEmployerJobRequest extends FormRequest
             'employment_type.required' => 'Please choose a job type.',
             'employment_type.exists' => 'Please choose a valid job type.',
             'experience_level.required' => 'Please choose an experience level.',
+            'experience_level.exists' => 'Please choose a valid experience level.',
             'country.exists' => 'Please choose a valid country.',
             'logo.image' => 'The job logo must be an image.',
             'logo.mimes' => 'The job logo must be a JPG, PNG, or WEBP file.',

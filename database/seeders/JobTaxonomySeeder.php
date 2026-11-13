@@ -59,6 +59,20 @@ class JobTaxonomySeeder extends Seeder
                 ['name' => 'Internship', 'slug' => 'internship'],
                 ['name' => 'Remote', 'slug' => 'remote'],
             ],
+            JobTaxonomyType::ExperienceLevel->value => [
+                ['name' => 'Entry Level', 'slug' => 'entry-level'],
+                ['name' => 'Mid Level', 'slug' => 'mid-level'],
+                ['name' => 'Senior', 'slug' => 'senior'],
+                ['name' => 'Lead', 'slug' => 'lead'],
+                ['name' => 'Director', 'slug' => 'director'],
+            ],
+            JobTaxonomyType::OrganizationType->value => [
+                ['name' => 'Private Company', 'slug' => 'private_company'],
+                ['name' => 'Non-Profit Organization', 'slug' => 'non_profit'],
+                ['name' => 'NGO', 'slug' => 'ngo'],
+                ['name' => 'Institute / Educational', 'slug' => 'institute'],
+                ['name' => 'Public Sector', 'slug' => 'public_sector'],
+            ],
         ];
 
         foreach ($sets as $type => $items) {

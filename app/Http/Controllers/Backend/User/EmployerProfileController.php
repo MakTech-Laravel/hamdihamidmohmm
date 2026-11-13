@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Backend\User;
 
 use App\Enums\EmployerVerificationStatus;
-use App\Enums\OrganizationType;
+use App\Enums\JobTaxonomyType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Backend\User\UpdateEmployerProfileRequest;
 use App\Http\Requests\Backend\User\UpdateEmployerPublicAboutRequest;
@@ -11,6 +11,7 @@ use App\Http\Requests\Backend\User\UploadEmployerCoverRequest;
 use App\Http\Requests\Backend\User\UploadEmployerLogoRequest;
 use App\Http\Requests\Backend\User\UploadEmployerPhotoRequest;
 use App\Http\Requests\Backend\User\UploadEmployerVerificationDocumentRequest;
+use App\Models\JobTaxonomy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -29,12 +30,17 @@ class EmployerProfileController extends Controller
         $hasCover = $employer->hasCompanyCover();
         $hasDocument = $employer->hasVerificationDocument();
 
-        $organizationType = $employer->organization_type ?? OrganizationType::PrivateCompany;
+        $organizationType = filled($employer->organization_type)
+            ? (string) $employer->organization_type
+            : 'private_company';
 
         $profile = [
             'company_name' => $employer->company_name,
-            'organization_type' => $organizationType->value,
-            'organization_type_label' => $organizationType->label(),
+            'organization_type' => $organizationType,
+            'organization_type_label' => JobTaxonomy::labelFor(
+                JobTaxonomyType::OrganizationType,
+                $organizationType,
+            ),
             'contact_name' => $employer->contact_name,
             'industry' => $employer->industry,
             'company_size' => $employer->company_size,
@@ -83,7 +89,7 @@ class EmployerProfileController extends Controller
 
         return Inertia::render('backend/User/EmployerCompanyProfile', [
             'profile' => $profile,
-            'organizationTypes' => OrganizationType::options(),
+            'organizationTypes' => JobTaxonomy::organizationTypeOptions($organizationType),
             'completion' => [
                 'percent' => (int) round(($completed / max(count($sections), 1)) * 100),
                 'completed' => $completed,

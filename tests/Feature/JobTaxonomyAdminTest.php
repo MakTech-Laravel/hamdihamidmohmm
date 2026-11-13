@@ -15,7 +15,7 @@ test('admins can view job filter taxonomies', function () {
         ->assertInertia(fn ($page) => $page
             ->component('backend/Admin/JobTaxonomies')
             ->has('items')
-            ->has('types', 4)
+            ->has('types', 6)
             ->where('filters.type', ''));
 });
 

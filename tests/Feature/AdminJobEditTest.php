@@ -53,7 +53,7 @@ test('admins can update a job posting', function () {
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Senior',
+            'experience_level' => 'senior',
             'salary_range' => 'SDG 10,000 - 15,000',
             'description' => '<p><strong>Updated</strong> description for policy compliance.</p><script>alert(1)</script>',
             'requirements' => '<p><em>Updated</em> requirements.</p><script>alert(1)</script>',
@@ -66,7 +66,7 @@ test('admins can update a job posting', function () {
     $job->refresh();
 
     expect($job->title)->toBe('Corrected Title')
-        ->and($job->experience_level)->toBe('Senior')
+        ->and($job->experience_level)->toBe('senior')
         ->and($job->status)->toBe(JobPostStatus::Active)
         ->and($job->skills)->toContain('Laravel')
         ->and($job->description)->toContain('<strong>Updated</strong>')

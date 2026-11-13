@@ -102,7 +102,7 @@ test('publishing a job flashes the admin-approval confirmation', function () {
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'publish' => true,
         ])
         ->assertRedirect(route('employer.jobs'))

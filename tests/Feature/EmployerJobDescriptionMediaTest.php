@@ -82,7 +82,7 @@ HTML;
             'location' => 'khartoum',
             'country' => 'sudan',
             'employment_type' => 'full_time',
-            'experience_level' => 'Mid Level',
+            'experience_level' => 'mid-level',
             'description' => $description,
             'publish' => false,
         ])
