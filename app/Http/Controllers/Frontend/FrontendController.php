@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Enums\JobApplicationStatus;
 use App\Enums\JobPostStatus;
 use App\Enums\JobTaxonomyType;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
 use App\Models\JobPost;
@@ -15,6 +17,8 @@ use App\Support\ListPageSize;
 use App\Support\PortalPreferences;
 use App\Support\TrainingMedia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,13 +31,14 @@ class FrontendController extends Controller
         return Inertia::render('frontend/home', [
             'packages' => Package::publicCards(),
             'filterOptions' => JobTaxonomy::filterOptions(),
+            'stats' => $this->portalStats(),
             'recommendedJobs' => JobPost::query()
                 ->active()
                 ->with('employer:id,name,company_name,company_logo_path,portal_preferences')
                 ->latest()
                 ->limit(6)
                 ->get()
-                ->map(fn (JobPost $job) => $this->homeJobCard($job))
+                ->map(fn(JobPost $job) => $this->homeJobCard($job))
                 ->values(),
         ]);
     }
@@ -50,7 +55,7 @@ class FrontendController extends Controller
         $location = $request->string('location')->toString();
         $category = $request->string('category')->toString();
         $types = collect($request->input('types', []))
-            ->map(fn (mixed $type): string => trim((string) $type))
+            ->map(fn(mixed $type): string => trim((string) $type))
             ->filter()
             ->values()
             ->all();
@@ -73,7 +78,7 @@ class FrontendController extends Controller
             ->latest()
             ->paginate(ListPageSize::DEFAULT)
             ->withQueryString()
-            ->through(fn (JobPost $job) => [
+            ->through(fn(JobPost $job) => [
                 'id' => $job->id,
                 'slug' => $job->slug,
                 'title' => $job->title,
@@ -120,9 +125,9 @@ class FrontendController extends Controller
 
         $applied = $request->user()?->isJobSeeker()
             ? JobApplication::query()
-                ->where('job_post_id', $jobPost->id)
-                ->where('job_seeker_id', $request->user()->id)
-                ->exists()
+            ->where('job_post_id', $jobPost->id)
+            ->where('job_seeker_id', $request->user()->id)
+            ->exists()
             : false;
 
         return Inertia::render('frontend/job-show', [
@@ -153,7 +158,7 @@ class FrontendController extends Controller
                 'requirements' => $jobPost->requirements,
                 'skills' => array_values(array_filter(
                     is_array($jobPost->skills) ? $jobPost->skills : [],
-                    fn (mixed $skill): bool => filled($skill),
+                    fn(mixed $skill): bool => filled($skill),
                 )),
                 'application_questions' => is_array($jobPost->application_questions)
                     ? $jobPost->application_questions
@@ -170,7 +175,7 @@ class FrontendController extends Controller
                     ->latest()
                     ->limit(3)
                     ->get()
-                    ->map(fn (JobPost $similar) => [
+                    ->map(fn(JobPost $similar) => [
                         'slug' => $similar->slug,
                         'title' => $similar->title,
                         'company' => $similar->employer?->company_name ?: $similar->employer?->name,
@@ -183,17 +188,17 @@ class FrontendController extends Controller
             'is_preview' => ! $isLive,
             'applicant_cvs' => $request->user()?->isJobSeeker() === true
                 ? $request->user()->jobSeekerCvs()
-                    ->orderByDesc('is_default')
-                    ->orderByDesc('id')
-                    ->get(['id', 'label', 'original_name', 'is_default'])
-                    ->map(fn ($cv) => [
-                        'id' => $cv->id,
-                        'label' => $cv->label,
-                        'file_name' => $cv->original_name,
-                        'is_default' => (bool) $cv->is_default,
-                    ])
-                    ->values()
-                    ->all()
+                ->orderByDesc('is_default')
+                ->orderByDesc('id')
+                ->get(['id', 'label', 'original_name', 'is_default'])
+                ->map(fn($cv) => [
+                    'id' => $cv->id,
+                    'label' => $cv->label,
+                    'file_name' => $cv->original_name,
+                    'is_default' => (bool) $cv->is_default,
+                ])
+                ->values()
+                ->all()
                 : [],
         ]);
     }
@@ -284,5 +289,45 @@ class FrontendController extends Controller
         $letters = preg_replace('/[^A-Za-z]/', '', (string) $name) ?: 'JP';
 
         return Str::upper(Str::substr($letters, 0, 2));
+    }
+
+    /**
+     * Live marketing counters for the Discover page (cached briefly).
+     *
+     * @return array{active_jobs: string, companies: string, seekers: string, applications: string, hired_today: string}
+     */
+    private function portalStats(): array
+    {
+        /** @var array{active_jobs: string, companies: string, seekers: string, applications: string, hired_today: string} */
+        return Cache::remember('frontend.portal_stats', now()->addMinutes(5), function (): array {
+            $activeJobs = JobPost::query()->active()->count();
+            $companiesQuery = User::query()->where('role', UserRole::Employer);
+
+            // Team accounts use employer_owner_id; older DBs may not have migrated yet.
+            if (Schema::hasColumn('users', 'employer_owner_id')) {
+                $companiesQuery->whereNull('employer_owner_id');
+            }
+
+            $companies = $companiesQuery->count();
+            $seekers = User::query()->where('role', UserRole::JobSeeker)->count();
+            $applications = JobApplication::query()->count();
+            $hiredToday = JobApplication::query()
+                ->where('status', JobApplicationStatus::Hired)
+                ->whereDate('updated_at', now()->toDateString())
+                ->count();
+
+            return [
+                'active_jobs' => $this->formatStatCount($activeJobs),
+                'companies' => $this->formatStatCount($companies),
+                'seekers' => $this->formatStatCount($seekers),
+                'applications' => $this->formatStatCount($applications),
+                'hired_today' => '+' . number_format($hiredToday),
+            ];
+        });
+    }
+
+    private function formatStatCount(int $count): string
+    {
+        return number_format($count) . '+';
     }
 }
