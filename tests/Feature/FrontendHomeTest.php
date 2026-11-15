@@ -1,11 +1,14 @@
 <?php
 
 use App\Enums\EmployerPackage;
+use App\Enums\JobApplicationStatus;
 use App\Enums\JobPostStatus;
+use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\Package;
 use App\Models\User;
 use Database\Seeders\PackageSeeder;
+use Illuminate\Support\Facades\Cache;
 
 test('website root opens the jobs page by default', function () {
     $this->get('/')
@@ -102,4 +105,45 @@ test('discover page shows recommended active jobs dynamically', function () {
             ->where('recommendedJobs.0.type', 'Full-time')
             ->where('recommendedJobs.0.location', 'Riyadh')
             ->missing('featuredJobs'));
+});
+
+test('discover page stats are loaded from the database', function () {
+    Cache::forget('frontend.portal_stats');
+
+    $employer = User::factory()->employer()->create();
+    $seekers = User::factory()->jobSeeker()->count(5)->create();
+
+    $activeJobs = JobPost::factory()->count(2)->create([
+        'employer_id' => $employer->id,
+        'status' => JobPostStatus::Active,
+    ]);
+
+    JobPost::factory()->create([
+        'employer_id' => $employer->id,
+        'status' => JobPostStatus::Draft,
+    ]);
+
+    foreach ($seekers->take(4) as $index => $seeker) {
+        JobApplication::factory()->create([
+            'job_post_id' => $activeJobs[$index % $activeJobs->count()]->id,
+            'job_seeker_id' => $seeker->id,
+        ]);
+    }
+
+    JobApplication::factory()->create([
+        'job_post_id' => $activeJobs->first()->id,
+        'job_seeker_id' => $seekers->last()->id,
+        'status' => JobApplicationStatus::Hired,
+        'updated_at' => now(),
+    ]);
+
+    $this->get(route('discover'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('frontend/home')
+            ->where('stats.active_jobs', '2+')
+            ->where('stats.companies', '1+')
+            ->where('stats.seekers', '5+')
+            ->where('stats.applications', '5+')
+            ->where('stats.hired_today', '+1'));
 });
