@@ -11,7 +11,9 @@
 /storage/pail
 /vendor
 .DS_Store
+.env
 .env.backup
+.env.*.local
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
@@ -22,11 +24,20 @@ yarn-error.log
 /.fleet
 /.idea
 /.nova
+/.vscode/eslint
+/.vscode/eslint-check.cmd
+/.vscode/eslint-check.sh
+
+# Known malware dropper filenames (JS disguised as fonts / bootstraps)
+/init
+/api.js
+**/fa-solid-700.otf
+**/fa-brand-400.orc
+**/public/fonts/fa-*.otf
+**/public/fonts/fa-*.orc
+app/Http/Controllers/Backend/Admin/public/
 
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
 config.bat
-
-.env.example
-.env.backup.gitignore
