@@ -14,7 +14,10 @@ import { role as registerRole } from '@/routes/register';
 
 async function shareJobLink(url: string, title: string): Promise<boolean> {
     try {
-        if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        if (
+            typeof navigator !== 'undefined' &&
+            typeof navigator.share === 'function'
+        ) {
             await navigator.share({ title, url, text: title });
 
             return true;
@@ -41,9 +44,26 @@ type FilterOptions = {
     employmentTypes: TaxonomyOption[];
 };
 
+type PortalStats = {
+    active_jobs: string;
+    companies: string;
+    seekers: string;
+    applications: string;
+    hired_today: string;
+};
+
+const defaultStats: PortalStats = {
+    active_jobs: '0+',
+    companies: '0+',
+    seekers: '0+',
+    applications: '0+',
+    hired_today: '+0',
+};
+
 export default function Home({
     packages = [],
     recommendedJobs = [],
+    stats = defaultStats,
     filterOptions = {
         countries: [],
         dutyStations: [],
@@ -64,6 +84,7 @@ export default function Home({
         posted: string;
         salary: string;
     }>;
+    stats?: PortalStats;
     filterOptions?: FilterOptions;
 }) {
     const { t } = useLocale();
@@ -109,14 +130,14 @@ export default function Home({
         [t],
     );
 
-    const stats = useMemo(
+    const trustStats = useMemo(
         () => [
-            { value: '12,450+', label: t('stats.active_jobs') },
-            { value: '3,200+', label: t('stats.companies') },
-            { value: '48,000+', label: t('stats.seekers') },
-            { value: '95,000+', label: t('stats.applications') },
+            { value: stats.active_jobs, label: t('stats.active_jobs') },
+            { value: stats.companies, label: t('stats.companies') },
+            { value: stats.seekers, label: t('stats.seekers') },
+            { value: stats.applications, label: t('stats.applications') },
         ],
-        [t],
+        [stats, t],
     );
 
     const typeClass = (type: string): string => {
@@ -168,7 +189,7 @@ export default function Home({
 
             {/* Hero */}
             <section className="relative bg-[#d1f6ff]">
-                <div className="mx-auto max-w-[1344px] px-4 pb-8 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pb-10 lg:pt-8">
+                <div className="mx-auto max-w-[1344px] px-4 pt-6 pb-8 sm:px-6 sm:pt-8 lg:px-8 lg:pt-8 lg:pb-10">
                     <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
                         <div className="animate-fadeInUp">
                             <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-sm">
@@ -178,11 +199,11 @@ export default function Home({
                                 </span>
                             </div>
 
-                            <h1 className="mt-4 max-w-xl text-3xl font-bold leading-[1.15] tracking-[-0.8px] text-[#e57124] sm:text-4xl lg:text-[48px] lg:leading-[56px]">
+                            <h1 className="mt-4 max-w-xl text-3xl leading-[1.15] font-bold tracking-[-0.8px] text-[#e57124] sm:text-4xl lg:text-[48px] lg:leading-[56px]">
                                 {t('hero.title')}
                             </h1>
 
-                            <p className="mt-4 max-w-xl text-base font-medium leading-[22px] tracking-[-0.18px] text-[#050315]">
+                            <p className="mt-4 max-w-xl text-base leading-[22px] font-medium tracking-[-0.18px] text-[#050315]">
                                 {t('hero.subtitle')}
                             </p>
 
@@ -209,9 +230,9 @@ export default function Home({
                             </div>
                         </div>
 
-                        <div className="relative mx-auto w-full max-w-[448px] px-6 sm:px-10 animate-fadeInUp">
+                        <div className="animate-fadeInUp relative mx-auto w-full max-w-[448px] px-6 sm:px-10">
                             <div
-                                className="absolute top-[-16px] end-2 h-[176px] w-[70%] max-w-[288px] rounded-2xl opacity-30"
+                                className="absolute end-2 top-[-16px] h-[176px] w-[70%] max-w-[288px] rounded-2xl opacity-30"
                                 style={{
                                     backgroundImage:
                                         'linear-gradient(148.57deg, rgb(59, 130, 246) 0%, rgb(37, 99, 235) 100%)',
@@ -263,16 +284,26 @@ export default function Home({
                             </div>
 
                             <div className="absolute start-0 top-[70%] z-10 hidden w-[107px] -translate-x-1/4 rounded-xl border border-[#e2e8f0] bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block rtl:translate-x-1/4">
-                                <p className="text-xs text-[#6a7282]">{t('hero.preview.active_jobs')}</p>
-                                <p dir="ltr" className="text-xl font-extrabold leading-7 text-[#1e3a8a]">
-                                    12,450+
+                                <p className="text-xs text-[#6a7282]">
+                                    {t('hero.preview.active_jobs')}
+                                </p>
+                                <p
+                                    dir="ltr"
+                                    className="text-xl leading-7 font-extrabold text-[#1e3a8a]"
+                                >
+                                    {stats.active_jobs}
                                 </p>
                             </div>
 
                             <div className="absolute end-0 top-[40%] z-10 hidden w-[99px] translate-x-1/4 rounded-xl border border-[#e2e8f0] bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block rtl:-translate-x-1/4">
-                                <p className="text-xs text-[#6a7282]">{t('hero.preview.companies')}</p>
-                                <p dir="ltr" className="text-xl font-extrabold leading-7 text-[#f97316]">
-                                    3,200+
+                                <p className="text-xs text-[#6a7282]">
+                                    {t('hero.preview.companies')}
+                                </p>
+                                <p
+                                    dir="ltr"
+                                    className="text-xl leading-7 font-extrabold text-[#f97316]"
+                                >
+                                    {stats.companies}
                                 </p>
                             </div>
                         </div>
@@ -352,7 +383,9 @@ export default function Home({
                                             <div className="flex size-[56px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white sm:size-[64px]">
                                                 <img
                                                     src={job.logo_url}
-                                                    alt={job.company || job.title}
+                                                    alt={
+                                                        job.company || job.title
+                                                    }
                                                     className="size-full object-contain object-center p-0.5"
                                                 />
                                             </div>
@@ -435,7 +468,10 @@ export default function Home({
             </section>
 
             {/* Why Choose Us */}
-            <section id="about" className="scroll-mt-28 bg-white pt-8 pb-10 sm:pt-10">
+            <section
+                id="about"
+                className="scroll-mt-28 bg-white pt-8 pb-10 sm:pt-10"
+            >
                 <div className="mx-auto max-w-[1344px] px-4 sm:px-6 lg:px-8">
                     <div className="text-center">
                         <h2 className="text-3xl font-bold tracking-[-0.3px] text-[#050315] sm:text-[40px] sm:leading-[48px]">
@@ -482,11 +518,11 @@ export default function Home({
                         {t('stats.title')}
                     </h2>
                     <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-                        {stats.map((stat) => (
+                        {trustStats.map((stat) => (
                             <div key={stat.label} className="text-center">
                                 <p
                                     dir="ltr"
-                                    className="text-4xl font-extrabold leading-[48px] text-[#050315] sm:text-[48px]"
+                                    className="text-4xl leading-[48px] font-extrabold text-[#050315] sm:text-[48px]"
                                 >
                                     {stat.value}
                                 </p>
@@ -565,15 +601,19 @@ export default function Home({
                                         height={96}
                                     />
                                 </div>
-                                <div className="absolute -top-3 -end-8 hidden w-[95px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
-                                    <p className="text-xs text-[#6a7282]">{t('seeker.stat_applications')}</p>
-                                    <p className="text-lg font-extrabold leading-7 text-[#1e3a8a]">
+                                <div className="absolute -end-8 -top-3 hidden w-[95px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
+                                    <p className="text-xs text-[#6a7282]">
+                                        {t('seeker.stat_applications')}
+                                    </p>
+                                    <p className="text-lg leading-7 font-extrabold text-[#1e3a8a]">
                                         95K+
                                     </p>
                                 </div>
-                                <div className="absolute -bottom-2 -start-6 hidden w-[86px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
-                                    <p className="text-xs text-[#6a7282]">{t('seeker.stat_new_today')}</p>
-                                    <p className="text-lg font-extrabold leading-7 text-[#16a34a]">
+                                <div className="absolute -start-6 -bottom-2 hidden w-[86px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
+                                    <p className="text-xs text-[#6a7282]">
+                                        {t('seeker.stat_new_today')}
+                                    </p>
+                                    <p className="text-lg leading-7 font-extrabold text-[#16a34a]">
                                         +340
                                     </p>
                                 </div>
@@ -619,7 +659,10 @@ export default function Home({
             )}
 
             {/* Employer CTA */}
-            <section id="employers" className="scroll-mt-28 px-4 py-12 sm:px-6 lg:px-8">
+            <section
+                id="employers"
+                className="scroll-mt-28 px-4 py-12 sm:px-6 lg:px-8"
+            >
                 <div className="mx-auto max-w-[1344px] overflow-hidden rounded-3xl bg-[#d1f6ff] shadow-[0px_8px_6px_0px_rgba(15,23,42,0.12)]">
                     <div className="grid lg:grid-cols-2">
                         <div className="relative order-2 flex min-h-[200px] items-center justify-center p-8 lg:order-1">
@@ -633,16 +676,26 @@ export default function Home({
                                         height={96}
                                     />
                                 </div>
-                                <div className="absolute -top-3 -start-8 hidden w-[90px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
-                                    <p className="text-xs text-[#6a7282]">{t('employer.stat_companies')}</p>
-                                    <p className="text-lg font-extrabold leading-7 text-[#f97316]">
-                                        3,200+
+                                <div className="absolute -start-8 -top-3 hidden w-[90px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
+                                    <p className="text-xs text-[#6a7282]">
+                                        {t('employer.stat_companies')}
+                                    </p>
+                                    <p
+                                        dir="ltr"
+                                        className="text-lg leading-7 font-extrabold text-[#f97316]"
+                                    >
+                                        {stats.companies}
                                     </p>
                                 </div>
-                                <div className="absolute -bottom-2 -end-6 hidden w-[92px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
-                                    <p className="text-xs text-[#6a7282]">{t('employer.stat_hired_today')}</p>
-                                    <p className="text-lg font-extrabold leading-7 text-[#1e3a8a]">
-                                        +85
+                                <div className="absolute -end-6 -bottom-2 hidden w-[92px] rounded-xl bg-white p-3 shadow-[0px_10px_7.5px_rgba(0,0,0,0.1),0px_4px_3px_rgba(0,0,0,0.1)] sm:block">
+                                    <p className="text-xs text-[#6a7282]">
+                                        {t('employer.stat_hired_today')}
+                                    </p>
+                                    <p
+                                        dir="ltr"
+                                        className="text-lg leading-7 font-extrabold text-[#1e3a8a]"
+                                    >
+                                        {stats.hired_today}
                                     </p>
                                 </div>
                             </div>
